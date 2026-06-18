@@ -173,6 +173,21 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
+        /// Directly applies a signed IQ delta (e.g. from a random event), clamped to [0, 100].
+        /// Unlike RestoreIQ, this allows IQ to decrease as well as increase.
+        /// </summary>
+        public void ModifyIQNatively(float delta)
+        {
+            float previousIQ = currentIQ;
+            currentIQ = Mathf.Clamp(currentIQ + delta, MinimumIQ, StartingIQ);
+
+            if (!Mathf.Approximately(previousIQ, currentIQ))
+            {
+                OnIQChanged?.Invoke(currentIQ);
+            }
+        }
+
+        /// <summary>
         /// Resets IQ to full and clears all active decay modifiers (e.g. Chaos spikes,
         /// University, the Literal Library) so a rebirth starts with a clean decay state.
         /// </summary>

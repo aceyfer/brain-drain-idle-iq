@@ -106,6 +106,22 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
+        /// Removes Brains from the player's spendable balance, clamped at zero. Unlike
+        /// SpendBrains, this always succeeds (e.g. for event penalties) and never refuses
+        /// due to insufficient funds. Does not affect CumulativeBrains.
+        /// </summary>
+        public void RemoveBrains(double amount)
+        {
+            if (amount <= 0d)
+            {
+                return;
+            }
+
+            brains = Math.Max(0d, brains - amount);
+            OnBrainsChanged?.Invoke(brains);
+        }
+
+        /// <summary>
         /// Attempts to spend Brains. Returns true when the purchase succeeds.
         /// </summary>
         public bool SpendBrains(double amount)
