@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
-  m_Name: TheBroadcastTower
+  m_Name: PodcasterSoundboard
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: The Broadcast Tower
-  description: The Broadcast Tower
-  unlockPlayerLevel: 25
-  baseCost: 200000
+  buildingName: Podcaster Soundboard
+  description: Three guys in a garage explain geopolitics for four hours using
+    only vibes. Somehow, people are taking notes.
+  unlockPlayerLevel: 5
+  baseCost: 150
   costMultiplier: 1.15
-  baseBrainsPerSecond: 2048
-  iqRecoveryPerSecond: -50
+  baseBrainsPerSecond: 5
+  iqRecoveryPerSecond: -0.2

@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
-  m_Name: ClickbaitFarm
+  m_Name: CryptoBroCompound
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Clickbait Farm
-  description: Clickbait Farm
-  unlockPlayerLevel: 5
-  baseCost: 150
+  buildingName: Crypto-Bro Compound
+  description: A walled compound of vape smoke and group chats screaming "WAGMI."
+    Income spikes violently, then mysteriously vanishes into a rug pull.
+  unlockPlayerLevel: 10
+  baseCost: 1200
   costMultiplier: 1.15
-  baseBrainsPerSecond: 4
-  iqRecoveryPerSecond: -0.2
+  baseBrainsPerSecond: 60
+  iqRecoveryPerSecond: -3

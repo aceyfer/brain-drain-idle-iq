@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
+  m_Name: DoomscrollEngine
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingName: Doomscroll Engine
+  description: An infinite-scroll algorithm fine-tuned to never let your thumb
+    rest. Outputs zero nutritional value and a faint ringing sound.
+  unlockPlayerLevel: 1
+  baseCost: 10
+  costMultiplier: 1.15
+  baseBrainsPerSecond: 0.3
+  iqRecoveryPerSecond: -0.05

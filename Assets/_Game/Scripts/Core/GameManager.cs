@@ -30,6 +30,7 @@ namespace BrainDrain.Core
         [SerializeField] private RankDefinition[] rankDefinitions;
 
         private bool tickLoopActive;
+        private int currentRankIndex;
 
 
         /// <summary>Thread-safe singleton accessor. Returns null if no instance exists in the scene.</summary>
@@ -65,6 +66,9 @@ namespace BrainDrain.Core
         /// <summary>Idiocracy Rank Definitions array.</summary>
         public RankDefinition[] RankDefinitions => rankDefinitions;
 
+        /// <summary>Index into <see cref="RankDefinitions"/> for the currently active rank.</summary>
+        public int CurrentRankIndex => currentRankIndex;
+
         /// <summary>Determines rank name based on cumulative Brains earned.</summary>
         public string GetRankName(double cumulativeBrains)
         {
@@ -73,19 +77,7 @@ namespace BrainDrain.Core
                 return "Unknown";
             }
 
-            string currentRank = rankDefinitions[0].rankName;
-            for (int i = 0; i < rankDefinitions.Length; i++)
-            {
-                if (cumulativeBrains >= rankDefinitions[i].threshold)
-                {
-                    currentRank = rankDefinitions[i].rankName;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return currentRank;
+            return rankDefinitions[CalculateRankIndex(cumulativeBrains)].rankName;
         }
 
         /// <summary>Fired once after the tick loop is running.</summary>
@@ -93,6 +85,9 @@ namespace BrainDrain.Core
 
         /// <summary>Fired every second by the background tick loop.</summary>
         public event Action OnSecondTick;
+
+        /// <summary>Fired when the active Idiocracy Rank index changes. Passes the new rank index.</summary>
+        public event Action<int> OnRankChanged;
 
         /// <summary>Hook for a future SaveSystem to persist state on demand.</summary>
         public event Action OnSaveRequested;
@@ -118,12 +113,15 @@ namespace BrainDrain.Core
         private void Start()
         {
             StartTickLoop();
+            SubscribeToCurrencyForRank();
+            UpdateRankFromCumulativeBrains(currencyManager != null ? currencyManager.CumulativeBrains : 0d);
             OnGameInitialized?.Invoke();
         }
 
         private void OnDestroy()
         {
             StopTickLoop();
+            UnsubscribeFromCurrencyForRank();
 
             lock (InstanceLock)
             {
@@ -198,6 +196,67 @@ namespace BrainDrain.Core
         private void ProcessSecondTick()
         {
             OnSecondTick?.Invoke();
+        }
+
+        private void SubscribeToCurrencyForRank()
+        {
+            if (currencyManager == null)
+            {
+                return;
+            }
+
+            currencyManager.OnCumulativeBrainsChanged -= HandleCumulativeBrainsChangedForRank;
+            currencyManager.OnCumulativeBrainsChanged += HandleCumulativeBrainsChangedForRank;
+        }
+
+        private void UnsubscribeFromCurrencyForRank()
+        {
+            if (currencyManager == null)
+            {
+                return;
+            }
+
+            currencyManager.OnCumulativeBrainsChanged -= HandleCumulativeBrainsChangedForRank;
+        }
+
+        private void HandleCumulativeBrainsChangedForRank(double cumulativeBrains)
+        {
+            UpdateRankFromCumulativeBrains(cumulativeBrains);
+        }
+
+        private void UpdateRankFromCumulativeBrains(double cumulativeBrains)
+        {
+            int newRankIndex = CalculateRankIndex(cumulativeBrains);
+            if (newRankIndex == currentRankIndex)
+            {
+                return;
+            }
+
+            currentRankIndex = newRankIndex;
+            OnRankChanged?.Invoke(currentRankIndex);
+        }
+
+        private int CalculateRankIndex(double cumulativeBrains)
+        {
+            if (rankDefinitions == null || rankDefinitions.Length == 0)
+            {
+                return 0;
+            }
+
+            int rankIndex = 0;
+            for (int i = 0; i < rankDefinitions.Length; i++)
+            {
+                if (cumulativeBrains >= rankDefinitions[i].threshold)
+                {
+                    rankIndex = i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return rankIndex;
         }
     }
 }

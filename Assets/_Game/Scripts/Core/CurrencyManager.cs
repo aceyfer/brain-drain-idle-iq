@@ -12,6 +12,7 @@ namespace BrainDrain.Core
         private double cumulativeBrains;
         private int neurons;
         private double idleBps;
+        private double _rebirthMultiplier = 1.0;
 
         /// <summary>Convenient accessor routed through GameManager when available.</summary>
         public static CurrencyManager Instance
@@ -38,6 +39,9 @@ namespace BrainDrain.Core
 
         /// <summary>Total idle Brains generated per second from buildings and upgrades.</summary>
         public double IdleBPS => idleBps;
+
+        /// <summary>Permanent income multiplier accumulated across rebirths.</summary>
+        public double RebirthMultiplier => _rebirthMultiplier;
 
         /// <summary>Fired when the spendable Brains balance changes. Passes the new total.</summary>
         public event Action<double> OnBrainsChanged;
@@ -77,8 +81,25 @@ namespace BrainDrain.Core
                 return;
             }
 
-            brains += amount;
-            cumulativeBrains += amount;
+            double multipliedAmount = amount * _rebirthMultiplier;
+
+            brains += multipliedAmount;
+            cumulativeBrains += multipliedAmount;
+
+            OnBrainsChanged?.Invoke(brains);
+            OnCumulativeBrainsChanged?.Invoke(cumulativeBrains);
+        }
+
+        /// <summary>
+        /// Performs a full progression wipe: zeroes spendable and cumulative Brains and
+        /// permanently increases the rebirth income multiplier by <paramref name="multiplierBonus"/>.
+        /// </summary>
+        public void ExecuteRebirth(double multiplierBonus)
+        {
+            _rebirthMultiplier += multiplierBonus;
+
+            brains = 0d;
+            cumulativeBrains = 0d;
 
             OnBrainsChanged?.Invoke(brains);
             OnCumulativeBrainsChanged?.Invoke(cumulativeBrains);

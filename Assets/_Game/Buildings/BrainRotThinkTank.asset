@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
-  m_Name: DoomscrollAssembly
+  m_Name: BrainRotThinkTank
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Doomscroll Assembly
-  description: Doomscroll Assembly
-  unlockPlayerLevel: 10
-  baseCost: 1200
+  buildingName: Brain-Rot Think Tank
+  description: A glass tower of PhDs paid handsomely to explain why the dumbest
+    possible idea is, actually, very smart. The think tank that ends all thinking.
+  unlockPlayerLevel: 25
+  baseCost: 200000
   costMultiplier: 1.15
-  baseBrainsPerSecond: 32
-  iqRecoveryPerSecond: -1.5
+  baseBrainsPerSecond: 4500
+  iqRecoveryPerSecond: -110

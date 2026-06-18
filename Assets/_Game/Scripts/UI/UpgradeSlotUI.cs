@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using TMPro;
 using BrainDrain.Core;
 
@@ -19,7 +20,8 @@ namespace BrainDrain.UI
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;
         [SerializeField] private TextMeshProUGUI costText;
-        [SerializeField] private TextMeshProUGUI levelText;
+        [FormerlySerializedAs("levelText")]
+        [SerializeField] private TextMeshProUGUI countText;
 
         [Header("Interaction")]
         [SerializeField] private UnityEngine.UI.Button buyButton;
@@ -28,7 +30,7 @@ namespace BrainDrain.UI
         public TextMeshProUGUI NameText { get => nameText; set => nameText = value; }
         public TextMeshProUGUI DescriptionText { get => descriptionText; set => descriptionText = value; }
         public TextMeshProUGUI CostText { get => costText; set => costText = value; }
-        public TextMeshProUGUI LevelText { get => levelText; set => levelText = value; }
+        public TextMeshProUGUI CountText { get => countText; set => countText = value; }
         public UnityEngine.UI.Button BuyButton { get => buyButton; set => buyButton = value; }
         public UnityEngine.UI.Image Background { get => background; set => background = value; }
 
@@ -69,9 +71,9 @@ namespace BrainDrain.UI
             int level = boundManager.GetBuildingLevel(boundData);
             bool affordable = unlocked && currency != null && currency.CanAffordBrains(cost);
 
-            if (levelText != null)
+            if (countText != null)
             {
-                levelText.text = $"LVL {level}";
+                countText.text = $"OWNED: {level}";
             }
 
             if (descriptionText != null)

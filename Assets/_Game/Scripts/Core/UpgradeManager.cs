@@ -20,6 +20,9 @@ namespace BrainDrain.Core
 
         private IQDecaySystem iqDecaySystem;
 
+        /// <summary>Convenient scene-lookup accessor, since GameManager does not hub this reference.</summary>
+        public static UpgradeManager Instance => FindAnyObjectByType<UpgradeManager>();
+
         /// <summary>Read-only view of owned building levels keyed by building name.</summary>
         public IReadOnlyDictionary<string, int> BuildingLevels => buildingLevels;
 
@@ -102,6 +105,13 @@ namespace BrainDrain.Core
             return building.baseCost * Math.Pow(building.costMultiplier, level);
         }
 
+        /// <summary>Returns true when the player's current decay level meets the building's unlock requirement.</summary>
+        public bool IsUnlocked(BuildingData building)
+        {
+            ResolveReferences();
+            return building != null && iqDecaySystem != null && iqDecaySystem.CurrentLevel >= building.unlockPlayerLevel;
+        }
+
         /// <summary>
         /// Attempts to purchase one level of a building after validating level unlock and cost.
         /// </summary>
@@ -135,6 +145,13 @@ namespace BrainDrain.Core
             buildingLevels.TryGetValue(building.buildingName, out int level);
             buildingLevels[building.buildingName] = level + 1;
 
+            OnBuildingsChanged?.Invoke();
+        }
+
+        /// <summary>Clears all owned building levels back to baseline and notifies UI to refresh.</summary>
+        public void ResetBuildings()
+        {
+            buildingLevels.Clear();
             OnBuildingsChanged?.Invoke();
         }
 

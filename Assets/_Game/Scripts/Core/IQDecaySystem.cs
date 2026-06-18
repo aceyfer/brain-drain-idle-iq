@@ -38,6 +38,20 @@ namespace BrainDrain.Core
         private int currentLevel = 1;
         private float netDecayRate;
 
+        /// <summary>Convenient accessor routed through GameManager when available.</summary>
+        public static IQDecaySystem Instance
+        {
+            get
+            {
+                if (GameManager.Instance != null)
+                {
+                    return GameManager.Instance.IQDecay;
+                }
+
+                return FindAnyObjectByType<IQDecaySystem>();
+            }
+        }
+
         /// <summary>Current global IQ value.</summary>
         public float CurrentIQ => currentIQ;
 
@@ -155,6 +169,20 @@ namespace BrainDrain.Core
                 return;
             }
 
+            OnIQChanged?.Invoke(currentIQ);
+        }
+
+        /// <summary>
+        /// Resets IQ to full and clears all active decay modifiers (e.g. Chaos spikes,
+        /// University, the Literal Library) so a rebirth starts with a clean decay state.
+        /// </summary>
+        public void ResetDecayState()
+        {
+            currentIQ = StartingIQ;
+            additiveModifiers.Clear();
+            multiplicativeModifiers.Clear();
+
+            RecalculateNetDecayRate(emitEvent: true);
             OnIQChanged?.Invoke(currentIQ);
         }
 

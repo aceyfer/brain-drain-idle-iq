@@ -10,12 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
-  m_Name: InfluencerPod
+  m_Name: RealityTVSyndicate
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Influencer Pod
-  description: Influencer Pod
+  buildingName: Reality TV Syndicate
+  description: Twelve strangers, one mansion, zero impulse control. Syndicated
+    into 4,000 time zones, dragging the planet's median IQ down with every rose
+    ceremony.
   unlockPlayerLevel: 15
   baseCost: 15000
   costMultiplier: 1.15
-  baseBrainsPerSecond: 256
-  iqRecoveryPerSecond: -8
+  baseBrainsPerSecond: 320
+  iqRecoveryPerSecond: -10
