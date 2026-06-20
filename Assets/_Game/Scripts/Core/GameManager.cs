@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
+using BrainDrain.Systems;
 
 namespace BrainDrain.Core
 {
@@ -18,12 +20,17 @@ namespace BrainDrain.Core
     public sealed class GameManager : MonoBehaviour
     {
         private const float TickIntervalSeconds = 1f;
+        private const int AutoSaveIntervalSeconds = 60;
 
         private static readonly object InstanceLock = new();
         private static GameManager instance;
 
+        private int secondsSinceLastAutoSave;
+
         [Header("Core Systems")]
-        [SerializeField] private IQDecaySystem iqDecaySystem;
+        [FormerlySerializedAs("iqDecaySystem")]
+        [FormerlySerializedAs("worldProgressionManager")]
+        [SerializeField] private PlayerIQManager playerIQManager;
         [SerializeField] private CurrencyManager currencyManager;
 
         [Header("Idiocracy Ranks")]
@@ -57,8 +64,8 @@ namespace BrainDrain.Core
             }
         }
 
-        /// <summary>Direct reference to the IQ decay simulation.</summary>
-        public IQDecaySystem IQDecay => iqDecaySystem;
+        /// <summary>Direct reference to the player IQ simulation.</summary>
+        public PlayerIQManager PlayerIQSystem => playerIQManager;
 
         /// <summary>Direct reference to the currency system.</summary>
         public CurrencyManager Currency => currencyManager;
@@ -69,15 +76,15 @@ namespace BrainDrain.Core
         /// <summary>Index into <see cref="RankDefinitions"/> for the currently active rank.</summary>
         public int CurrentRankIndex => currentRankIndex;
 
-        /// <summary>Determines rank name based on cumulative Brains earned.</summary>
-        public string GetRankName(double cumulativeBrains)
+        /// <summary>Determines rank name based on cumulative Brain Power earned.</summary>
+        public string GetRankName(double cumulativeBrainPower)
         {
             if (rankDefinitions == null || rankDefinitions.Length == 0)
             {
                 return "Unknown";
             }
 
-            return rankDefinitions[CalculateRankIndex(cumulativeBrains)].rankName;
+            return rankDefinitions[CalculateRankIndex(cumulativeBrainPower)].rankName;
         }
 
         /// <summary>Fired once after the tick loop is running.</summary>
@@ -107,6 +114,13 @@ namespace BrainDrain.Core
             }
 
             DontDestroyOnLoad(gameObject);
+
+            // SaveManager's self-bootstrapping Instance property only creates it on first
+            // access -- but nothing else ever calls *into* SaveManager (it only calls out to
+            // other managers), so something has to proactively touch it once. This is the
+            // earliest, most central place to guarantee that happens.
+            _ = SaveManager.Instance;
+
             ResolveCoreReferences();
         }
 
@@ -114,7 +128,7 @@ namespace BrainDrain.Core
         {
             StartTickLoop();
             SubscribeToCurrencyForRank();
-            UpdateRankFromCumulativeBrains(currencyManager != null ? currencyManager.CumulativeBrains : 0d);
+            UpdateRankFromCumulativeBrainPower(currencyManager != null ? currencyManager.CumulativeBrainPower : 0d);
             OnGameInitialized?.Invoke();
         }
 
@@ -138,20 +152,41 @@ namespace BrainDrain.Core
             OnSaveRequested?.Invoke();
         }
 
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                RequestSave();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                RequestSave();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            RequestSave();
+        }
+
         private void ResolveCoreReferences()
         {
-            if (iqDecaySystem == null)
+            if (playerIQManager == null)
             {
-                iqDecaySystem = GetComponentInChildren<IQDecaySystem>(true);
+                playerIQManager = GetComponentInChildren<PlayerIQManager>(true);
 
-                if (iqDecaySystem == null)
+                if (playerIQManager == null)
                 {
-                    iqDecaySystem = FindAnyObjectByType<IQDecaySystem>();
+                    playerIQManager = FindAnyObjectByType<PlayerIQManager>();
                 }
 
-                if (iqDecaySystem == null)
+                if (playerIQManager == null)
                 {
-                    Debug.LogError("[GameManager] IQDecaySystem reference is missing.", this);
+                    Debug.LogError("[GameManager] PlayerIQManager reference is missing.", this);
                 }
             }
 
@@ -196,6 +231,19 @@ namespace BrainDrain.Core
         private void ProcessSecondTick()
         {
             OnSecondTick?.Invoke();
+            UpdateAutoSaveTimer();
+        }
+
+        private void UpdateAutoSaveTimer()
+        {
+            secondsSinceLastAutoSave++;
+            if (secondsSinceLastAutoSave < AutoSaveIntervalSeconds)
+            {
+                return;
+            }
+
+            secondsSinceLastAutoSave = 0;
+            RequestSave();
         }
 
         private void SubscribeToCurrencyForRank()
@@ -205,8 +253,8 @@ namespace BrainDrain.Core
                 return;
             }
 
-            currencyManager.OnCumulativeBrainsChanged -= HandleCumulativeBrainsChangedForRank;
-            currencyManager.OnCumulativeBrainsChanged += HandleCumulativeBrainsChangedForRank;
+            currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChangedForRank;
+            currencyManager.OnCumulativeBrainPowerChanged += HandleCumulativeBrainPowerChangedForRank;
         }
 
         private void UnsubscribeFromCurrencyForRank()
@@ -216,17 +264,17 @@ namespace BrainDrain.Core
                 return;
             }
 
-            currencyManager.OnCumulativeBrainsChanged -= HandleCumulativeBrainsChangedForRank;
+            currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChangedForRank;
         }
 
-        private void HandleCumulativeBrainsChangedForRank(double cumulativeBrains)
+        private void HandleCumulativeBrainPowerChangedForRank(double cumulativeBrainPower)
         {
-            UpdateRankFromCumulativeBrains(cumulativeBrains);
+            UpdateRankFromCumulativeBrainPower(cumulativeBrainPower);
         }
 
-        private void UpdateRankFromCumulativeBrains(double cumulativeBrains)
+        private void UpdateRankFromCumulativeBrainPower(double cumulativeBrainPower)
         {
-            int newRankIndex = CalculateRankIndex(cumulativeBrains);
+            int newRankIndex = CalculateRankIndex(cumulativeBrainPower);
             if (newRankIndex == currentRankIndex)
             {
                 return;
@@ -236,7 +284,7 @@ namespace BrainDrain.Core
             OnRankChanged?.Invoke(currentRankIndex);
         }
 
-        private int CalculateRankIndex(double cumulativeBrains)
+        private int CalculateRankIndex(double cumulativeBrainPower)
         {
             if (rankDefinitions == null || rankDefinitions.Length == 0)
             {
@@ -246,7 +294,7 @@ namespace BrainDrain.Core
             int rankIndex = 0;
             for (int i = 0; i < rankDefinitions.Length; i++)
             {
-                if (cumulativeBrains >= rankDefinitions[i].threshold)
+                if (cumulativeBrainPower >= rankDefinitions[i].threshold)
                 {
                     rankIndex = i;
                 }

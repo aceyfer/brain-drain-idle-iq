@@ -15,8 +15,7 @@ MonoBehaviour:
   buildingName: Crypto-Bro Compound
   description: A walled compound of vape smoke and group chats screaming "WAGMI."
     Income spikes violently, then mysteriously vanishes into a rug pull.
-  unlockPlayerLevel: 10
+  unlockCumulativeBrainPower: 65000
   baseCost: 1200
   costMultiplier: 1.15
-  baseBrainsPerSecond: 60
-  iqRecoveryPerSecond: -3
+  baseBrainPowerPerSecond: 60

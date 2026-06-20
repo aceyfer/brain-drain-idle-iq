@@ -17,6 +17,6 @@ MonoBehaviour:
     cardboard box hypnotizes you into a trance. You wake up having bought everything
     in the video, then somehow turned a profit reselling it.
   choiceButtonText: Watch Until The End
-  brainRewardOrPenalty: 50000
-  iqImpact: -25
+  brainPowerRewardOrPenalty: 50000
+  playerIQImpact: -25
   multiplierSpike: 0

@@ -13,7 +13,6 @@ namespace BrainDrain.UI
         [Header("Dependencies")]
         [SerializeField] private UpgradeManager upgradeManager;
         [SerializeField] private CurrencyManager currencyManager;
-        [SerializeField] private IQDecaySystem iqDecaySystem;
 
         [Header("Layout")]
         [SerializeField] private RectTransform content;
@@ -55,11 +54,6 @@ namespace BrainDrain.UI
             {
                 currencyManager = CurrencyManager.Instance;
             }
-
-            if (iqDecaySystem == null)
-            {
-                iqDecaySystem = FindAnyObjectByType<IQDecaySystem>();
-            }
         }
 
         private void BuildShop()
@@ -78,7 +72,17 @@ namespace BrainDrain.UI
                 return;
             }
 
-            ClearExistingChildren();
+            // Keep static rows, destroy only others
+            for (int i = content.childCount - 1; i >= 0; i--)
+            {
+                Transform child = content.GetChild(i);
+                if (child.name == "Library" || child.name.StartsWith("UpgradeSlot_") || child.name.StartsWith("Static_"))
+                {
+                    continue;
+                }
+                Destroy(child.gameObject);
+            }
+            spawnedSlots.Clear();
 
             IReadOnlyList<BuildingData> templates = upgradeManager.BuildingTemplates;
             if (templates != null)
@@ -91,8 +95,26 @@ namespace BrainDrain.UI
                         continue;
                     }
 
-                    UpgradeSlotUI slot = Instantiate(slotPrefab, content);
-                    slot.name = $"UpgradeSlot_{data.buildingName}";
+                    UpgradeSlotUI slot = null;
+                    // Look for existing matching slot under Content
+                    for (int c = 0; c < content.childCount; c++)
+                    {
+                        Transform child = content.GetChild(c);
+                        UpgradeSlotUI childSlot = child.GetComponent<UpgradeSlotUI>();
+                        if (childSlot != null && (child.name == $"UpgradeSlot_{data.buildingName}" || (data.buildingName == "The Literal Library" && child.name == "Library")))
+                        {
+                            slot = childSlot;
+                            slot.name = $"UpgradeSlot_{data.buildingName}";
+                            break;
+                        }
+                    }
+
+                    if (slot == null)
+                    {
+                        slot = Instantiate(slotPrefab, content);
+                        slot.name = $"UpgradeSlot_{data.buildingName}";
+                    }
+
                     slot.Bind(data, upgradeManager);
                     spawnedSlots.Add(slot);
                 }
@@ -107,7 +129,12 @@ namespace BrainDrain.UI
         {
             for (int i = content.childCount - 1; i >= 0; i--)
             {
-                Destroy(content.GetChild(i).gameObject);
+                Transform child = content.GetChild(i);
+                if (child.name == "Library" || child.name.StartsWith("UpgradeSlot_") || child.name.StartsWith("Static_"))
+                {
+                    continue;
+                }
+                Destroy(child.gameObject);
             }
 
             spawnedSlots.Clear();
@@ -117,14 +144,10 @@ namespace BrainDrain.UI
         {
             if (currencyManager != null)
             {
-                currencyManager.OnBrainsChanged -= HandleBrainsChanged;
-                currencyManager.OnBrainsChanged += HandleBrainsChanged;
-            }
-
-            if (iqDecaySystem != null)
-            {
-                iqDecaySystem.OnLevelChanged -= HandleLevelChanged;
-                iqDecaySystem.OnLevelChanged += HandleLevelChanged;
+                currencyManager.OnBrainPowerChanged -= HandleBrainPowerChanged;
+                currencyManager.OnBrainPowerChanged += HandleBrainPowerChanged;
+                currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChanged;
+                currencyManager.OnCumulativeBrainPowerChanged += HandleCumulativeBrainPowerChanged;
             }
 
             if (upgradeManager != null)
@@ -138,12 +161,8 @@ namespace BrainDrain.UI
         {
             if (currencyManager != null)
             {
-                currencyManager.OnBrainsChanged -= HandleBrainsChanged;
-            }
-
-            if (iqDecaySystem != null)
-            {
-                iqDecaySystem.OnLevelChanged -= HandleLevelChanged;
+                currencyManager.OnBrainPowerChanged -= HandleBrainPowerChanged;
+                currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChanged;
             }
 
             if (upgradeManager != null)
@@ -152,12 +171,12 @@ namespace BrainDrain.UI
             }
         }
 
-        private void HandleBrainsChanged(double _)
+        private void HandleBrainPowerChanged(double _)
         {
             RefreshAllSlots();
         }
 
-        private void HandleLevelChanged(int _)
+        private void HandleCumulativeBrainPowerChanged(double _)
         {
             RefreshAllSlots();
         }
@@ -168,7 +187,7 @@ namespace BrainDrain.UI
             {
                 if (spawnedSlots[i] != null)
                 {
-                    spawnedSlots[i].RefreshState(currencyManager, iqDecaySystem);
+                    spawnedSlots[i].RefreshState(currencyManager);
                 }
             }
         }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using TMPro;
 using BrainDrain.Core;
+using BrainDrain.Systems;
 
 namespace BrainDrain.UI
 {
@@ -36,6 +37,7 @@ namespace BrainDrain.UI
 
         private BuildingData boundData;
         private UpgradeManager boundManager;
+        private bool wasAffordable;
 
         /// <summary>Binds this slot to a building template and wires the buy button.</summary>
         public void Bind(BuildingData data, UpgradeManager manager)
@@ -58,18 +60,19 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>Recomputes labels and visual state based on current currency and player level.</summary>
-        public void RefreshState(CurrencyManager currency, IQDecaySystem decay)
+        /// <summary>Recomputes labels and visual state based on current currency.</summary>
+        public void RefreshState(CurrencyManager currency)
         {
             if (boundData == null || boundManager == null)
             {
                 return;
             }
 
-            bool unlocked = decay != null && decay.CurrentLevel >= boundData.unlockPlayerLevel;
+            bool unlocked = currency != null && currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower;
             double cost = boundManager.GetCurrentCost(boundData);
             int level = boundManager.GetBuildingLevel(boundData);
-            bool affordable = unlocked && currency != null && currency.CanAffordBrains(cost);
+            bool affordable = unlocked && currency != null && currency.CanAffordBrainPower(cost);
+            UpdateAffordablePulse(affordable);
 
             if (countText != null)
             {
@@ -84,7 +87,7 @@ namespace BrainDrain.UI
             if (!unlocked)
             {
                 if (nameText != null) nameText.text = "??? CLASSIFIED ???";
-                if (costText != null) costText.text = $"LEVEL {boundData.unlockPlayerLevel} REQUIRED";
+                if (costText != null) costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BRAIN POWER REQUIRED";
                 ApplyAccent(LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
@@ -97,6 +100,34 @@ namespace BrainDrain.UI
 
             // Keep interactable so the player can attempt purchase; manager silently rejects if unaffordable.
             if (buyButton != null) buyButton.interactable = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (background != null)
+            {
+                AnimationController.StopAffordablePulse(background.rectTransform);
+            }
+        }
+
+        private void UpdateAffordablePulse(bool affordable)
+        {
+            if (background == null || affordable == wasAffordable)
+            {
+                wasAffordable = affordable;
+                return;
+            }
+
+            wasAffordable = affordable;
+
+            if (affordable)
+            {
+                AnimationController.PlayAffordablePulse(background.rectTransform, background);
+            }
+            else
+            {
+                AnimationController.StopAffordablePulse(background.rectTransform);
+            }
         }
 
         private void ApplyAccent(Color accent)

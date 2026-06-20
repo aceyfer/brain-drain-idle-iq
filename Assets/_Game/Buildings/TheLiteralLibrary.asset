@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: The Literal Library
   description: The Literal Library
-  unlockPlayerLevel: 1
+  unlockCumulativeBrainPower: 0
   baseCost: 15
   costMultiplier: 1.15
-  baseBrainsPerSecond: 0.1
-  iqRecoveryPerSecond: 0.5
+  baseBrainPowerPerSecond: 0.1

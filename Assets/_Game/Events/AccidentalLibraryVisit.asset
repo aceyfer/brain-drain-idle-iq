@@ -17,6 +17,6 @@ MonoBehaviour:
     out a book. Reading it cost you 1,000 Brains in lost scrolling productivity,
     but your skull feels suspiciously heavier.
   choiceButtonText: Check Out a Book
-  brainRewardOrPenalty: -1000
-  iqImpact: 15
+  brainPowerRewardOrPenalty: -1000
+  playerIQImpact: 15
   multiplierSpike: 0

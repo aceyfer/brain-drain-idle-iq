@@ -14,12 +14,13 @@ namespace BrainDrain.Core
         public string description;
 
         [Header("Progression")]
-        public int unlockPlayerLevel = 1;
+        public double unlockCumulativeBrainPower;
         public double baseCost = 10d;
         public double costMultiplier = 1.15d;
 
         [Header("Production")]
-        public double baseBrainsPerSecond = 1d;
-        public double iqRecoveryPerSecond;
+        public double baseBrainPowerPerSecond = 1d;
+        [Tooltip("Cash per second per level. 0 for buildings that don't produce Cash (everything except Underground Economy, currently).")]
+        public double baseCashPerSecond;
     }
 }

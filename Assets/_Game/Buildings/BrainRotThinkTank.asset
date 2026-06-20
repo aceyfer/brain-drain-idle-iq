@@ -15,8 +15,7 @@ MonoBehaviour:
   buildingName: Brain-Rot Think Tank
   description: A glass tower of PhDs paid handsomely to explain why the dumbest
     possible idea is, actually, very smart. The think tank that ends all thinking.
-  unlockPlayerLevel: 25
+  unlockCumulativeBrainPower: 725000
   baseCost: 200000
   costMultiplier: 1.15
-  baseBrainsPerSecond: 4500
-  iqRecoveryPerSecond: -110
+  baseBrainPowerPerSecond: 4500

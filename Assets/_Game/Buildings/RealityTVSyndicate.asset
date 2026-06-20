@@ -16,8 +16,7 @@ MonoBehaviour:
   description: Twelve strangers, one mansion, zero impulse control. Syndicated
     into 4,000 time zones, dragging the planet's median IQ down with every rose
     ceremony.
-  unlockPlayerLevel: 15
+  unlockCumulativeBrainPower: 185000
   baseCost: 15000
   costMultiplier: 1.15
-  baseBrainsPerSecond: 320
-  iqRecoveryPerSecond: -10
+  baseBrainPowerPerSecond: 320

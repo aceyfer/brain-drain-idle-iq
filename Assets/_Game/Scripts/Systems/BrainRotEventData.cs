@@ -4,7 +4,7 @@ namespace BrainDrain.Systems
 {
     /// <summary>
     /// Authoring data for one satirical random chaos event: a pop-up that nudges
-    /// Brains and IQ when the player accepts it.
+    /// Brain Power and PlayerIQ when the player accepts it.
     /// </summary>
     [CreateAssetMenu(fileName = "BrainRotEventData", menuName = "BrainDrain/Brain Rot Event")]
     public sealed class BrainRotEventData : ScriptableObject
@@ -16,8 +16,8 @@ namespace BrainDrain.Systems
         public string choiceButtonText;
 
         [Header("Effects")]
-        public double brainRewardOrPenalty;
-        public float iqImpact;
+        public double brainPowerRewardOrPenalty;
+        public float playerIQImpact;
 
         [Tooltip("Not yet consumed by RandomEventManager.ApplyEventEffects — reserved pending a decision on temporary vs. permanent application.")]
         public double multiplierSpike;

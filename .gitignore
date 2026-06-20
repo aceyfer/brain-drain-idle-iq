@@ -34,3 +34,11 @@ crashlytics-build.properties
 
 # Asset meta backups
 *.tmp
+
+# Personal automation tooling / AI-art generator output (not game source)
+/afk_runner.sh
+/tasks.txt
+/logs/
+/GeneratedAssets/
+Assets/files.zip
+Assets/files.zip.meta

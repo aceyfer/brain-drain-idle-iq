@@ -15,8 +15,7 @@ MonoBehaviour:
   buildingName: Podcaster Soundboard
   description: Three guys in a garage explain geopolitics for four hours using
     only vibes. Somehow, people are taking notes.
-  unlockPlayerLevel: 5
+  unlockCumulativeBrainPower: 10000
   baseCost: 150
   costMultiplier: 1.15
-  baseBrainsPerSecond: 5
-  iqRecoveryPerSecond: -0.2
+  baseBrainPowerPerSecond: 5

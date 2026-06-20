@@ -30,6 +30,10 @@ namespace BrainDrain.UI
             {
                 rebirthModalPanel.SetActive(true);
                 UpdateVisuals();
+
+                RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
+                CanvasGroup panelCanvasGroup = rebirthModalPanel.GetComponent<CanvasGroup>();
+                AnimationController.PlayPopupSpawn(panelRect, panelCanvasGroup);
             }
         }
 

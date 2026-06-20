@@ -17,6 +17,6 @@ MonoBehaviour:
     ASMR soap cutting videos. You emerge dumber, but somehow 5,000 Brains richer
     from ad revenue you don't remember earning.
   choiceButtonText: Keep Scrolling
-  brainRewardOrPenalty: 5000
-  iqImpact: -5
+  brainPowerRewardOrPenalty: 5000
+  playerIQImpact: -5
   multiplierSpike: 0

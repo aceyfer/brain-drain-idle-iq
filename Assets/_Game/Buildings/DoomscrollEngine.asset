@@ -15,8 +15,7 @@ MonoBehaviour:
   buildingName: Doomscroll Engine
   description: An infinite-scroll algorithm fine-tuned to never let your thumb
     rest. Outputs zero nutritional value and a faint ringing sound.
-  unlockPlayerLevel: 1
+  unlockCumulativeBrainPower: 0
   baseCost: 10
   costMultiplier: 1.15
-  baseBrainsPerSecond: 0.3
-  iqRecoveryPerSecond: -0.05
+  baseBrainPowerPerSecond: 0.3

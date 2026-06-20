@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using BrainDrain.Core;
 
@@ -5,60 +6,82 @@ namespace BrainDrain.Systems
 {
     public class RebirthManager : MonoBehaviour
     {
-        private const double MultiplierBonusPerSqrtBrain = 0.002;
-        private const double MinimumBonusThreshold = 0.1;
+        private const double FlatMultiplierBonusPerRebirth = 0.05;
+        private const double FlatCashMultiplierBonusPerRebirth = 0.1;
+        private const double FlatPointsConversionRateBonusPerRebirth = 0.05;
 
-        public static RebirthManager Instance { get; private set; }
+        private static RebirthManager instance;
 
-        /// <summary>Minimum multiplier bonus required to allow a rebirth.</summary>
-        public double MinBonusThreshold => MinimumBonusThreshold;
-
-        /// <summary>Multiplier bonus the player would receive if they rebirthed right now.</summary>
-        public double PendingMultiplierIncrease
+        /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
+        public static RebirthManager Instance
         {
             get
             {
-                CurrencyManager currencyManager = CurrencyManager.Instance;
-                if (currencyManager == null) return 0d;
-                return MultiplierBonusPerSqrtBrain * System.Math.Sqrt(currencyManager.CumulativeBrains);
+                if (instance != null)
+                {
+                    return instance;
+                }
+
+                instance = FindAnyObjectByType<RebirthManager>();
+                if (instance == null)
+                {
+                    var hostObject = new GameObject("RebirthManager (Auto)");
+                    instance = hostObject.AddComponent<RebirthManager>();
+                }
+
+                return instance;
             }
         }
 
+        /// <summary>Permanent +5% global production bonus granted by each Rebirth.</summary>
+        public double PendingMultiplierIncrease => FlatMultiplierBonusPerRebirth;
+
+        /// <summary>How many times the player has rebirthed this session.</summary>
+        public int RebirthCount { get; private set; }
+
+        /// <summary>Fired when RebirthCount changes. Passes the new count.</summary>
+        public event Action<int> OnRebirthCountChanged;
+
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (instance != null && instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            Instance = this;
+            instance = this;
             DontDestroyOnLoad(gameObject);
         }
 
+        /// <summary>
+        /// Resets current Brain Power and building tiers to zero, increments RebirthCount, and
+        /// applies a permanent, stacking +5% global production bonus to all future Brain Power
+        /// accumulation.
+        /// </summary>
         public void TriggerRebirth()
         {
             if (CurrencyManager.Instance == null) return;
 
-            double cumulative = CurrencyManager.Instance.CumulativeBrains;
+            RebirthCount++;
+            OnRebirthCountChanged?.Invoke(RebirthCount);
 
-            // Calculate the permanent multiplier bonus using the square root curve
-            double bonus = MultiplierBonusPerSqrtBrain * System.Math.Sqrt(cumulative);
-
-            // Guardrail: Player must earn at least a +0.1 bonus to turn their skull inside out
-            if (bonus < MinimumBonusThreshold)
-            {
-                Debug.LogWarning("Not enough Neuro-Sludge accumulated to rebirth yet!");
-                return;
-            }
-
-            // Execute hard wipe in precise order
-            if (IQDecaySystem.Instance != null) IQDecaySystem.Instance.ResetDecayState();
             if (UpgradeManager.Instance != null) UpgradeManager.Instance.ResetBuildings();
 
-            // Finalize currency reset and apply the meta-progression power spike
-            CurrencyManager.Instance.ExecuteRebirth(bonus);
+            CurrencyManager.Instance.ExecuteRebirth(
+                FlatMultiplierBonusPerRebirth,
+                FlatCashMultiplierBonusPerRebirth,
+                FlatPointsConversionRateBonusPerRebirth);
 
-            Debug.Log($"Rebirth successful! Added +{bonus:F3} to the global income multiplier.");
+            Debug.Log($"Rebirth #{RebirthCount} successful! Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, and +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate.");
+
+            GameManager.Instance?.RequestSave();
+        }
+
+        /// <summary>Directly restores RebirthCount from a save file.</summary>
+        public void LoadState(int restoredRebirthCount)
+        {
+            RebirthCount = restoredRebirthCount;
+            OnRebirthCountChanged?.Invoke(RebirthCount);
         }
     }
 }

@@ -103,7 +103,7 @@ namespace BrainDrain.Core
             UnsubscribeFromEvents();
 
             var currency = CurrencyManager.Instance;
-            double cumulative = currency != null ? currency.CumulativeBrains : 0d;
+            double cumulative = currency != null ? currency.CumulativeBrainPower : 0d;
             activeIndex = ResolveActiveIndex(cumulative);
 
             // Snap alpha immediately on init (no fade from an undefined start state).
@@ -122,7 +122,7 @@ namespace BrainDrain.Core
 
             if (currency != null)
             {
-                currency.OnCumulativeBrainsChanged += UpdateActiveDiorama;
+                currency.OnCumulativeBrainPowerChanged += UpdateActiveDiorama;
             }
         }
 
@@ -131,16 +131,16 @@ namespace BrainDrain.Core
             var currency = CurrencyManager.Instance;
             if (currency != null)
             {
-                currency.OnCumulativeBrainsChanged -= UpdateActiveDiorama;
+                currency.OnCumulativeBrainPowerChanged -= UpdateActiveDiorama;
             }
         }
 
-        private void UpdateActiveDiorama(double cumulativeBrains)
+        private void UpdateActiveDiorama(double cumulativeBrainPower)
         {
-            activeIndex = ResolveActiveIndex(cumulativeBrains);
+            activeIndex = ResolveActiveIndex(cumulativeBrainPower);
         }
 
-        private int ResolveActiveIndex(double cumulativeBrains)
+        private int ResolveActiveIndex(double cumulativeBrainPower)
         {
             if (dioramaObjects == null || dioramaObjects.Length == 0)
             {
@@ -155,7 +155,7 @@ namespace BrainDrain.Core
                 {
                     for (int i = 0; i < ranks.Length; i++)
                     {
-                        if (cumulativeBrains >= ranks[i].threshold)
+                        if (cumulativeBrainPower >= ranks[i].threshold)
                         {
                             index = i;
                         }
