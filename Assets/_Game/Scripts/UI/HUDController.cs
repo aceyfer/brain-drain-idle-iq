@@ -187,6 +187,13 @@ namespace BrainDrain.UI
                 playerIQManager.OnPlayerIQChanged += UpdatePlayerIQText;
             }
 
+            var tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            if (tapHandler != null)
+            {
+                tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
+                tapHandler.OnTapRewardEarned += HandleTapRewardEarned;
+            }
+
             if (RebirthManager.Instance != null)
             {
                 UpdateRebirthCountText(RebirthManager.Instance.RebirthCount);
@@ -225,6 +232,12 @@ namespace BrainDrain.UI
             if (playerIQManager != null)
             {
                 playerIQManager.OnPlayerIQChanged -= UpdatePlayerIQText;
+            }
+
+            var tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            if (tapHandler != null)
+            {
+                tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
             }
 
             if (RebirthManager.Instance != null)
@@ -273,6 +286,11 @@ namespace BrainDrain.UI
                 lastIQMilestoneIndex = milestoneIndex;
                 AnimationController.PlayHighIQCelebration(hudCanvasGroup, celebrationFlashOverlay);
             }
+        }
+
+        private void HandleTapRewardEarned(double _)
+        {
+            AnimationController.PlayIQFlash(playerIQText);
         }
 
         private void UpdateRankText(double cumulativeBrainPower)

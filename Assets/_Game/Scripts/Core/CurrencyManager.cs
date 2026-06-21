@@ -113,6 +113,15 @@ namespace BrainDrain.Core
         /// <summary>Fired when the Points balance changes. UnityEvent for the same reason as OnCashChanged.</summary>
         public PointsChangedUnityEvent OnPointsChanged = new();
 
+        /// <summary>
+        /// Fired whenever ConvertCashToPoints actually converts something (not on a no-op call
+        /// with zero Cash available). Passes the amount of Cash converted -- used for narrator
+        /// commentary on the CONVERT button. Also fires from the 10s auto-convert tick if
+        /// AutoConvertCash is on, since both paths call this same method; harmless today since
+        /// no UI exposes that toggle yet, so in practice this only ever fires from the button.
+        /// </summary>
+        public event Action<double> OnCashConverted;
+
         private bool hasEarnedFirstBrainPower;
 
         private void Start()
@@ -201,6 +210,7 @@ namespace BrainDrain.Core
 
             OnCashChanged?.Invoke(currentCash);
             OnPointsChanged?.Invoke(currentPoints);
+            OnCashConverted?.Invoke(convertedAmount);
             return true;
         }
 

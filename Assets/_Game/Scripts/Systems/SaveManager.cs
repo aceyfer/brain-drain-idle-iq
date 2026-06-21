@@ -38,6 +38,13 @@ namespace BrainDrain.Systems
         public double worldRestorationPointsSpent;
 
         public string equippedOutfitId;
+
+        /// <summary>
+        /// Unix seconds (UTC) as of the last successful SaveGame(). Stored as a long, not a
+        /// DateTime, since JsonUtility does not serialize DateTime's internal fields. Drives
+        /// PlayerIQManager's offline-decay-on-load calculation.
+        /// </summary>
+        public long lastActiveUnixSeconds;
     }
 
     /// <summary>
@@ -205,6 +212,8 @@ namespace BrainDrain.Systems
                 }
             }
 
+            data.lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
             LoadedData = data;
 
             try
@@ -247,7 +256,8 @@ namespace BrainDrain.Systems
                 data.currentPoints,
                 data.pointsConversionRate,
                 data.autoConvertCash);
-            PlayerIQManager.Instance?.LoadState(data.playerIQ);
+            DateTime lastActiveUtc = DateTimeOffset.FromUnixTimeSeconds(data.lastActiveUnixSeconds).UtcDateTime;
+            PlayerIQManager.Instance?.LoadStateWithOfflineDecay(data.playerIQ, lastActiveUtc);
             RebirthManager.Instance?.LoadState(data.rebirthCount);
             UpgradeManager.Instance?.LoadBuildingLevels(data.buildingLevels);
             ChapterManager.Instance?.LoadState(data.currentChapter);
@@ -272,7 +282,8 @@ namespace BrainDrain.Systems
                 autoConvertCash = false,
                 currentChapter = 0,
                 worldRestorationPointsSpent = 0d,
-                equippedOutfitId = null
+                equippedOutfitId = null,
+                lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             };
         }
     }

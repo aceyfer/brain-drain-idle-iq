@@ -27,6 +27,7 @@ namespace BrainDrain.Systems
     {
         private const int MaxQueueDepth = 2;
         private const float DefaultDisplayDurationSeconds = 3f;
+        private const int TapsWithoutPurchaseThreshold = 10;
 
         /// <summary>One line ready to display, regardless of whether it came from the NarratorLine pool or was injected directly.</summary>
         private readonly struct DialogueEntry
@@ -78,6 +79,7 @@ namespace BrainDrain.Systems
         private readonly Queue<DialogueEntry> queuedEntries = new();
         private bool isDisplaying;
         private NarratorLine lastPlayedLine;
+        private int tapsSinceLastPurchase;
 
         private void Awake()
         {
@@ -113,6 +115,8 @@ namespace BrainDrain.Systems
             {
                 currencyManager.OnFirstBrainPowerEarned -= HandleFirstTap;
                 currencyManager.OnFirstBrainPowerEarned += HandleFirstTap;
+                currencyManager.OnCashConverted -= HandleCashConverted;
+                currencyManager.OnCashConverted += HandleCashConverted;
             }
 
             UpgradeManager upgradeManager = UpgradeManager.Instance;
@@ -139,6 +143,15 @@ namespace BrainDrain.Systems
             {
                 playerIQManager.OnIQMilestoneCrossed -= HandleIQMilestone;
                 playerIQManager.OnIQMilestoneCrossed += HandleIQMilestone;
+                playerIQManager.OnOfflineDecayApplied -= HandleOfflineDecayApplied;
+                playerIQManager.OnOfflineDecayApplied += HandleOfflineDecayApplied;
+            }
+
+            PlayerTapHandler tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            if (tapHandler != null)
+            {
+                tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
+                tapHandler.OnTapRewardEarned += HandleTapRewardEarned;
             }
         }
 
@@ -148,6 +161,7 @@ namespace BrainDrain.Systems
             if (currencyManager != null)
             {
                 currencyManager.OnFirstBrainPowerEarned -= HandleFirstTap;
+                currencyManager.OnCashConverted -= HandleCashConverted;
             }
 
             UpgradeManager upgradeManager = UpgradeManager.Instance;
@@ -170,6 +184,13 @@ namespace BrainDrain.Systems
             if (playerIQManager != null)
             {
                 playerIQManager.OnIQMilestoneCrossed -= HandleIQMilestone;
+                playerIQManager.OnOfflineDecayApplied -= HandleOfflineDecayApplied;
+            }
+
+            PlayerTapHandler tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            if (tapHandler != null)
+            {
+                tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
             }
         }
 
@@ -180,6 +201,7 @@ namespace BrainDrain.Systems
 
         private void HandleBuildingPurchased(BuildingData building)
         {
+            tapsSinceLastPurchase = 0;
             TryFireLine(NarratorTriggerType.BuildingPurchase, building != null ? building.buildingName : null);
         }
 
@@ -196,6 +218,27 @@ namespace BrainDrain.Systems
         private void HandleIQMilestone(float currentIQ)
         {
             TryFireLine(NarratorTriggerType.IQMilestone, null);
+        }
+
+        private void HandleCashConverted(double amount)
+        {
+            TryFireLine(NarratorTriggerType.CashConverted, null);
+        }
+
+        private void HandleOfflineDecayApplied(float amountLost)
+        {
+            TryFireLine(NarratorTriggerType.OfflineDecayReturn, null);
+        }
+
+        /// <summary>Counts taps since the last building purchase; fires every TapsWithoutPurchaseThreshold taps as long as the player keeps tapping without buying anything.</summary>
+        private void HandleTapRewardEarned(double _)
+        {
+            tapsSinceLastPurchase++;
+            if (tapsSinceLastPurchase >= TapsWithoutPurchaseThreshold)
+            {
+                tapsSinceLastPurchase = 0;
+                TryFireLine(NarratorTriggerType.TapWithoutPurchase, null);
+            }
         }
 
         private void TryFireLine(NarratorTriggerType triggerType, string buildingName)

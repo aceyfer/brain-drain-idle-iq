@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 namespace BrainDrain.UI
 {
@@ -12,7 +13,7 @@ namespace BrainDrain.UI
     {
         private void Update()
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
                 if (EventSystem.current == null)
                 {
@@ -21,7 +22,7 @@ namespace BrainDrain.UI
 
                 PointerEventData pointerData = new PointerEventData(EventSystem.current)
                 {
-                    position = Input.mousePosition
+                    position = Mouse.current.position.ReadValue()
                 };
 
                 List<RaycastResult> results = new List<RaycastResult>();

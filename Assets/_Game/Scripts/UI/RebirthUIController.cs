@@ -18,10 +18,66 @@ namespace BrainDrain.UI
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
 
+        [Header("Visibility Gate")]
+        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Hidden until pointsSpentUnlockThreshold is reached, then stays visible permanently (CumulativePointsSpentOnRestoration only ever increases).")]
+        [SerializeField] private GameObject rebirthTriggerButton;
+        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button appears.")]
+        [SerializeField] private double pointsSpentUnlockThreshold = 1000d;
+
         private void Awake()
         {
             if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirmClicked);
             if (cancelButton != null) cancelButton.onClick.AddListener(OnCancelClicked);
+
+            // Hide immediately, before the real threshold check in Start(), so there's no
+            // single-frame flash of the button prior to WorldRestorationManager being ready.
+            if (rebirthTriggerButton != null)
+            {
+                rebirthTriggerButton.SetActive(false);
+            }
+        }
+
+        private void Start()
+        {
+            ApplyTriggerButtonVisibility();
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                WorldRestorationManager.Instance.OnRestorationProgressChanged += HandleRestorationProgressChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+            }
+        }
+
+        private void HandleRestorationProgressChanged(double _)
+        {
+            ApplyTriggerButtonVisibility();
+        }
+
+        /// <summary>Reveals the REBIRTH trigger button once enough Points have been spent on World Restoration. Never re-hides it, since that progress is monotonic.</summary>
+        private void ApplyTriggerButtonVisibility()
+        {
+            if (rebirthTriggerButton == null)
+            {
+                return;
+            }
+
+            double spent = WorldRestorationManager.Instance != null
+                ? WorldRestorationManager.Instance.CumulativePointsSpentOnRestoration
+                : 0d;
+            bool shouldBeVisible = spent >= pointsSpentUnlockThreshold;
+
+            if (rebirthTriggerButton.activeSelf != shouldBeVisible)
+            {
+                rebirthTriggerButton.SetActive(shouldBeVisible);
+            }
         }
 
         public void OpenModal()

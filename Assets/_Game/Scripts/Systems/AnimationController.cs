@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace BrainDrain.Systems
 {
@@ -23,7 +24,11 @@ namespace BrainDrain.Systems
         private readonly Dictionary<Transform, Coroutine> breathingCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> boredFidgetCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> excitedBounceCoroutines = new();
+        private readonly Dictionary<Transform, Coroutine> buttonPunchCoroutines = new();
         private readonly Dictionary<RectTransform, Coroutine> affordablePulseCoroutines = new();
+        private readonly Dictionary<TextMeshProUGUI, Coroutine> textFlashCoroutines = new();
+        private readonly Dictionary<TextMeshProUGUI, Color> textFlashBaseColors = new();
+        private readonly Dictionary<RectTransform, Coroutine> slideCoroutines = new();
 
         private void Awake()
         {
@@ -215,6 +220,166 @@ namespace BrainDrain.Systems
             {
                 yield return ScaleOverTime(target, Vector3.one, Vector3.one * 1.12f, halfDuration, EaseOutQuad);
                 yield return ScaleOverTime(target, target.localScale, Vector3.one, halfDuration, EaseInOutQuad);
+            }
+        }
+
+        // ----- Tap button punch (separate from the character's own tap squash/stretch) ------
+
+        /// <summary>Plays a quick 1.0 -&gt; 1.2 -&gt; 1.0 scale punch on target.localScale (0.05s out, 0.05s back).</summary>
+        public static void PlayButtonPunch(Transform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            controller.StopAndReplace(controller.buttonPunchCoroutines, target, controller.ButtonPunchRoutine(target));
+        }
+
+        private IEnumerator ButtonPunchRoutine(Transform target)
+        {
+            const float halfDuration = 0.05f;
+            yield return ScaleOverTime(target, Vector3.one, Vector3.one * 1.2f, halfDuration, EaseOutQuad);
+            yield return ScaleOverTime(target, target.localScale, Vector3.one, halfDuration, EaseInOutQuad);
+        }
+
+        // ----- Floating reward text ----------------------------------------------------------
+
+        private static readonly Color FloatingRewardTextColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
+
+        /// <summary>
+        /// Spawns transient text inside parent at screenPosition that rises ~70px and fades out
+        /// over 0.8s, then self-destructs. Mirrors PlaySplatParticles' screen-to-local-point and
+        /// transient-GameObject pattern.
+        /// </summary>
+        public static void PlayFloatingRewardText(string text, Vector2 screenPosition, RectTransform parent)
+        {
+            if (parent == null || string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            EnsureInstance().SpawnFloatingRewardText(text, screenPosition, parent);
+        }
+
+        private void SpawnFloatingRewardText(string text, Vector2 screenPosition, RectTransform parent)
+        {
+            Canvas canvas = parent.GetComponentInParent<Canvas>();
+            Camera screenCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPosition, screenCamera, out Vector2 localPoint);
+
+            GameObject textObject = new GameObject("FloatingRewardText", typeof(RectTransform));
+            textObject.transform.SetParent(parent, false);
+
+            RectTransform textRect = textObject.GetComponent<RectTransform>();
+            textRect.sizeDelta = new Vector2(220f, 50f);
+            textRect.anchoredPosition = localPoint;
+
+            TextMeshProUGUI label = textObject.AddComponent<TextMeshProUGUI>();
+            label.text = text;
+            label.fontSize = 32f;
+            label.fontStyle = FontStyles.Bold;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = FloatingRewardTextColor;
+            label.raycastTarget = false;
+
+            StartCoroutine(FloatingRewardTextRoutine(textRect, label, localPoint));
+        }
+
+        private static IEnumerator FloatingRewardTextRoutine(RectTransform rect, TextMeshProUGUI label, Vector2 startPosition)
+        {
+            const float lifetime = 0.8f;
+            const float riseDistance = 70f;
+            float elapsed = 0f;
+            Color startColor = label.color;
+
+            while (elapsed < lifetime)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / lifetime);
+                if (rect == null)
+                {
+                    yield break;
+                }
+
+                rect.anchoredPosition = startPosition + new Vector2(0f, riseDistance * EaseOutQuad(t));
+
+                Color c = startColor;
+                c.a = Mathf.Lerp(1f, 0f, t);
+                label.color = c;
+
+                yield return null;
+            }
+
+            if (rect != null)
+            {
+                Destroy(rect.gameObject);
+            }
+        }
+
+        // ----- Text color flash (e.g. HUDController's IQ readout on tap) --------------------
+
+        private static readonly Color TextFlashYellow = Color.yellow;
+
+        /// <summary>Briefly flashes text.color to yellow and back (0.1s in, 0.2s out), then restores its original color exactly.</summary>
+        public static void PlayIQFlash(TextMeshProUGUI text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            EnsureInstance().PlayTextFlash(text, TextFlashYellow);
+        }
+
+        private void PlayTextFlash(TextMeshProUGUI text, Color flashColor)
+        {
+            if (!textFlashBaseColors.TryGetValue(text, out Color baseColor))
+            {
+                baseColor = text.color;
+                textFlashBaseColors[text] = baseColor;
+            }
+
+            if (textFlashCoroutines.TryGetValue(text, out Coroutine running) && running != null)
+            {
+                StopCoroutine(running);
+            }
+
+            // Always restart from the true base color so rapid repeated flashes can't drift.
+            text.color = baseColor;
+            textFlashCoroutines[text] = StartCoroutine(TextFlashRoutine(text, baseColor, flashColor));
+        }
+
+        private static IEnumerator TextFlashRoutine(TextMeshProUGUI text, Color baseColor, Color flashColor)
+        {
+            const float toFlashDuration = 0.1f;
+            const float backDuration = 0.2f;
+
+            yield return ColorOverTime(text, baseColor, flashColor, toFlashDuration);
+            yield return ColorOverTime(text, flashColor, baseColor, backDuration);
+        }
+
+        private static IEnumerator ColorOverTime(TextMeshProUGUI text, Color from, Color to, float duration)
+        {
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                if (text == null)
+                {
+                    yield break;
+                }
+
+                text.color = Color.LerpUnclamped(from, to, t);
+                yield return null;
+            }
+
+            if (text != null)
+            {
+                text.color = to;
             }
         }
 
@@ -481,6 +646,50 @@ namespace BrainDrain.Systems
             {
                 canvasGroup.alpha = 1f;
             }
+        }
+
+        // ----- Generic panel slide (e.g. ShopUIController's slide-up-from-bottom panel) -----
+
+        /// <summary>
+        /// Slides rect.anchoredPosition from "from" to "to" over duration, then invokes
+        /// onComplete (e.g. to deactivate the panel after a slide-down-to-close). Reusable
+        /// primitive -- callers own what "resting" vs "offscreen" actually means for their panel.
+        /// </summary>
+        public static void PlaySlide(RectTransform rect, Vector2 from, Vector2 to, float duration, Action onComplete = null)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            controller.StopAndReplace(controller.slideCoroutines, rect, controller.SlideRoutine(rect, from, to, duration, onComplete));
+        }
+
+        private IEnumerator SlideRoutine(RectTransform rect, Vector2 from, Vector2 to, float duration, Action onComplete)
+        {
+            float elapsed = 0f;
+            rect.anchoredPosition = from;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                if (rect == null)
+                {
+                    yield break;
+                }
+
+                rect.anchoredPosition = Vector2.LerpUnclamped(from, to, EaseInOutQuad(t));
+                yield return null;
+            }
+
+            if (rect != null)
+            {
+                rect.anchoredPosition = to;
+            }
+
+            onComplete?.Invoke();
         }
 
         // ----- High-IQ milestone celebration ------------------------------------------------

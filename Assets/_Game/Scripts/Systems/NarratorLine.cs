@@ -9,7 +9,10 @@ namespace BrainDrain.Systems
         BuildingPurchase,
         Rebirth,
         EventOutcome,
-        IQMilestone
+        IQMilestone,
+        TapWithoutPurchase,
+        CashConverted,
+        OfflineDecayReturn
     }
 
     /// <summary>
