@@ -26,9 +26,14 @@ namespace BrainDrain.UI
         [SerializeField] private TextMeshProUGUI bppsText;
         [SerializeField] private TextMeshProUGUI cashText;
         [SerializeField] private TextMeshProUGUI pointsText;
+        [SerializeField] private TextMeshProUGUI restorationProgressText;
 
         [Header("Cash/Points Conversion")]
         [SerializeField] private Button convertButton;
+
+        [Header("World Restoration")]
+        [Tooltip("Spends all current Points on World Restoration when clicked.")]
+        [SerializeField] private Button restoreButton;
 
         [Header("High-IQ Celebration")]
         [Tooltip("Optional. CanvasGroup on the root HUD canvas, pulsed during the celebration beat.")]
@@ -98,12 +103,30 @@ namespace BrainDrain.UI
             set => convertButton = value;
         }
 
+        public TextMeshProUGUI RestorationProgressText
+        {
+            get => restorationProgressText;
+            set => restorationProgressText = value;
+        }
+
+        public Button RestoreButton
+        {
+            get => restoreButton;
+            set => restoreButton = value;
+        }
+
         private void Awake()
         {
             if (convertButton != null)
             {
                 convertButton.onClick.RemoveListener(OnConvertClicked);
                 convertButton.onClick.AddListener(OnConvertClicked);
+            }
+
+            if (restoreButton != null)
+            {
+                restoreButton.onClick.RemoveListener(OnRestoreClicked);
+                restoreButton.onClick.AddListener(OnRestoreClicked);
             }
         }
 
@@ -175,6 +198,14 @@ namespace BrainDrain.UI
                 GameManager.Instance.OnSecondTick -= UpdateBPPSText;
                 GameManager.Instance.OnSecondTick += UpdateBPPSText;
             }
+
+            var worldRestoration = WorldRestorationManager.Instance;
+            if (worldRestoration != null)
+            {
+                UpdateRestorationProgressText(worldRestoration.CumulativePointsSpentOnRestoration);
+                worldRestoration.OnRestorationProgressChanged -= UpdateRestorationProgressText;
+                worldRestoration.OnRestorationProgressChanged += UpdateRestorationProgressText;
+            }
         }
 
         private void UnsubscribeFromEvents()
@@ -204,6 +235,11 @@ namespace BrainDrain.UI
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.OnSecondTick -= UpdateBPPSText;
+            }
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
             }
         }
 
@@ -308,6 +344,31 @@ namespace BrainDrain.UI
             if (currency != null)
             {
                 currency.ConvertCashToPoints(currency.CurrentCash);
+            }
+        }
+
+        private void UpdateRestorationProgressText(double cumulativePointsSpent)
+        {
+            if (restorationProgressText == null)
+            {
+                return;
+            }
+
+            var worldRestoration = WorldRestorationManager.Instance;
+            double percent = worldRestoration != null ? worldRestoration.RestorationPercent : 0d;
+            string stageName = worldRestoration != null && worldRestoration.CurrentStage != null
+                ? worldRestoration.CurrentStage.stageName
+                : "DYSTOPIA";
+
+            restorationProgressText.text = $"{stageName.ToUpper()} ({percent:F1}% RESTORED)";
+        }
+
+        private void OnRestoreClicked()
+        {
+            var currency = CurrencyManager.Instance;
+            if (currency != null)
+            {
+                WorldRestorationManager.Instance?.TrySpendPointsOnRestoration(currency.CurrentPoints);
             }
         }
     }

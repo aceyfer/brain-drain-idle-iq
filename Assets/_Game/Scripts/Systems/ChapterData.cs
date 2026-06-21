@@ -2,7 +2,11 @@ using UnityEngine;
 
 namespace BrainDrain.Systems
 {
-    /// <summary>Which stat ChapterManager checks unlockThreshold against.</summary>
+    /// <summary>
+    /// Which stat ChapterManager checks unlockThreshold against. WorldRestorationPercent
+    /// checks WorldRestorationManager.RestorationPercent (a 0-100 value) -- unlockThreshold
+    /// should be expressed on that same 0-100 scale for this condition type.
+    /// </summary>
     public enum ChapterUnlockConditionType
     {
         CumulativeBrainPower,

@@ -34,6 +34,10 @@ namespace BrainDrain.Systems
         public bool autoConvertCash;
 
         public int currentChapter;
+
+        public double worldRestorationPointsSpent;
+
+        public string equippedOutfitId;
     }
 
     /// <summary>
@@ -175,6 +179,16 @@ namespace BrainDrain.Systems
                 data.currentChapter = ChapterManager.Instance.CurrentChapterNumber;
             }
 
+            if (WorldRestorationManager.Instance != null)
+            {
+                data.worldRestorationPointsSpent = WorldRestorationManager.Instance.CumulativePointsSpentOnRestoration;
+            }
+
+            if (WardrobeManager.Instance != null && WardrobeManager.Instance.EquippedOutfit != null)
+            {
+                data.equippedOutfitId = WardrobeManager.Instance.EquippedOutfit.outfitId;
+            }
+
             PlayerIQManager playerIQManager = PlayerIQManager.Instance;
             if (playerIQManager != null)
             {
@@ -237,6 +251,8 @@ namespace BrainDrain.Systems
             RebirthManager.Instance?.LoadState(data.rebirthCount);
             UpgradeManager.Instance?.LoadBuildingLevels(data.buildingLevels);
             ChapterManager.Instance?.LoadState(data.currentChapter);
+            WorldRestorationManager.Instance?.LoadState(data.worldRestorationPointsSpent);
+            WardrobeManager.Instance?.LoadState(data.equippedOutfitId);
         }
 
         private static PlayerData CreateDefaultData()
@@ -254,7 +270,9 @@ namespace BrainDrain.Systems
                 currentPoints = 0d,
                 pointsConversionRate = 0.1d,
                 autoConvertCash = false,
-                currentChapter = 0
+                currentChapter = 0,
+                worldRestorationPointsSpent = 0d,
+                equippedOutfitId = null
             };
         }
     }

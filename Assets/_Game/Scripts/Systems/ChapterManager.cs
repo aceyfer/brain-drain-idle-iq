@@ -258,9 +258,8 @@ namespace BrainDrain.Systems
                         && CurrencyManager.Instance.CurrentPoints >= chapter.unlockThreshold;
 
                 case ChapterUnlockConditionType.WorldRestorationPercent:
-                    // No "world restoration" concept exists anymore (replaced by PlayerIQ several
-                    // sessions ago). Always false until/unless this is reintroduced for real.
-                    return false;
+                    return WorldRestorationManager.Instance != null
+                        && WorldRestorationManager.Instance.RestorationPercent >= chapter.unlockThreshold;
 
                 default:
                     return false;

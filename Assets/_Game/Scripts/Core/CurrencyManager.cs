@@ -316,6 +316,28 @@ namespace BrainDrain.Core
             return amount > 0d && brainPower >= amount;
         }
 
+        /// <summary>
+        /// Attempts to spend Points (e.g. on World Restoration). Returns true when the spend
+        /// succeeds. Mirrors SpendBrainPower's validate-then-spend behavior.
+        /// </summary>
+        public bool SpendPoints(double amount)
+        {
+            if (amount <= 0d || currentPoints < amount)
+            {
+                return false;
+            }
+
+            currentPoints -= amount;
+            OnPointsChanged?.Invoke(currentPoints);
+            return true;
+        }
+
+        /// <summary>Returns true when the player has enough Points for the given cost.</summary>
+        public bool CanAffordPoints(double amount)
+        {
+            return amount > 0d && currentPoints >= amount;
+        }
+
         /// <summary>Adds Neurons to the player's balance.</summary>
         public void AddNeurons(int amount)
         {
