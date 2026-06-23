@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f0dd19318b7844d44b32c80b932537dd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Example/Conversation9b.cs
+  uploadId: 318165

@@ -80,6 +80,7 @@ namespace BrainDrain.Systems
         private bool isDisplaying;
         private NarratorLine lastPlayedLine;
         private int tapsSinceLastPurchase;
+        private Coroutine activeDisplayCoroutine;
 
         private void Awake()
         {
@@ -90,7 +91,9 @@ namespace BrainDrain.Systems
             }
 
             instance = this;
-            DontDestroyOnLoad(gameObject);
+            // No DontDestroyOnLoad: this is a single-scene game with no scene reloads during
+            // play, so it serves no purpose -- and it warns/no-ops anyway once this GameObject
+            // is parented under _Systems rather than at scene root.
         }
 
         private void Start()
@@ -243,13 +246,21 @@ namespace BrainDrain.Systems
 
         private void TryFireLine(NarratorTriggerType triggerType, string buildingName)
         {
-            int currentRebirthCount = RebirthManager.Instance != null ? RebirthManager.Instance.RebirthCount : 0;
+            // Tier selection switched 2026-06-22 from RebirthCount to WorldRestorationManager's
+            // RestorationPercent -- RebirthCount-gated tone tiers meant a player who never
+            // rebirths sees the exact same 6 lines forever, while restoration progress climbs
+            // continuously and visibly regardless of Rebirth activity, giving a real degrading
+            // arc tied to "the population is healing and harder to manipulate" rather than to a
+            // Rebirth-count milestone the player may rarely hit.
+            float currentRestorationPercent = WorldRestorationManager.Instance != null
+                ? (float)WorldRestorationManager.Instance.RestorationPercent
+                : 0f;
 
             List<NarratorLine> candidates = narratorLines.Where(line =>
                 line != null
                 && line.triggerType == triggerType
-                && currentRebirthCount >= line.minRebirthCount
-                && currentRebirthCount <= line.maxRebirthCount
+                && currentRestorationPercent >= line.minRestorationPercent
+                && currentRestorationPercent <= line.maxRestorationPercent
                 && (string.IsNullOrWhiteSpace(line.buildingName) || line.buildingName == buildingName)
             ).ToList();
 
@@ -281,6 +292,29 @@ namespace BrainDrain.Systems
             Enqueue(new DialogueEntry(line, displayDurationSeconds, null));
         }
 
+        /// <summary>
+        /// Displays line immediately, interrupting whatever is currently showing (stopping its
+        /// finish-timer coroutine so it can't later pull a queued entry out from under this one)
+        /// and clearing any queued lines. For reactions to a specific player action (e.g. a
+        /// Points Shop purchase's cogsReactionLine) that shouldn't have to wait behind
+        /// background narrative lines the way EnqueueDirectLine's queue does. Added 2026-06-22.
+        /// </summary>
+        public void ShowPriorityLine(string line, float displayDurationSeconds = DefaultDisplayDurationSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return;
+            }
+
+            if (activeDisplayCoroutine != null)
+            {
+                StopCoroutine(activeDisplayCoroutine);
+            }
+
+            queuedEntries.Clear();
+            Display(new DialogueEntry(line, displayDurationSeconds, null));
+        }
+
         private void Enqueue(DialogueEntry entry)
         {
             if (!isDisplaying)
@@ -305,7 +339,7 @@ namespace BrainDrain.Systems
 
             OnDialogueLine?.Invoke(entry.Text);
 
-            StartCoroutine(WaitForLineToFinish(CurrentDisplayDurationSeconds));
+            activeDisplayCoroutine = StartCoroutine(WaitForLineToFinish(CurrentDisplayDurationSeconds));
         }
 
         private IEnumerator WaitForLineToFinish(float duration)

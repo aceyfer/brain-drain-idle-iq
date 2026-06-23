@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName: The Literal Library
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: The Library. A necessary illusion. Let them think you care.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: The Library. A museum piece. Nobody reads anymore — I made
+    sure of that, personally.
   displayDurationSeconds: 3

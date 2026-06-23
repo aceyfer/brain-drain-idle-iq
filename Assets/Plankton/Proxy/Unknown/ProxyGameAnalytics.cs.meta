@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 2dd2e0b559b450b4d8f22bcaf4d7ee74
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303073
+  packageName: 'Free Mobile Monetization Toolkit [Ads, IAP, Analytics, Game Services,
+    GDPR]'
+  packageVersion: 3.3.0
+  assetPath: Assets/Plankton/Proxy/Unknown/ProxyGameAnalytics.cs
+  uploadId: 800016

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COGSStage_0_CorruptedCRT
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.COGSStage
   stageIndex: 0
-  portraitSprite: {fileID: 0}
+  portraitSprite: {fileID: 21300000, guid: 5e1bb5f98e0cf97439bd42e91c07149f, type: 3}
   minRebirthCount: 0
   stageName: Corrupted CRT
-  actUnlockName:
+  actUnlockName: 

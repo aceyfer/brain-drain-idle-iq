@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5b571e90e724a7e48abaf98603d83b7b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 275260
+  packageName: Sprite Sheet Changer | Tool
+  packageVersion: 1.1
+  assetPath: Assets/SpritesheetChanger/Editor/Sprite sheetPivotSetter/SpritesheetPivotSetterEditor.cs
+  uploadId: 706083

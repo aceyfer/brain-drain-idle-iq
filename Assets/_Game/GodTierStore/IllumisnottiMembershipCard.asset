@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27cd703eb9d99d5d3fcc4697782f190c, type: 3}
+  m_Name: IllumisnottiMembershipCard
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
+  itemId: illumisnotti_membership_card
+  displayName: The Illumisnotti Membership Card
+  description: Purely cosmetic. Gold-foil UI badge. Means nothing. Feels incredible.
+  realMoneyPriceDisplay: $14.99
+  effectType: 3
+  offlineExtensionHours: 0

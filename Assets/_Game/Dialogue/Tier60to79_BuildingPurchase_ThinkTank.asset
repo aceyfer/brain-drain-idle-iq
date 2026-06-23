@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName: Brain-Rot Think Tank
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: 'The Think Tank! Big brain play! Wait— ironically big brain.
-    Love it.'
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: 'The Think Tank, online. Funny — attendance at the actual
+    library is also up. Coincidence. Definitely.'
   displayDurationSeconds: 3

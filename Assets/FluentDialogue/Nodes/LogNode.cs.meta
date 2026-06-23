@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: de8bfd6450a304b4bbd83a560b75767b
+timeCreated: 1505249861
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Nodes/LogNode.cs
+  uploadId: 318165

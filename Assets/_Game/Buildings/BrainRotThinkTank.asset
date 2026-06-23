@@ -17,5 +17,5 @@ MonoBehaviour:
     possible idea is, actually, very smart. The think tank that ends all thinking.
   unlockCumulativeBrainPower: 725000
   baseCost: 200000
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 4500

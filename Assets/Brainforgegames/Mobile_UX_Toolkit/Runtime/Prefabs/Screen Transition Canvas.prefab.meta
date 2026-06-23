@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: eaf69e8c3ca4b47259469e9efe90a6e4
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Prefabs/Screen Transition
+    Canvas.prefab
+  uploadId: 881010

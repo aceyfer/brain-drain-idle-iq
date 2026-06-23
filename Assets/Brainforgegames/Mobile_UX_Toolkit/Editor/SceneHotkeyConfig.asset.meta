@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9fe80256cb88b493ba397a2c631a1f89
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Editor/SceneHotkeyConfig.asset
+  uploadId: 881010

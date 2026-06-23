@@ -4,14 +4,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 namespace BrainDrain.Systems
 {
     /// <summary>
     /// Singleton home for all core UI feedback animations (tap squash/stretch, idle breathing,
-    /// goo splat particles, affordable-slot pulse, popup spawn shake). No DOTween/LeanTween are
-    /// present in this project, so every effect is driven by hand-rolled coroutines. Other
-    /// scripts trigger effects via the static wrapper methods, e.g. AnimationController.PlayTapAnim(transform).
+    /// goo splat particles, affordable-slot pulse, popup spawn shake). Most effects are still
+    /// hand-rolled coroutines -- simple one-shots/loops don't need a tweening engine -- but
+    /// PlayButtonPunch, PlayFloatingRewardText, and PlaySlide use DOTween (now present at
+    /// Assets/Plugins/Demigiant/DOTween) for smoother curves on the effects that benefited
+    /// most. Other scripts trigger effects via the static wrapper methods, e.g.
+    /// AnimationController.PlayTapAnim(transform).
     /// </summary>
     public sealed class AnimationController : MonoBehaviour
     {
@@ -24,11 +28,11 @@ namespace BrainDrain.Systems
         private readonly Dictionary<Transform, Coroutine> breathingCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> boredFidgetCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> excitedBounceCoroutines = new();
-        private readonly Dictionary<Transform, Coroutine> buttonPunchCoroutines = new();
+        private readonly Dictionary<Transform, Tween> buttonPunchTweens = new();
         private readonly Dictionary<RectTransform, Coroutine> affordablePulseCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Coroutine> textFlashCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Color> textFlashBaseColors = new();
-        private readonly Dictionary<RectTransform, Coroutine> slideCoroutines = new();
+        private readonly Dictionary<RectTransform, Tween> slideTweens = new();
 
         private void Awake()
         {
@@ -225,7 +229,7 @@ namespace BrainDrain.Systems
 
         // ----- Tap button punch (separate from the character's own tap squash/stretch) ------
 
-        /// <summary>Plays a quick 1.0 -&gt; 1.2 -&gt; 1.0 scale punch on target.localScale (0.05s out, 0.05s back).</summary>
+        /// <summary>Plays a quick DOTween scale punch (DOPunchScale, 0.2 punch, 0.1s, vibrato 1, elasticity 0.5) on target.localScale.</summary>
         public static void PlayButtonPunch(Transform target)
         {
             if (target == null)
@@ -234,14 +238,10 @@ namespace BrainDrain.Systems
             }
 
             AnimationController controller = EnsureInstance();
-            controller.StopAndReplace(controller.buttonPunchCoroutines, target, controller.ButtonPunchRoutine(target));
-        }
+            KillExisting(controller.buttonPunchTweens, target);
 
-        private IEnumerator ButtonPunchRoutine(Transform target)
-        {
-            const float halfDuration = 0.05f;
-            yield return ScaleOverTime(target, Vector3.one, Vector3.one * 1.2f, halfDuration, EaseOutQuad);
-            yield return ScaleOverTime(target, target.localScale, Vector3.one, halfDuration, EaseInOutQuad);
+            target.localScale = Vector3.one;
+            controller.buttonPunchTweens[target] = target.DOPunchScale(Vector3.one * 0.2f, 0.1f, 1, 0.5f);
         }
 
         // ----- Floating reward text ----------------------------------------------------------
@@ -284,38 +284,17 @@ namespace BrainDrain.Systems
             label.color = FloatingRewardTextColor;
             label.raycastTarget = false;
 
-            StartCoroutine(FloatingRewardTextRoutine(textRect, label, localPoint));
-        }
-
-        private static IEnumerator FloatingRewardTextRoutine(RectTransform rect, TextMeshProUGUI label, Vector2 startPosition)
-        {
             const float lifetime = 0.8f;
             const float riseDistance = 70f;
-            float elapsed = 0f;
-            Color startColor = label.color;
 
-            while (elapsed < lifetime)
+            textRect.DOAnchorPos(localPoint + new Vector2(0f, riseDistance), lifetime).SetEase(Ease.OutQuad);
+            label.DOFade(0f, lifetime).SetEase(Ease.Linear).OnComplete(() =>
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / lifetime);
-                if (rect == null)
+                if (textRect != null)
                 {
-                    yield break;
+                    Destroy(textRect.gameObject);
                 }
-
-                rect.anchoredPosition = startPosition + new Vector2(0f, riseDistance * EaseOutQuad(t));
-
-                Color c = startColor;
-                c.a = Mathf.Lerp(1f, 0f, t);
-                label.color = c;
-
-                yield return null;
-            }
-
-            if (rect != null)
-            {
-                Destroy(rect.gameObject);
-            }
+            });
         }
 
         // ----- Text color flash (e.g. HUDController's IQ readout on tap) --------------------
@@ -457,6 +436,167 @@ namespace BrainDrain.Systems
             {
                 Destroy(particleRect.gameObject);
             }
+        }
+
+        // ----- Touch Ripple (Futuristic Neon Ring + Glow) ---------------------------
+
+        private static Sprite cachedRingSprite;
+        private static Sprite cachedGlowSprite;
+
+        /// <summary>
+        /// Spawns a futuristic neon green expanding ring and a soft green glow at the click position.
+        /// </summary>
+        public static void PlayTouchRipple(Vector2 screenPosition, RectTransform parent)
+        {
+            if (parent == null)
+            {
+                return;
+            }
+
+            EnsureInstance().SpawnTouchRipple(screenPosition, parent);
+        }
+
+        private void SpawnTouchRipple(Vector2 screenPosition, RectTransform parent)
+        {
+            Canvas canvas = parent.GetComponentInParent<Canvas>();
+            Camera screenCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPosition, screenCamera, out Vector2 localPoint);
+
+            // 1. Create Glowing Core
+            GameObject glowGo = new GameObject("TouchGlow", typeof(RectTransform), typeof(Image));
+            glowGo.transform.SetParent(parent, false);
+            RectTransform glowRect = glowGo.GetComponent<RectTransform>();
+            glowRect.sizeDelta = new Vector2(120f, 120f);
+            glowRect.anchoredPosition = localPoint;
+            glowRect.localScale = new Vector3(0.1f, 0.1f, 1f);
+
+            Image glowImg = glowGo.GetComponent<Image>();
+            glowImg.sprite = GetGlowSprite();
+            glowImg.color = new Color(0.224f, 1f, 0.078f, 0.6f); // Neon Green
+            glowImg.raycastTarget = false;
+
+            // 2. Create Expanding Ring
+            GameObject ringGo = new GameObject("TouchRing", typeof(RectTransform), typeof(Image));
+            ringGo.transform.SetParent(parent, false);
+            RectTransform ringRect = ringGo.GetComponent<RectTransform>();
+            ringRect.sizeDelta = new Vector2(150f, 150f);
+            ringRect.anchoredPosition = localPoint;
+            ringRect.localScale = new Vector3(0.1f, 0.1f, 1f);
+
+            Image ringImg = ringGo.GetComponent<Image>();
+            ringImg.sprite = GetRingSprite();
+            ringImg.color = new Color(0.224f, 1f, 0.078f, 1f); // Neon Green
+            ringImg.raycastTarget = false;
+
+            StartCoroutine(TouchRippleRoutine(ringRect, ringImg, glowRect, glowImg));
+        }
+
+        private static IEnumerator TouchRippleRoutine(RectTransform ringRect, Image ringImage, RectTransform glowRect, Image glowImage)
+        {
+            const float duration = 0.4f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                float tGlow = EaseOutQuad(t);
+                float tRing = EaseOutQuad(t);
+
+                if (glowRect != null && glowImage != null)
+                {
+                    glowRect.localScale = Vector3.LerpUnclamped(new Vector3(0.1f, 0.1f, 1f), new Vector3(1.2f, 1.2f, 1f), tGlow);
+                    Color col = glowImage.color;
+                    col.a = Mathf.Lerp(0.6f, 0f, t);
+                    glowImage.color = col;
+                }
+
+                if (ringRect != null && ringImage != null)
+                {
+                    ringRect.localScale = Vector3.LerpUnclamped(new Vector3(0.1f, 0.1f, 1f), new Vector3(1.8f, 1.8f, 1f), tRing);
+                    Color col = ringImage.color;
+                    col.a = Mathf.Lerp(1f, 0f, t);
+                    ringImage.color = col;
+                }
+
+                yield return null;
+            }
+
+            if (glowRect != null) Destroy(glowRect.gameObject);
+            if (ringRect != null) Destroy(ringRect.gameObject);
+        }
+
+        private static Sprite GetRingSprite()
+        {
+            if (cachedRingSprite != null) return cachedRingSprite;
+
+#if UNITY_EDITOR
+            cachedRingSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Sprites/UI/Generated/NeonRing.png");
+            if (cachedRingSprite != null) return cachedRingSprite;
+#endif
+
+            // Procedural Ring fallback
+            const int size = 64;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Vector2 center = new Vector2(size / 2f, size / 2f);
+            float outerRadius = size / 2f - 2f;
+            float innerRadius = outerRadius - 4f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
+                    float alpha = 0f;
+                    if (d <= outerRadius && d >= innerRadius)
+                    {
+                        alpha = 1f;
+                    }
+                    else if (d > outerRadius && d < outerRadius + 1.5f)
+                    {
+                        alpha = 1f - (d - outerRadius) / 1.5f;
+                    }
+                    else if (d < innerRadius && d > innerRadius - 1.5f)
+                    {
+                        alpha = 1f - (innerRadius - d) / 1.5f;
+                    }
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+            tex.Apply();
+            cachedRingSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+            return cachedRingSprite;
+        }
+
+        private static Sprite GetGlowSprite()
+        {
+            if (cachedGlowSprite != null) return cachedGlowSprite;
+
+#if UNITY_EDITOR
+            cachedGlowSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Sprites/UI/Generated/RadialGlowGreen.png");
+            if (cachedGlowSprite != null) return cachedGlowSprite;
+#endif
+
+            // Procedural Glow fallback
+            const int size = 64;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Vector2 center = new Vector2(size / 2f, size / 2f);
+            float radius = size / 2f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
+                    float alpha = Mathf.Clamp01(1f - d / radius);
+                    alpha = alpha * alpha; // quadratic fade for softer glow
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+            tex.Apply();
+            cachedGlowSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+            return cachedGlowSprite;
         }
 
         private static Sprite GetRandomSplatSprite()
@@ -651,9 +791,10 @@ namespace BrainDrain.Systems
         // ----- Generic panel slide (e.g. ShopUIController's slide-up-from-bottom panel) -----
 
         /// <summary>
-        /// Slides rect.anchoredPosition from "from" to "to" over duration, then invokes
-        /// onComplete (e.g. to deactivate the panel after a slide-down-to-close). Reusable
-        /// primitive -- callers own what "resting" vs "offscreen" actually means for their panel.
+        /// Slides rect.anchoredPosition from "from" to "to" over duration via DOTween
+        /// (Ease.InOutQuad), then invokes onComplete (e.g. to deactivate the panel after a
+        /// slide-down-to-close). Reusable primitive -- callers own what "resting" vs
+        /// "offscreen" actually means for their panel.
         /// </summary>
         public static void PlaySlide(RectTransform rect, Vector2 from, Vector2 to, float duration, Action onComplete = null)
         {
@@ -663,33 +804,16 @@ namespace BrainDrain.Systems
             }
 
             AnimationController controller = EnsureInstance();
-            controller.StopAndReplace(controller.slideCoroutines, rect, controller.SlideRoutine(rect, from, to, duration, onComplete));
-        }
+            KillExisting(controller.slideTweens, rect);
 
-        private IEnumerator SlideRoutine(RectTransform rect, Vector2 from, Vector2 to, float duration, Action onComplete)
-        {
-            float elapsed = 0f;
             rect.anchoredPosition = from;
-
-            while (elapsed < duration)
+            Tween tween = rect.DOAnchorPos(to, duration).SetEase(Ease.InOutQuad);
+            if (onComplete != null)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                if (rect == null)
-                {
-                    yield break;
-                }
-
-                rect.anchoredPosition = Vector2.LerpUnclamped(from, to, EaseInOutQuad(t));
-                yield return null;
+                tween.OnComplete(() => onComplete());
             }
 
-            if (rect != null)
-            {
-                rect.anchoredPosition = to;
-            }
-
-            onComplete?.Invoke();
+            controller.slideTweens[rect] = tween;
         }
 
         // ----- High-IQ milestone celebration ------------------------------------------------
@@ -766,6 +890,17 @@ namespace BrainDrain.Systems
             }
 
             map[key] = StartCoroutine(routine);
+        }
+
+        /// <summary>DOTween equivalent of StopAndReplace: kills any in-flight tween for key before the caller starts a new one.</summary>
+        private static void KillExisting<T>(Dictionary<T, Tween> map, T key)
+        {
+            if (map.TryGetValue(key, out Tween existing) && existing != null && existing.IsActive())
+            {
+                existing.Kill();
+            }
+
+            map.Remove(key);
         }
 
         private static IEnumerator ScaleOverTime(Transform target, Vector3 from, Vector3 to, float duration, Func<float, float> ease)

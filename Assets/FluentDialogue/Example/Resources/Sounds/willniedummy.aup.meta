@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 05c359f3d15e0c8428f767110f86cc09
+timeCreated: 1520400436
+licenseType: Store
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Example/Resources/Sounds/willniedummy.aup
+  uploadId: 318165

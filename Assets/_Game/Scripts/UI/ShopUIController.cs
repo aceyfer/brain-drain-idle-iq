@@ -83,7 +83,7 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>Opens the shop panel, sliding it up from offscreen-below into its authored resting position.</summary>
+        /// <summary>Opens the shop panel, sliding it down from offscreen-above into its authored resting position.</summary>
         public void OpenShop()
         {
             if (shopPanel == null)
@@ -95,12 +95,12 @@ namespace BrainDrain.UI
 
             if (shopPanelRect != null && shopPanelRestingPositionCaptured)
             {
-                Vector2 offscreenBelow = shopPanelRestingPosition - new Vector2(0f, shopPanelRect.rect.height);
-                AnimationController.PlaySlide(shopPanelRect, offscreenBelow, shopPanelRestingPosition, SlideDurationSeconds);
+                Vector2 offscreenAbove = shopPanelRestingPosition + new Vector2(0f, shopPanelRect.rect.height);
+                AnimationController.PlaySlide(shopPanelRect, offscreenAbove, shopPanelRestingPosition, SlideDurationSeconds);
             }
         }
 
-        /// <summary>Closes the shop panel, sliding it back down offscreen, then deactivating it once the slide finishes.</summary>
+        /// <summary>Closes the shop panel, sliding it back up offscreen, then deactivating it once the slide finishes.</summary>
         public void CloseShop()
         {
             if (shopPanel == null)
@@ -110,9 +110,9 @@ namespace BrainDrain.UI
 
             if (shopPanelRect != null && shopPanelRestingPositionCaptured)
             {
-                Vector2 offscreenBelow = shopPanelRestingPosition - new Vector2(0f, shopPanelRect.rect.height);
+                Vector2 offscreenAbove = shopPanelRestingPosition + new Vector2(0f, shopPanelRect.rect.height);
                 GameObject panelToHide = shopPanel;
-                AnimationController.PlaySlide(shopPanelRect, shopPanelRestingPosition, offscreenBelow, SlideDurationSeconds, () =>
+                AnimationController.PlaySlide(shopPanelRect, shopPanelRestingPosition, offscreenAbove, SlideDurationSeconds, () =>
                 {
                     if (panelToHide != null)
                     {

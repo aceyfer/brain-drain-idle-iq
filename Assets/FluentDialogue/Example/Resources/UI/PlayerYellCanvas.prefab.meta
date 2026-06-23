@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 85f0cda6660da12409e367283be56e5e
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Example/Resources/UI/PlayerYellCanvas.prefab
+  uploadId: 318165

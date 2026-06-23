@@ -9,6 +9,7 @@ namespace BrainDrain.Systems
         private const double FlatMultiplierBonusPerRebirth = 0.05;
         private const double FlatCashMultiplierBonusPerRebirth = 0.1;
         private const double FlatPointsConversionRateBonusPerRebirth = 0.05;
+        private const double FlatTapMultiplierBonusPerRebirth = 0.05;
 
         private static RebirthManager instance;
 
@@ -72,7 +73,9 @@ namespace BrainDrain.Systems
                 FlatCashMultiplierBonusPerRebirth,
                 FlatPointsConversionRateBonusPerRebirth);
 
-            Debug.Log($"Rebirth #{RebirthCount} successful! Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, and +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate.");
+            PlayerTapHandler.Instance?.AddTapMultiplier(FlatTapMultiplierBonusPerRebirth);
+
+            Debug.Log($"The Snotting #{RebirthCount} complete! You are now {GetIllumisnottiTitle(RebirthCount)}. Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate, and +{FlatTapMultiplierBonusPerRebirth:P0} to the tap multiplier.");
 
             GameManager.Instance?.RequestSave();
         }
@@ -82,6 +85,27 @@ namespace BrainDrain.Systems
         {
             RebirthCount = restoredRebirthCount;
             OnRebirthCountChanged?.Invoke(RebirthCount);
+        }
+
+        /// <summary>
+        /// The Illumisnotti title earned at a given Snotting (Rebirth) tier, displayed under the
+        /// HUD's IQ readout. Added 2026-06-21 as part of the Illumisnotti narrative rewrite --
+        /// "Rebirth" is reflavored as "The Snotting" in player-facing text; RebirthCount/
+        /// RebirthManager/TriggerRebirth themselves are deliberately NOT renamed in code, to
+        /// avoid an invasive rename across every system that already references them.
+        /// </summary>
+        public static string GetIllumisnottiTitle(int rebirthCount)
+        {
+            switch (rebirthCount)
+            {
+                case 0: return string.Empty;
+                case 1: return "Junior Associate Snott";
+                case 2: return "Regional Snott Manager";
+                case 3: return "Vice President of Snottery";
+                case 4: return "Lord Snott (Provisional)";
+                case 5: return "Grand Illumisnotti";
+                default: return "Supreme Snott Eternal";
+            }
         }
     }
 }

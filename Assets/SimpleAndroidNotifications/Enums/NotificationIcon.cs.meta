@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 243b640bb54d927499ad71bfe4b8137e
+timeCreated: 1473424878
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68626
+  packageName: Simple Android Notifications Free
+  packageVersion: 3.4
+  assetPath: Assets/SimpleAndroidNotifications/Enums/NotificationIcon.cs
+  uploadId: 619759

@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: IQ at 70 and DROPPING! That's not a bug, that's a FEATURE!
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: World Restoration past twenty percent. Statistically
+    irrelevant. I keep saying that. It keeps not feeling true.
   displayDurationSeconds: 3

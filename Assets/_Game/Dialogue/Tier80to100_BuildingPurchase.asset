@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: A fine acquisition. Your portfolio of cognitive leverage is
-    most impressive.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: Another acquisition. The population remains beautifully,
+    reliably stupid. Carry on.
   displayDurationSeconds: 3

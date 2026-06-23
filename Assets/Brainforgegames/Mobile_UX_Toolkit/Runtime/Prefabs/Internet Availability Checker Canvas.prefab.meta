@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c13e00fbcdb37413699fc8333c992ce7
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Prefabs/Internet Availability
+    Checker Canvas.prefab
+  uploadId: 881010

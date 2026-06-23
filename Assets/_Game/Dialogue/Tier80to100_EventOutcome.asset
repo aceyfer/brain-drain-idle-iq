@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: Crisis managed. Or manufactured. Does it matter? Brains are
-    flowing.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: Crisis resolved, or rather, monetized. Same thing, different
+    invoice.
   displayDurationSeconds: 3

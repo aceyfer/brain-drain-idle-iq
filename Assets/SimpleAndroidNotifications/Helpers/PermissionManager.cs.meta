@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5aed8cd94b5e97944a1df6d1374ce568
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68626
+  packageName: Simple Android Notifications Free
+  packageVersion: 3.4
+  assetPath: Assets/SimpleAndroidNotifications/Helpers/PermissionManager.cs
+  uploadId: 619759

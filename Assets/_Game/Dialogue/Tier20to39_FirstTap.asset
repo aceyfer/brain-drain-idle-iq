@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: TAP! GOOD! MORE!
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: TAP! YES! KEEP TAPPING! DON'T THINK ABOUT THE RESTORATION
+    NUMBER! TAP!
   displayDurationSeconds: 3

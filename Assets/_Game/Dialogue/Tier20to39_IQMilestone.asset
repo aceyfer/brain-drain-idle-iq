@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: 'NUMBER SMALL! THAT MEAN WIN! RIGHT?! YES!'
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: RESTORATION AT SEVENTY PERCENT. THEY CAN READ NOW. THEY CAN
+    ALL READ. SOMEBODY TAUGHT THEM TO READ.
   displayDurationSeconds: 3

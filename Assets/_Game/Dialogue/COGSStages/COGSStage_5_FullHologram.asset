@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COGSStage_5_FullHologram
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.COGSStage
   stageIndex: 5
-  portraitSprite: {fileID: 0}
+  portraitSprite: {fileID: 21300000, guid: f5467089da205904e8307197a7ed82ad, type: 3}
   minRebirthCount: 20
   stageName: Full Hologram
-  actUnlockName:
+  actUnlockName: 

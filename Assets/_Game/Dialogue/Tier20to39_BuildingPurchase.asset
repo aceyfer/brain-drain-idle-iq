@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: BUILDING! YES! BRAINS!
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: BUILDING BOUGHT! GREAT! THE WORLD IS HEALING AND I AM
+    SCREAMING INTERNALLY BUT EXTERNALLY THIS IS FINE!
   displayDurationSeconds: 3

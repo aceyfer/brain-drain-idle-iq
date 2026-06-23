@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Synergistic acquisition! This building slaps. Massive BPS
-    vibes.
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: Building acquired. Restoration ticking up too, which is —
+    fine. Totally fine. Routine fluctuation.
   displayDurationSeconds: 3

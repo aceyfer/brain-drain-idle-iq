@@ -16,5 +16,9 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 11
   maxRebirthCount: 2147483647
-  dialogueLine: "...again. \U0001F504"
+  minRestorationPercent: 81
+  maxRestorationPercent: 100
+  dialogueLine: you rebirth. i watch. the world is almost entirely fixed
+    and you keep choosing this game over it. that's — that's actually
+    kind of sweet 🔄
   displayDurationSeconds: 3

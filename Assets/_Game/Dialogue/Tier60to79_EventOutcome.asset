@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Chaos is just opportunity in a trenchcoat. We monetized it!
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: Handled. Though I'll admit, that took more convincing than
+    it used to.
   displayDurationSeconds: 3

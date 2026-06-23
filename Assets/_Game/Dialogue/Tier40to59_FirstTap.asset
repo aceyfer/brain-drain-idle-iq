@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: You tap good! Brain juice come out! Yes!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: You're still tapping? Good. Good. Don't — don't think too
+    hard about why I said "good" twice.
   displayDurationSeconds: 3

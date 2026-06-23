@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: DoomscrollEngine
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Doomscroll Engine
-  description: An infinite-scroll algorithm fine-tuned to never let your thumb
-    rest. Outputs zero nutritional value and a faint ringing sound.
+  description: Lord Snott III invented this. You perfected it.
   unlockCumulativeBrainPower: 0
   baseCost: 10
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 0.3

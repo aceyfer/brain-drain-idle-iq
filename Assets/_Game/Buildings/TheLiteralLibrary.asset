@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: TheLiteralLibrary
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: The Literal Library
-  description: The Literal Library
+  description: The Illumisnotti burned most of these. You're rebuilding.
   unlockCumulativeBrainPower: 0
   baseCost: 15
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 0.1

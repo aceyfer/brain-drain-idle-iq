@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName: Reality TV Syndicate
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: TV MAKE PEOPLE WATCH! WATCH MEAN BRAINS! BRAINS MEAN US! WOOOO!
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: REALITY TV RATINGS DROPPING! THEY WANT — THEY WANT
+    DOCUMENTARIES NOW?! WHO RAISED THESE PEOPLE!
   displayDurationSeconds: 3

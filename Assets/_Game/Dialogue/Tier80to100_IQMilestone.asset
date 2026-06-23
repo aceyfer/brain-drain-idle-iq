@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: Global IQ has dropped to 80. Productivity is up 34%.
-    Coincidence? No.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: PlayerIQ climbing nicely. World Restoration barely a flicker.
+    Adorable. Keep tapping.
   displayDurationSeconds: 3

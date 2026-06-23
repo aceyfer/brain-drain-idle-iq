@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COGSStage_1_PatchedCRT
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.COGSStage
   stageIndex: 1
-  portraitSprite: {fileID: 0}
+  portraitSprite: {fileID: 21300000, guid: b423c4a0238c2534fb4218652421a1fb, type: 3}
   minRebirthCount: 1
   stageName: Patched CRT
-  actUnlockName:
+  actUnlockName: 

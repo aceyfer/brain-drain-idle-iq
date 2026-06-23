@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Full reset, zero regrets! Rebirth is just growth hacking your
-    whole empire!
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: Rebirth complete. I'm noticing the restoration meter doesn't
+    reset with you. Seems like an oversight on someone's part.
   displayDurationSeconds: 3

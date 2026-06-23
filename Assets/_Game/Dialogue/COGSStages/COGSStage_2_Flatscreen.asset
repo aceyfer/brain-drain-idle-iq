@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COGSStage_2_Flatscreen
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.COGSStage
   stageIndex: 2
-  portraitSprite: {fileID: 0}
+  portraitSprite: {fileID: 21300000, guid: ab773e97eec77994cb277fbe0acd4c27, type: 3}
   minRebirthCount: 3
   stageName: Flatscreen
-  actUnlockName:
+  actUnlockName: 

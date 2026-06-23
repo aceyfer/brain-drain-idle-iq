@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 1519d09270a2ebe4ab9d08d1f12bc454
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303073
+  packageName: 'Free Mobile Monetization Toolkit [Ads, IAP, Analytics, Game Services,
+    GDPR]'
+  packageVersion: 3.3.0
+  assetPath: Assets/Plankton/Proxy/iOS/ProxyPushNotification.cs
+  uploadId: 800016

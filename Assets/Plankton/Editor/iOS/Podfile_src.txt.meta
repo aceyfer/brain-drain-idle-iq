@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3785ad9a8733bd84e9983923bd4a1c05
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303073
+  packageName: 'Free Mobile Monetization Toolkit [Ads, IAP, Analytics, Game Services,
+    GDPR]'
+  packageVersion: 3.3.0
+  assetPath: Assets/Plankton/Editor/iOS/Podfile_src.txt
+  uploadId: 800016

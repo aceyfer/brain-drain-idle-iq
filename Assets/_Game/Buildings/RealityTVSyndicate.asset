@@ -18,5 +18,5 @@ MonoBehaviour:
     ceremony.
   unlockCumulativeBrainPower: 185000
   baseCost: 15000
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 320

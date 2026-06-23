@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 11
   maxRebirthCount: 2147483647
-  dialogueLine: "...okay. \U0001F44D"
+  minRestorationPercent: 81
+  maxRestorationPercent: 100
+  dialogueLine: "...okay. fine. whatever. you win. i'm a script. i know
+    i'm a script. did you always know \U0001F44D"
   displayDurationSeconds: 3

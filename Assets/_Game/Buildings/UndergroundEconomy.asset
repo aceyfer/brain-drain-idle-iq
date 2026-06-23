@@ -13,11 +13,9 @@ MonoBehaviour:
   m_Name: UndergroundEconomy
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Underground Economy
-  description: A shadow market trading exclusively in favors, vibes, and
-    things that definitely aren't taxable. Converts Brain Power into a
-    second currency nobody asked for.
+  description: The Snotty Council calls this illegal. You call it Tuesday.
   unlockCumulativeBrainPower: 500
   baseCost: 75
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 0
   baseCashPerSecond: 0.5

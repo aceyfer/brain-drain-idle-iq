@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf35c1049da089a6a375e8d1b4cbacac, type: 3}
+  m_Name: ShiveringDesignerMicroDog
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CashShopItemData
+  itemId: shivering_designer_micro_dog
+  displayName: Shivering Designer Micro-Dog
+  description: Genetically engineered to vibrate with anxiety.
+  cost: 50000
+  gateRebirthCount: 0
+  effectType: 1
+  effectPercent: 0.08

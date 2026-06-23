@@ -26,6 +26,7 @@ namespace BrainDrain.Systems
         [Header("Visual")]
         [SerializeField] private Transform characterVisualTarget;
         [SerializeField] private SpriteRenderer appearanceRenderer;
+        [SerializeField] private UnityEngine.UI.Image appearanceImage;
         [SerializeField] private List<CharacterAppearanceStage> appearanceStages = new();
 
         [Header("Mood Tuning")]
@@ -289,6 +290,11 @@ namespace BrainDrain.Systems
             if (appearanceRenderer != null)
             {
                 appearanceRenderer.sprite = resolved.sprite;
+            }
+
+            if (appearanceImage != null)
+            {
+                appearanceImage.sprite = resolved.sprite;
             }
         }
 

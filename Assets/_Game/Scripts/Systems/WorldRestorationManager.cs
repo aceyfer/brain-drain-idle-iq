@@ -50,6 +50,9 @@ namespace BrainDrain.Systems
         /// <summary>The currently resolved stage, or null before the first resolution has run / no stages configured.</summary>
         public WorldRestorationStage CurrentStage { get; private set; }
 
+        /// <summary>Read-only view of configured stages, sorted by pointsRequired ascending. Added for DebugCheats, so its "jump to stage" buttons read real configured thresholds instead of hardcoding values that could drift out of sync.</summary>
+        public IReadOnlyList<WorldRestorationStage> Stages => stages;
+
         /// <summary>
         /// 0-100 progress toward the final configured stage's pointsRequired. 0 if no stages
         /// are configured yet. Backs ChapterUnlockConditionType.WorldRestorationPercent.

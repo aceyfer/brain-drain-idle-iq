@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 59cbb7c56d8174ef49a2f6a19427b68b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Prefabs/Toast Canvas.prefab
+  uploadId: 881010

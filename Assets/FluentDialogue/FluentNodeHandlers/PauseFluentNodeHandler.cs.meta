@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 1d22e9f153ab7654c84096f343d53444
+timeCreated: 1505481393
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/FluentNodeHandlers/PauseFluentNodeHandler.cs
+  uploadId: 318165

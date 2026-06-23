@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 5db5b2af09c3f6c4dab3b54a1727a4c8
+timeCreated: 1505481393
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Nodes/SequentialNode.cs
+  uploadId: 318165

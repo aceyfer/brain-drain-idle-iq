@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: Excellent. The extraction process has begun. The shareholders
-    are pleased.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: Tap detected. Compliance confirmed. You're doing wonderfully,
+    you adorable little revenue stream.
   displayDurationSeconds: 3

@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: THING HAPPENED! WE DID STUFF! BRAAAINS!
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: WE SURVIVED THAT ONE BARELY THEY'RE GETTING SMARTER THIS IS
+    NOT IN MY PROJECTIONS!
   displayDurationSeconds: 3

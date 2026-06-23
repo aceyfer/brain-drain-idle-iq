@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff254d3afae4a28ccf1d94d930f911e8, type: 3}
+  m_Name: IllumisnottiLordSnottTantrum
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BrainRotEventData
+  eventTitle: Lord Snott Tantrum
+  eventDescription: He found out your net worth. He's been crying into his monocle.
+  choiceButtonText: Let Him Cry
+  brainPowerRewardOrPenalty: 0
+  playerIQImpact: 0
+  cashRewardOrPenalty: 0
+  multiplierSpike: 0
+  effectType: 4
+  effectDurationSeconds: 90
+  effectMagnitudePercent: -0.10

@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 5cdee1425cbcdd9458c562f781c95152
+timeCreated: 1505333511
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Editor/FluentScriptEditor.cs
+  uploadId: 318165

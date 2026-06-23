@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.WorldRestorationStage
   stageIndex: 4
   stageName: Renewed Skyline
-  pointsRequired: 25000
+  pointsRequired: 250000

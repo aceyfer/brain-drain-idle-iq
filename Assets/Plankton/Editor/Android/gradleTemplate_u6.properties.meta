@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9702a2258046e6c4ea9c90140c0ca41b
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303073
+  packageName: 'Free Mobile Monetization Toolkit [Ads, IAP, Analytics, Game Services,
+    GDPR]'
+  packageVersion: 3.3.0
+  assetPath: Assets/Plankton/Editor/Android/gradleTemplate_u6.properties
+  uploadId: 800016

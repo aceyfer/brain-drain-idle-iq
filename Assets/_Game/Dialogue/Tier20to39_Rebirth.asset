@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: EVERYTHING GONE BUT WE STILL HERE! WOOOOO!
+  minRestorationPercent: 56
+  maxRestorationPercent: 80
+  dialogueLine: REBIRTH AGAIN?! AT THIS RESTORATION LEVEL?! THE SHAREHOLDERS
+    — WAIT, THERE ARE NO SHAREHOLDERS, THERE'S JUST ME, SCREAMING, ALONE!
   displayDurationSeconds: 3

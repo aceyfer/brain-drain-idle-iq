@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 1148273335f8ca3409373989b6caa354
+timeCreated: 1505482692
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/FluentNodeHandlers/YellHandler.cs
+  uploadId: 318165

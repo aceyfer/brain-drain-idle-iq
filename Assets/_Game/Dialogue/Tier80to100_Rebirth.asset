@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 0
   maxRebirthCount: 0
-  dialogueLine: A full cognitive reset. Beautifully ruthless. The board
-    approves.
+  minRestorationPercent: 0
+  maxRestorationPercent: 10
+  dialogueLine: A reset. How efficient. The dumber they stay, the richer we
+    get. Simple math, really.
   displayDurationSeconds: 3

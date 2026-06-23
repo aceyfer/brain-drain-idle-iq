@@ -19,6 +19,8 @@ namespace BrainDrain.UI
         [FormerlySerializedAs("worldRestorationText")]
         [SerializeField] private TextMeshProUGUI playerIQText;
         [SerializeField] private TextMeshProUGUI rankText;
+        [Tooltip("Illumisnotti title earned at the current Snotting (Rebirth) tier -- displayed under the IQ readout. Blank until the first Snotting. Added 2026-06-21.")]
+        [SerializeField] private TextMeshProUGUI illumisnottiTitleText;
         [FormerlySerializedAs("brainsCounterText")]
         [SerializeField] private TextMeshProUGUI brainPowerCounterText;
         [SerializeField] private TextMeshProUGUI cumulativeBrainPowerCounterText;
@@ -59,6 +61,12 @@ namespace BrainDrain.UI
         {
             get => rankText;
             set => rankText = value;
+        }
+
+        public TextMeshProUGUI IllumisnottiTitleText
+        {
+            get => illumisnottiTitleText;
+            set => illumisnottiTitleText = value;
         }
 
         public TextMeshProUGUI BrainPowerCounterText
@@ -198,6 +206,8 @@ namespace BrainDrain.UI
             {
                 UpdateRebirthCountText(RebirthManager.Instance.RebirthCount);
                 RebirthManager.Instance.OnRebirthCountChanged += UpdateRebirthCountText;
+                UpdateIllumisnottiTitleText(RebirthManager.Instance.RebirthCount);
+                RebirthManager.Instance.OnRebirthCountChanged += UpdateIllumisnottiTitleText;
             }
 
             if (GameManager.Instance != null)
@@ -243,6 +253,7 @@ namespace BrainDrain.UI
             if (RebirthManager.Instance != null)
             {
                 RebirthManager.Instance.OnRebirthCountChanged -= UpdateRebirthCountText;
+                RebirthManager.Instance.OnRebirthCountChanged -= UpdateIllumisnottiTitleText;
             }
 
             if (GameManager.Instance != null)
@@ -313,7 +324,16 @@ namespace BrainDrain.UI
         {
             if (rebirthCountText != null)
             {
-                rebirthCountText.text = $"REBIRTHS: {rebirthCount}";
+                rebirthCountText.text = $"SNOTTINGS: {rebirthCount}";
+            }
+        }
+
+        /// <summary>Updates the Illumisnotti title shown under the IQ readout. Blank (no text) until the first Snotting.</summary>
+        private void UpdateIllumisnottiTitleText(int rebirthCount)
+        {
+            if (illumisnottiTitleText != null)
+            {
+                illumisnottiTitleText.text = RebirthManager.GetIllumisnottiTitle(rebirthCount).ToUpper();
             }
         }
 

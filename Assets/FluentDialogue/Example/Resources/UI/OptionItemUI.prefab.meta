@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: d77a3a604a317c14ca74f55533dad293
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Example/Resources/UI/OptionItemUI.prefab
+  uploadId: 318165

@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName: Doomscroll Engine
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: Doomscroll make people sad but also tap more! Good business!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: Doomscroll engagement is DOWN. Down! On MY watch! I refuse
+    to acknowledge this is a trend.
   displayDurationSeconds: 3

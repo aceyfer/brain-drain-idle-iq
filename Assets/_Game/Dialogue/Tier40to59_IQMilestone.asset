@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: Number go down mean number go up! That is economy!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: Restoration at fifty percent and climbing. I am not
+    panicking. This is just my normal voice, slightly louder.
   displayDurationSeconds: 3

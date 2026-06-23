@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 81d2bd420146cac4a8a1cb2c72df103f
+timeCreated: 1505767424
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/FluentNodeHandlers/ContinueWhenHandler.cs
+  uploadId: 318165

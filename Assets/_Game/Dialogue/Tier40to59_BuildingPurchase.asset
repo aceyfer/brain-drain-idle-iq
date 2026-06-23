@@ -16,5 +16,9 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: New building! Much income! Very passive! Wow!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: New building, sure, fine, great — but restoration is past
+    forty percent and people are asking questions now. Real ones. With
+    follow-ups.
   displayDurationSeconds: 3

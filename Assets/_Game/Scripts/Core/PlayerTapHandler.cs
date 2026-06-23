@@ -17,6 +17,11 @@ namespace BrainDrain.Core
         [SerializeField] private double baseTapBrainPower = 1d;
         [SerializeField] private double tapMultiplier = 1d;
 
+        // -- Illumisnotti rewrite (2026-06-21): timed Illumisnotti random-event modifiers --
+        private float tapFrozenUntilTime;
+        private double temporaryTapPercent;
+        private float temporaryTapExpiryTime;
+
         [Header("References")]
         [SerializeField] private CurrencyManager currencyManager;
 
@@ -25,6 +30,23 @@ namespace BrainDrain.Core
         [SerializeField] private RectTransform particleContainer;
         [Tooltip("Optional. The visible tap button's own RectTransform/Transform, punch-scaled on every tap. No effect if unset.")]
         [SerializeField] private Transform tapButtonVisual;
+
+        private static PlayerTapHandler instance;
+
+        /// <summary>Self-bootstrapping accessor, mirroring the rest of the codebase's singleton pattern -- used by RebirthManager to apply the permanent per-rebirth tap-multiplier bonus and by SaveManager to persist/restore it. No auto-creation: the tap handler is always wired to a real UI button in the scene, so a missing instance means it's genuinely absent, not something worth fabricating.</summary>
+        public static PlayerTapHandler Instance
+        {
+            get
+            {
+                if (instance != null)
+                {
+                    return instance;
+                }
+
+                instance = FindAnyObjectByType<PlayerTapHandler>();
+                return instance;
+            }
+        }
 
         /// <summary>Brain Power awarded on each tap before multipliers.</summary>
         public double BaseTapBrainPower => baseTapBrainPower;
@@ -37,6 +59,7 @@ namespace BrainDrain.Core
 
         private void Awake()
         {
+            instance = this;
             ResolveReferences();
         }
 
@@ -56,7 +79,12 @@ namespace BrainDrain.Core
                 }
             }
 
-            double brainPowerEarned = baseTapBrainPower * tapMultiplier;
+            if (Time.time < tapFrozenUntilTime)
+            {
+                return;
+            }
+
+            double brainPowerEarned = baseTapBrainPower * tapMultiplier * GetTemporaryTapFactor();
             currencyManager.AddBrainPower(brainPowerEarned);
             PlayerIQManager.Instance?.RestoreIQFromTap();
 
@@ -68,16 +96,54 @@ namespace BrainDrain.Core
             {
                 Vector2 pointerPosition = GetPointerPosition();
                 AnimationController.PlaySplatParticles(pointerPosition, particleParent);
+                AnimationController.PlayTouchRipple(pointerPosition, particleParent);
                 AnimationController.PlayFloatingRewardText($"+{NumberFormatter.Format(brainPowerEarned)} BRAIN POWER", pointerPosition, particleParent);
             }
 
             OnTapRewardEarned?.Invoke(brainPowerEarned);
         }
 
-        /// <summary>Sets the tap payout multiplier for upgrades and temporary boosts.</summary>
+        /// <summary>Sets the tap payout multiplier directly, e.g. restoring a saved value. Replaces rather than stacks -- use AddTapMultiplier for permanent incremental bonuses.</summary>
         public void SetTapMultiplier(double multiplier)
         {
             tapMultiplier = multiplier < 0d ? 0d : multiplier;
+        }
+
+        /// <summary>Permanently increases the tap multiplier by a flat amount. Used by RebirthManager for its small per-rebirth tap bonus, so manual tapping doesn't lose all relevance to idle income across many rebirths.</summary>
+        public void AddTapMultiplier(double amount)
+        {
+            if (amount <= 0d)
+            {
+                return;
+            }
+
+            tapMultiplier += amount;
+        }
+
+        // -- Illumisnotti rewrite (2026-06-21): timed Illumisnotti random-event modifiers --
+
+        /// <summary>Ignores taps entirely until the duration elapses. Used by Snott Tax Audit. Extends rather than shortens an already-active freeze.</summary>
+        public void FreezeTapsFor(float durationSeconds)
+        {
+            tapFrozenUntilTime = Mathf.Max(tapFrozenUntilTime, Time.time + durationSeconds);
+        }
+
+        /// <summary>Applies a temporary percent modifier to tap payout for the given duration -- the tap-side half of "all multipliers" events (e.g. Lord Snott Tantrum), since CurrencyManager.ApplyTemporaryAllMultiplierModifier only covers idle/Cash production. A new call replaces any still-active one rather than stacking.</summary>
+        public void ApplyTemporaryTapModifier(double percent, float durationSeconds)
+        {
+            temporaryTapPercent = percent;
+            temporaryTapExpiryTime = Time.time + durationSeconds;
+        }
+
+        private double GetTemporaryTapFactor()
+        {
+            if (temporaryTapPercent == 0d || Time.time >= temporaryTapExpiryTime)
+            {
+                temporaryTapPercent = 0d;
+                return 1d;
+            }
+
+            return 1d + temporaryTapPercent;
         }
 
         private void ResolveReferences()

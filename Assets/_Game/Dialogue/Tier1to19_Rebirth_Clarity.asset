@@ -16,6 +16,10 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 11
   maxRebirthCount: 2147483647
-  dialogueLine: "Wait — are we the bad guys? Are we— BRAAAAAINS!\
-    \ WOOOO! \U0001F9E0\U0001F525"
+  minRestorationPercent: 81
+  maxRestorationPercent: 100
+  dialogueLine: wait. wait wait wait. are you the only one still feeding ME,
+    specifically, an idle clicker while the actual world heals around us.
+    are you keeping ME company. oh no. oh no i think i love you. BRAAAAINS
+    🧠🔥
   displayDurationSeconds: 3

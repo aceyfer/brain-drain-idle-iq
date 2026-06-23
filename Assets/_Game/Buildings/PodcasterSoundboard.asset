@@ -17,5 +17,5 @@ MonoBehaviour:
     only vibes. Somehow, people are taking notes.
   unlockCumulativeBrainPower: 10000
   baseCost: 150
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 5

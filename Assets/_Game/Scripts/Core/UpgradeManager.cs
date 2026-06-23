@@ -32,6 +32,10 @@ namespace BrainDrain.Core
 
         private readonly Dictionary<string, int> buildingLevels = new(16);
 
+        // -- Illumisnotti rewrite (2026-06-21): "lock one random building" timed events --
+        private readonly List<(double bpps, double cps, float restoreAtTime)> activeBuildingLocks = new();
+        private bool lockTickSubscribed;
+
         /// <summary>Convenient scene-lookup accessor, since GameManager does not hub this reference.</summary>
         public static UpgradeManager Instance => FindAnyObjectByType<UpgradeManager>();
 
@@ -50,6 +54,14 @@ namespace BrainDrain.Core
         private void Awake()
         {
             ResolveReferences();
+        }
+
+        private void OnDestroy()
+        {
+            if (lockTickSubscribed && GameManager.Instance != null)
+            {
+                GameManager.Instance.OnSecondTick -= HandleLockRestoreTick;
+            }
         }
 
         /// <summary>Returns the current owned level for a building template.</summary>
@@ -122,6 +134,75 @@ namespace BrainDrain.Core
 
             OnBuildingsChanged?.Invoke();
             OnBuildingPurchased?.Invoke(building);
+        }
+
+        /// <summary>
+        /// Picks one random currently-owned building, temporarily suppresses its exact current
+        /// BPPS/CPS contribution for durationSeconds via CurrencyManager.SuppressIdleBPPS/
+        /// SuppressCashPerSecond, then automatically restores it on a later
+        /// GameManager.OnSecondTick. Used by the "Ministry Inspection"/"Brawndo Spill"
+        /// Illumisnotti events. No-ops if the player owns no buildings yet.
+        /// </summary>
+        public void LockRandomBuildingFor(float durationSeconds)
+        {
+            ResolveReferences();
+            if (currencyManager == null)
+            {
+                return;
+            }
+
+            List<BuildingData> owned = new List<BuildingData>();
+            for (int i = 0; i < buildingTemplates.Count; i++)
+            {
+                BuildingData building = buildingTemplates[i];
+                if (building != null && GetBuildingLevel(building) > 0)
+                {
+                    owned.Add(building);
+                }
+            }
+
+            if (owned.Count == 0)
+            {
+                return;
+            }
+
+            BuildingData target = owned[UnityEngine.Random.Range(0, owned.Count)];
+            int level = GetBuildingLevel(target);
+            double bpps = level * target.baseBrainPowerPerSecond;
+            double cps = level * target.baseCashPerSecond;
+
+            currencyManager.SuppressIdleBPPS(bpps);
+            currencyManager.SuppressCashPerSecond(cps);
+
+            activeBuildingLocks.Add((bpps, cps, Time.time + durationSeconds));
+            SubscribeToGameTickForLocks();
+        }
+
+        private void SubscribeToGameTickForLocks()
+        {
+            if (lockTickSubscribed || GameManager.Instance == null)
+            {
+                return;
+            }
+
+            GameManager.Instance.OnSecondTick += HandleLockRestoreTick;
+            lockTickSubscribed = true;
+        }
+
+        private void HandleLockRestoreTick()
+        {
+            for (int i = activeBuildingLocks.Count - 1; i >= 0; i--)
+            {
+                (double bpps, double cps, float restoreAtTime) entry = activeBuildingLocks[i];
+                if (Time.time < entry.restoreAtTime)
+                {
+                    continue;
+                }
+
+                currencyManager?.RestoreIdleBPPS(entry.bpps);
+                currencyManager?.RestoreCashPerSecond(entry.cps);
+                activeBuildingLocks.RemoveAt(i);
+            }
         }
 
         /// <summary>Clears all owned building levels back to baseline and notifies UI to refresh.</summary>

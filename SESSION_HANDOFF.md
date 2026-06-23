@@ -90,3 +90,17 @@ None of this can be done from a script edit safely — either because it's scene
 3. **World Visual Restoration.** Worth clarifying at the start of next session whether this is meant to resurrect the "world restoration" concept that was deliberately removed and replaced by `PlayerIQ` earlier this session (see §5's `WorldRestorationPercent` note) — if so, that's a real design reversal worth discussing explicitly before building, the same way the `PlayerIQ`→`RebirthCount` dialogue migration got flagged before being done.
 
 Nothing in this section has been started. No code or assets exist for any of the three yet.
+
+## 7. Addendum (2026-06-21, later same session): debug testing system + economy rebalance
+
+Everything in sections 1-6 above is stale (Player Character, Wardrobe, and World Restoration — section 6's "next build queue" — all got built later in this same session) and **`CLAUDE.md` is the authoritative, current architecture doc** — read that first, not this file, for how any of it actually works now. This section exists purely to flag the two things built *most recently*, in case they're the source of anything that looks broken right now.
+
+**A. Editor-only progression testing system** (`#if UNITY_EDITOR` throughout, compiles out of all builds): `Systems/DebugCheats.cs` (shared cheat logic), `UI/DebugCheatPanel.cs` (triple-tap `HUDController.PlayerIQText` to open a self-built panel), `Editor/TestingMenuShortcuts.cs` (`BrainDrain/Testing` menu), plus a `SaveManager.KeepSaveEditorPrefsKey` EditorPrefs toggle + an `EditorApplication.playModeStateChanged` hook that force-saves on Stop. Full detail in `CLAUDE.md`'s "Editor-only progression testing system" section.
+
+**B. Economy rebalance** — a numeric pacing simulation (`balance_sim.js`, project root, not part of the game) found the pre-Rebirth building ladder cleared and the Rebirth button unlocked within about 30 minutes of play, World Restoration's thresholds didn't represent a real long-term arc, and tapping lost almost all relevance to idle income within ~15 minutes. Four changes in response, **all already saved to disk, last confirmed compiling clean via a live Editor.log check with zero new `error CS` lines**:
+1. All 7 buildings' `costMultiplier`: `1.15` → `1.21` (`Assets/_Game/Buildings/*.asset`).
+2. All 6 `WorldRestorationStage.pointsRequired`: rescaled 10x to `0/2,500/10,000/50,000/250,000/1,000,000` (`Assets/_Game/Restoration/*.asset`).
+3. `RebirthUIController.pointsSpentUnlockThreshold`: `1,000` → `50,000` (the REBIRTH button's visibility gate).
+4. New: `PlayerTapHandler.AddTapMultiplier` (permanent, +5% per Rebirth via `RebirthManager`) and `CurrencyManager.GetIQProductionMultiplier()` (idle BPPS/CPS scaled by `PlayerIQ / 100`, capped at 1 — ties offline-IQ-decay to a real idle-income penalty on return). Both required a new `tapMultiplier` field in `SaveManager.PlayerData`, with a load-time migration guard (a deserialized `0` from a pre-existing save means "field didn't exist yet," treated as `1`, not a real zeroed-out multiplier).
+
+**If something looks broken right now and wasn't before this addendum**: check whether it's actually B.3 (Rebirth button correctly *not* appearing yet — it now needs 50,000 points spent on Restoration instead of 1,000) before assuming it's a regression. Full reasoning and the simulation numbers behind these values are in `CLAUDE.md`'s "Economy rebalance (2026-06-21)" section.

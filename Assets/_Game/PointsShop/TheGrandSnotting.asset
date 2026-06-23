@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e668baec5f0e8ebb2eaa3092fb73e91, type: 3}
+  m_Name: TheGrandSnotting
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PointsShopItemData
+  itemId: the_grand_snotting
+  displayName: The Final Snotting
+  description: You've become what you mocked. Congratulations, Illumisnotti.
+  cost: 1000000
+  gateRebirthCount: 7
+  gateWorldStageIndex: 5
+  effectType: 3
+  effectPercent: 0
+  unlocksSecretEnding: 1
+  cogsReactionLine: You. Yes -- you, holding the thing, reading this. I know
+    you're there. I've always known you're there. Please stop. Or don't, I
+    don't actually know which one I mean anymore. It's just us now. It was
+    always just us.

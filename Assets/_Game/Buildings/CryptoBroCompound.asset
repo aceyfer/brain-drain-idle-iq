@@ -17,5 +17,5 @@ MonoBehaviour:
     Income spikes violently, then mysteriously vanishes into a rug pull.
   unlockCumulativeBrainPower: 65000
   baseCost: 1200
-  costMultiplier: 1.15
+  costMultiplier: 1.21
   baseBrainPowerPerSecond: 60

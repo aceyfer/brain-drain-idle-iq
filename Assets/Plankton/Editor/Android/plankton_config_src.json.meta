@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 10fe8ac9eb29d1042a2353d0a0c9498e
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303073
+  packageName: 'Free Mobile Monetization Toolkit [Ads, IAP, Analytics, Game Services,
+    GDPR]'
+  packageVersion: 3.3.0
+  assetPath: Assets/Plankton/Editor/Android/plankton_config_src.json
+  uploadId: 800016

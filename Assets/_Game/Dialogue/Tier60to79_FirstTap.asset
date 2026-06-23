@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Big tap energy. Very disruptive. Love the hustle.
+  minRestorationPercent: 11
+  maxRestorationPercent: 30
+  dialogueLine: Hold on. That tap pattern looks... deliberate? No, surely
+    not. Continue.
   displayDurationSeconds: 3

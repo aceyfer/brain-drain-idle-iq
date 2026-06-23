@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 04bafa369dbac00478feecb96bf71f90
+timeCreated: 1504018996
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68626
+  packageName: Simple Android Notifications Free
+  packageVersion: 3.4
+  assetPath: Assets/SimpleAndroidNotifications/DemoScene.unity
+  uploadId: 619759

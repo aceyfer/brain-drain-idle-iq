@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 47b56589587ca4f94a91df5284b59933
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Scripts/SafeAreaFitter.cs
+  uploadId: 881010

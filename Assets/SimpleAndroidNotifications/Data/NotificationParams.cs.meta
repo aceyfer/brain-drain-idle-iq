@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 446603b0820736a40aea1a8d0067b67b
+timeCreated: 1470161197
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68626
+  packageName: Simple Android Notifications Free
+  packageVersion: 3.4
+  assetPath: Assets/SimpleAndroidNotifications/Data/NotificationParams.cs
+  uploadId: 619759

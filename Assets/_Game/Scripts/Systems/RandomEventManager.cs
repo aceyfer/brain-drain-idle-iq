@@ -94,7 +94,7 @@ namespace BrainDrain.Systems
             OnRandomEventTriggered?.Invoke(CurrentEvent);
         }
 
-        /// <summary>Applies an event's Brain Power and PlayerIQ effects to the active core singletons.</summary>
+        /// <summary>Applies an event's Brain Power, Cash, PlayerIQ, and (for Illumisnotti interference events) timed effects to the active core singletons.</summary>
         public void ApplyEventEffects(BrainRotEventData eventData)
         {
             if (eventData == null)
@@ -113,6 +113,13 @@ namespace BrainDrain.Systems
                 {
                     currencyManager.RemoveBrainPower(-eventData.brainPowerRewardOrPenalty);
                 }
+
+                // cashRewardOrPenalty added 2026-06-21 for Illumisnotti events (e.g. Illumisnotti
+                // Leak) -- 0 for the original 8 events, which never touched Cash.
+                if (eventData.cashRewardOrPenalty > 0d)
+                {
+                    currencyManager.AddCash(eventData.cashRewardOrPenalty);
+                }
             }
 
             PlayerIQManager playerIQManager = PlayerIQManager.Instance;
@@ -121,7 +128,47 @@ namespace BrainDrain.Systems
                 playerIQManager.ModifyPlayerIQ(eventData.playerIQImpact);
             }
 
+            ApplyTimedEffect(eventData, currencyManager);
+
             OnEventResolved?.Invoke(eventData);
+        }
+
+        /// <summary>
+        /// Added 2026-06-21 for the Illumisnotti interference events. InstantOnly (the original
+        /// 8 events' implicit type) is a deliberate no-op here -- their effects are fully covered
+        /// by the brainPowerRewardOrPenalty/playerIQImpact handling above.
+        /// </summary>
+        private static void ApplyTimedEffect(BrainRotEventData eventData, CurrencyManager currencyManager)
+        {
+            switch (eventData.effectType)
+            {
+                case EventEffectType.InstantOnly:
+                    return;
+
+                case EventEffectType.LockRandomBuilding:
+                    UpgradeManager.Instance?.LockRandomBuildingFor(eventData.effectDurationSeconds);
+                    return;
+
+                case EventEffectType.FreezeTap:
+                    PlayerTapHandler.Instance?.FreezeTapsFor(eventData.effectDurationSeconds);
+                    return;
+
+                case EventEffectType.BrainPowerProductionPercent:
+                    currencyManager?.ApplyTemporaryBrainPowerModifier(eventData.effectMagnitudePercent, eventData.effectDurationSeconds);
+                    return;
+
+                case EventEffectType.AllMultipliersPercent:
+                    currencyManager?.ApplyTemporaryAllMultiplierModifier(eventData.effectMagnitudePercent, eventData.effectDurationSeconds);
+                    PlayerTapHandler.Instance?.ApplyTemporaryTapModifier(eventData.effectMagnitudePercent, eventData.effectDurationSeconds);
+                    return;
+
+                case EventEffectType.RandomBuffOrDebuff:
+                    double signedPercent = UnityEngine.Random.value < 0.5f
+                        ? -Mathf.Abs(eventData.effectMagnitudePercent)
+                        : Mathf.Abs(eventData.effectMagnitudePercent);
+                    currencyManager?.ApplyTemporaryAllMultiplierModifier(signedPercent, eventData.effectDurationSeconds);
+                    return;
+            }
         }
 
         private void SubscribeToGameTick()

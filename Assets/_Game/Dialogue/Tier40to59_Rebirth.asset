@@ -16,6 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: Everything go zero but multiplier stay! Smart! You smart!
-    Maybe!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: Rebirth logged. I used to love resets. Now they just feel
+    like the population getting a do-over too. I don't love that.
   displayDurationSeconds: 3

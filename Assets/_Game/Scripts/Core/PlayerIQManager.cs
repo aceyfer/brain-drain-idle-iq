@@ -29,6 +29,15 @@ namespace BrainDrain.Core
         private float playerIQ = StartingPlayerIQ;
         private int lastMilestoneIndex;
 
+        /// <summary>
+        /// Added 2026-06-21 for the God Tier Store's "24-Hour Corporate Cloak" -- extends the
+        /// offline-decay window (real hours before IQ reaches OfflineDecayFloor) by this many
+        /// hours. Starts at 0 (no effect on non-owners, identical to pre-existing behavior).
+        /// "Convenience not power" per the item's own description -- it doesn't raise the floor
+        /// or PlayerIQ itself, only how long the player has before reaching the existing floor.
+        /// </summary>
+        private float bonusOfflineDecayMaxHours;
+
         /// <summary>Convenient accessor routed through GameManager when available.</summary>
         public static PlayerIQManager Instance
         {
@@ -135,7 +144,16 @@ namespace BrainDrain.Core
             OnOfflineDecayApplied?.Invoke(amountLost);
         }
 
-        private static float ApplyOfflineDecay(float iq, DateTime lastActiveUtc)
+        /// <summary>Permanently extends the offline-decay window by this many hours. Used by GodTierStoreManager when the "24-Hour Corporate Cloak" is stub-purchased.</summary>
+        public void ExtendOfflineDecayWindow(float additionalHours)
+        {
+            if (additionalHours > 0f)
+            {
+                bonusOfflineDecayMaxHours += additionalHours;
+            }
+        }
+
+        private float ApplyOfflineDecay(float iq, DateTime lastActiveUtc)
         {
             if (iq <= OfflineDecayFloor)
             {
@@ -148,7 +166,8 @@ namespace BrainDrain.Core
                 return iq;
             }
 
-            float t = (float)Math.Min(1d, offlineHours / OfflineDecayMaxHours);
+            float effectiveMaxHours = OfflineDecayMaxHours + bonusOfflineDecayMaxHours;
+            float t = (float)Math.Min(1d, offlineHours / effectiveMaxHours);
             return Mathf.Lerp(iq, OfflineDecayFloor, t);
         }
 

@@ -21,8 +21,8 @@ namespace BrainDrain.UI
         [Header("Visibility Gate")]
         [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Hidden until pointsSpentUnlockThreshold is reached, then stays visible permanently (CumulativePointsSpentOnRestoration only ever increases).")]
         [SerializeField] private GameObject rebirthTriggerButton;
-        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button appears.")]
-        [SerializeField] private double pointsSpentUnlockThreshold = 1000d;
+        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button appears. Deliberately high (50,000, up from an earlier 1,000) so a player can't reach Rebirth within their first day -- see CLAUDE.md's 2026-06-21 rebalance notes.")]
+        [SerializeField] private double pointsSpentUnlockThreshold = 50000d;
 
         private void Awake()
         {
@@ -106,7 +106,8 @@ namespace BrainDrain.UI
             if (multiplierText != null && RebirthManager.Instance != null)
             {
                 double pending = RebirthManager.Instance.PendingMultiplierIncrease;
-                multiplierText.text = $"+{NumberFormatter.Format(pending)}x MULTIPLIER";
+                int nextTier = RebirthManager.Instance.RebirthCount + 1;
+                multiplierText.text = $"+{NumberFormatter.Format(pending)}x MULTIPLIER\nBECOME {RebirthManager.GetIllumisnottiTitle(nextTier).ToUpper()}";
             }
         }
 

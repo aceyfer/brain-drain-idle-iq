@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f8ff5f1ed81694457857bfb5b71cd4f1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Prefabs/Popup Canvas.prefab
+  uploadId: 881010

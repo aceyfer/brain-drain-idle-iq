@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 2d19951582345634bb61e310ed58c1a7
+timeCreated: 1505668461
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/FluentNodeHandlers/WriteHandler.cs
+  uploadId: 318165

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 55871e6fc74bc5244bb14280231e7b8c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 275260
+  packageName: Sprite Sheet Changer | Tool
+  packageVersion: 1.1
+  assetPath: Assets/SpritesheetChanger/Editor/SpritesheetChangerMenu.cs
+  uploadId: 706083

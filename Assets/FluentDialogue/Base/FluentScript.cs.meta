@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: f80dcee814ff6074394dfcc4f84c4a5c
+timeCreated: 1505325551
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 30069
+  packageName: Fluent Dialogue
+  packageVersion: 2.0
+  assetPath: Assets/FluentDialogue/Base/FluentScript.cs
+  uploadId: 318165

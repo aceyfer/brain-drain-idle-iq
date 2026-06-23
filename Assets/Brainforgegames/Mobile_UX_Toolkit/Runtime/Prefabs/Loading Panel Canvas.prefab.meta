@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 678561751a49d48d39e8c681d2385cfc
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 351304
+  packageName: Mobile UX Toolkit
+  packageVersion: 1.0.0
+  assetPath: Assets/Brainforgegames/Mobile_UX_Toolkit/Runtime/Prefabs/Loading Panel
+    Canvas.prefab
+  uploadId: 881010

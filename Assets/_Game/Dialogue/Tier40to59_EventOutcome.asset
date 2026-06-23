@@ -16,5 +16,8 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 3
   maxRebirthCount: 5
-  dialogueLine: Bad thing happen but also Brains? We take it! Yes!
+  minRestorationPercent: 31
+  maxRestorationPercent: 55
+  dialogueLine: Crisis "managed." Barely. They almost organized a committee.
+    A COMMITTEE.
   displayDurationSeconds: 3
