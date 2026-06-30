@@ -42,6 +42,9 @@ namespace BrainDrain.UI
             if (rebirthTriggerButton != null)
             {
                 rebirthTriggerButton.SetActive(true);
+                // Move above the full-screen MainTapButton (a transparent raycast target that
+                // would otherwise intercept every click aimed at this button).
+                rebirthTriggerButton.transform.SetAsLastSibling();
 
                 // Wire the trigger button to open the modal. RemoveListener first so a double-
                 // Awake (e.g. DontDestroyOnLoad scene reload) can't stack duplicate listeners.
@@ -153,15 +156,20 @@ namespace BrainDrain.UI
 
         public void OpenModal()
         {
-            if (rebirthModalPanel != null)
+            if (rebirthModalPanel == null)
             {
-                rebirthModalPanel.SetActive(true);
-                UpdateVisuals();
-
-                RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
-                CanvasGroup panelCanvasGroup = rebirthModalPanel.GetComponent<CanvasGroup>();
-                AnimationController.PlayPopupSpawn(panelRect, panelCanvasGroup);
+                Debug.LogWarning("[RebirthUIController] rebirthModalPanel is not assigned — cannot open The Snotting modal.", this);
+                return;
             }
+
+            // Ensure the modal renders above the trigger button and everything else.
+            rebirthModalPanel.transform.SetAsLastSibling();
+            rebirthModalPanel.SetActive(true);
+            UpdateVisuals();
+
+            RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
+            CanvasGroup panelCanvasGroup = rebirthModalPanel.GetComponent<CanvasGroup>();
+            AnimationController.PlayPopupSpawn(panelRect, panelCanvasGroup);
         }
 
         public void CloseModal()
