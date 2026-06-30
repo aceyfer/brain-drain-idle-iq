@@ -28131,6 +28131,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d402, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d403, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d404, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d405, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d406, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d407, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d408, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d409, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40a, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40b, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40c, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40d, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40e, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40f, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d410, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d411, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d412, type: 2}
   OnDialogueLine:
     m_PersistentCalls:
       m_Calls: []
@@ -33754,6 +33768,7 @@ GameObject:
   - component: {fileID: 504763767}
   - component: {fileID: 763822613}
   - component: {fileID: 799359081}
+  - component: {fileID: 1486179492}
   m_Layer: 0
   m_Name: _Systems
   m_TagString: Untagged
@@ -33866,11 +33881,103 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd3c15fe4c8cb0c41a73a1e8ea8a75ef, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.IllumisnottiManagerUI
   roundedRectSprite: {fileID: 21300000, guid: b5f78f3720ea80b4da08e54f2268135e, type: 3}
   vignetteSprite: {fileID: 21300000, guid: 3563b726aeddf7d47a8e3fe2d842d3ac, type: 3}
   fontAsset: {fileID: 11400000, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}
+--- !u!114 &1486179492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1486179485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e1e786afdfb95f48824311466143c23, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.RandomChatterManager
+  tierOneLines:
+  - My corndog fell out of my pocket again
+  - Oh no, my iguana drank my Stupaid
+  - I don't know what this is but I'm gonna sniff it
+  - Armadillo sauce goes with everything
+  - Snake utters taste better cold
+  - I found a Stupaid under the couch and it was still good
+  - They discontinued my favorite flavor, Cheese Dirt
+  - My left shoe has been making decisions for me
+  - I traded my refrigerator for a bucket of Stupaid
+  - The label says do not drink but it don't say why
+  - I been eating the same corndog since Tuesday
+  - Stupaid Zero still has the brain taste though
+  - My cat only responds to the Stupaid jingle
+  - I microwaved my Stupaid for forty minutes on accident
+  - They put something in the armadillo sauce and I want more of it
+  - This Stupaid is warm but honestly it hits different
+  - My corndog made a decision this morning and I respected it
+  - I don't read labels anymore, it only makes things worse
+  - Cheese Dirt changed my brain chemistry and I am not sorry
+  - My iguana and I share a Stupaid every morning, it is our thing
+  - Armadillo sauce was on sale so I bought the whole shelf
+  - I don't know who invented snake utters but I owe them something
+  - I woke up holding a corndog and I do not remember purchasing it
+  - I think the Stupaid is making decisions for me now and it is going okay
+  - I found a Stupaid under my seat and honestly that is a good day
+  tierTwoLines:
+  - The Illumisnotty put something in my Stupaid
+  - They're hiding the good corn from us
+  - I saw a shadow man near my mailbox again
+  - My microwave is reporting my thoughts to someone
+  - The Illumisnotty don't want you to know about snake utters
+  - Every time I think too hard my nose bleeds a little
+  - They cancelled that show because it was making us smart
+  - The Illumisnotty replaced my neighbor with a quieter one
+  - I stopped sleeping and now I can see the grid
+  - They put the mind control in the store brand not the name brand
+  - My dreams have been sponsored by someone I never agreed to
+  - The shadow people took my good Stupaid flavor
+  - I drew a map of their plan but then I ate it
+  - Every helicopter I see is looking specifically at me
+  - The Illumisnotty are scared of armadillo sauce and that's why it's rare
+  - The Illumisnotty own the factory that makes thinking seem hard
+  - My phone autocorrects my suspicions into brand loyalty
+  - They put something in the air that makes you not want to know things
+  - I read the whole label on the Stupaid once and then I could not sleep
+  - The Illumisnotty already know what I am going to eat before I do
+  - I found a frequency in my corndog and it was not natural
+  - Something is very wrong with the moon lately
+  - My brain has a popup ad and I do not remember installing it
+  - They replaced my mailman with one who does not look me in the eye
+  - The Illumisnotty do not want you thinking about snake utters too long
+  tierThreeLines:
+  - I don't know what the hell snake utters are but I bought twelve
+  - My corndog fell in the damn toilet and I had to think about it
+  - The Illumisnotty can kiss my ass, I found the good Stupaid
+  - What the hell is armadillo sauce and why does it taste like home
+  - I accidentally drank my iguana's Stupaid and honestly it slapped
+  - This bastard microwave keeps reporting my thoughts
+  - I don't know what I'm sniffing but I'll be damned if I stop
+  - The shadow man showed up again and I told him to get the hell out
+  - They discontinued Cheese Dirt flavor and I am so damn mad
+  - My left shoe told me to do something and I said hell no
+  - I traded my fridge for Stupaid and I'd do it again no question
+  - The Illumisnotty are hiding the good corn and that's bull
+  - I been eating this corndog for four days, damn thing won't end
+  - My cat only responds to profanity and the Stupaid jingle
+  - I drew their whole damn plan out and then I sat on it
+  - This warm Stupaid is genuinely the best thing I have ever had, what the hell
+  - I cannot stop eating snake utters and I refuse to explain myself
+  - My microwave and my phone are both reporting me and honestly fair enough
+  - Armadillo sauce is just better than everything, I do not know what to tell you
+  - The Illumisnotty replaced my neighbor and honestly the new one is quieter, good call
+  - I found the map I made of their plan and it was worse than I remembered, damn
+  - Every corndog I have had this week has been making eye contact with me
+  - I told the shadow man about the good Stupaid and now he will not leave
+  - What the hell is happening with the moon lately
+  - I bought every Cheese Dirt flavor before they discontinued it and I regret nothing
+  profanityUnlocked: 0
+  profanityEnabled: 0
 --- !u!1 &1493771991
 GameObject:
   m_ObjectHideFlags: 0
