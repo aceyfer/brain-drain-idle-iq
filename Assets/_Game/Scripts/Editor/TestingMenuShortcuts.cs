@@ -25,6 +25,37 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Force Rebirth")]
         private static void ForceRebirthMenuItem() => RequirePlayMode(DebugCheats.ForceRebirth);
 
+        [MenuItem("BrainDrain/Testing/Snotting Cycle Test")]
+        private static void SnottingCycleTestMenuItem() => RequirePlayMode(DebugCheats.RunSnottingCycleTest);
+
+        // ── Checkpoints ─────────────────────────────────────────────────────────────
+        // Reproducible test states. Each sets exact manager values without touching the
+        // save file. All gated behind RequirePlayMode like the other testing shortcuts.
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/Fresh Run")]
+        private static void CheckpointFreshRunMenuItem() => RequirePlayMode(DebugCheats.FreshRun);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/Snotting Ready")]
+        private static void CheckpointSnottingReadyMenuItem() => RequirePlayMode(DebugCheats.SnottingReady);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 1")]
+        private static void CheckpointAfterSnotting1MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting1);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 2")]
+        private static void CheckpointAfterSnotting2MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting2);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 3")]
+        private static void CheckpointAfterSnotting3MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting3);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 4")]
+        private static void CheckpointAfterSnotting4MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting4);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 5")]
+        private static void CheckpointAfterSnotting5MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting5);
+
+        [MenuItem("BrainDrain/Testing/Checkpoints/After Snotting 6")]
+        private static void CheckpointAfterSnotting6MenuItem() => RequirePlayMode(DebugCheats.AfterSnotting6);
+
         [MenuItem("BrainDrain/Testing/Unlock Snotting 50K")]
         private static void UnlockSnottingMenuItem() => RequirePlayMode(() =>
         {
