@@ -147,11 +147,6 @@ namespace BrainDrain.UI
                 }
             }
 
-            Debug.Log(
-                $"[RebirthUIController] ApplyTriggerButtonVisibility: " +
-                $"spent={spent:F0} threshold={pointsSpentUnlockThreshold:F0} unlocked={unlocked} " +
-                $"btnInteractable={btn?.interactable} " +
-                $"triggerActive={rebirthTriggerButton.activeSelf}");
         }
 
         public void OpenModal()
