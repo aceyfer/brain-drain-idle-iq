@@ -167,6 +167,17 @@ namespace BrainDrain.Systems
             ApplyStageForCumulativePoints(snapImmediately: true);
         }
 
+        /// <summary>
+        /// Zeroes all restoration progress on Snotting (Rebirth). Fires OnRestorationProgressChanged
+        /// so listeners (RebirthUIController's trigger button visibility) immediately re-evaluate.
+        /// </summary>
+        public void ResetProgress()
+        {
+            CumulativePointsSpentOnRestoration = 0d;
+            OnRestorationProgressChanged?.Invoke(CumulativePointsSpentOnRestoration);
+            ApplyStageForCumulativePoints(snapImmediately: true);
+        }
+
         private void ApplyStageForCumulativePoints(bool snapImmediately)
         {
             WorldRestorationStage resolved = ResolveStage(CumulativePointsSpentOnRestoration);

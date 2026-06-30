@@ -180,6 +180,17 @@ namespace BrainDrain.Core
             OnOfflineDecayApplied?.Invoke(amountLost);
         }
 
+        /// <summary>
+        /// Resets IQ to the fresh-run baseline (MinPlayerIQ = 1) on Snotting (Rebirth).
+        /// Also clears lastMilestoneIndex so milestones fire correctly in the new run.
+        /// </summary>
+        public void ResetForRebirth()
+        {
+            playerIQ = MinPlayerIQ;
+            lastMilestoneIndex = 0;
+            OnPlayerIQChanged?.Invoke(playerIQ);
+        }
+
         /// <summary>Permanently extends the offline-decay window by this many hours. Used by GodTierStoreManager when the "24-Hour Corporate Cloak" is stub-purchased.</summary>
         public void ExtendOfflineDecayWindow(float additionalHours)
         {

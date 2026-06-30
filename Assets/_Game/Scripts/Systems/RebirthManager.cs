@@ -75,6 +75,9 @@ namespace BrainDrain.Systems
 
             PlayerTapHandler.Instance?.AddTapMultiplier(FlatTapMultiplierBonusPerRebirth);
 
+            WorldRestorationManager.Instance?.ResetProgress();
+            BrainDrain.Core.PlayerIQManager.Instance?.ResetForRebirth();
+
             Debug.Log($"The Snotting #{RebirthCount} complete! You are now {GetIllumisnottiTitle(RebirthCount)}. Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate, and +{FlatTapMultiplierBonusPerRebirth:P0} to the tap multiplier.");
 
             GameManager.Instance?.RequestSave();

@@ -383,11 +383,10 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
-        /// Performs a full progression wipe: zeroes spendable and cumulative Brain Power and idle
-        /// BPPS (so reset building tiers stop contributing income), and permanently increases
-        /// the Brain Power, Cash, and Points-conversion rebirth bonuses. Cash/Points balances
-        /// themselves are intentionally left untouched -- only Brain Power and building tiers
-        /// reset on Rebirth per spec.
+        /// Performs a full prestige wipe: zeroes all current-run currency balances and income
+        /// rates, then permanently increases the Brain Power, Cash, and Points-conversion rebirth
+        /// bonuses. Shop multipliers (Cash Shop/Points Shop permanent purchases) are intentionally
+        /// preserved -- they are cross-run permanent upgrades, not current-run progression.
         /// </summary>
         public void ExecuteRebirth(double multiplierBonus, double cashMultiplierBonus, double pointsConversionRateBonus)
         {
@@ -398,9 +397,14 @@ namespace BrainDrain.Core
             brainPower = 0d;
             cumulativeBrainPower = 0d;
             idleBpps = 0d;
+            currentCash = 0d;
+            cashPerSecond = 0d;
+            currentPoints = 0d;
 
             OnBrainPowerChanged?.Invoke(brainPower);
             OnCumulativeBrainPowerChanged?.Invoke(cumulativeBrainPower);
+            OnCashChanged?.Invoke(currentCash);
+            OnPointsChanged?.Invoke(currentPoints);
         }
 
         /// <summary>
