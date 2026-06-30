@@ -278,7 +278,7 @@ namespace BrainDrain.Systems
             if (bubbleRt != null)
             {
                 bubbleRt.localScale = Vector3.one;
-                bubble.TrackPedestrian(pedestrian, pedestrianHeight + 40f);
+                bubble.TrackPedestrian(pedestrian, pedestrianHeight * 0.5f);
             }
 
             string line = RandomChatterManager.Instance != null ? RandomChatterManager.Instance.GetRandomLine() : "brains...";

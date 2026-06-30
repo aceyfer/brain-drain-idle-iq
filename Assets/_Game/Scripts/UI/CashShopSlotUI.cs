@@ -15,7 +15,7 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class CashShopSlotUI : MonoBehaviour
     {
-        private static readonly Color LockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
+        private static readonly Color LockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
         private static readonly Color AffordableColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
         private static readonly Color TooExpensiveColor = new Color32(0xFF, 0x00, 0x7F, 0xFF);
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
@@ -100,6 +100,15 @@ namespace BrainDrain.UI
             bool owned = boundManager.IsItemOwned(boundData);
             if (owned)
             {
+                if (nameText != null)
+                {
+                    string ownedPrefix = boundData.itemId == "profanity_pack"
+                        ? "<size=18><color=#00F0FF>ONE-TIME UNLOCK</color></size>"
+                        : "<size=18><color=#39FF14>ONE-TIME UPGRADE</color></size>";
+                    nameText.text = $"{ownedPrefix}\n{boundData.displayName}";
+                    nameText.fontSize = 32f;
+                }
+
                 if (descriptionText != null)
                 {
                     descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
@@ -133,7 +142,7 @@ namespace BrainDrain.UI
                 }
                 if (costText != null)
                 {
-                    costText.text = $"REBIRTH {boundData.gateRebirthCount} REQ";
+                    costText.text = $"CLASSIFIED — REBIRTH {boundData.gateRebirthCount} REQUIRED";
                     costText.fontSize = 28f; // Large font
                 }
                 ApplyAccent(LockedColor);
@@ -142,9 +151,21 @@ namespace BrainDrain.UI
             }
 
             bool affordable = currency != null && currency.CanAffordCash(boundData.cost);
+            if (nameText != null)
+            {
+                string availablePrefix = boundData.itemId == "profanity_pack"
+                    ? "<size=18><color=#00F0FF>ONE-TIME UNLOCK</color></size>"
+                    : "<size=18><color=#00F0FF>ONE-TIME UPGRADE</color></size>";
+                nameText.text = $"{availablePrefix}\n{boundData.displayName}";
+                nameText.fontSize = 32f;
+            }
+
             if (descriptionText != null)
             {
-                descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
+                string tradeoffNote = boundData.itemId == "profanity_pack"
+                    ? ""
+                    : "\n<size=16><color=#888888>Permanent boost — cash spent here won't convert to Points.</color></size>";
+                descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>{tradeoffNote}";
                 descriptionText.fontSize = 24f; // Large font
             }
             if (costText != null)

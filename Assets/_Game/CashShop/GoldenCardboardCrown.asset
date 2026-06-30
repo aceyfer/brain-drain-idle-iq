@@ -18,4 +18,4 @@ MonoBehaviour:
   cost: 10000
   gateRebirthCount: 0
   effectType: 0
-  effectPercent: 0.05
+  effectPercent: 0.15

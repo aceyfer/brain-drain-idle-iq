@@ -345,7 +345,10 @@ namespace BrainDrain.UI
         {
             if (playerIQText != null)
             {
-                playerIQText.text = $"IQ: {playerIQ:F0}";
+                if (playerIQ > 100f)
+                    playerIQText.text = $"IQ: {playerIQ:F0} <color=#FF8C00>OVERCHARGED</color>";
+                else
+                    playerIQText.text = $"IQ: {playerIQ:F0}";
             }
 
             int milestoneIndex = Mathf.FloorToInt(playerIQ / IQCelebrationMilestoneInterval);

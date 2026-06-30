@@ -630,10 +630,10 @@ namespace BrainDrain.Core
 
         /// <summary>
         /// Idle BPPS/CPS payout multiplier based on current PlayerIQ.
-        /// Maps IQ 1 → 0.25 (25% floor) and IQ 100 → 1.0 (full production), linearly.
-        /// IQ above 100 stays at 1.0 -- playing longer doesn't boost production above baseline.
-        /// On a fresh save (IQ=1) idle output is 25%; tapping restores IQ toward 100 and full
-        /// production. Tap income is untouched -- taps are how the player recovers IQ.
+        /// IQ 1→100: 25% floor rising to 100% (linear recovery curve).
+        /// IQ 100→200: Overcharged range, 100% rising to 125% (capped at 1.25).
+        /// Overcharged IQ comes from infrastructure spend and building purchases, not taps.
+        /// Tap income is untouched by this multiplier.
         /// </summary>
         private static double GetIQProductionMultiplier()
         {
@@ -643,8 +643,14 @@ namespace BrainDrain.Core
                 return 1d;
             }
 
-            float normalized = Mathf.InverseLerp(1f, 100f, iqManager.PlayerIQ);
-            return Mathf.Lerp(0.25f, 1f, normalized);
+            float iq = iqManager.PlayerIQ;
+            if (iq <= 100f)
+            {
+                return Mathf.Lerp(0.25f, 1f, Mathf.InverseLerp(1f, 100f, iq));
+            }
+
+            // Overcharged: extends to 1.25x at IQ 200, capped there.
+            return Mathf.Lerp(1f, 1.25f, Mathf.Clamp01(Mathf.InverseLerp(100f, 200f, iq)));
         }
     }
 }

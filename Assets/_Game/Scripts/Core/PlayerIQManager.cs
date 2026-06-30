@@ -20,6 +20,9 @@ namespace BrainDrain.Core
         /// <summary>Hard minimum for all IQ operations. Offline decay, events, and saves never push IQ below this.</summary>
         private const float MinPlayerIQ = 1f;
 
+        /// <summary>Overcharged IQ drains toward this baseline at OverchargeDecayPerSecond while the app is running.</summary>
+        private const float OverchargeDecayPerSecond = 0.1f;
+
         /// <summary>PlayerIQ never decays below this floor, no matter how long the app was closed.</summary>
         private const float OfflineDecayFloor = MinPlayerIQ;
 
@@ -40,6 +43,30 @@ namespace BrainDrain.Core
         /// or PlayerIQ itself, only how long the player has before reaching the existing floor.
         /// </summary>
         private float bonusOfflineDecayMaxHours;
+
+        private void Start()
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnSecondTick += DecayOvercharge;
+        }
+
+        private void OnDestroy()
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnSecondTick -= DecayOvercharge;
+        }
+
+        private void DecayOvercharge()
+        {
+            if (playerIQ <= StartingPlayerIQ)
+                return;
+
+            float previous = playerIQ;
+            playerIQ = Mathf.Max(StartingPlayerIQ, playerIQ - OverchargeDecayPerSecond);
+
+            if (!Mathf.Approximately(previous, playerIQ))
+                OnPlayerIQChanged?.Invoke(playerIQ);
+        }
 
         /// <summary>Convenient accessor routed through GameManager when available.</summary>
         public static PlayerIQManager Instance
