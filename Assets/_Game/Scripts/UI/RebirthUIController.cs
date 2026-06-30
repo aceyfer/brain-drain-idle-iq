@@ -182,12 +182,38 @@ namespace BrainDrain.UI
 
         private void UpdateVisuals()
         {
-            if (multiplierText != null && RebirthManager.Instance != null)
+            if (multiplierText == null || RebirthManager.Instance == null)
             {
-                double pending = RebirthManager.Instance.PendingMultiplierIncrease;
-                int nextTier = RebirthManager.Instance.RebirthCount + 1;
-                multiplierText.text = $"+{NumberFormatter.Format(pending)}x MULTIPLIER\nBECOME {RebirthManager.GetIllumisnottiTitle(nextTier).ToUpper()}";
+                return;
             }
+
+            int bpPct   = (int)(RebirthManager.Instance.PendingMultiplierIncrease     * 100);
+            int cashPct = (int)(RebirthManager.Instance.PendingCashMultiplierIncrease * 100);
+            int tapPct  = (int)(RebirthManager.Instance.PendingTapMultiplierIncrease  * 100);
+            int nextTier = RebirthManager.Instance.RebirthCount + 1;
+            string illumisnottiTitle = RebirthManager.GetIllumisnottiTitle(nextTier).ToUpper();
+
+            multiplierText.text =
+                "<b>THE SNOTTING</b>\n\n" +
+                "Prestige reset.\n" +
+                "Your current run gets wiped:\n" +
+                "BP, Cash, Points, Buildings, Restoration, IQ.\n\n" +
+                "You keep:\n" +
+                "Rank and permanent boosts.\n\n" +
+                "Reward:\n" +
+                $"+{bpPct}% Brain Power\n" +
+                $"+{cashPct}% Cash\n" +
+                $"+{tapPct}% Tap Power\n" +
+                "Better Cash → Points rate";
+
+            if (!string.IsNullOrEmpty(illumisnottiTitle))
+            {
+                multiplierText.text += $"\n\nBecoming: {illumisnottiTitle}";
+            }
+
+            multiplierText.enableAutoSizing = true;
+            multiplierText.fontSizeMin = 14f;
+            multiplierText.fontSizeMax = 26f;
         }
 
         private void OnConfirmClicked()

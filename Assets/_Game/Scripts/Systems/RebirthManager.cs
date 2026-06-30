@@ -37,6 +37,12 @@ namespace BrainDrain.Systems
         /// <summary>Permanent +5% global production bonus granted by each Rebirth.</summary>
         public double PendingMultiplierIncrease => FlatMultiplierBonusPerRebirth;
 
+        /// <summary>Permanent +10% Cash multiplier bonus granted by each Rebirth.</summary>
+        public double PendingCashMultiplierIncrease => FlatCashMultiplierBonusPerRebirth;
+
+        /// <summary>Permanent +5% tap payout multiplier bonus granted by each Rebirth.</summary>
+        public double PendingTapMultiplierIncrease => FlatTapMultiplierBonusPerRebirth;
+
         /// <summary>How many times the player has rebirthed this session.</summary>
         public int RebirthCount { get; private set; }
 
