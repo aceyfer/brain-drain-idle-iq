@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74b1aa9cfc7bcea41ad9eda65d8b6dc8, type: 3}
-  m_Name: TapWithoutPurchase_BuySomething
+  m_Name: BuildingPurchase_Compounding
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
-  triggerType: 5
+  triggerType: 1
   buildingName:
   minRebirthCount: 0
-  maxRebirthCount: 0
+  maxRebirthCount: 2147483647
   minRestorationPercent: 0
   maxRestorationPercent: 100
-  dialogueLine: Brain extraction confirmed. Now buy something before society notices.
+  dialogueLine: Compounding returns. The kind the Illumisnotty hoarded for themselves. Until now.
   displayDurationSeconds: 4

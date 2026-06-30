@@ -84,7 +84,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -7943285491464463122, guid: 50befc083ac09734f96d06ddddd6342e, type: 3}
+  m_Sprite: {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -135,7 +135,7 @@ MonoBehaviour:
   streetMinY: -2
   streetMaxY: 2
   stageSprites:
-  - {fileID: -7943285491464463122, guid: 50befc083ac09734f96d06ddddd6342e, type: 3}
+  - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
   - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
   - {fileID: 9057677870770557258, guid: b885268538ad7df418dfb39c04fc6295, type: 3}
   - {fileID: -8107581593755355517, guid: c1d314bb906bf0242b412e872761ddff, type: 3}

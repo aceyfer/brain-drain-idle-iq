@@ -126,7 +126,7 @@ namespace BrainDrain.UI
             if (bpToCashStatusText != null)
             {
                 bpToCashStatusText.text = $"Current BP: {NumberFormatter.Format(bp)}\nRate: 1,000 BP ➔ $1\nYields: ${NumberFormatter.Format(estimatedCash)}";
-                bpToCashStatusText.fontSize = 22f; // Large font
+                bpToCashStatusText.fontSize = 28f;
             }
 
             if (convertBPAmountButton != null)
@@ -136,7 +136,7 @@ namespace BrainDrain.UI
                 if (text != null)
                 {
                     text.text = $"CONVERT 50%\n(+${NumberFormatter.Format(estimatedCash * 0.5f)})";
-                    text.fontSize = 20f; // Large font
+                    text.fontSize = 24f;
                 }
             }
 
@@ -147,7 +147,7 @@ namespace BrainDrain.UI
                 if (text != null)
                 {
                     text.text = $"CONVERT 100%\n(+${NumberFormatter.Format(estimatedCash)})";
-                    text.fontSize = 20f; // Large font
+                    text.fontSize = 24f;
                 }
             }
 
@@ -173,7 +173,7 @@ namespace BrainDrain.UI
             if (cashToPointsStatusText != null)
             {
                 cashToPointsStatusText.text = $"Current $: ${NumberFormatter.Format(cash)}\nRate: $1 ➔ {rate:F2} Restoration Points\nYields: {NumberFormatter.Format(estimatedPoints)} Pts";
-                cashToPointsStatusText.fontSize = 22f;
+                cashToPointsStatusText.fontSize = 28f;
             }
 
             if (convertAllCashButton != null)
@@ -183,7 +183,7 @@ namespace BrainDrain.UI
                 if (text != null)
                 {
                     text.text = $"CONVERT ALL $\n(+{NumberFormatter.Format(estimatedPoints)} Pts)";
-                    text.fontSize = 20f;
+                    text.fontSize = 24f;
                 }
             }
         }

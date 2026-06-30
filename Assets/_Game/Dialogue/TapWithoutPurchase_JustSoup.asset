@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74b1aa9cfc7bcea41ad9eda65d8b6dc8, type: 3}
-  m_Name: TapWithoutPurchase_BuySomething
+  m_Name: TapWithoutPurchase_JustSoup
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 5
   buildingName:
@@ -18,5 +18,5 @@ MonoBehaviour:
   maxRebirthCount: 0
   minRestorationPercent: 0
   maxRestorationPercent: 100
-  dialogueLine: Brain extraction confirmed. Now buy something before society notices.
+  dialogueLine: Raw brain power is just soup until you weaponize it into infrastructure.
   displayDurationSeconds: 4

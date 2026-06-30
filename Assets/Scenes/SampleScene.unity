@@ -465,7 +465,7 @@ MonoBehaviour:
   baseTapBrainPower: 1
   tapMultiplier: 1
   currencyManager: {fileID: 0}
-  particleContainer: {fileID: 0}
+  particleContainer: {fileID: 1574612717}
   tapButtonVisual: {fileID: 0}
 --- !u!114 &20145561
 MonoBehaviour:
@@ -11054,10 +11054,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.9411765, b: 1, a: 1}
+  m_Color: {r: 0, g: 0.9411765, b: 1, a: 0.85}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -16012,7 +16012,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 350, y: 450}
+  m_SizeDelta: {x: 560, y: 580}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &650774494
 MonoBehaviour:
@@ -25316,12 +25316,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 16
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 10
-  m_fontSizeMax: 20
+  m_fontSizeMax: 24
   m_fontStyle: 2
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -28145,6 +28145,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d410, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d411, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d412, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d413, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d414, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d415, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d416, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d417, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d418, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d419, type: 2}
+  - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d41a, type: 2}
   OnDialogueLine:
     m_PersistentCalls:
       m_Calls: []
@@ -47201,7 +47209,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BackgroundPedestrianManager
   dystopianPedestrianSprites:
-  - {fileID: -7943285491464463122, guid: 50befc083ac09734f96d06ddddd6342e, type: 3}
+  - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
   - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
   - {fileID: 4181100336446859371, guid: e39b1bfcdcdac714f8b53ea865bcb29c, type: 3}
   - {fileID: 2040400924261930103, guid: 44a09f4a84c7ad143b45ec581617a987, type: 3}
@@ -47738,12 +47746,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24.6
-  m_fontSizeBase: 24
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 14
-  m_fontSizeMax: 28
+  m_fontSizeMax: 36
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512

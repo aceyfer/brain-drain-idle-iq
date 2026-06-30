@@ -45,7 +45,7 @@ namespace BrainDrain.UI
         [SerializeField] private CashShopSlotUI slotPrefab;
 
         private static readonly Color CompanionAffordableColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
-        private static readonly Color CompanionLockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
+        private static readonly Color CompanionLockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
         private static readonly Color CompanionMaxedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
 
         private readonly List<CashShopSlotUI> spawnedSlots = new(8);

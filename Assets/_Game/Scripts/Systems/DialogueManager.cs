@@ -27,7 +27,7 @@ namespace BrainDrain.Systems
     {
         private const int MaxQueueDepth = 2;
         private const float DefaultDisplayDurationSeconds = 3f;
-        private const int TapsWithoutPurchaseThreshold = 10;
+        private const int TapsWithoutPurchaseThreshold = 25;
         private const double SnottingReadyThreshold = 50_000d;
 
         /// <summary>One line ready to display, regardless of whether it came from the NarratorLine pool or was injected directly.</summary>
