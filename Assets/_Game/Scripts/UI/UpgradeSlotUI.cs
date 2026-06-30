@@ -13,7 +13,7 @@ namespace BrainDrain.UI
     public sealed class UpgradeSlotUI : MonoBehaviour
     {
         // Calmer, professional, non-flashy palette.
-        private static readonly Color LockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
+        private static readonly Color LockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
         private static readonly Color AffordableColor = new Color32(0x2E, 0x7D, 0x32, 0xFF); // Matte dark green
         private static readonly Color TooExpensiveColor = new Color32(0x7F, 0x8C, 0x8D, 0xFF); // Matte grey or muted slate
 
@@ -123,7 +123,7 @@ namespace BrainDrain.UI
                 {
                     descriptionText.text = "Access restricted by the Ministry.";
                 }
-                descriptionText.fontSize = 24f;
+                descriptionText.fontSize = 26f;
             }
 
             if (!unlocked)
@@ -187,7 +187,12 @@ namespace BrainDrain.UI
 
             if (nameText != null)
             {
-                nameText.color = accent;
+                nameText.color = Color.white;
+            }
+
+            if (descriptionText != null)
+            {
+                descriptionText.color = Color.white;
             }
 
             if (costText != null)

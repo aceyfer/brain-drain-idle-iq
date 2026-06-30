@@ -194,7 +194,15 @@ namespace BrainDrain.Systems
                 }
             }
 
-            Sprite selectedSprite = activePool[Random.Range(0, activePool.Length)];
+            // Filter out null/missing sprite references before picking — a null sprite assigned to
+            // a UI Image renders as a solid white rectangle, which is the recurring "white box" bug.
+            Sprite[] validPool = System.Array.FindAll(activePool, s => s != null);
+            if (validPool.Length == 0)
+            {
+                Debug.LogWarning("[BackgroundPedestrianManager] All sprites in active pool are null or unloaded — skipping spawn.", this);
+                return;
+            }
+            Sprite selectedSprite = validPool[Random.Range(0, validPool.Length)];
 
             // Create UI GameObject
             var pedGo = new GameObject("Pedestrian", typeof(RectTransform));
