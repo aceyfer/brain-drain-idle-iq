@@ -28,6 +28,7 @@ namespace BrainDrain.Systems
         private const int MaxQueueDepth = 2;
         private const float DefaultDisplayDurationSeconds = 3f;
         private const int TapsWithoutPurchaseThreshold = 10;
+        private const double SnottingReadyThreshold = 50_000d;
 
         /// <summary>One line ready to display, regardless of whether it came from the NarratorLine pool or was injected directly.</summary>
         private readonly struct DialogueEntry
@@ -81,6 +82,8 @@ namespace BrainDrain.Systems
         private NarratorLine lastPlayedLine;
         private int tapsSinceLastPurchase;
         private Coroutine activeDisplayCoroutine;
+        private bool hasSeenFirstRestore;
+        private bool hasSeenSnottingReady;
 
         private void Awake()
         {
@@ -120,6 +123,8 @@ namespace BrainDrain.Systems
                 currencyManager.OnFirstBrainPowerEarned += HandleFirstTap;
                 currencyManager.OnCashConverted -= HandleCashConverted;
                 currencyManager.OnCashConverted += HandleCashConverted;
+                currencyManager.OnFirstCashEarned -= HandleFirstCashEarned;
+                currencyManager.OnFirstCashEarned += HandleFirstCashEarned;
             }
 
             UpgradeManager upgradeManager = UpgradeManager.Instance;
@@ -156,6 +161,14 @@ namespace BrainDrain.Systems
                 tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
                 tapHandler.OnTapRewardEarned += HandleTapRewardEarned;
             }
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                WorldRestorationManager.Instance.OnRestorationProgressChanged += HandleRestorationProgressChanged;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
+                WorldRestorationManager.Instance.OnRestorationStageChanged += HandleRestorationStageChanged;
+            }
         }
 
         private void UnsubscribeFromEvents()
@@ -165,6 +178,7 @@ namespace BrainDrain.Systems
             {
                 currencyManager.OnFirstBrainPowerEarned -= HandleFirstTap;
                 currencyManager.OnCashConverted -= HandleCashConverted;
+                currencyManager.OnFirstCashEarned -= HandleFirstCashEarned;
             }
 
             UpgradeManager upgradeManager = UpgradeManager.Instance;
@@ -194,6 +208,12 @@ namespace BrainDrain.Systems
             if (tapHandler != null)
             {
                 tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
+            }
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
             }
         }
 
@@ -231,6 +251,35 @@ namespace BrainDrain.Systems
         private void HandleOfflineDecayApplied(float amountLost)
         {
             TryFireLine(NarratorTriggerType.OfflineDecayReturn, null);
+        }
+
+        private void HandleFirstCashEarned()
+        {
+            TryFireLine(NarratorTriggerType.FirstCashEarned, null);
+        }
+
+        private void HandleRestorationProgressChanged(double cumulativeSpent)
+        {
+            if (!hasSeenFirstRestore && cumulativeSpent > 0d)
+            {
+                hasSeenFirstRestore = true;
+                TryFireLine(NarratorTriggerType.FirstRestoreSpend, null);
+            }
+            else if (!hasSeenSnottingReady && cumulativeSpent >= SnottingReadyThreshold)
+            {
+                hasSeenSnottingReady = true;
+                TryFireLine(NarratorTriggerType.SnottingReady, null);
+            }
+        }
+
+        private void HandleRestorationStageChanged(WorldRestorationStage stage)
+        {
+            if (stage == null || stage.pointsRequired <= 0d)
+            {
+                return;
+            }
+
+            TryFireLine(NarratorTriggerType.RestorationStageChange, null);
         }
 
         /// <summary>Counts taps since the last building purchase; fires every TapsWithoutPurchaseThreshold taps as long as the player keeps tapping without buying anything.</summary>

@@ -222,17 +222,8 @@ namespace BrainDrain.UI
         {
             if (badgeText != null)
             {
-                badgeText.text = "RANK: " + GetTitle(rebirthCount);
+                badgeText.text = "RANK: " + RebirthManager.GetIllumisnottiTitle(rebirthCount);
             }
-        }
-
-        private string GetTitle(int rebirthCount)
-        {
-            if (rebirthCount >= 11) return "BUNKER SUPREME";
-            if (rebirthCount >= 6) return "ILLUMINOSNOTTI INTERN";
-            if (rebirthCount >= 4) return "BUNKER BUREAUCRAT";
-            if (rebirthCount >= 2) return "UNDER-SNOT ELITE";
-            return "SNOTTY ROOKIE";
         }
 
         private void HandleRandomEventTriggered(BrainRotEventData eventData)

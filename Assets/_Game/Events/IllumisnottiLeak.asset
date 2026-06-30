@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff254d3afae4a28ccf1d94d930f911e8, type: 3}
   m_Name: IllumisnottiLeak
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BrainRotEventData
-  eventTitle: Illumisnotti Leak
+  eventTitle: Illumisnotty Leak
   eventDescription: Someone left their offshore account unlocked. How unfortunate for them.
   choiceButtonText: Take It
   brainPowerRewardOrPenalty: 0

@@ -54,7 +54,30 @@ namespace BrainDrain.UI
         private void Awake()
         {
             if (openButton != null) openButton.onClick.AddListener(OpenShop);
-            if (closeButton != null) closeButton.onClick.AddListener(CloseShop);
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveListener(CloseShop);
+                closeButton.onClick.AddListener(CloseShop);
+
+                // Enforce close button size and anchoring programmatically
+                RectTransform closeRT = closeButton.GetComponent<RectTransform>();
+                if (closeRT != null)
+                {
+                    closeRT.anchorMin = new Vector2(1f, 1f);
+                    closeRT.anchorMax = new Vector2(1f, 1f);
+                    closeRT.pivot = new Vector2(1f, 1f);
+                    closeRT.sizeDelta = new Vector2(80f, 80f);
+                    closeRT.anchoredPosition = new Vector2(-20f, -20f);
+                }
+
+                UnityEngine.UI.Image img = closeButton.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                {
+                    img.raycastTarget = true;
+                }
+
+                closeButton.transform.SetAsLastSibling();
+            }
             if (companionBuyButton != null) companionBuyButton.onClick.AddListener(HandleCompanionBuyClicked);
 
             if (shopPanel != null)
@@ -162,6 +185,12 @@ namespace BrainDrain.UI
                 companionManager.OnTierChanged -= HandleCompanionTierChanged;
                 companionManager.OnTierChanged += HandleCompanionTierChanged;
             }
+
+            if (RandomChatterManager.Instance != null)
+            {
+                RandomChatterManager.Instance.OnProfanitySettingsChanged -= RefreshAll;
+                RandomChatterManager.Instance.OnProfanitySettingsChanged += RefreshAll;
+            }
         }
 
         private void UnsubscribeFromEvents()
@@ -179,6 +208,11 @@ namespace BrainDrain.UI
             if (companionManager != null)
             {
                 companionManager.OnTierChanged -= HandleCompanionTierChanged;
+            }
+
+            if (RandomChatterManager.Instance != null)
+            {
+                RandomChatterManager.Instance.OnProfanitySettingsChanged -= RefreshAll;
             }
         }
 
@@ -212,7 +246,7 @@ namespace BrainDrain.UI
             if (next == null)
             {
                 // All 6 tiers owned.
-                if (companionQuoteText != null) companionQuoteText.text = "SHE IS THE ILLUMISNOTTI NOW.";
+                if (companionQuoteText != null) companionQuoteText.text = "SHE IS THE ILLUMISNOTTI NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
                 if (companionCostText != null) companionCostText.text = "MAXED";
                 if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
                 ApplyCompanionAccent(CompanionMaxedColor);
@@ -222,7 +256,7 @@ namespace BrainDrain.UI
 
             bool gateMet = companionManager.IsNextTierGateMet();
             if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
-            if (companionQuoteText != null) companionQuoteText.text = next.quote;
+            if (companionQuoteText != null) companionQuoteText.text = $"{next.quote}\n<color=#00F0FF><font-weight=bold>Effect: +{next.cashPerSecondPercent * 100f:F0}% Cash/sec</font-weight></color>";
 
             if (!gateMet)
             {

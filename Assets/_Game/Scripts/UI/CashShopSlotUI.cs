@@ -46,7 +46,21 @@ namespace BrainDrain.UI
 
         private void HandleBuyClicked()
         {
-            boundManager?.TryPurchaseItem(boundData);
+            if (boundData != null && boundData.itemId == "profanity_pack" && boundManager != null && boundManager.IsItemOwned(boundData))
+            {
+                if (RandomChatterManager.Instance != null)
+                {
+                    RandomChatterManager.Instance.ToggleProfanity(!RandomChatterManager.Instance.ProfanityEnabled);
+                    SaveManager.Instance?.SaveGame();
+                }
+            }
+            else
+            {
+                if (boundManager != null && boundManager.TryPurchaseItem(boundData))
+                {
+                    SaveManager.Instance?.SaveGame();
+                }
+            }
         }
 
         public void RefreshState(CurrencyManager currency)
@@ -59,31 +73,85 @@ namespace BrainDrain.UI
             if (nameText != null)
             {
                 nameText.text = boundData.displayName;
+                nameText.fontSize = 32f; // Large font
+            }
+
+            string bonusText = "";
+            if (boundData.itemId == "profanity_pack")
+            {
+                bonusText = "Unlocks profanity chatter toggle";
+            }
+            else
+            {
+                switch (boundData.effectType)
+                {
+                    case CashShopEffectType.BrainPowerTapPercent:
+                        bonusText = $"+{boundData.effectPercent * 100f:F0}% Tap Power";
+                        break;
+                    case CashShopEffectType.CashPerSecondPercent:
+                        bonusText = $"+{boundData.effectPercent * 100f:F0}% Cash/sec";
+                        break;
+                    case CashShopEffectType.AllMultipliersPercent:
+                        bonusText = $"+{boundData.effectPercent * 100f:F0}% All Multipliers";
+                        break;
+                }
             }
 
             bool owned = boundManager.IsItemOwned(boundData);
             if (owned)
             {
-                if (descriptionText != null) descriptionText.text = boundData.description;
-                if (costText != null) costText.text = "OWNED";
+                if (descriptionText != null)
+                {
+                    descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
+                    descriptionText.fontSize = 24f; // Large font
+                }
+                if (costText != null)
+                {
+                    if (boundData.itemId == "profanity_pack")
+                    {
+                        bool enabled = RandomChatterManager.Instance != null && RandomChatterManager.Instance.ProfanityEnabled;
+                        costText.text = enabled ? "PROFANITY: ON" : "PROFANITY: OFF";
+                    }
+                    else
+                    {
+                        costText.text = "OWNED";
+                    }
+                    costText.fontSize = 28f; // Large font
+                }
                 ApplyAccent(OwnedColor);
-                if (buyButton != null) buyButton.interactable = false;
+                if (buyButton != null) buyButton.interactable = (boundData.itemId == "profanity_pack");
                 return;
             }
 
             bool unlocked = boundManager.IsItemUnlocked(boundData);
             if (!unlocked)
             {
-                if (descriptionText != null) descriptionText.text = "Access restricted by the Snotty Council.";
-                if (costText != null) costText.text = $"REBIRTH {boundData.gateRebirthCount} REQUIRED";
+                if (descriptionText != null)
+                {
+                    descriptionText.text = "Access restricted by the Snotty Council.";
+                    descriptionText.fontSize = 24f; // Large font
+                }
+                if (costText != null)
+                {
+                    costText.text = $"REBIRTH {boundData.gateRebirthCount} REQ";
+                    costText.fontSize = 28f; // Large font
+                }
                 ApplyAccent(LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
             }
 
             bool affordable = currency != null && currency.CanAffordCash(boundData.cost);
-            if (descriptionText != null) descriptionText.text = boundData.description;
-            if (costText != null) costText.text = $"{NumberFormatter.Format(boundData.cost)} CASH";
+            if (descriptionText != null)
+            {
+                descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
+                descriptionText.fontSize = 24f; // Large font
+            }
+            if (costText != null)
+            {
+                costText.text = $"${NumberFormatter.Format(boundData.cost)}";
+                costText.fontSize = 28f; // Large font
+            }
             ApplyAccent(affordable ? AffordableColor : TooExpensiveColor);
             if (buyButton != null) buyButton.interactable = true;
         }
@@ -91,8 +159,8 @@ namespace BrainDrain.UI
         private void ApplyAccent(Color accent)
         {
             if (background != null) background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
-            if (nameText != null) nameText.color = accent;
-            if (costText != null) costText.color = accent;
+            if (nameText != null) nameText.color = Color.white; // Stable white for readability
+            if (costText != null) costText.color = new Color(1f, 0.92f, 0.016f, 1f); // Warm stable gold for cost
         }
     }
 }

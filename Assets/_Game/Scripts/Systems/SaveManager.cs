@@ -58,6 +58,10 @@ namespace BrainDrain.Systems
         public bool holographicTrashCanFlexOwned;
         public float offlineExtensionHoursGranted;
 
+        // -- Profanity Dialogue Pack persisted state --
+        public bool profanityUnlocked;
+        public bool profanityEnabled;
+
         /// <summary>
         /// The four CurrencyManager shop-multiplier aggregates (ShopCashMultiplier/
         /// ShopAllMultiplier/ShopCashToPointsMultiplier/ShopAllPointGainsMultiplier), saved
@@ -259,10 +263,19 @@ namespace BrainDrain.Systems
                 if (data.shopAllMultiplier <= 0d) data.shopAllMultiplier = 1d;
                 if (data.shopCashToPointsMultiplier <= 0d) data.shopCashToPointsMultiplier = 1d;
                 if (data.shopAllPointGainsMultiplier <= 0d) data.shopAllPointGainsMultiplier = 1d;
+                if (data.pointsConversionRate <= 0d) data.pointsConversionRate = 0.1d;
 
                 data.cashShopOwnedItemIds ??= new List<string>();
                 data.pointsShopOwnedItemIds ??= new List<string>();
                 data.godTierStoreOwnedItemIds ??= new List<string>();
+
+                // Migration fallback for Profanity Dialogue Pack:
+                // If loaded save data doesn't have profanity unlocked, check if it was previously unlocked in PlayerPrefs.
+                if (!data.profanityUnlocked && PlayerPrefs.GetInt("BrainDrain_ProfanityUnlocked", 0) == 1)
+                {
+                    data.profanityUnlocked = true;
+                    data.profanityEnabled = PlayerPrefs.GetInt("BrainDrain_ProfanityEnabled", 0) == 1;
+                }
 
                 LoadedData = data;
             }
@@ -328,6 +341,12 @@ namespace BrainDrain.Systems
             if (CompanionManager.Instance != null)
             {
                 data.hotChickCount = CompanionManager.Instance.HotChickCount;
+            }
+
+            if (RandomChatterManager.Instance != null)
+            {
+                data.profanityUnlocked = RandomChatterManager.Instance.ProfanityUnlocked;
+                data.profanityEnabled = RandomChatterManager.Instance.ProfanityEnabled;
             }
 
             if (CashShopManager.Instance != null)
@@ -397,6 +416,11 @@ namespace BrainDrain.Systems
 
             data.lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+            if (LoadedData.firstLaunchUnixSeconds != 0)
+            {
+                data.firstLaunchUnixSeconds = LoadedData.firstLaunchUnixSeconds;
+            }
+
             LoadedData = data;
 
             try
@@ -462,6 +486,10 @@ namespace BrainDrain.Systems
                 File.Delete(SaveFilePath);
             }
 
+            PlayerPrefs.DeleteKey("BrainDrain_ProfanityUnlocked");
+            PlayerPrefs.DeleteKey("BrainDrain_ProfanityEnabled");
+            PlayerPrefs.Save();
+
             LoadedData = CreateDefaultData();
         }
 
@@ -523,6 +551,7 @@ namespace BrainDrain.Systems
             WardrobeManager.Instance?.LoadState(data.equippedOutfitId);
             PlayerTapHandler.Instance?.SetTapMultiplier(data.tapMultiplier);
             CashShopManager.Instance?.LoadState(data.cashShopOwnedItemIds);
+            RandomChatterManager.Instance?.LoadState(data.profanityUnlocked, data.profanityEnabled);
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
@@ -586,7 +615,7 @@ namespace BrainDrain.Systems
                 cumulativeBrains = 0d,
                 rebirthMultiplier = 1d,
                 rebirthCount = 0,
-                playerIQ = 100f,
+                playerIQ = 1f,
                 buildingLevels = new List<BuildingSaveEntry>(),
                 currentCash = 0d,
                 cashMultiplier = 1d,
@@ -607,6 +636,8 @@ namespace BrainDrain.Systems
                 illumisnottiMembershipCardOwned = false,
                 holographicTrashCanFlexOwned = false,
                 offlineExtensionHoursGranted = 0f,
+                profanityUnlocked = false,
+                profanityEnabled = false,
                 shopCashMultiplier = 1d,
                 shopAllMultiplier = 1d,
                 shopCashToPointsMultiplier = 1d,

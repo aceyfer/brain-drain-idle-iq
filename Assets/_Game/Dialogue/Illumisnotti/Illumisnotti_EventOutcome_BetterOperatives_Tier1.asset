@@ -16,6 +16,6 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Illumisnotti event resolved. They're sending better operatives
+  dialogueLine: Illumisnotty event resolved. They're sending better operatives
     now. Still bad. Just less bad.
   displayDurationSeconds: 3

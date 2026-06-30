@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 using BrainDrain.Systems;
+using BrainDrain.UI;
 
 namespace BrainDrain.EditorTools
 {
@@ -23,6 +24,16 @@ namespace BrainDrain.EditorTools
 
         [MenuItem("BrainDrain/Testing/Force Rebirth")]
         private static void ForceRebirthMenuItem() => RequirePlayMode(DebugCheats.ForceRebirth);
+
+        [MenuItem("BrainDrain/Testing/Unlock Snotting 50K")]
+        private static void UnlockSnottingMenuItem() => RequirePlayMode(() =>
+        {
+            DebugCheats.UnlockSnotting();
+            UnityEngine.Object.FindAnyObjectByType<RebirthUIController>()?.RefreshTriggerButton();
+        });
+
+        [MenuItem("BrainDrain/Testing/Open Debug Cheat Panel")]
+        private static void OpenDebugCheatPanel() => RequirePlayMode(() => DebugCheatPanel.Instance.ShowPanel());
 
         [MenuItem("BrainDrain/Testing/Reset Save")]
         private static void ResetSaveMenuItem() => DebugCheats.ClearSave();

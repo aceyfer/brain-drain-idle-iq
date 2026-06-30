@@ -16,6 +16,6 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 6
   maxRebirthCount: 10
-  dialogueLine: Illumisnotti event, resolved, by you, the way an Illumisnotti
+  dialogueLine: Illumisnotty event, resolved, by you, the way an Illumisnotty
     would resolve it. Casually. Permanently. I need a minute.
   displayDurationSeconds: 3

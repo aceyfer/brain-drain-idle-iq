@@ -1,5 +1,13 @@
 {
   "dependencies": {
+    "app.rive.rive-unity": {
+      "version": "file:app.rive.rive-unity",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.shadergraph": "14.0.11"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "14.0.4",
       "depth": 0,
@@ -100,7 +108,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ai.assistant": {
-      "version": "2.12.0-pre.2",
+      "version": "2.13.0-pre.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using UnityEditor;
+using BrainDrain.Core;
 using BrainDrain.Systems;
 
 namespace BrainDrain.UI
@@ -133,6 +135,12 @@ namespace BrainDrain.UI
             EditorPrefs.SetBool(PanelOpenEditorPrefsKey, visible);
         }
 
+        /// <summary>
+        /// Opens the cheat panel programmatically (e.g. from the BrainDrain/Testing menu)
+        /// without requiring the triple-tap trigger on the IQ text.
+        /// </summary>
+        public void ShowPanel() => SetPanelVisible(true);
+
         // ===================== Panel construction =====================
 
         private void BuildPanel(RectTransform canvasRect)
@@ -200,6 +208,13 @@ namespace BrainDrain.UI
 
             BuildWorldRestoreRow(contentObject.transform);
 
+            CreateButton(contentObject.transform, "UNLOCK SNOTTING (50K)", () =>
+            {
+                DebugCheats.UnlockSnotting();
+                FindAnyObjectByType<RebirthUIController>()?.RefreshTriggerButton();
+            });
+
+            CreateButton(contentObject.transform, "LOG CLICK BLOCKERS", LogClickBlockers);
             CreateButton(contentObject.transform, "CLEAR SAVE (FRESH START)", DebugCheats.ClearSave);
             CreateButton(contentObject.transform, "CLOSE", () => SetPanelVisible(false));
         }
@@ -226,14 +241,76 @@ namespace BrainDrain.UI
             rowLayout.childControlHeight = true;
 
             LayoutElement rowElement = rowObject.AddComponent<LayoutElement>();
-            rowElement.minHeight = 36f;
-            rowElement.preferredHeight = 36f;
+            rowElement.minHeight = 44f;
+            rowElement.preferredHeight = 44f;
+
+            double snottingThreshold = FindAnyObjectByType<RebirthUIController>()?.SnottingUnlockThreshold ?? 50000d;
 
             for (int i = 0; i < stages.Count; i++)
             {
                 double threshold = stages[i].pointsRequired;
-                CreateButton(rowObject.transform, (i + 1).ToString(), () => DebugCheats.JumpToWorldRestorationStage(threshold));
+                string label = threshold < 1d ? "0" : NumberFormatter.Format(threshold);
+                if (System.Math.Abs(threshold - snottingThreshold) < 1d)
+                {
+                    label += "\nSNOTTING";
+                }
+                CreateButton(rowObject.transform, label, () => DebugCheats.JumpToWorldRestorationStage(threshold));
             }
+        }
+
+        private void LogClickBlockers()
+        {
+            RebirthUIController rebirthUI = FindAnyObjectByType<RebirthUIController>();
+            if (rebirthUI == null)
+            {
+                Debug.LogWarning("[DebugCheatPanel] LogClickBlockers: No RebirthUIController found in scene.");
+                return;
+            }
+
+            GameObject triggerBtn = rebirthUI.TriggerButtonObject;
+            if (triggerBtn == null)
+            {
+                Debug.LogWarning("[DebugCheatPanel] LogClickBlockers: RebirthUIController.rebirthTriggerButton is null.");
+                return;
+            }
+
+            RectTransform rt = triggerBtn.GetComponent<RectTransform>();
+            if (rt == null)
+            {
+                Debug.LogWarning("[DebugCheatPanel] LogClickBlockers: Snotting button has no RectTransform.");
+                return;
+            }
+
+            Vector3[] corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            // Average bottom-left and top-right corners for center
+            Vector3 worldCenter = (corners[0] + corners[2]) * 0.5f;
+
+            Canvas canvas = triggerBtn.GetComponentInParent<Canvas>();
+            Camera uiCamera = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                ? canvas.worldCamera
+                : null;
+            Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(uiCamera, worldCenter);
+
+            PointerEventData ped = new PointerEventData(EventSystem.current) { position = screenPos };
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(ped, results);
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[DebugCheatPanel] Click blockers at Snotting button screen pos {screenPos} (triggerActive={triggerBtn.activeSelf}):");
+            if (results.Count == 0)
+            {
+                sb.AppendLine("  (no hits — nothing intercepting at that position)");
+            }
+            else
+            {
+                for (int i = 0; i < results.Count; i++)
+                {
+                    RaycastResult r = results[i];
+                    sb.AppendLine($"  [{i}] \"{r.gameObject.name}\"  depth={r.depth}  dist={r.distance:F2}  sortOrder={r.sortingOrder}");
+                }
+            }
+            Debug.Log(sb.ToString());
         }
 
         private static void CreateLabel(Transform parent, string text, float fontSize)

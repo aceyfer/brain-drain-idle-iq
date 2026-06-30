@@ -103,7 +103,7 @@ namespace BrainDrain.Systems
                 case 2: return "Regional Snott Manager";
                 case 3: return "Vice President of Snottery";
                 case 4: return "Lord Snott (Provisional)";
-                case 5: return "Grand Illumisnotti";
+                case 5: return "Grand Illumisnotty";
                 default: return "Supreme Snott Eternal";
             }
         }

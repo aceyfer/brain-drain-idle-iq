@@ -19,12 +19,15 @@ namespace BrainDrain.UI
     public sealed class DialogueDisplayUI : MonoBehaviour
     {
         private const float SlideDurationSeconds = 0.3f;
+        private const float MinFontSize = 24f;
 
         [Header("Panel")]
         [SerializeField] private RectTransform panelRect;
         [SerializeField] private TextMeshProUGUI lineText;
-        [Tooltip("64x64 narrator portrait slot. No art assigned yet -- placeholder until assets arrive.")]
+        [Tooltip("Compact narrator portrait slot (90×90).")]
         [SerializeField] private Image avatarImage;
+        [Tooltip("Optional. Tap to dismiss the current dialogue line early.")]
+        [SerializeField] private Button closeButton;
 
         [Header("RebirthCount Font Degradation")]
         [Tooltip("Optional. Swapped in at RebirthCount 6+ as a 'Comic Sans equivalent'. Left unassigned until a real font asset is sourced -- size/spacing degrade regardless.")]
@@ -38,10 +41,10 @@ namespace BrainDrain.UI
 
         private void Awake()
         {
+            Debug.Log("[DialogueDisplayUI] Awake() entered. panelRect: " + (panelRect != null ? panelRect.name : "null"));
             if (panelRect != null)
             {
                 restingPosition = panelRect.anchoredPosition;
-                panelRect.gameObject.SetActive(false);
 
                 // Find or add a dedicated Outline for the Hot Pink glow
                 Outline[] outlines = panelRect.GetComponents<Outline>();
@@ -58,16 +61,23 @@ namespace BrainDrain.UI
                     glowOutline.effectColor = new Color(1f, 0.078f, 0.576f, 0f); // Hot Pink, transparent initially
                     glowOutline.effectDistance = Vector2.zero;
                 }
+
+                // Position offscreen on startup instead of deactivating the GameObject
+                panelRect.anchoredPosition = restingPosition - new Vector2(panelRect.rect.width, 0f);
             }
 
             if (lineText != null)
             {
                 defaultFontAsset = lineText.font;
             }
-        }
 
-        private void Start()
-        {
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveListener(DismissNow);
+                closeButton.onClick.AddListener(DismissNow);
+            }
+
+            // Register listeners in Awake before deactivating the GameObject, ensuring they are bound
             if (DialogueManager.Instance != null)
             {
                 DialogueManager.Instance.OnDialogueLine.AddListener(HandleDialogueLine);
@@ -77,10 +87,6 @@ namespace BrainDrain.UI
             {
                 COGSPortraitController.Instance.OnStageChanged.AddListener(HandleStageChanged);
 
-                // Covers both Start() orderings: if COGSPortraitController already resolved its
-                // initial stage before this ran, apply it now. If not, the listener above will
-                // catch it once COGSPortraitController.Start() runs (still within Awake-then-
-                // Start ordering guarantees for the same frame).
                 if (COGSPortraitController.Instance.CurrentStage != null)
                 {
                     HandleStageChanged(COGSPortraitController.Instance.CurrentStage);
@@ -90,14 +96,17 @@ namespace BrainDrain.UI
 
         private void OnDestroy()
         {
-            if (DialogueManager.Instance != null)
+            // Only unregister if the singleton instances actually exist during shutdown to prevent leaks
+            var dialogueManager = FindAnyObjectByType<DialogueManager>();
+            if (dialogueManager != null)
             {
-                DialogueManager.Instance.OnDialogueLine.RemoveListener(HandleDialogueLine);
+                dialogueManager.OnDialogueLine.RemoveListener(HandleDialogueLine);
             }
 
-            if (COGSPortraitController.Instance != null)
+            var portraitController = FindAnyObjectByType<COGSPortraitController>();
+            if (portraitController != null)
             {
-                COGSPortraitController.Instance.OnStageChanged.RemoveListener(HandleStageChanged);
+                portraitController.OnStageChanged.RemoveListener(HandleStageChanged);
             }
         }
 
@@ -107,6 +116,44 @@ namespace BrainDrain.UI
             {
                 avatarImage.sprite = stage.portraitSprite;
             }
+        }
+
+        /// <summary>
+        /// Immediately slides the dialogue panel off-screen. Safe to call while a line is
+        /// playing (cancels the hold timer), or when the panel is already hidden (no-op).
+        /// </summary>
+        public void DismissNow()
+        {
+            if (panelRect == null) return;
+
+            if (activeRoutine != null)
+            {
+                StopCoroutine(activeRoutine);
+                activeRoutine = null;
+            }
+
+            if (glowRoutine != null)
+            {
+                StopCoroutine(glowRoutine);
+                glowRoutine = null;
+            }
+
+            if (glowOutline != null)
+            {
+                glowOutline.effectDistance = Vector2.zero;
+                Color col = glowOutline.effectColor;
+                col.a = 0f;
+                glowOutline.effectColor = col;
+            }
+
+            Vector2 offscreenLeft = restingPosition - new Vector2(panelRect.rect.width, 0f);
+            activeRoutine = StartCoroutine(SlideAndClear(offscreenLeft));
+        }
+
+        private IEnumerator SlideAndClear(Vector2 target)
+        {
+            yield return Slide(panelRect.anchoredPosition, target, SlideDurationSeconds);
+            activeRoutine = null;
         }
 
         private void HandleDialogueLine(string line)
@@ -171,7 +218,8 @@ namespace BrainDrain.UI
                 spacing = 15f;
             }
 
-            lineText.fontSize = size;
+            lineText.fontSize        = Mathf.Max(size, MinFontSize);
+            lineText.fontSizeMin     = MinFontSize;
             lineText.characterSpacing = spacing;
             lineText.font = rebirthCount >= 6 && lowIQFontAsset != null ? lowIQFontAsset : defaultFontAsset;
         }
@@ -201,7 +249,6 @@ namespace BrainDrain.UI
         private IEnumerator SlideRoutine(string line, float holdDuration)
         {
             lineText.text = line;
-            panelRect.gameObject.SetActive(true);
 
             if (glowRoutine != null) StopCoroutine(glowRoutine);
             glowRoutine = StartCoroutine(GlowPulseRoutine());
@@ -225,8 +272,6 @@ namespace BrainDrain.UI
                 glowOutline.effectColor = col;
             }
 
-            panelRect.gameObject.SetActive(false);
-            panelRect.anchoredPosition = restingPosition;
             activeRoutine = null;
         }
 

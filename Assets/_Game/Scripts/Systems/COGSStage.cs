@@ -7,6 +7,10 @@ namespace BrainDrain.Systems
     /// COGSPortraitController matches the highest stage whose minRebirthCount is at or below
     /// the player's current RebirthCount. actUnlockName is reserved for a future narrative-act
     /// system; nothing currently reads it.
+    /// 
+    /// DESIGN NOTE: COGS progresses from a corrupted, cynical and hostile Stage 1 to a godlike, 
+    /// clear, and supportive Stage 6. Early stages feature cynical/antagonistic comments; 
+    /// later stages reflect clarity and a supportive attitude.
     /// </summary>
     [CreateAssetMenu(fileName = "COGSStage", menuName = "BrainDrain/COGS Stage")]
     public sealed class COGSStage : ScriptableObject

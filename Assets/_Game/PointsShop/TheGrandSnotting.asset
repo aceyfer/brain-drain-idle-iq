@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PointsShopItemData
   itemId: the_grand_snotting
   displayName: The Final Snotting
-  description: You've become what you mocked. Congratulations, Illumisnotti.
+  description: You've become what you mocked. Congratulations, Illumisnotty.
   cost: 1000000
   gateRebirthCount: 7
   gateWorldStageIndex: 5

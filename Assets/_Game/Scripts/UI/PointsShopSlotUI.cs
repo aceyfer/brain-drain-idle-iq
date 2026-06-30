@@ -57,13 +57,39 @@ namespace BrainDrain.UI
             if (nameText != null)
             {
                 nameText.text = boundData.displayName;
+                nameText.fontSize = 32f; // Large font
+            }
+
+            string bonusText = "";
+            switch (boundData.effectType)
+            {
+                case PointsShopEffectType.PointsConversionRatePercent:
+                    bonusText = $"+{boundData.effectPercent * 100f:F0}% Points Conversion Rate";
+                    break;
+                case PointsShopEffectType.CashToPointsConversionPercent:
+                    bonusText = $"+{boundData.effectPercent * 100f:F0}% Cash-to-Points Rate";
+                    break;
+                case PointsShopEffectType.AllPointGainsPercent:
+                    bonusText = $"+{boundData.effectPercent * 100f:F0}% Point Gains";
+                    break;
+                case PointsShopEffectType.GrandSnottingCapstone:
+                    bonusText = "10x Multiplier to ALL production + Unlocks Secret Ending";
+                    break;
             }
 
             bool owned = boundManager.IsItemOwned(boundData);
             if (owned)
             {
-                if (descriptionText != null) descriptionText.text = boundData.description;
-                if (costText != null) costText.text = "OWNED";
+                if (descriptionText != null)
+                {
+                    descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
+                    descriptionText.fontSize = 24f; // Large font
+                }
+                if (costText != null)
+                {
+                    costText.text = "OWNED";
+                    costText.fontSize = 28f; // Large font
+                }
                 ApplyAccent(OwnedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
@@ -72,19 +98,35 @@ namespace BrainDrain.UI
             bool unlocked = boundManager.IsItemUnlocked(boundData);
             if (!unlocked)
             {
-                if (descriptionText != null) descriptionText.text = "The Illumisnotti haven't been weakened enough yet.";
+                if (descriptionText != null)
+                {
+                    descriptionText.text = "The Illumisnotty haven't been weakened enough yet.";
+                    descriptionText.fontSize = 24f; // Large font
+                }
                 string gateDescription = boundData.gateWorldStageIndex >= 0
-                    ? $"REBIRTH {boundData.gateRebirthCount} + WORLD STAGE {boundData.gateWorldStageIndex} REQUIRED"
-                    : $"REBIRTH {boundData.gateRebirthCount} REQUIRED";
-                if (costText != null) costText.text = gateDescription;
+                    ? $"REBIRTH {boundData.gateRebirthCount} + STAGE {boundData.gateWorldStageIndex} REQ"
+                    : $"REBIRTH {boundData.gateRebirthCount} REQ";
+                if (costText != null)
+                {
+                    costText.text = gateDescription;
+                    costText.fontSize = 28f; // Large font
+                }
                 ApplyAccent(LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
             }
 
             bool affordable = currency != null && currency.CanAffordPoints(boundData.cost);
-            if (descriptionText != null) descriptionText.text = boundData.description;
-            if (costText != null) costText.text = $"{NumberFormatter.Format(boundData.cost)} POINTS";
+            if (descriptionText != null)
+            {
+                descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
+                descriptionText.fontSize = 24f; // Large font
+            }
+            if (costText != null)
+            {
+                costText.text = $"{NumberFormatter.Format(boundData.cost)} POINTS";
+                costText.fontSize = 28f; // Large font
+            }
             ApplyAccent(affordable ? AffordableColor : TooExpensiveColor);
             if (buyButton != null) buyButton.interactable = true;
         }
@@ -92,8 +134,8 @@ namespace BrainDrain.UI
         private void ApplyAccent(Color accent)
         {
             if (background != null) background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
-            if (nameText != null) nameText.color = accent;
-            if (costText != null) costText.color = accent;
+            if (nameText != null) nameText.color = Color.white; // Stable white for readability
+            if (costText != null) costText.color = new Color(1f, 0.92f, 0.016f, 1f); // Warm stable gold for cost
         }
     }
 }

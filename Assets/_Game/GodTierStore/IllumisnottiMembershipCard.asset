@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IllumisnottiMembershipCard
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: illumisnotti_membership_card
-  displayName: The Illumisnotti Membership Card
+  displayName: The Illumisnotty Membership Card
   description: Purely cosmetic. Gold-foil UI badge. Means nothing. Feels incredible.
   realMoneyPriceDisplay: $14.99
   effectType: 3

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IllumisnottiBrawndoSpill
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BrainRotEventData
   eventTitle: Brawndo Spill
-  eventDescription: An operative spilled sports drink on your server. Classic Illumisnotti.
+  eventDescription: An operative spilled sports drink on your server. Classic Illumisnotty.
   choiceButtonText: Mop It Up
   brainPowerRewardOrPenalty: 0
   playerIQImpact: 0

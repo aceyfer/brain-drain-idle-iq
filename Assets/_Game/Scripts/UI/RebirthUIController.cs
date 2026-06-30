@@ -19,21 +19,46 @@ namespace BrainDrain.UI
         [SerializeField] private Button cancelButton;
 
         [Header("Visibility Gate")]
-        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Hidden until pointsSpentUnlockThreshold is reached, then stays visible permanently (CumulativePointsSpentOnRestoration only ever increases).")]
+        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active; interactable gates on pointsSpentUnlockThreshold.")]
         [SerializeField] private GameObject rebirthTriggerButton;
-        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button appears. Deliberately high (50,000, up from an earlier 1,000) so a player can't reach Rebirth within their first day -- see CLAUDE.md's 2026-06-21 rebalance notes.")]
+        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button becomes interactable.")]
         [SerializeField] private double pointsSpentUnlockThreshold = 50000d;
+
+        /// <summary>Exposes the configured threshold so HUDController can display progress toward it without duplicating the value.</summary>
+        public double SnottingUnlockThreshold => pointsSpentUnlockThreshold;
+
+        private static readonly Color ButtonColorLocked = new Color(0.35f, 0.35f, 0.35f, 0.85f);
+        private static readonly Color ButtonColorReady  = new Color(1f, 0.078f, 0.576f, 1f);
+
+#if UNITY_EDITOR
+        public GameObject TriggerButtonObject => rebirthTriggerButton;
+#endif
 
         private void Awake()
         {
             if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirmClicked);
             if (cancelButton != null) cancelButton.onClick.AddListener(OnCancelClicked);
 
-            // Hide immediately, before the real threshold check in Start(), so there's no
-            // single-frame flash of the button prior to WorldRestorationManager being ready.
             if (rebirthTriggerButton != null)
             {
-                rebirthTriggerButton.SetActive(false);
+                rebirthTriggerButton.SetActive(true);
+
+                // Wire the trigger button to open the modal. RemoveListener first so a double-
+                // Awake (e.g. DontDestroyOnLoad scene reload) can't stack duplicate listeners.
+                Button btn = rebirthTriggerButton.GetComponent<Button>();
+                if (btn != null)
+                {
+                    btn.onClick.RemoveListener(OpenModal);
+                    btn.onClick.AddListener(OpenModal);
+                }
+
+                // Child TextMeshPro elements must NOT be raycast targets — if they are, they
+                // consume the pointer event before it reaches the Button component, so clicks
+                // appear to do nothing even when the button is interactable.
+                foreach (TextMeshProUGUI tmp in rebirthTriggerButton.GetComponentsInChildren<TextMeshProUGUI>(true))
+                {
+                    tmp.raycastTarget = false;
+                }
             }
         }
 
@@ -61,7 +86,16 @@ namespace BrainDrain.UI
             ApplyTriggerButtonVisibility();
         }
 
-        /// <summary>Reveals the REBIRTH trigger button once enough Points have been spent on World Restoration. Never re-hides it, since that progress is monotonic.</summary>
+        /// <summary>
+        /// Forces an immediate re-evaluation of the trigger button's interactable state and
+        /// label text. Call this after any cheat or debug action that directly sets restoration
+        /// progress, since those bypass the normal OnRestorationProgressChanged path.
+        /// </summary>
+        public void RefreshTriggerButton()
+        {
+            ApplyTriggerButtonVisibility();
+        }
+
         private void ApplyTriggerButtonVisibility()
         {
             if (rebirthTriggerButton == null)
@@ -69,15 +103,52 @@ namespace BrainDrain.UI
                 return;
             }
 
+            rebirthTriggerButton.SetActive(true);
+
             double spent = WorldRestorationManager.Instance != null
                 ? WorldRestorationManager.Instance.CumulativePointsSpentOnRestoration
                 : 0d;
-            bool shouldBeVisible = spent >= pointsSpentUnlockThreshold;
+            bool unlocked = spent >= pointsSpentUnlockThreshold;
 
-            if (rebirthTriggerButton.activeSelf != shouldBeVisible)
+            Button btn = rebirthTriggerButton.GetComponent<Button>();
+            if (btn != null)
             {
-                rebirthTriggerButton.SetActive(shouldBeVisible);
+                btn.interactable = unlocked;
             }
+
+            // Drive the background image color directly so locked always looks grey and
+            // ready always looks hot pink — Unity's disabled-color tint alone is too subtle.
+            Image img = rebirthTriggerButton.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = unlocked ? ButtonColorReady : ButtonColorLocked;
+            }
+
+            TextMeshProUGUI txt = rebirthTriggerButton.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (txt != null)
+            {
+                txt.enableAutoSizing = true;
+                if (unlocked)
+                {
+                    txt.text = "THE SNOTTING";
+                    txt.fontSizeMin = 24f;
+                    txt.fontSizeMax = 46.35f;
+                    txt.color = Color.white;
+                }
+                else
+                {
+                    txt.text = $"SNOTTING LOCKED\n{NumberFormatter.Format(spent)} / {NumberFormatter.Format(pointsSpentUnlockThreshold)}";
+                    txt.fontSizeMin = 16f;
+                    txt.fontSizeMax = 36f;
+                    txt.color = new Color(0.75f, 0.75f, 0.75f, 1f);
+                }
+            }
+
+            Debug.Log(
+                $"[RebirthUIController] ApplyTriggerButtonVisibility: " +
+                $"spent={spent:F0} threshold={pointsSpentUnlockThreshold:F0} unlocked={unlocked} " +
+                $"btnInteractable={btn?.interactable} " +
+                $"triggerActive={rebirthTriggerButton.activeSelf}");
         }
 
         public void OpenModal()

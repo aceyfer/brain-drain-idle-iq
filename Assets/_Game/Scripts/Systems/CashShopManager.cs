@@ -47,6 +47,15 @@ namespace BrainDrain.Systems
         /// <summary>Fired after an item is successfully purchased or the owned set is restored from a save.</summary>
         public event Action OnItemsChanged;
 
+        public void AddCashShopItem(CashShopItemData newItem)
+        {
+            if (items == null) items = new List<CashShopItemData>();
+            if (newItem != null && !items.Contains(newItem))
+            {
+                items.Add(newItem);
+            }
+        }
+
         private void Awake()
         {
             if (instance != null && instance != this)
@@ -92,6 +101,13 @@ namespace BrainDrain.Systems
 
         private static void ApplyItemEffect(CurrencyManager currencyManager, CashShopItemData item)
         {
+            if (item != null && item.itemId == "profanity_pack")
+            {
+                RandomChatterManager.Instance?.UnlockProfanity();
+                RandomChatterManager.Instance?.ToggleProfanity(true);
+                return;
+            }
+
             switch (item.effectType)
             {
                 case CashShopEffectType.BrainPowerTapPercent:

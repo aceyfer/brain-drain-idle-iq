@@ -15,6 +15,10 @@ namespace BrainDrain.Systems
     /// DialogueDisplayUI (which subscribes to update its avatar slot), and per spec, future
     /// world-visual/outfit systems can subscribe the same way without this class knowing about
     /// them.
+    /// 
+    /// DESIGN NOTE: COGS progresses from a corrupted, cynical and hostile Stage 1 to a godlike, 
+    /// clear, and supportive Stage 6. Early stages feature cynical/antagonistic comments; 
+    /// later stages reflect clarity and a supportive attitude.
     /// </summary>
     public sealed class COGSPortraitController : MonoBehaviour
     {
@@ -59,7 +63,6 @@ namespace BrainDrain.Systems
             }
 
             instance = this;
-            DontDestroyOnLoad(gameObject);
 
             SortStages();
         }

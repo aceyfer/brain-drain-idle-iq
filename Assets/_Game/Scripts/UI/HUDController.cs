@@ -32,6 +32,14 @@ namespace BrainDrain.UI
 
         [Header("Cash/Points Conversion")]
         [SerializeField] private Button convertButton;
+        [SerializeField] private ConvertUIController convertUIController;
+
+        [Header("Premium Shop Control")]
+        [SerializeField] private Button premiumShopButton;
+        [SerializeField] private PremiumShopUIController premiumShopUIController;
+
+        [Header("Points Locking Visibility")]
+        [SerializeField] private Button pointsShopButton;
 
         [Header("World Restoration")]
         [Tooltip("Spends all current Points on World Restoration when clicked.")]
@@ -44,6 +52,7 @@ namespace BrainDrain.UI
         [SerializeField] private Image celebrationFlashOverlay;
 
         private int lastIQMilestoneIndex;
+        private RebirthUIController cachedRebirthUI;
 
         public TextMeshProUGUI CapacityText
         {
@@ -123,6 +132,17 @@ namespace BrainDrain.UI
             set => restoreButton = value;
         }
 
+        public void ConfigureConvertPanel(ConvertUIController controller, Button pointsButton)
+        {
+            convertUIController = controller;
+            pointsShopButton = pointsButton;
+        }
+
+        public void ForceUpdatePointsLockState(int rebirthCount)
+        {
+            UpdatePointsLockState(rebirthCount);
+        }
+
         private void Awake()
         {
             if (convertButton != null)
@@ -135,6 +155,20 @@ namespace BrainDrain.UI
             {
                 restoreButton.onClick.RemoveListener(OnRestoreClicked);
                 restoreButton.onClick.AddListener(OnRestoreClicked);
+            }
+
+            if (premiumShopButton != null)
+            {
+                premiumShopButton.onClick.RemoveListener(OnPremiumShopClicked);
+                premiumShopButton.onClick.AddListener(OnPremiumShopClicked);
+            }
+        }
+
+        private void OnPremiumShopClicked()
+        {
+            if (premiumShopUIController != null)
+            {
+                premiumShopUIController.OpenShop();
             }
         }
 
@@ -208,6 +242,12 @@ namespace BrainDrain.UI
                 RebirthManager.Instance.OnRebirthCountChanged += UpdateRebirthCountText;
                 UpdateIllumisnottiTitleText(RebirthManager.Instance.RebirthCount);
                 RebirthManager.Instance.OnRebirthCountChanged += UpdateIllumisnottiTitleText;
+                RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForPoints;
+                UpdatePointsLockState(RebirthManager.Instance.RebirthCount);
+            }
+            else
+            {
+                UpdatePointsLockState(0);
             }
 
             if (GameManager.Instance != null)
@@ -216,12 +256,22 @@ namespace BrainDrain.UI
                 GameManager.Instance.OnSecondTick += UpdateBPPSText;
             }
 
+            cachedRebirthUI = FindAnyObjectByType<RebirthUIController>();
+
             var worldRestoration = WorldRestorationManager.Instance;
             if (worldRestoration != null)
             {
                 UpdateRestorationProgressText(worldRestoration.CumulativePointsSpentOnRestoration);
                 worldRestoration.OnRestorationProgressChanged -= UpdateRestorationProgressText;
                 worldRestoration.OnRestorationProgressChanged += UpdateRestorationProgressText;
+            }
+
+            // Re-evaluate the restoration text when the player performs their first Snotting,
+            // since that removes the "unlock progress" line from the display.
+            if (RebirthManager.Instance != null)
+            {
+                RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
+                RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForRestorationText;
             }
         }
 
@@ -254,6 +304,8 @@ namespace BrainDrain.UI
             {
                 RebirthManager.Instance.OnRebirthCountChanged -= UpdateRebirthCountText;
                 RebirthManager.Instance.OnRebirthCountChanged -= UpdateIllumisnottiTitleText;
+                RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForPoints;
+                RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
             }
 
             if (GameManager.Instance != null)
@@ -264,6 +316,11 @@ namespace BrainDrain.UI
             if (WorldRestorationManager.Instance != null)
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
+            }
+
+            if (premiumShopButton != null)
+            {
+                premiumShopButton.onClick.RemoveListener(OnPremiumShopClicked);
             }
         }
 
@@ -365,24 +422,73 @@ namespace BrainDrain.UI
 
             var currency = CurrencyManager.Instance;
             double cps = currency != null ? currency.CashPerSecond : 0d;
-            cashText.text = $"{NumberFormatter.Format(currentCash)} CASH ({NumberFormatter.Format(cps)}/s)";
+            cashText.text = $"${NumberFormatter.Format(currentCash)} (${NumberFormatter.Format(cps)}/s)";
         }
 
         private void UpdatePointsText(double currentPoints)
         {
-            if (pointsText != null)
+            if (pointsText == null)
+            {
+                return;
+            }
+
+            bool isRebirthActivated = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
+            if (isRebirthActivated)
             {
                 pointsText.text = $"{NumberFormatter.Format(currentPoints)} POINTS";
+                pointsText.color = Color.white;
+            }
+            else
+            {
+                // Pre-Snotting: points are Restoration Points used for World Restoration.
+                // Show the balance (not "LOCKED") so the player can see progress.
+                pointsText.text = $"{NumberFormatter.Format(currentPoints)} RESTORATION PTS";
+                pointsText.color = new Color(1f, 0.85f, 0.2f, 1f); // gold — matches the Snotting progress line
             }
         }
 
         private void OnConvertClicked()
         {
-            var currency = CurrencyManager.Instance;
-            if (currency != null)
+            if (convertUIController != null)
             {
-                currency.ConvertCashToPoints(currency.CurrentCash);
+                convertUIController.OpenPanel();
             }
+            else
+            {
+                var currency = CurrencyManager.Instance;
+                if (currency != null)
+                {
+                    currency.ConvertCashToPoints(currency.CurrentCash);
+                }
+            }
+        }
+
+        private void HandleRebirthCountChangedForPoints(int rebirthCount)
+        {
+            UpdatePointsLockState(rebirthCount);
+        }
+
+        private void UpdatePointsLockState(int rebirthCount)
+        {
+            bool isRebirthActivated = rebirthCount >= 1;
+            if (pointsShopButton != null)
+            {
+                pointsShopButton.interactable = isRebirthActivated;
+                var img = pointsShopButton.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                {
+                    img.color = isRebirthActivated ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                }
+                var txt = pointsShopButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null)
+                {
+                    txt.color = isRebirthActivated ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                }
+            }
+
+            var currency = CurrencyManager.Instance;
+            double currentPoints = currency != null ? currency.CurrentPoints : 0d;
+            UpdatePointsText(currentPoints);
         }
 
         private void UpdateRestorationProgressText(double cumulativePointsSpent)
@@ -398,7 +504,35 @@ namespace BrainDrain.UI
                 ? worldRestoration.CurrentStage.stageName
                 : "DYSTOPIA";
 
-            restorationProgressText.text = $"{stageName.ToUpper()} ({percent:F1}% RESTORED)";
+            bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
+            double threshold = cachedRebirthUI != null ? cachedRebirthUI.SnottingUnlockThreshold : 50000d;
+
+            if (snottingUnlocked)
+            {
+                restorationProgressText.text = $"{stageName.ToUpper()} ({percent:F1}% RESTORED)";
+            }
+            else if (cumulativePointsSpent >= threshold)
+            {
+                // Threshold reached — nudge the player to click the now-unlocked button.
+                restorationProgressText.text =
+                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED)\n" +
+                    $"<color=#00FF88><size=18>READY — CLICK THE SNOTTING BUTTON</size></color>";
+            }
+            else
+            {
+                // Pre-Snotting, still working toward threshold — show progress + flow hint.
+                restorationProgressText.text =
+                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED)\n" +
+                    $"<color=#FFD700><size=18>SNOTTING: {NumberFormatter.Format(cumulativePointsSpent)} / {NumberFormatter.Format(threshold)} RESTORATION PTS</size></color>\n" +
+                    $"<color=#888888><size=16>CONVERT CASH → RESTORATION PTS → RESTORE → UNLOCK SNOTTING</size></color>";
+            }
+        }
+
+        private void HandleRebirthCountChangedForRestorationText(int _)
+        {
+            var worldRestoration = WorldRestorationManager.Instance;
+            double spent = worldRestoration != null ? worldRestoration.CumulativePointsSpentOnRestoration : 0d;
+            UpdateRestorationProgressText(spent);
         }
 
         private void OnRestoreClicked()
@@ -408,6 +542,9 @@ namespace BrainDrain.UI
             {
                 WorldRestorationManager.Instance?.TrySpendPointsOnRestoration(currency.CurrentPoints);
             }
+            // Force an immediate button state refresh so the Snotting button goes live the
+            // moment the player hits 50K — don't wait for the next event fire.
+            cachedRebirthUI?.RefreshTriggerButton();
         }
     }
 }

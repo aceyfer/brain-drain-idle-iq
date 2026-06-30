@@ -18,4 +18,4 @@ MonoBehaviour:
   baseCost: 75
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 0
-  baseCashPerSecond: 0.5
+  baseCashPerSecond: 5.0

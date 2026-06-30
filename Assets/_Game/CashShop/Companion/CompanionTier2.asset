@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CompanionTier2
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 2
-  quote: She's trending. The Illumisnotti are furious.
+  quote: She's trending. The Illumisnotty are furious.
   cost: 250000
   gateType: 1
   gateRealHours: 0

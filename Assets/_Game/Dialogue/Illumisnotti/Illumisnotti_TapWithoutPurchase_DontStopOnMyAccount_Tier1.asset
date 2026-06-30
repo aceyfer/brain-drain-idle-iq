@@ -16,6 +16,6 @@ MonoBehaviour:
   buildingName:
   minRebirthCount: 1
   maxRebirthCount: 2
-  dialogueLine: Still tapping? The Illumisnotti haven't tapped anything
+  dialogueLine: Still tapping? The Illumisnotty haven't tapped anything
     themselves in three generations. Don't stop on my account.
   displayDurationSeconds: 3

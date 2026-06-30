@@ -12,10 +12,10 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class UpgradeSlotUI : MonoBehaviour
     {
-        // Neon, high-contrast palette (bloom-ready).
+        // Calmer, professional, non-flashy palette.
         private static readonly Color LockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
-        private static readonly Color TooExpensiveColor = new Color32(0xFF, 0x00, 0x7F, 0xFF);
+        private static readonly Color AffordableColor = new Color32(0x2E, 0x7D, 0x32, 0xFF); // Matte dark green
+        private static readonly Color TooExpensiveColor = new Color32(0x7F, 0x8C, 0x8D, 0xFF); // Matte grey or muted slate
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
@@ -77,24 +77,82 @@ namespace BrainDrain.UI
             if (countText != null)
             {
                 countText.text = $"OWNED: {level}";
+                countText.fontSize = 28f; // Large font
             }
 
             if (descriptionText != null)
             {
-                descriptionText.text = unlocked ? boundData.description : "Access restricted by the Ministry.";
+                if (unlocked)
+                {
+                    double bppsMult = (currency != null) ? (currency.RebirthMultiplier * currency.ShopAllMultiplier) : 1d;
+                    double cashMult = (currency != null) ? (currency.CashMultiplier * currency.ShopCashMultiplier * currency.ShopAllMultiplier) : 1d;
+
+                    double singleBpps = boundData.baseBrainPowerPerSecond * bppsMult;
+                    double singleCash = boundData.baseCashPerSecond * cashMult;
+
+                    string perLevel = "";
+                    if (boundData.baseBrainPowerPerSecond > 0)
+                        perLevel += $"+{NumberFormatter.Format(singleBpps)} BP/s";
+                    if (boundData.baseCashPerSecond > 0)
+                    {
+                        if (perLevel.Length > 0) perLevel += "  ";
+                        perLevel += $"+${NumberFormatter.Format(singleCash)}/s";
+                    }
+
+                    string totalLine = "";
+                    if (level > 0)
+                    {
+                        double totalBpps = level * boundData.baseBrainPowerPerSecond * bppsMult;
+                        double totalCash = level * boundData.baseCashPerSecond * cashMult;
+
+                        string totalBP = boundData.baseBrainPowerPerSecond > 0
+                            ? $"+{NumberFormatter.Format(totalBpps)} BP/s"
+                            : "";
+                        string totalC = boundData.baseCashPerSecond > 0
+                            ? $"+${NumberFormatter.Format(totalCash)}/s"
+                            : "";
+                        string totalParts = totalBP.Length > 0 && totalC.Length > 0
+                            ? $"{totalBP}  {totalC}"
+                            : $"{totalBP}{totalC}";
+                        totalLine = $"\n<color=#FFD700>TOTAL ({level}×): {totalParts}</color>";
+                    }
+
+                    descriptionText.text = $"{boundData.description}\n<color=#00F0FF><b>Per level: {perLevel}</b></color>{totalLine}";
+                }
+                else
+                {
+                    descriptionText.text = "Access restricted by the Ministry.";
+                }
+                descriptionText.fontSize = 24f;
             }
 
             if (!unlocked)
             {
-                if (nameText != null) nameText.text = "??? CLASSIFIED ???";
-                if (costText != null) costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BRAIN POWER REQUIRED";
+                if (nameText != null)
+                {
+                    nameText.text = "??? CLASSIFIED ???";
+                    nameText.fontSize = 32f;
+                }
+                if (costText != null)
+                {
+                    costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
+                    costText.fontSize = 28f;
+                }
                 ApplyAccent(LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
             }
 
-            if (nameText != null) nameText.text = boundData.buildingName;
-            if (costText != null) costText.text = NumberFormatter.Format(cost);
+            if (nameText != null)
+            {
+                nameText.text = boundData.buildingName;
+                nameText.fontSize = 32f;
+            }
+            if (costText != null)
+            {
+                costText.text = $"{NumberFormatter.Format(cost)} BP";
+                costText.fontSize = 30f;
+            }
 
             ApplyAccent(affordable ? AffordableColor : TooExpensiveColor);
 
@@ -112,19 +170,8 @@ namespace BrainDrain.UI
 
         private void UpdateAffordablePulse(bool affordable)
         {
-            if (background == null || affordable == wasAffordable)
-            {
-                wasAffordable = affordable;
-                return;
-            }
-
-            wasAffordable = affordable;
-
-            if (affordable)
-            {
-                AnimationController.PlayAffordablePulse(background.rectTransform, background);
-            }
-            else
+            // Disabled per user request (too flashy)
+            if (background != null)
             {
                 AnimationController.StopAffordablePulse(background.rectTransform);
             }

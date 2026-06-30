@@ -12,7 +12,11 @@ namespace BrainDrain.Systems
         IQMilestone,
         TapWithoutPurchase,
         CashConverted,
-        OfflineDecayReturn
+        OfflineDecayReturn,
+        FirstCashEarned,        // 8
+        FirstRestoreSpend,      // 9
+        RestorationStageChange, // 10
+        SnottingReady           // 11
     }
 
     /// <summary>

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CashShopItemData
   itemId: golden_cardboard_crown
   displayName: Golden Cardboard Crown
-  description: Spray-painted authority. The Illumisnotti hate it.
+  description: Spray-painted authority. The Illumisnotty hate it.
   cost: 10000
   gateRebirthCount: 0
   effectType: 0

@@ -166,7 +166,11 @@ namespace BrainDrain.Core
         /// </summary>
         public event Action<double> OnCashConverted;
 
+        /// <summary>Fired exactly once, the first time Cash is ever earned (Underground Economy first payout).</summary>
+        public event Action OnFirstCashEarned;
+
         private bool hasEarnedFirstBrainPower;
+        private bool hasEarnedFirstCash;
 
         private void Start()
         {
@@ -234,6 +238,12 @@ namespace BrainDrain.Core
 
             currentCash += amount * cashMultiplier * shopCashMultiplier * shopAllMultiplier * GetTemporaryAllMultiplierFactor();
             OnCashChanged?.Invoke(currentCash);
+
+            if (!hasEarnedFirstCash)
+            {
+                hasEarnedFirstCash = true;
+                OnFirstCashEarned?.Invoke();
+            }
         }
 
         // -- Illumisnotti rewrite (2026-06-21): Shop 2/Shop 3 permanent multiplier grants --
@@ -425,6 +435,11 @@ namespace BrainDrain.Core
                 hasEarnedFirstBrainPower = true;
             }
 
+            if (restoredCash > 0d)
+            {
+                hasEarnedFirstCash = true;
+            }
+
             OnBrainPowerChanged?.Invoke(brainPower);
             OnCumulativeBrainPowerChanged?.Invoke(cumulativeBrainPower);
             OnCashChanged?.Invoke(currentCash);
@@ -614,14 +629,11 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
-        /// Idle BPPS/CPS payout is scaled by current PlayerIQ / 100, clamped to a max of 1 so IQ
-        /// growing past 100 during play never boosts production above normal -- only a decayed
-        /// IQ (below 100, only possible right after the offline-decay-on-load hook) reduces it.
-        /// This is what makes returning from being offline cost something real: idle income
-        /// comes back at a reduced rate (down to 60% at the decay floor) until tapping restores
-        /// PlayerIQ to 100, rather than crediting a full 100% idle gain the instant the app
-        /// reopens. Tap income itself is untouched -- taps are how the player recovers IQ in the
-        /// first place, so they must stay at full value.
+        /// Idle BPPS/CPS payout multiplier based on current PlayerIQ.
+        /// Maps IQ 1 → 0.25 (25% floor) and IQ 100 → 1.0 (full production), linearly.
+        /// IQ above 100 stays at 1.0 -- playing longer doesn't boost production above baseline.
+        /// On a fresh save (IQ=1) idle output is 25%; tapping restores IQ toward 100 and full
+        /// production. Tap income is untouched -- taps are how the player recovers IQ.
         /// </summary>
         private static double GetIQProductionMultiplier()
         {
@@ -631,10 +643,8 @@ namespace BrainDrain.Core
                 return 1d;
             }
 
-            double normalized = iqManager.PlayerIQ / 100d;
-            if (normalized > 1d) return 1d;
-            if (normalized < 0d) return 0d;
-            return normalized;
+            float normalized = Mathf.InverseLerp(1f, 100f, iqManager.PlayerIQ);
+            return Mathf.Lerp(0.25f, 1f, normalized);
         }
     }
 }

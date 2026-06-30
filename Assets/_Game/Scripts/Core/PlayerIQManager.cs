@@ -17,8 +17,11 @@ namespace BrainDrain.Core
         private const float StartingPlayerIQ = 100f;
         private const float MilestoneInterval = 1000f;
 
+        /// <summary>Hard minimum for all IQ operations. Offline decay, events, and saves never push IQ below this.</summary>
+        private const float MinPlayerIQ = 1f;
+
         /// <summary>PlayerIQ never decays below this floor, no matter how long the app was closed.</summary>
-        private const float OfflineDecayFloor = 60f;
+        private const float OfflineDecayFloor = MinPlayerIQ;
 
         /// <summary>Offline time beyond this is not decayed any further -- decay reaches the floor at exactly this duration.</summary>
         private const float OfflineDecayMaxHours = 8f;
@@ -66,12 +69,12 @@ namespace BrainDrain.Core
 
         /// <summary>
         /// Applies a signed delta to PlayerIQ (e.g. infrastructure spending, a building
-        /// purchase, or a random event), clamped at a minimum of zero.
+        /// purchase, or a random event), clamped at MinPlayerIQ (1).
         /// </summary>
         public void ModifyPlayerIQ(float delta)
         {
             float previousIQ = playerIQ;
-            playerIQ = Mathf.Max(0f, playerIQ + delta);
+            playerIQ = Mathf.Max(MinPlayerIQ, playerIQ + delta);
 
             if (!Mathf.Approximately(previousIQ, playerIQ))
             {
@@ -80,12 +83,17 @@ namespace BrainDrain.Core
             }
         }
 
-        /// <summary>Directly restores PlayerIQ from a save file, with no transformation.</summary>
+        /// <summary>Directly restores PlayerIQ from a save file. Migrates invalid/0 values from pre-1.0 saves to MinPlayerIQ.</summary>
         public void LoadState(float restoredPlayerIQ)
         {
-            playerIQ = restoredPlayerIQ;
+            playerIQ = Mathf.Max(MinPlayerIQ, restoredPlayerIQ);
             lastMilestoneIndex = Mathf.FloorToInt(playerIQ / MilestoneInterval);
             OnPlayerIQChanged?.Invoke(playerIQ);
+
+            float normalized = Mathf.InverseLerp(MinPlayerIQ, StartingPlayerIQ, playerIQ);
+            float productionMultiplier = Mathf.Lerp(0.25f, 1f, normalized);
+            Debug.Log($"[PlayerIQManager] Loaded IQ={playerIQ:F0} → idle production multiplier={productionMultiplier:P0}" +
+                      (playerIQ <= MinPlayerIQ ? " (fresh save — floor is 25%)" : ""));
         }
 
         /// <summary>
@@ -110,9 +118,10 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
-        /// Adds a small flat IQ restore on tap, but only while recovering from offline decay
-        /// (current IQ below the 100 baseline) -- clamped so this never pushes IQ above 100.
-        /// Once back at 100, taps stop touching IQ again, matching pre-decay behavior.
+        /// Adds a small flat IQ restore per tap while IQ is below the 100 baseline (both on a
+        /// fresh save starting at IQ 1 and after offline decay). Clamped so taps never push
+        /// IQ above StartingPlayerIQ (100). Above 100, IQ only grows from infrastructure
+        /// spending and building purchases -- tapping stops affecting it entirely.
         /// </summary>
         public void RestoreIQFromTap()
         {

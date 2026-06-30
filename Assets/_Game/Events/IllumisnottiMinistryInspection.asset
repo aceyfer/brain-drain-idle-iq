@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IllumisnottiMinistryInspection
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BrainRotEventData
   eventTitle: Ministry Inspection
-  eventDescription: The Illumisnotti sent an inspector. He got lost in the lobby.
+  eventDescription: The Illumisnotty sent an inspector. He got lost in the lobby.
   choiceButtonText: Let Him Wander
   brainPowerRewardOrPenalty: 0
   playerIQImpact: 0
