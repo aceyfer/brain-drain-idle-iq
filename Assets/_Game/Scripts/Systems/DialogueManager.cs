@@ -102,6 +102,14 @@ namespace BrainDrain.Systems
         private void Start()
         {
             SubscribeToEvents();
+
+            bool isFirstEverPlay = CurrencyManager.Instance != null
+                && CurrencyManager.Instance.CumulativeBrainPower == 0d
+                && (RebirthManager.Instance == null || RebirthManager.Instance.RebirthCount == 0);
+            if (isFirstEverPlay)
+            {
+                ShowPriorityLine("TAP THE WASTELAND. BRAIN POWER WON'T GENERATE ITSELF.", 5f);
+            }
         }
 
         private void OnDestroy()
@@ -220,6 +228,7 @@ namespace BrainDrain.Systems
         private void HandleFirstTap()
         {
             TryFireLine(NarratorTriggerType.FirstTap, null);
+            EnqueueDirectLine("OPEN BP SHOP → BUY BUILDINGS → EARN BRAIN POWER WHILE YOU SLEEP.", 4f);
         }
 
         private void HandleBuildingPurchased(BuildingData building)
