@@ -119,8 +119,6 @@ namespace BrainDrain.Core
 
             float normalized = Mathf.InverseLerp(MinPlayerIQ, StartingPlayerIQ, playerIQ);
             float productionMultiplier = Mathf.Lerp(0.25f, 1f, normalized);
-            Debug.Log($"[PlayerIQManager] Loaded IQ={playerIQ:F0} → idle production multiplier={productionMultiplier:P0}" +
-                      (playerIQ <= MinPlayerIQ ? " (fresh save — floor is 25%)" : ""));
         }
 
         /// <summary>

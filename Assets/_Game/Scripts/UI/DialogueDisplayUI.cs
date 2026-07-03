@@ -41,7 +41,6 @@ namespace BrainDrain.UI
 
         private void Awake()
         {
-            Debug.Log("[DialogueDisplayUI] Awake() entered. panelRect: " + (panelRect != null ? panelRect.name : "null"));
             if (panelRect != null)
             {
                 restingPosition = panelRect.anchoredPosition;

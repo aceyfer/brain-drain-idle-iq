@@ -598,13 +598,6 @@ namespace BrainDrain.Systems
             int elapsedWholeHours = (int)elapsedHours;
             int elapsedMinutes = (int)((elapsedHours - elapsedWholeHours) * 60d);
             double effectiveBPPS = currentIdleBPPS * multiplier;
-            Debug.Log(
-                "[HotChick] Offline decay report:\n" +
-                $" Elapsed: {elapsedWholeHours}h {elapsedMinutes}m\n" +
-                $" Hot Chicks owned: {data.hotChickCount}\n" +
-                $" Decay window: {decayWindowHours:F0}h\n" +
-                $" BPPS multiplier applied: {multiplier:F2}\n" +
-                $" Effective BPPS this session: {effectiveBPPS:F2}");
         }
 
         private static PlayerData CreateDefaultData()
