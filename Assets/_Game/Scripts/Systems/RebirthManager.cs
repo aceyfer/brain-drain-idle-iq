@@ -97,24 +97,19 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
-        /// The Illumisnotti title earned at a given Snotting (Rebirth) tier, displayed under the
-        /// HUD's IQ readout. Added 2026-06-21 as part of the Illumisnotti narrative rewrite --
-        /// "Rebirth" is reflavored as "The Snotting" in player-facing text; RebirthCount/
-        /// RebirthManager/TriggerRebirth themselves are deliberately NOT renamed in code, to
-        /// avoid an invasive rename across every system that already references them.
+        /// The Illumisnotti title earned at a given Snotting (Rebirth) tier, displayed from game
+        /// start under the HUD's IQ readout and in the Illumisnotti panel. "Rebirth" is reflavored
+        /// as "The Snotting" in player-facing text; RebirthCount/RebirthManager/TriggerRebirth
+        /// themselves are deliberately NOT renamed in code, to avoid an invasive rename across
+        /// every system that already references them.
         /// </summary>
         public static string GetIllumisnottiTitle(int rebirthCount)
         {
-            switch (rebirthCount)
-            {
-                case 0: return string.Empty;
-                case 1: return "Junior Associate Snott";
-                case 2: return "Regional Snott Manager";
-                case 3: return "Vice President of Snottery";
-                case 4: return "Lord Snott (Provisional)";
-                case 5: return "Grand Illumisnotty";
-                default: return "Supreme Snott Eternal";
-            }
+            if (rebirthCount >= 11) return "BUNKER SUPREME";
+            if (rebirthCount >= 6) return "ILLUMISNOTTY INTERN";
+            if (rebirthCount >= 4) return "BUNKER BUREAUCRAT";
+            if (rebirthCount >= 2) return "UNDER-SNOT ELITE";
+            return "SNOTTY ROOKIE";
         }
     }
 }
