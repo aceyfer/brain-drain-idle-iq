@@ -29,6 +29,8 @@ namespace BrainDrain.Systems
 
         public static AnimationController Instance { get; private set; }
 
+        private static bool isQuitting;
+
         private readonly Dictionary<Transform, Coroutine> tapAnimCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> breathingCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> boredFidgetCoroutines = new();
@@ -51,11 +53,21 @@ namespace BrainDrain.Systems
             DontDestroyOnLoad(gameObject);
         }
 
+        private void OnApplicationQuit()
+        {
+            isQuitting = true;
+        }
+
         private static AnimationController EnsureInstance()
         {
             if (Instance != null)
             {
                 return Instance;
+            }
+
+            if (isQuitting)
+            {
+                return null;
             }
 
             var hostObject = new GameObject("AnimationController (Auto)");
@@ -265,7 +277,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            EnsureInstance().SpawnFloatingRewardText(text, screenPosition, parent);
+            EnsureInstance()?.SpawnFloatingRewardText(text, screenPosition, parent);
         }
 
         private void SpawnFloatingRewardText(string text, Vector2 screenPosition, RectTransform parent)
@@ -318,7 +330,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            EnsureInstance().PlayTextFlash(text, TextFlashYellow);
+            EnsureInstance()?.PlayTextFlash(text, TextFlashYellow);
         }
 
         private void PlayTextFlash(TextMeshProUGUI text, Color flashColor)
@@ -385,7 +397,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            EnsureInstance().SpawnSplatParticles(screenPosition, parent);
+            EnsureInstance()?.SpawnSplatParticles(screenPosition, parent);
         }
 
         private void SpawnSplatParticles(Vector2 screenPosition, RectTransform parent)
@@ -462,7 +474,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            EnsureInstance().SpawnTouchRipple(screenPosition, parent);
+            EnsureInstance()?.SpawnTouchRipple(screenPosition, parent);
         }
 
         private void SpawnTouchRipple(Vector2 screenPosition, RectTransform parent)
@@ -731,7 +743,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            EnsureInstance().StartCoroutine(PopupSpawnRoutine(rect, canvasGroup));
+            EnsureInstance()?.StartCoroutine(PopupSpawnRoutine(rect, canvasGroup));
         }
 
         private static IEnumerator PopupSpawnRoutine(RectTransform rect, CanvasGroup canvasGroup)
@@ -824,7 +836,7 @@ namespace BrainDrain.Systems
         /// </summary>
         public static void PlayHighIQCelebration(CanvasGroup hudCanvasGroup, Image flashOverlay)
         {
-            EnsureInstance().StartCoroutine(HighIQCelebrationRoutine(hudCanvasGroup, flashOverlay));
+            EnsureInstance()?.StartCoroutine(HighIQCelebrationRoutine(hudCanvasGroup, flashOverlay));
         }
 
         private static IEnumerator HighIQCelebrationRoutine(CanvasGroup hudCanvasGroup, Image flashOverlay)

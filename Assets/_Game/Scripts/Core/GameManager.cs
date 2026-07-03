@@ -141,6 +141,9 @@ namespace BrainDrain.Core
             StopTickLoop();
             UnsubscribeFromCurrencyForRank();
 
+            DOTween.KillAll(false);
+            DOTween.Clear(false);
+
             lock (InstanceLock)
             {
                 if (instance == this)
