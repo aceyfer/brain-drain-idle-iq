@@ -15429,7 +15429,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -20.000122, y: 0}
+  m_AnchoredPosition: {x: -20.000183, y: 0}
   m_SizeDelta: {x: 135.8014, y: 702.4572}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &625420705
@@ -21238,7 +21238,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.PremiumShopUIController
   premiumShopManager: {fileID: 0}
-  currencyManager: {fileID: 0}
+  currencyManager: {fileID: 1486179488}
   shopPanel: {fileID: 856580541}
   openButton: {fileID: 1087047317}
   closeButton: {fileID: 105819937}
