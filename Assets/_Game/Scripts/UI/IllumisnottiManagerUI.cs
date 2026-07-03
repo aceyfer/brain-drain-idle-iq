@@ -191,7 +191,7 @@ namespace BrainDrain.UI
 
             watermarkText = textGo.AddComponent<TextMeshProUGUI>();
             watermarkText.font = fontAsset;
-            watermarkText.text = "ILLUMISNOTTI INTERFERENCE DETECTED";
+            watermarkText.text = "ILLUMISNOTTY INTERFERENCE DETECTED";
             watermarkText.fontSize = 44f;
             watermarkText.color = new Color(1f, 1f, 1f, 0f); // Transparent white
             watermarkText.alignment = TextAlignmentOptions.Center;

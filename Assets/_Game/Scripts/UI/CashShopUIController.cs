@@ -246,7 +246,7 @@ namespace BrainDrain.UI
             if (next == null)
             {
                 // All 6 tiers owned.
-                if (companionQuoteText != null) companionQuoteText.text = "SHE IS THE ILLUMISNOTTI NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
+                if (companionQuoteText != null) companionQuoteText.text = "SHE IS THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
                 if (companionCostText != null) companionCostText.text = "MAXED";
                 if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
                 ApplyCompanionAccent(CompanionMaxedColor);
