@@ -59,6 +59,11 @@ namespace BrainDrain.EditorTools
         /// </summary>
         private static void ReactivateShopPanelIfNeeded()
         {
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             ShopUIController shopUI = Object.FindAnyObjectByType<ShopUIController>(FindObjectsInactive.Include);
             if (shopUI == null || shopUI.gameObject.activeSelf)
             {
@@ -117,6 +122,11 @@ namespace BrainDrain.EditorTools
 
         private static void FixShopPanelIfUnwired()
         {
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             ShopUIController shopUI = Object.FindAnyObjectByType<ShopUIController>(FindObjectsInactive.Include);
             if (shopUI == null)
             {
@@ -136,6 +146,12 @@ namespace BrainDrain.EditorTools
 
         private static void MarkAndSaveScene()
         {
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("[AutoSceneFixes] Skipped scene save: play mode became active after the initial guard check (delayCall timing hole).");
+                return;
+            }
+
             var scene = EditorSceneManager.GetActiveScene();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
