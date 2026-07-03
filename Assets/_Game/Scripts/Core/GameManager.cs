@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 using BrainDrain.Systems;
+using DG.Tweening;
 
 namespace BrainDrain.Core
 {
@@ -114,6 +115,9 @@ namespace BrainDrain.Core
             }
 
             DontDestroyOnLoad(gameObject);
+
+            DOTween.Init(recycleAllByDefault: true, useSafeMode: true, logBehaviour: LogBehaviour.ErrorsOnly)
+                   .SetCapacity(500, 50);
 
             // SaveManager's self-bootstrapping Instance property only creates it on first
             // access -- but nothing else ever calls *into* SaveManager (it only calls out to

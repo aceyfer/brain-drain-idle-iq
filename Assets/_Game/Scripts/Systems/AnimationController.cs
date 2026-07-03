@@ -22,6 +22,11 @@ namespace BrainDrain.Systems
         private static Sprite cachedSplatSprite;
         private static Sprite[] cachedSplatSprites;
 
+        [SerializeField] private Sprite _neonRingSprite;
+        [SerializeField] private Sprite _radialGlowSprite;
+        [SerializeField] private Sprite[] _gooSplatSprites;
+        [SerializeField] private Material _floatingTextMaterial;
+
         public static AnimationController Instance { get; private set; }
 
         private readonly Dictionary<Transform, Coroutine> tapAnimCoroutines = new();
@@ -278,11 +283,15 @@ namespace BrainDrain.Systems
 
             TextMeshProUGUI label = textObject.AddComponent<TextMeshProUGUI>();
             label.text = text;
-            label.fontSize = 32f;
+            label.fontSize = 48f;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.Center;
             label.color = FloatingRewardTextColor;
             label.raycastTarget = false;
+            if (_floatingTextMaterial != null)
+            {
+                label.fontSharedMaterial = _floatingTextMaterial;
+            }
 
             const float lifetime = 0.8f;
             const float riseDistance = 70f;
@@ -531,10 +540,11 @@ namespace BrainDrain.Systems
         {
             if (cachedRingSprite != null) return cachedRingSprite;
 
-#if UNITY_EDITOR
-            cachedRingSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Sprites/UI/Generated/NeonRing.png");
-            if (cachedRingSprite != null) return cachedRingSprite;
-#endif
+            if (Instance != null && Instance._neonRingSprite != null)
+            {
+                cachedRingSprite = Instance._neonRingSprite;
+                return cachedRingSprite;
+            }
 
             // Procedural Ring fallback
             const int size = 64;
@@ -573,10 +583,11 @@ namespace BrainDrain.Systems
         {
             if (cachedGlowSprite != null) return cachedGlowSprite;
 
-#if UNITY_EDITOR
-            cachedGlowSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Sprites/UI/Generated/RadialGlowGreen.png");
-            if (cachedGlowSprite != null) return cachedGlowSprite;
-#endif
+            if (Instance != null && Instance._radialGlowSprite != null)
+            {
+                cachedGlowSprite = Instance._radialGlowSprite;
+                return cachedGlowSprite;
+            }
 
             // Procedural Glow fallback
             const int size = 64;
@@ -606,25 +617,11 @@ namespace BrainDrain.Systems
                 return cachedSplatSprites[UnityEngine.Random.Range(0, cachedSplatSprites.Length)];
             }
 
-#if UNITY_EDITOR
-            // Dynamically load the high-quality cartoon splat spritesheet in the editor
-            string path = "Assets/_Game/Sprites/Particles/GooSplats.png";
-            var loadedAssets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path);
-            var spriteList = new List<Sprite>();
-            foreach (var asset in loadedAssets)
+            if (Instance != null && Instance._gooSplatSprites != null && Instance._gooSplatSprites.Length > 0)
             {
-                if (asset is Sprite sp)
-                {
-                    spriteList.Add(sp);
-                }
-            }
-
-            if (spriteList.Count > 0)
-            {
-                cachedSplatSprites = spriteList.ToArray();
+                cachedSplatSprites = Instance._gooSplatSprites;
                 return cachedSplatSprites[UnityEngine.Random.Range(0, cachedSplatSprites.Length)];
             }
-#endif
 
             // Fallback to legacy single procedural sprite
             if (cachedSplatSprite != null)
@@ -855,7 +852,7 @@ namespace BrainDrain.Systems
                 {
                     float phase = (elapsed % pulsePeriod) / pulsePeriod;
                     float sine = (Mathf.Sin(phase * Mathf.PI * 2f - Mathf.PI / 2f) + 1f) / 2f;
-                    hudCanvasGroup.alpha = Mathf.Lerp(0.7f, 1.0f, sine);
+                    hudCanvasGroup.alpha = Mathf.Lerp(0.95f, 1.0f, sine);
                 }
 
                 yield return null;
