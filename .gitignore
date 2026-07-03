@@ -41,4 +41,12 @@ crashlytics-build.properties
 /logs/
 /GeneratedAssets/
 Assets/files.zip
+
+# Local Unity recovery / package noise
+_Recovery/
+Assets/_Recovery/
+*.meta
+!Assets/**/*.meta
+Assets/_Recovery.meta
 Assets/files.zip.meta
+Packages/app.rive.rive-unity/

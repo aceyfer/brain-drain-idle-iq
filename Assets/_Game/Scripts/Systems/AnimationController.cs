@@ -30,6 +30,7 @@ namespace BrainDrain.Systems
         public static AnimationController Instance { get; private set; }
 
         private static bool isQuitting;
+        private readonly List<GameObject> _trackedVfxObjects = new();
 
         private readonly Dictionary<Transform, Coroutine> tapAnimCoroutines = new();
         private readonly Dictionary<Transform, Coroutine> breathingCoroutines = new();
@@ -56,6 +57,42 @@ namespace BrainDrain.Systems
         private void OnApplicationQuit()
         {
             isQuitting = true;
+        }
+
+        private void OnDestroy()
+        {
+            isQuitting = true;
+            StopAllCoroutines();
+            foreach (var go in _trackedVfxObjects)
+            {
+                if (go != null)
+                {
+                    KillVfxTweens(go);
+                    Destroy(go);
+                }
+            }
+            _trackedVfxObjects.Clear();
+            if (Instance == this) Instance = null;
+        }
+
+        // Kills DOTween tweens on all components that VFX spawners use as tween targets.
+        // go.transform covers RectTransform (DOAnchorPos, DOScale).
+        // TextMeshProUGUI covers label.DOFade. Image covers future color tweens.
+        // DOTween.Kill(null) is a documented safe no-op.
+        private static void KillVfxTweens(GameObject go)
+        {
+            go.transform.DOKill();
+            DOTween.Kill(go.GetComponent<TextMeshProUGUI>());
+            DOTween.Kill(go.GetComponent<Image>());
+        }
+
+        // Normal-path cleanup: unregister from tracking, kill tweens, destroy.
+        private void DestroyTrackedVfx(GameObject go)
+        {
+            if (go == null) return;
+            _trackedVfxObjects.Remove(go);
+            KillVfxTweens(go);
+            Destroy(go);
         }
 
         private static AnimationController EnsureInstance()
@@ -282,12 +319,14 @@ namespace BrainDrain.Systems
 
         private void SpawnFloatingRewardText(string text, Vector2 screenPosition, RectTransform parent)
         {
+            if (isQuitting) return;
             Canvas canvas = parent.GetComponentInParent<Canvas>();
             Camera screenCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPosition, screenCamera, out Vector2 localPoint);
 
             GameObject textObject = new GameObject("FloatingRewardText", typeof(RectTransform));
             textObject.transform.SetParent(parent, false);
+            _trackedVfxObjects.Add(textObject);
 
             RectTransform textRect = textObject.GetComponent<RectTransform>();
             textRect.sizeDelta = new Vector2(220f, 50f);
@@ -313,7 +352,7 @@ namespace BrainDrain.Systems
             {
                 if (textRect != null)
                 {
-                    Destroy(textRect.gameObject);
+                    DestroyTrackedVfx(textRect.gameObject);
                 }
             });
         }
@@ -402,6 +441,7 @@ namespace BrainDrain.Systems
 
         private void SpawnSplatParticles(Vector2 screenPosition, RectTransform parent)
         {
+            if (isQuitting) return;
             int count = UnityEngine.Random.Range(4, 7);
 
             Canvas canvas = parent.GetComponentInParent<Canvas>();
@@ -412,6 +452,7 @@ namespace BrainDrain.Systems
             {
                 GameObject particleObject = new GameObject("GooSplatParticle", typeof(RectTransform), typeof(Image));
                 particleObject.transform.SetParent(parent, false);
+                _trackedVfxObjects.Add(particleObject);
 
                 RectTransform particleRect = particleObject.GetComponent<RectTransform>();
                 // Make particles slightly larger so the detailed shapes are easily visible
@@ -430,7 +471,7 @@ namespace BrainDrain.Systems
             }
         }
 
-        private static IEnumerator SplatParticleRoutine(RectTransform particleRect, Image particleImage, Vector2 from, Vector2 to)
+        private IEnumerator SplatParticleRoutine(RectTransform particleRect, Image particleImage, Vector2 from, Vector2 to)
         {
             const float lifetime = 0.3f;
             const float fadeStart = 0.2f;
@@ -455,7 +496,7 @@ namespace BrainDrain.Systems
 
             if (particleRect != null)
             {
-                Destroy(particleRect.gameObject);
+                DestroyTrackedVfx(particleRect.gameObject);
             }
         }
 
@@ -479,6 +520,7 @@ namespace BrainDrain.Systems
 
         private void SpawnTouchRipple(Vector2 screenPosition, RectTransform parent)
         {
+            if (isQuitting) return;
             Canvas canvas = parent.GetComponentInParent<Canvas>();
             Camera screenCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPosition, screenCamera, out Vector2 localPoint);
@@ -486,6 +528,7 @@ namespace BrainDrain.Systems
             // 1. Create Glowing Core
             GameObject glowGo = new GameObject("TouchGlow", typeof(RectTransform), typeof(Image));
             glowGo.transform.SetParent(parent, false);
+            _trackedVfxObjects.Add(glowGo);
             RectTransform glowRect = glowGo.GetComponent<RectTransform>();
             glowRect.sizeDelta = new Vector2(120f, 120f);
             glowRect.anchoredPosition = localPoint;
@@ -499,6 +542,7 @@ namespace BrainDrain.Systems
             // 2. Create Expanding Ring
             GameObject ringGo = new GameObject("TouchRing", typeof(RectTransform), typeof(Image));
             ringGo.transform.SetParent(parent, false);
+            _trackedVfxObjects.Add(ringGo);
             RectTransform ringRect = ringGo.GetComponent<RectTransform>();
             ringRect.sizeDelta = new Vector2(150f, 150f);
             ringRect.anchoredPosition = localPoint;
@@ -512,7 +556,7 @@ namespace BrainDrain.Systems
             StartCoroutine(TouchRippleRoutine(ringRect, ringImg, glowRect, glowImg));
         }
 
-        private static IEnumerator TouchRippleRoutine(RectTransform ringRect, Image ringImage, RectTransform glowRect, Image glowImage)
+        private IEnumerator TouchRippleRoutine(RectTransform ringRect, Image ringImage, RectTransform glowRect, Image glowImage)
         {
             const float duration = 0.4f;
             float elapsed = 0f;
@@ -544,8 +588,8 @@ namespace BrainDrain.Systems
                 yield return null;
             }
 
-            if (glowRect != null) Destroy(glowRect.gameObject);
-            if (ringRect != null) Destroy(ringRect.gameObject);
+            if (glowRect != null) DestroyTrackedVfx(glowRect.gameObject);
+            if (ringRect != null) DestroyTrackedVfx(ringRect.gameObject);
         }
 
         private static Sprite GetRingSprite()
