@@ -20,6 +20,7 @@ namespace BrainDrain.Systems
         private float secondsUntilNextEvent;
 
         private static RandomEventManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static RandomEventManager Instance
@@ -34,6 +35,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<RandomEventManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("RandomEventManager (Auto)");
                     instance = hostObject.AddComponent<RandomEventManager>();
                 }
@@ -56,6 +58,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Debug.LogWarning("[RandomEventManager] Duplicate instance destroyed.", this);
@@ -72,12 +75,18 @@ namespace BrainDrain.Systems
             SubscribeToGameTick();
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeFromGameTick();
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

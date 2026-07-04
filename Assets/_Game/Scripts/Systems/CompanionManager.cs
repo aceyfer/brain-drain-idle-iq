@@ -37,6 +37,7 @@ namespace BrainDrain.Systems
         private int currentTier;
 
         private static CompanionManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static CompanionManager Instance
@@ -51,6 +52,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<CompanionManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("CompanionManager (Auto)");
                     instance = hostObject.AddComponent<CompanionManager>();
                 }
@@ -79,6 +81,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -86,6 +89,20 @@ namespace BrainDrain.Systems
             }
 
             instance = this;
+        }
+
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                isShuttingDown = true;
+                instance = null;
+            }
         }
 
         /// <summary>Returns the next purchasable tier's data, or null if all 6 are owned or the list is misconfigured.</summary>

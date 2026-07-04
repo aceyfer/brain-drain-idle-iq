@@ -29,6 +29,7 @@ namespace BrainDrain.Systems
         private readonly HashSet<string> purchasedItemIds = new HashSet<string>();
 
         private static PremiumShopManager instance;
+        private static bool isShuttingDown;
 
         public static PremiumShopManager Instance
         {
@@ -38,6 +39,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<PremiumShopManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var host = new GameObject("PremiumShopManager (Auto)");
                     instance = host.AddComponent<PremiumShopManager>();
                 }
@@ -51,6 +53,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -72,6 +75,20 @@ namespace BrainDrain.Systems
                     neuronCost = 50,
                     itemType = PremiumItemType.UnlockProfanityPack
                 });
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                isShuttingDown = true;
+                instance = null;
             }
         }
 

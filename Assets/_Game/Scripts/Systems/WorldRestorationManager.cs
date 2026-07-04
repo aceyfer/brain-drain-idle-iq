@@ -22,6 +22,7 @@ namespace BrainDrain.Systems
         [SerializeField] private float fadeSpeed = 1f;
 
         private static WorldRestorationManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static WorldRestorationManager Instance
@@ -36,6 +37,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<WorldRestorationManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("WorldRestorationManager (Auto)");
                     instance = hostObject.AddComponent<WorldRestorationManager>();
                 }
@@ -87,6 +89,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Debug.LogWarning("[WorldRestorationManager] Duplicate instance destroyed.", this);
@@ -106,10 +109,16 @@ namespace BrainDrain.Systems
             ApplyStageForCumulativePoints(snapImmediately: true);
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

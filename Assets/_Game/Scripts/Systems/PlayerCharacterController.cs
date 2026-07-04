@@ -35,6 +35,7 @@ namespace BrainDrain.Systems
         [SerializeField] private float excitedHoldSeconds = 2.5f;
 
         private static PlayerCharacterController instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static PlayerCharacterController Instance
@@ -49,6 +50,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<PlayerCharacterController>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("PlayerCharacterController (Auto)");
                     instance = hostObject.AddComponent<PlayerCharacterController>();
                 }
@@ -70,6 +72,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Debug.LogWarning("[PlayerCharacterController] Duplicate instance destroyed.", this);
@@ -91,12 +94,18 @@ namespace BrainDrain.Systems
             SubscribeToEvents();
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

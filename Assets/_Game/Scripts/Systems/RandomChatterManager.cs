@@ -17,6 +17,7 @@ namespace BrainDrain.Systems
         private const string SystemsParentName = "_Systems";
 
         private static RandomChatterManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static RandomChatterManager Instance
@@ -31,6 +32,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<RandomChatterManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("RandomChatterManager (Auto)");
                     instance = hostObject.AddComponent<RandomChatterManager>();
                 }
@@ -116,6 +118,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -132,6 +135,20 @@ namespace BrainDrain.Systems
 
             profanityUnlocked = PlayerPrefs.GetInt(ProfanityUnlockedPrefsKey, 0) == 1;
             profanityEnabled = PlayerPrefs.GetInt(ProfanityEnabledPrefsKey, 0) == 1;
+        }
+
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                isShuttingDown = true;
+                instance = null;
+            }
         }
 
         /// <summary>

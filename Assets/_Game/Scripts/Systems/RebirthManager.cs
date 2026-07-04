@@ -12,6 +12,7 @@ namespace BrainDrain.Systems
         private const double FlatTapMultiplierBonusPerRebirth = 0.05;
 
         private static RebirthManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static RebirthManager Instance
@@ -26,6 +27,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<RebirthManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("RebirthManager (Auto)");
                     instance = hostObject.AddComponent<RebirthManager>();
                 }
@@ -51,6 +53,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -58,6 +61,20 @@ namespace BrainDrain.Systems
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                isShuttingDown = true;
+                instance = null;
+            }
         }
 
         /// <summary>

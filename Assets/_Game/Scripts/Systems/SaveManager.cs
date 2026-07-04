@@ -136,6 +136,7 @@ namespace BrainDrain.Systems
 #endif
 
         private static SaveManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>
         /// Self-bootstrapping: creates a hosting GameObject on first access if nothing placed
@@ -155,6 +156,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<SaveManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("SaveManager (Auto)");
                     instance = hostObject.AddComponent<SaveManager>();
                 }
@@ -179,6 +181,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -217,6 +220,11 @@ namespace BrainDrain.Systems
 #endif
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             if (GameManager.Instance != null)
@@ -226,6 +234,7 @@ namespace BrainDrain.Systems
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

@@ -28,6 +28,7 @@ namespace BrainDrain.Systems
         public COGSStageChangedUnityEvent OnStageChanged = new();
 
         private static COGSPortraitController instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static COGSPortraitController Instance
@@ -42,6 +43,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<COGSPortraitController>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("COGSPortraitController (Auto)");
                     instance = hostObject.AddComponent<COGSPortraitController>();
                 }
@@ -55,6 +57,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Debug.LogWarning("[COGSPortraitController] Duplicate instance destroyed.", this);
@@ -75,12 +78,18 @@ namespace BrainDrain.Systems
             SubscribeToEvents();
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

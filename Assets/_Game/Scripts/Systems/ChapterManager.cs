@@ -38,6 +38,7 @@ namespace BrainDrain.Systems
         public ChapterDataUnityEvent OnNamePromptRequested = new();
 
         private static ChapterManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static ChapterManager Instance
@@ -52,6 +53,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<ChapterManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("ChapterManager (Auto)");
                     instance = hostObject.AddComponent<ChapterManager>();
                 }
@@ -70,6 +72,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Debug.LogWarning("[ChapterManager] Duplicate instance destroyed.", this);
@@ -89,12 +92,18 @@ namespace BrainDrain.Systems
             CheckForChapterUnlock();
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

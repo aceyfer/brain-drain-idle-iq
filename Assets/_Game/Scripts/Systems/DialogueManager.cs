@@ -52,6 +52,7 @@ namespace BrainDrain.Systems
         public DialogueLineUnityEvent OnDialogueLine = new();
 
         private static DialogueManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static DialogueManager Instance
@@ -66,6 +67,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<DialogueManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("DialogueManager (Auto)");
                     instance = hostObject.AddComponent<DialogueManager>();
                 }
@@ -87,6 +89,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -112,12 +115,18 @@ namespace BrainDrain.Systems
             }
         }
 
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
 
             if (instance == this)
             {
+                isShuttingDown = true;
                 instance = null;
             }
         }

@@ -19,6 +19,7 @@ namespace BrainDrain.Systems
         private readonly HashSet<string> ownedItemIds = new();
 
         private static CashShopManager instance;
+        private static bool isShuttingDown;
 
         /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
         public static CashShopManager Instance
@@ -33,6 +34,7 @@ namespace BrainDrain.Systems
                 instance = FindAnyObjectByType<CashShopManager>();
                 if (instance == null)
                 {
+                    if (isShuttingDown) return null;
                     var hostObject = new GameObject("CashShopManager (Auto)");
                     instance = hostObject.AddComponent<CashShopManager>();
                 }
@@ -58,6 +60,7 @@ namespace BrainDrain.Systems
 
         private void Awake()
         {
+            isShuttingDown = false;
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -65,6 +68,20 @@ namespace BrainDrain.Systems
             }
 
             instance = this;
+        }
+
+        private void OnApplicationQuit()
+        {
+            isShuttingDown = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                isShuttingDown = true;
+                instance = null;
+            }
         }
 
         public bool IsItemOwned(CashShopItemData item) => item != null && ownedItemIds.Contains(item.itemId);
