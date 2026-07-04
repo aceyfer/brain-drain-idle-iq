@@ -220,11 +220,6 @@ namespace BrainDrain.Systems
 #endif
         }
 
-        private void OnApplicationQuit()
-        {
-            isShuttingDown = true;
-        }
-
         private void OnDestroy()
         {
             if (GameManager.Instance != null)
@@ -484,6 +479,7 @@ namespace BrainDrain.Systems
 
         private void OnApplicationQuit()
         {
+            isShuttingDown = true;
             SaveGame();
         }
 
