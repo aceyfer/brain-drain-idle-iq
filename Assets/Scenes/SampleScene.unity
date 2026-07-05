@@ -33888,8 +33888,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bf9e453a6d31ff478dff6ff355d3e4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.GameManager
-  playerIQManager: {fileID: 0}
-  currencyManager: {fileID: 0}
+  playerIQManager: {fileID: 1486179486}
+  currencyManager: {fileID: 1486179488}
   rankDefinitions:
   - rankName: Unregistered Outcast
     threshold: 0
