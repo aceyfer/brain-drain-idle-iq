@@ -516,18 +516,13 @@ namespace BrainDrain.UI
             }
             else if (cumulativePointsSpent >= threshold)
             {
-                // Threshold reached — nudge the player to click the now-unlocked button.
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED)\n" +
-                    $"<color=#00FF88><size=18>READY — CLICK THE SNOTTING BUTTON</size></color>";
+                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED) | <color=#00FF88><size=14>SNOTTING READY</size></color>";
             }
             else
             {
-                // Pre-Snotting, still working toward threshold — show progress + flow hint.
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED)\n" +
-                    $"<color=#FFD700><size=18>SNOTTING: {NumberFormatter.Format(cumulativePointsSpent)} / {NumberFormatter.Format(threshold)} RESTORATION PTS</size></color>\n" +
-                    $"<color=#888888><size=16>CONVERT CASH → RESTORATION PTS → RESTORE → UNLOCK SNOTTING</size></color>";
+                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED) | <color=#FFD700><size=14>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
             }
         }
 

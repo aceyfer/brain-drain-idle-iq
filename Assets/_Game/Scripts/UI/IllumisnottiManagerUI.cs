@@ -16,6 +16,8 @@ namespace BrainDrain.UI
         [SerializeField] private Sprite roundedRectSprite;
         [SerializeField] private Sprite vignetteSprite;
         [SerializeField] private TMP_FontAsset fontAsset;
+        [Tooltip("Phase 2 HUD owns the Illumisnotti title. Leave this off to avoid a duplicate runtime RANK badge.")]
+        [SerializeField] private bool showHudBadge;
 
         private GameObject badgeGo;
         private TextMeshProUGUI badgeText;
@@ -28,7 +30,10 @@ namespace BrainDrain.UI
         private void Start()
         {
             CreateInterferenceUI();
-            CreateHUDBadge();
+            if (showHudBadge)
+            {
+                CreateHUDBadge();
+            }
 
             // Subscribe to Rebirth/Snotting events
             if (RebirthManager.Instance != null)
