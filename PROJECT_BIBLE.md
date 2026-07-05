@@ -1,7 +1,7 @@
 
 # PROJECT BIBLE — Brain Drain: Idle IQ
 
-*The front door. Read this first, every session. Deep architecture lives in CLAUDE.md — this file tells you what the game is, what's true, what's broken, what's protected, and what "done" means. If this file and any other doc disagree, this file wins. Last updated: 2026-07-04 (morning).*
+*The front door. Read this first, every session. Deep architecture lives in CLAUDE.md — this file tells you what the game is, what's true, what's broken, what's protected, and what "done" means. If this file and any other doc disagree, this file wins. Last updated: 2026-07-05 (Phase 1 complete).*
 
 ---
 
@@ -33,7 +33,7 @@ A satirical mobile idle-clicker by **AcEclipse Games**. You play the evil mogul 
    - **Stages 1–6** (world restoration backdrops)
    - **COGS 1–6** (narrator portrait progression)
    These may be visually *upgraded/polished* to merge with the art style. **No new character or entity sprites may be introduced** before first playable ships.
-   - Inventory (2026-07-03): COGS 1–6 ✅ in repo. Pedestrians: 35/36 in repo — Ped1 stage 1 uses Ped1_Stage2 as an approved workaround (see blocker #8). Stage 1–6 backdrop sprites: **do not exist anywhere** — confirmed absent from both repo and local machine. They are an art-production task for the Leonardo pipeline.
+   - Inventory (2026-07-05): COGS 1–6 ✅ in repo. Pedestrians: 35/36 in repo — Ped1 stage 1 uses Ped1_Stage2 as an approved workaround (see blocker #8). Stage 1-6 backdrops ✅ produced and wired (BG1.jpg, BG2-6.png).
 
 ## 3. Definition of Done — First Playable
 
@@ -44,14 +44,14 @@ The first playable is DONE when, on a fresh save, a player can: tap and feel sat
 | # | Blocker | Status |
 |---|---------|--------|
 | 1 | Global Light 2D applied to zero sorting layers — world rendered black | ✅ **CLOSED** 2026-07-03, commit `c03e9a0`. Mask now covers Background/World/Default/Characters. World and pedestrians confirmed lit in Play Mode. |
-| 2 | `WorldRestorationManager.restorationStageObjects` empty — 6 backdrop GameObjects need wiring | OPEN — **hard-blocked on Stage 1–6 art production** (sprites don't exist; Leonardo pipeline task) |
-| 3 | `COGSWorldPortraitUI` absent from scene — COGS has no persistent on-screen presence | OPEN — next wiring batch |
-| 4 | `GameManager.playerIQManager` / `.currencyManager` unwired (silent fallback works; wire explicitly) | OPEN — next wiring batch |
+| 2 | `WorldRestorationManager.restorationStageObjects` empty — 6 backdrop GameObjects need wiring | ✅ **CLOSED** 2026-07-05, commits `7e9a098` + `c2682aa`. Backdrops live under `_DioramaContainer/RestorationBackdrops`; SpriteRenderers use sorting layer `Background`, order `-20`; array wired Stage1→Stage6. |
+| 3 | `COGSWorldPortraitUI` absent from scene — COGS has no persistent on-screen presence | ✅ **CLOSED** 2026-07-05, commit `3810660`. COGS portrait UI is present and wired in scene. |
+| 4 | `GameManager.playerIQManager` / `.currencyManager` unwired (silent fallback works; wire explicitly) | ✅ **CLOSED** 2026-07-05, commit `caad434`. Explicit scene refs are wired. |
 | 5 | `illumisnottiTitleText` unwired + two conflicting title ladders | ✅ **CLOSED** 2026-07-03, commits `331b08b` + `2ef7f79`. SNOTTY ROOKIE ladder is official (see §7.11); HUD text wired; badge and HUD confirmed showing identical titles. |
-| 6 | `PremiumShopManager` absent from scene entirely (not merely unwired); `PremiumShopUIController.premiumShopManager` = fileID 0 | OPEN — add to `_Systems`, wire the UI ref. Wiring only; logic protected (§5). |
+| 6 | `PremiumShopManager` absent from scene entirely (not merely unwired); `PremiumShopUIController.premiumShopManager` = fileID 0 | ✅ **CLOSED** 2026-07-05, commit `7d8620a`. Manager added to `_Systems`; premium shop UI ref wired. Logic remains protected (§5). |
 | 7 | Portrait middle UI crowded / unreadable | OPEN — resolved by §2 downsize + 3-tab shop (Phase 2) |
-| 8 | Ped1 stage-1 art missing (`Ped1_Stage1.png` deleted; scene + `Ped1_Walk_Stage1.anim` + BackgroundPedestrianManager slot still reference dead GUID `50befc083ac09734f96d06ddddd6342e`) | WORKAROUND APPROVED — repoint all refs to `Ped1_Stage2.png` (GUID `5b666186fd7406e489f8cfd79a112cf2`, sprite fileID `-9157900419861997769`). Repoint prompt issued; **execution unconfirmed — verify in morning queue.** Real Stage 1 art regeneration deferred post-testing. |
-| 9 | Play Mode exit warning: "Some objects were not cleaned up" | DIAGNOSED. Leakers: `RebirthManager (Auto)`, `RandomEventManager (Auto)`, `CompanionManager (Auto)`, `RandomChatterManager (Auto)`, `WorldRestorationManager (Auto)`. Cause: UI `OnDestroy` unsubscribes call `Manager.Instance`; the getter self-bootstraps a new (Auto) object mid-teardown. Fix recipe: static `isQuitting`/teardown flag per self-bootstrapping singleton; getter returns null instead of creating while quitting. Editor-only, invisible on device. FIX IMPLEMENTED on branch `overnight/singleton-guards` (commit `9639860`): isShuttingDown flag pattern across ALL 15 self-bootstrapping managers (guard in getter + Awake reset + OnApplicationQuit + OnDestroy-when-active-instance setters; 7 files got new OnDestroy methods). **PENDING: Unity verification (2 Play Mode cycles per Assets/Docs/overnight-2026-07-04.md) + merge to main.** |
+| 8 | Ped1 stage-1 art missing (`Ped1_Stage1.png` deleted; scene + `Ped1_Walk_Stage1.anim` + BackgroundPedestrianManager slot referenced dead GUID `50befc083ac09734f96d06ddddd6342e`) | ✅ **CLOSED / WORKAROUND IN PLACE** 2026-07-03, commit `8c1138d`. All dead refs repointed to `Ped1_Stage2.png` (GUID `5b666186fd7406e489f8cfd79a112cf2`, sprite fileID `-9157900419861997769`). Real Stage 1 art regeneration deferred post-testing. |
+| 9 | Play Mode exit warning: "Some objects were not cleaned up" | ✅ **CLOSED** 2026-07-05, merged commits `9639860` + `828dc36`. Singleton teardown guards prevent `(Auto)` manager resurrection during exit; SaveManager duplicate quit hook fixed; two Play Mode cycles passed and warning confirmed gone. |
 
 ## 5. Protected Zones — NEVER touch without explicit written approval
 
@@ -125,8 +125,8 @@ Real Money ──▶ God Tier Store (stubbed, post-first-playable)
 
 ## 9. First-Playable Checklist
 
-**Phase 1 — Runs correctly:**
-☑ Light 2D (blocker 1) · ☑ title ladder + HUD title (blocker 5) · ☐ verify/execute Ped1 repoint (blocker 8) · ☐ wire GameManager refs (blocker 4) · ☐ add + wire COGSWorldPortraitUI (blocker 3) · ☐ add PremiumShopManager to `_Systems` + wire UI ref (blocker 6) · ☐ verify (2 Play Mode cycles) + merge overnight/singleton-guards branch (blocker 9, commits 9639860/03d5939/7ca98b4) · ☐ produce Stage 1–6 backdrops (Leonardo pipeline), then wire blocker 2
+**Phase 1 — Runs correctly: PHASE 1 COMPLETE 2026-07-05**
+☑ Light 2D (blocker 1) · ☑ title ladder + HUD title (blocker 5) · ☑ Ped1 repoint workaround (blocker 8) · ☑ wire GameManager refs (blocker 4) · ☑ add + wire COGSWorldPortraitUI (blocker 3) · ☑ add PremiumShopManager to `_Systems` + wire UI ref (blocker 6) · ☑ verify (2 Play Mode cycles) + merge singleton teardown guards (blocker 9, commits 9639860/828dc36) · ☑ produce and wire Stage 1–6 backdrops (blocker 2)
 **Phase 2 — Reads correctly:**
 ☐ UI icon downsize pass (§2.2) · ☐ build 3-tab unified shop panel (§2.4) · ☐ COGS/chatter bubble readability pass (§2.3) · ☐ middle-screen decongestion (blocker 7) · ☐ Play Mode pass: every HUD readout updates (BP, cumulative, BPPS, Cash, RP, IQ, Snottings, Restoration %, title)
 **Phase 3 — Feels correct:**
