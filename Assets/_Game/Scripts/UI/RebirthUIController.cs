@@ -125,6 +125,14 @@ namespace BrainDrain.UI
             if (img != null)
             {
                 img.color = unlocked ? ButtonColorReady : ButtonColorLocked;
+                img.raycastTarget = unlocked;
+            }
+
+            Transform innerFill = rebirthTriggerButton.transform.Find("InnerFill");
+            Image innerFillImage = innerFill != null ? innerFill.GetComponent<Image>() : null;
+            if (innerFillImage != null)
+            {
+                innerFillImage.raycastTarget = unlocked;
             }
 
             TextMeshProUGUI txt = rebirthTriggerButton.GetComponentInChildren<TextMeshProUGUI>(true);
