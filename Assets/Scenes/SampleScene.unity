@@ -21237,7 +21237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c61c816aeb739be46bccd14c0558cf33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.PremiumShopUIController
-  premiumShopManager: {fileID: 0}
+  premiumShopManager: {fileID: 706123450000000006}
   currencyManager: {fileID: 1486179488}
   shopPanel: {fileID: 856580541}
   openButton: {fileID: 1087047317}
@@ -33857,6 +33857,7 @@ GameObject:
   - component: {fileID: 763822613}
   - component: {fileID: 799359081}
   - component: {fileID: 1486179492}
+  - component: {fileID: 706123450000000006}
   m_Layer: 0
   m_Name: _Systems
   m_TagString: Untagged
@@ -51895,3 +51896,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.COGSWorldPortraitUI
   portraitImage: {fileID: 706123450000000004}
+--- !u!114 &706123450000000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1486179485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 089835883099fe44294584ffa003926e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PremiumShopManager
+  items: []
