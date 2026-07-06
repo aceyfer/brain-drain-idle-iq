@@ -59,6 +59,11 @@ namespace BrainDrain.UI
         {
             activeTab = tab;
 
+            if (tabPanels == null)
+            {
+                return;
+            }
+
             for (int i = 0; i < tabPanels.Length; i++)
             {
                 TabPanel panel = tabPanels[i];
