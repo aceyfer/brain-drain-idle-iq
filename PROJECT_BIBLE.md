@@ -136,7 +136,9 @@ Real Money ──▶ God Tier Store (stubbed, post-first-playable)
 
 ## 10. Deferred — post-first-playable (good ideas, wrong time)
 
-Real IAP for God Tier Store · secret ending sequence (flag exists) · COGS voicepack + Y2K theme swap · Wardrobe/outfit art + UI polish · dialogue font-degradation reconciliation (presentation still keys off PlayerIQ) · 12-chapter content review · `BrainRotEventData.multiplierSpike` (never read) · `ChapterUnlockConditionType.PointsSpent` re-pointing · regenerate real Ped1 Stage 1 art · new character/entity sprites of any kind (§2.5).
+Real IAP for God Tier Store · secret ending sequence (flag exists) · COGS voicepack + Y2K theme swap · Wardrobe/outfit art + UI polish · COGSWorldPortraitUI visuals disabled pending COGS art restyle — object must stay ACTIVE, it hosts the COGSPortraitController singleton · dialogue font-degradation reconciliation (presentation still keys off PlayerIQ) · 12-chapter content review · `BrainRotEventData.multiplierSpike` (never read) · `ChapterUnlockConditionType.PointsSpent` re-pointing · regenerate real Ped1 Stage 1 art · new character/entity sprites of any kind (§2.5).
+
+Scar tissue: never SetActive(false) an object hosting a self-bootstrapping singleton; hide visuals instead.
 
 ## 11. Doc Map
 

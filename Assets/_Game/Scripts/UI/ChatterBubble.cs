@@ -28,6 +28,16 @@ namespace BrainDrain.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
+
+            if (textLabel != null)
+            {
+                textLabel.raycastTarget = false;
+            }
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.raycastTarget = false;
+            }
         }
 
         private void Start()

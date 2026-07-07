@@ -1,5 +1,8 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using BrainDrain.Core;
 using BrainDrain.Systems;
@@ -7,49 +10,72 @@ using BrainDrain.Systems;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// Populates the shop scroll list with one UpgradeSlotUI per building template, sorted by
-    /// unlock order (cheapest/earliest-unlocking first), and keeps each row's state in sync
-    /// with currency and player level. Also owns the shop panel's open/closed state -- hidden
-    /// by default, opened via shopButton, closed via closeButton -- since the buildings list
-    /// now lives in a popup rather than the main game view.
+    /// Three-tab shop overlay: BP Upgrades, Cash Investments, and RP Restorations.
+    /// Each tab owns its own scroll content list; only one tab panel is visible at a time.
     /// </summary>
     public sealed class ShopUIController : MonoBehaviour
     {
+        public enum ShopTab
+        {
+            BpUpgrades = 0,
+            CashInvestments = 1,
+            RpRestorations = 2
+        }
+
         [Header("Dependencies")]
         [SerializeField] private UpgradeManager upgradeManager;
         [SerializeField] private CurrencyManager currencyManager;
 
-        [Header("Layout")]
-        [SerializeField] private RectTransform content;
+        [Header("Tab Navigation")]
+        [SerializeField] private Button bpTabButton;
+        [SerializeField] private Button cashTabButton;
+        [SerializeField] private Button rpTabButton;
+        [SerializeField] private GameObject bpTabPanel;
+        [SerializeField] private GameObject cashTabPanel;
+        [SerializeField] private GameObject rpTabPanel;
+
+        [Header("Tab Content")]
+        [FormerlySerializedAs("content")]
+        [SerializeField] private RectTransform bpContent;
+        [SerializeField] private RectTransform cashContent;
+        [SerializeField] private RectTransform rpContent;
         [SerializeField] private UpgradeSlotUI slotPrefab;
+        [SerializeField] private RestorationSlotUI restorationSlotPrefab;
 
         [Header("Panel Visibility")]
-        [Tooltip("The shop's outer panel/background GameObject, shown/hidden as a whole. Distinct from 'content', which is just the scrollable rows container.")]
         [SerializeField] private GameObject shopPanel;
-        [Tooltip("Opens the shop. Lives outside shopPanel (e.g. in the persistent HUD), since it must be clickable while the shop is closed.")]
         [SerializeField] private Button shopButton;
-        [Tooltip("Closes the shop. Lives inside shopPanel.")]
         [SerializeField] private Button closeButton;
 
         private const float SlideDurationSeconds = 0.3f;
 
-        private readonly List<UpgradeSlotUI> spawnedSlots = new(8);
+        private readonly List<UpgradeSlotUI> bpSlots = new(8);
+        private readonly List<UpgradeSlotUI> cashSlots = new(8);
+        private readonly List<RestorationSlotUI> rpSlots = new(8);
         private static readonly List<BuildingData> SortedTemplatesBuffer = new(8);
+
         private bool built;
+        private ShopTab activeTab = ShopTab.BpUpgrades;
+        private RestorationSlotUI runtimeRestorationSlotTemplate;
 
         private RectTransform shopPanelRect;
         private Vector2 shopPanelRestingPosition;
         private bool shopPanelRestingPositionCaptured;
 
+        public event Action ShopClosed;
+
         private void Awake()
         {
-            if (shopButton != null) shopButton.onClick.AddListener(OpenShop);
-            if (closeButton != null) closeButton.onClick.AddListener(CloseShop);
+            EnsureThreeTabLayout();
+            WireTabButtons();
+
+            if (closeButton != null)
+            {
+                closeButton.onClick.AddListener(CloseShop);
+            }
 
             if (shopPanel != null)
             {
-                // Capture the authored resting position before hiding -- this is the anchor
-                // both the slide-up-open and slide-down-close animations measure from/to.
                 shopPanelRect = shopPanel.GetComponent<RectTransform>();
                 if (shopPanelRect != null)
                 {
@@ -58,6 +84,27 @@ namespace BrainDrain.UI
                 }
 
                 shopPanel.SetActive(false);
+            }
+        }
+
+        private void WireTabButtons()
+        {
+            if (bpTabButton != null)
+            {
+                bpTabButton.onClick.RemoveListener(OnBpTabClicked);
+                bpTabButton.onClick.AddListener(OnBpTabClicked);
+            }
+
+            if (cashTabButton != null)
+            {
+                cashTabButton.onClick.RemoveListener(OnCashTabClicked);
+                cashTabButton.onClick.AddListener(OnCashTabClicked);
+            }
+
+            if (rpTabButton != null)
+            {
+                rpTabButton.onClick.RemoveListener(OnRpTabClicked);
+                rpTabButton.onClick.AddListener(OnRpTabClicked);
             }
         }
 
@@ -71,6 +118,7 @@ namespace BrainDrain.UI
             }
 
             BuildShop();
+            SelectTab(ShopTab.BpUpgrades);
         }
 
         private void OnDestroy()
@@ -83,7 +131,20 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>Opens the shop panel, sliding it down from offscreen-above into its authored resting position.</summary>
+        public bool IsOpen => shopPanel != null && shopPanel.activeSelf;
+
+        public void ToggleShop()
+        {
+            if (IsOpen)
+            {
+                CloseShop();
+            }
+            else
+            {
+                OpenShop();
+            }
+        }
+
         public void OpenShop()
         {
             if (shopPanel == null)
@@ -92,6 +153,8 @@ namespace BrainDrain.UI
             }
 
             shopPanel.SetActive(true);
+            SelectTab(activeTab);
+            RefreshAllSlots();
 
             if (shopPanelRect != null && shopPanelRestingPositionCaptured)
             {
@@ -100,7 +163,6 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>Closes the shop panel, sliding it back up offscreen, then deactivating it once the slide finishes.</summary>
         public void CloseShop()
         {
             if (shopPanel == null)
@@ -118,12 +180,271 @@ namespace BrainDrain.UI
                     {
                         panelToHide.SetActive(false);
                     }
+
+                    ShopClosed?.Invoke();
                 });
             }
             else
             {
                 shopPanel.SetActive(false);
+                ShopClosed?.Invoke();
             }
+        }
+
+        public void SelectTab(ShopTab tab)
+        {
+            activeTab = tab;
+
+            if (bpTabPanel != null) bpTabPanel.SetActive(tab == ShopTab.BpUpgrades);
+            if (cashTabPanel != null) cashTabPanel.SetActive(tab == ShopTab.CashInvestments);
+            if (rpTabPanel != null) rpTabPanel.SetActive(tab == ShopTab.RpRestorations);
+
+            SetTabButtonHighlight(bpTabButton, tab == ShopTab.BpUpgrades);
+            SetTabButtonHighlight(cashTabButton, tab == ShopTab.CashInvestments);
+            SetTabButtonHighlight(rpTabButton, tab == ShopTab.RpRestorations);
+        }
+
+        private static void SetTabButtonHighlight(Button button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Image image = button.targetGraphic as Image;
+            if (image != null)
+            {
+                image.color = selected
+                    ? new Color(0f, 0.94f, 1f, 1f)
+                    : new Color(0.35f, 0.35f, 0.4f, 1f);
+            }
+        }
+
+        private void OnBpTabClicked() => SelectTab(ShopTab.BpUpgrades);
+        private void OnCashTabClicked() => SelectTab(ShopTab.CashInvestments);
+        private void OnRpTabClicked() => SelectTab(ShopTab.RpRestorations);
+
+        private void EnsureThreeTabLayout()
+        {
+            if (bpTabPanel != null && cashTabPanel != null && rpTabPanel != null
+                && bpContent != null && cashContent != null && rpContent != null)
+            {
+                return;
+            }
+
+            Transform panelRoot = shopPanel != null ? shopPanel.transform : transform;
+
+            ScrollRect sourceScroll = panelRoot.GetComponentInChildren<ScrollRect>(true);
+            if (sourceScroll == null)
+            {
+                Debug.LogWarning("[ShopUIController] Cannot bootstrap tabs: no ScrollRect found.", this);
+                return;
+            }
+
+            if (bpContent == null)
+            {
+                bpContent = sourceScroll.content;
+            }
+
+            Transform tabBar = panelRoot.Find("ShopTabBar");
+            if (tabBar == null)
+            {
+                tabBar = CreateRuntimeTabBar(panelRoot);
+            }
+
+            if (bpTabButton == null) bpTabButton = tabBar.Find("BpTabButton")?.GetComponent<Button>();
+            if (cashTabButton == null) cashTabButton = tabBar.Find("CashTabButton")?.GetComponent<Button>();
+            if (rpTabButton == null) rpTabButton = tabBar.Find("RpTabButton")?.GetComponent<Button>();
+
+            if (bpTabPanel == null)
+            {
+                bpTabPanel = EnsureRuntimeTabPanel(panelRoot, "BpUpgradesPanel", sourceScroll.transform, out _);
+            }
+
+            if (cashTabPanel == null || cashContent == null)
+            {
+                cashTabPanel = EnsureRuntimeClonedPanel(
+                    panelRoot,
+                    sourceScroll.gameObject,
+                    "CashInvestmentsPanel",
+                    "CashInvestmentsScrollView",
+                    out cashContent);
+            }
+
+            if (rpTabPanel == null || rpContent == null)
+            {
+                rpTabPanel = EnsureRuntimeClonedPanel(
+                    panelRoot,
+                    sourceScroll.gameObject,
+                    "RpRestorationsPanel",
+                    "RpRestorationsScrollView",
+                    out rpContent);
+
+                if (restorationSlotPrefab == null && slotPrefab != null)
+                {
+                    runtimeRestorationSlotTemplate = CreateRuntimeRestorationSlotTemplate(slotPrefab);
+                }
+            }
+        }
+
+        private static Transform CreateRuntimeTabBar(Transform panelRoot)
+        {
+            GameObject tabBarGo = new GameObject("ShopTabBar", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            tabBarGo.transform.SetParent(panelRoot, false);
+
+            RectTransform tabBarRect = tabBarGo.GetComponent<RectTransform>();
+            tabBarRect.anchorMin = new Vector2(0f, 1f);
+            tabBarRect.anchorMax = new Vector2(1f, 1f);
+            tabBarRect.pivot = new Vector2(0.5f, 1f);
+            tabBarRect.sizeDelta = new Vector2(0f, 56f);
+            tabBarRect.anchoredPosition = new Vector2(0f, -3f);
+
+            HorizontalLayoutGroup layout = tabBarGo.GetComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(12, 12, 8, 8);
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            CreateRuntimeTabButton(tabBarGo.transform, "BpTabButton", "BP UPGRADES");
+            CreateRuntimeTabButton(tabBarGo.transform, "CashTabButton", "CASH INVESTMENTS");
+            CreateRuntimeTabButton(tabBarGo.transform, "RpTabButton", "RP RESTORATIONS");
+            tabBarGo.transform.SetSiblingIndex(1);
+            return tabBarGo.transform;
+        }
+
+        private static void CreateRuntimeTabButton(Transform parent, string name, string label)
+        {
+            GameObject buttonGo = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonGo.transform.SetParent(parent, false);
+
+            Image image = buttonGo.GetComponent<Image>();
+            image.color = new Color(0.35f, 0.35f, 0.4f, 1f);
+
+            Button button = buttonGo.GetComponent<Button>();
+            button.targetGraphic = image;
+
+            GameObject textGo = new GameObject("Label", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+            textGo.transform.SetParent(buttonGo.transform, false);
+            RectTransform textRect = textGo.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            TMPro.TextMeshProUGUI tmp = textGo.GetComponent<TMPro.TextMeshProUGUI>();
+            tmp.text = label;
+            tmp.fontSize = 18f;
+            tmp.fontStyle = TMPro.FontStyles.Bold;
+            tmp.alignment = TMPro.TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.raycastTarget = false;
+        }
+
+        private static GameObject EnsureRuntimeTabPanel(
+            Transform panelRoot,
+            string panelName,
+            Transform scrollTransform,
+            out RectTransform content)
+        {
+            Transform panel = panelRoot.Find(panelName);
+            if (panel == null)
+            {
+                GameObject panelGo = new GameObject(panelName, typeof(RectTransform));
+                panelGo.transform.SetParent(panelRoot, false);
+                panel = panelGo.transform;
+            }
+
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = new Vector2(0f, -56f);
+
+            scrollTransform.SetParent(panel, false);
+            StretchRect(scrollTransform as RectTransform);
+
+            ScrollRect scroll = scrollTransform.GetComponent<ScrollRect>();
+            content = scroll != null ? scroll.content : null;
+            return panel.gameObject;
+        }
+
+        private static GameObject EnsureRuntimeClonedPanel(
+            Transform panelRoot,
+            GameObject sourceScroll,
+            string panelName,
+            string scrollName,
+            out RectTransform content)
+        {
+            Transform panel = panelRoot.Find(panelName);
+            GameObject scrollGo;
+
+            if (panel == null)
+            {
+                GameObject panelGo = new GameObject(panelName, typeof(RectTransform));
+                panelGo.transform.SetParent(panelRoot, false);
+                panel = panelGo.transform;
+
+                RectTransform panelRect = panel.GetComponent<RectTransform>();
+                panelRect.anchorMin = Vector2.zero;
+                panelRect.anchorMax = Vector2.one;
+                panelRect.offsetMin = Vector2.zero;
+                panelRect.offsetMax = new Vector2(0f, -56f);
+
+                scrollGo = Instantiate(sourceScroll, panel);
+                scrollGo.name = scrollName;
+            }
+            else
+            {
+                Transform existingScroll = panel.Find(scrollName);
+                scrollGo = existingScroll != null ? existingScroll.gameObject : Instantiate(sourceScroll, panel);
+                scrollGo.name = scrollName;
+            }
+
+            StretchRect(scrollGo.GetComponent<RectTransform>());
+
+            ScrollRect scroll = scrollGo.GetComponent<ScrollRect>();
+            content = scroll != null ? scroll.content : null;
+            if (content != null)
+            {
+                for (int i = content.childCount - 1; i >= 0; i--)
+                {
+                    Destroy(content.GetChild(i).gameObject);
+                }
+            }
+
+            return panel.gameObject;
+        }
+
+        private RestorationSlotUI CreateRuntimeRestorationSlotTemplate(UpgradeSlotUI upgradePrefab)
+        {
+            GameObject instance = Instantiate(upgradePrefab.gameObject, transform);
+            instance.name = "RestorationSlotTemplate";
+            instance.SetActive(false);
+
+            Destroy(instance.GetComponent<UpgradeSlotUI>());
+            RestorationSlotUI restoration = instance.AddComponent<RestorationSlotUI>();
+            restoration.NameText = upgradePrefab.NameText;
+            restoration.DescriptionText = upgradePrefab.DescriptionText;
+            restoration.CostText = upgradePrefab.CostText;
+            restoration.BuyButton = upgradePrefab.BuyButton;
+            restoration.Background = upgradePrefab.Background;
+
+            return restoration;
+        }
+
+        private static void StretchRect(RectTransform rect)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.pivot = new Vector2(0.5f, 0.5f);
         }
 
         private void ResolveDependencies()
@@ -149,103 +470,192 @@ namespace BrainDrain.UI
 
             ResolveDependencies();
 
-            if (upgradeManager == null || content == null || slotPrefab == null)
+            if (upgradeManager == null || bpContent == null || slotPrefab == null)
             {
                 Debug.LogWarning("[ShopUIController] Missing references; cannot build shop.", this);
                 return;
             }
 
-            // Keep static rows, destroy only others
-            for (int i = content.childCount - 1; i >= 0; i--)
-            {
-                Transform child = content.GetChild(i);
-                if (child.name == "Library" || child.name.StartsWith("UpgradeSlot_") || child.name.StartsWith("Static_"))
-                {
-                    continue;
-                }
-                Destroy(child.gameObject);
-            }
-            spawnedSlots.Clear();
+            ClearContentChildren(bpContent);
+            ClearContentChildren(cashContent);
+            ClearContentChildren(rpContent);
+            bpSlots.Clear();
+            cashSlots.Clear();
+            rpSlots.Clear();
 
-            IReadOnlyList<BuildingData> templates = upgradeManager.BuildingTemplates;
-            if (templates != null)
-            {
-                // Display in unlock order (cheapest/earliest-unlocking first), independent of
-                // however buildingTemplates happens to be ordered in the Inspector.
-                SortedTemplatesBuffer.Clear();
-                SortedTemplatesBuffer.AddRange(templates);
-                SortedTemplatesBuffer.Sort((a, b) =>
-                {
-                    if (a == null) return b == null ? 0 : 1;
-                    if (b == null) return -1;
-                    return a.unlockCumulativeBrainPower.CompareTo(b.unlockCumulativeBrainPower);
-                });
-
-                for (int i = 0; i < SortedTemplatesBuffer.Count; i++)
-                {
-                    BuildingData data = SortedTemplatesBuffer[i];
-                    if (data == null)
-                    {
-                        continue;
-                    }
-
-                    UpgradeSlotUI slot = null;
-                    // Look for existing matching slot under Content
-                    for (int c = 0; c < content.childCount; c++)
-                    {
-                        Transform child = content.GetChild(c);
-                        UpgradeSlotUI childSlot = child.GetComponent<UpgradeSlotUI>();
-                        if (childSlot != null && (child.name == $"UpgradeSlot_{data.buildingName}" || (data.buildingName == "The Literal Library" && child.name == "Library")))
-                        {
-                            slot = childSlot;
-                            slot.name = $"UpgradeSlot_{data.buildingName}";
-                            break;
-                        }
-                    }
-
-                    if (slot == null)
-                    {
-                        slot = Instantiate(slotPrefab, content);
-                        slot.name = $"UpgradeSlot_{data.buildingName}";
-                    }
-
-                    // Force sibling order to match the sort, regardless of whether this slot
-                    // was just instantiated (appends at the end) or reused from a prior build.
-                    slot.transform.SetSiblingIndex(i);
-
-                    slot.Bind(data, upgradeManager);
-                    spawnedSlots.Add(slot);
-                }
-            }
+            BuildBuildingTabs();
+            BuildRestorationTab();
 
             built = true;
             SubscribeToEvents();
             RefreshAllSlots();
+            StartCoroutine(DisableShopLayoutAfterInit());
         }
 
-        private void ClearExistingChildren()
+        private void BuildBuildingTabs()
         {
-            for (int i = content.childCount - 1; i >= 0; i--)
+            IReadOnlyList<BuildingData> templates = upgradeManager.BuildingTemplates;
+            if (templates == null)
             {
-                Transform child = content.GetChild(i);
-                if (child.name == "Library" || child.name.StartsWith("UpgradeSlot_") || child.name.StartsWith("Static_"))
+                return;
+            }
+
+            SortedTemplatesBuffer.Clear();
+            SortedTemplatesBuffer.AddRange(templates);
+            SortedTemplatesBuffer.Sort((a, b) =>
+            {
+                if (a == null) return b == null ? 0 : 1;
+                if (b == null) return -1;
+                return a.unlockCumulativeBrainPower.CompareTo(b.unlockCumulativeBrainPower);
+            });
+
+            int bpIndex = 0;
+            int cashIndex = 0;
+
+            for (int i = 0; i < SortedTemplatesBuffer.Count; i++)
+            {
+                BuildingData data = SortedTemplatesBuffer[i];
+                if (data == null)
                 {
                     continue;
                 }
-                Destroy(child.gameObject);
+
+                bool isCash = UpgradeManager.IsCashCost(data);
+                RectTransform targetContent = isCash ? cashContent : bpContent;
+                if (targetContent == null)
+                {
+                    continue;
+                }
+
+                UpgradeSlotUI slot = Instantiate(slotPrefab, targetContent);
+                slot.name = $"UpgradeSlot_{data.buildingName}";
+                slot.Bind(data, upgradeManager);
+
+                if (isCash)
+                {
+                    slot.transform.SetSiblingIndex(cashIndex++);
+                    cashSlots.Add(slot);
+                }
+                else
+                {
+                    slot.transform.SetSiblingIndex(bpIndex++);
+                    bpSlots.Add(slot);
+                }
+            }
+        }
+
+        private void BuildRestorationTab()
+        {
+            if (rpContent == null || restorationSlotPrefab == null && runtimeRestorationSlotTemplate == null)
+            {
+                return;
             }
 
-            spawnedSlots.Clear();
+            RestorationSlotUI prefab = restorationSlotPrefab != null
+                ? restorationSlotPrefab
+                : runtimeRestorationSlotTemplate;
+
+            WorldRestorationManager manager = WorldRestorationManager.Instance;
+            if (manager == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<WorldRestorationStage> stages = manager.Stages;
+            int slotIndex = 0;
+
+            for (int i = 0; i < stages.Count; i++)
+            {
+                WorldRestorationStage stage = stages[i];
+                if (stage == null || stage.pointsRequired <= 0d)
+                {
+                    continue;
+                }
+
+                RestorationSlotUI slot = Instantiate(prefab, rpContent);
+                slot.name = $"RestorationSlot_{stage.stageIndex}";
+                slot.transform.SetSiblingIndex(slotIndex++);
+                slot.Bind(stage);
+                rpSlots.Add(slot);
+            }
+        }
+
+        private static void ClearContentChildren(RectTransform content)
+        {
+            if (content == null)
+            {
+                return;
+            }
+
+            for (int i = content.childCount - 1; i >= 0; i--)
+            {
+                Destroy(content.GetChild(i).gameObject);
+            }
+        }
+
+        private IEnumerator DisableShopLayoutAfterInit()
+        {
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+
+            DisableLayoutComponents(bpContent);
+            DisableLayoutComponents(cashContent);
+            DisableLayoutComponents(rpContent);
+
+            if (bpContent != null && bpContent.parent != null)
+            {
+                DisableLayoutComponents(bpContent.parent);
+            }
+
+            if (cashContent != null && cashContent.parent != null)
+            {
+                DisableLayoutComponents(cashContent.parent);
+            }
+
+            if (rpContent != null && rpContent.parent != null)
+            {
+                DisableLayoutComponents(rpContent.parent);
+            }
+        }
+
+        private static void DisableLayoutComponents(Transform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            VerticalLayoutGroup vertical = target.GetComponent<VerticalLayoutGroup>();
+            if (vertical != null)
+            {
+                vertical.enabled = false;
+            }
+
+            HorizontalLayoutGroup horizontal = target.GetComponent<HorizontalLayoutGroup>();
+            if (horizontal != null)
+            {
+                horizontal.enabled = false;
+            }
+
+            ContentSizeFitter fitter = target.GetComponent<ContentSizeFitter>();
+            if (fitter != null)
+            {
+                fitter.enabled = false;
+            }
         }
 
         private void SubscribeToEvents()
         {
             if (currencyManager != null)
             {
-                currencyManager.OnBrainPowerChanged -= HandleBrainPowerChanged;
-                currencyManager.OnBrainPowerChanged += HandleBrainPowerChanged;
-                currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChanged;
-                currencyManager.OnCumulativeBrainPowerChanged += HandleCumulativeBrainPowerChanged;
+                currencyManager.OnBrainPowerChanged -= HandleCurrencyChanged;
+                currencyManager.OnBrainPowerChanged += HandleCurrencyChanged;
+                currencyManager.OnCumulativeBrainPowerChanged -= HandleCurrencyChanged;
+                currencyManager.OnCumulativeBrainPowerChanged += HandleCurrencyChanged;
+                currencyManager.OnCashChanged.RemoveListener(HandleCashChanged);
+                currencyManager.OnCashChanged.AddListener(HandleCashChanged);
+                currencyManager.OnPointsChanged.RemoveListener(HandlePointsChanged);
+                currencyManager.OnPointsChanged.AddListener(HandlePointsChanged);
             }
 
             if (upgradeManager != null)
@@ -253,40 +663,56 @@ namespace BrainDrain.UI
                 upgradeManager.OnBuildingsChanged -= RefreshAllSlots;
                 upgradeManager.OnBuildingsChanged += RefreshAllSlots;
             }
+
+            WorldRestorationManager restoration = WorldRestorationManager.Instance;
+            if (restoration != null)
+            {
+                restoration.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                restoration.OnRestorationProgressChanged += HandleRestorationProgressChanged;
+            }
         }
 
         private void UnsubscribeFromEvents()
         {
             if (currencyManager != null)
             {
-                currencyManager.OnBrainPowerChanged -= HandleBrainPowerChanged;
-                currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChanged;
+                currencyManager.OnBrainPowerChanged -= HandleCurrencyChanged;
+                currencyManager.OnCumulativeBrainPowerChanged -= HandleCurrencyChanged;
+                currencyManager.OnCashChanged.RemoveListener(HandleCashChanged);
+                currencyManager.OnPointsChanged.RemoveListener(HandlePointsChanged);
             }
 
             if (upgradeManager != null)
             {
                 upgradeManager.OnBuildingsChanged -= RefreshAllSlots;
             }
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+            }
         }
 
-        private void HandleBrainPowerChanged(double _)
-        {
-            RefreshAllSlots();
-        }
-
-        private void HandleCumulativeBrainPowerChanged(double _)
-        {
-            RefreshAllSlots();
-        }
+        private void HandleCurrencyChanged(double _) => RefreshAllSlots();
+        private void HandleCashChanged(double _) => RefreshAllSlots();
+        private void HandlePointsChanged(double _) => RefreshAllSlots();
+        private void HandleRestorationProgressChanged(double _) => RefreshAllSlots();
 
         private void RefreshAllSlots()
         {
-            for (int i = 0; i < spawnedSlots.Count; i++)
+            for (int i = 0; i < bpSlots.Count; i++)
             {
-                if (spawnedSlots[i] != null)
-                {
-                    spawnedSlots[i].RefreshState(currencyManager);
-                }
+                bpSlots[i]?.RefreshState(currencyManager);
+            }
+
+            for (int i = 0; i < cashSlots.Count; i++)
+            {
+                cashSlots[i]?.RefreshState(currencyManager);
+            }
+
+            for (int i = 0; i < rpSlots.Count; i++)
+            {
+                rpSlots[i]?.RefreshState(currencyManager);
             }
         }
     }

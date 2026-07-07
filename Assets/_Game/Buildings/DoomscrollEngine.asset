@@ -15,6 +15,7 @@ MonoBehaviour:
   buildingName: Doomscroll Engine
   description: Lord Snott III invented this. You perfected it.
   unlockCumulativeBrainPower: 0
-  baseCost: 10
+  costType: 1
+  baseCost: 4
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 0.3

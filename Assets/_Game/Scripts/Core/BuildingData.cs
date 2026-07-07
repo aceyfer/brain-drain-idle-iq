@@ -2,6 +2,13 @@ using UnityEngine;
 
 namespace BrainDrain.Core
 {
+    /// <summary>Which currency a building purchase deducts from.</summary>
+    public enum CostType
+    {
+        BrainPower,
+        Cash
+    }
+
     /// <summary>
     /// Authoring data for a purchasable idle building or structure.
     /// </summary>
@@ -15,6 +22,7 @@ namespace BrainDrain.Core
 
         [Header("Progression")]
         public double unlockCumulativeBrainPower;
+        public CostType costType = CostType.BrainPower;
         public double baseCost = 10d;
         public double costMultiplier = 1.15d;
 

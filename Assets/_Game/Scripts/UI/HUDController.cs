@@ -12,6 +12,7 @@ namespace BrainDrain.UI
     {
         /// <summary>PlayerIQ interval between celebration beats (every 1000 points).</summary>
         private const float IQCelebrationMilestoneInterval = 1000f;
+        private const float TextFlushIntervalSeconds = 0.1f;
 
         [Header("UI Text Fields")]
         [SerializeField] private TextMeshProUGUI capacityText;
@@ -53,6 +54,21 @@ namespace BrainDrain.UI
 
         private int lastIQMilestoneIndex;
         private RebirthUIController cachedRebirthUI;
+        private float nextTextFlushTime;
+
+        private bool dirtyCapacity;
+        private bool dirtyBrainPower;
+        private bool dirtyCumulativeBrainPower;
+        private bool dirtyBpps;
+        private bool dirtyCash;
+        private bool dirtyPoints;
+        private bool dirtyRank;
+
+        private double pendingBrainPower;
+        private double pendingCumulativeBrainPower;
+        private double pendingCash;
+        private double pendingPoints;
+        private bool pendingPointsRebirthActivated;
 
         public TextMeshProUGUI CapacityText
         {
@@ -145,18 +161,6 @@ namespace BrainDrain.UI
 
         private void Awake()
         {
-            if (convertButton != null)
-            {
-                convertButton.onClick.RemoveListener(OnConvertClicked);
-                convertButton.onClick.AddListener(OnConvertClicked);
-            }
-
-            if (restoreButton != null)
-            {
-                restoreButton.onClick.RemoveListener(OnRestoreClicked);
-                restoreButton.onClick.AddListener(OnRestoreClicked);
-            }
-
             if (premiumShopButton != null)
             {
                 premiumShopButton.onClick.RemoveListener(OnPremiumShopClicked);
@@ -202,7 +206,7 @@ namespace BrainDrain.UI
             if (currency != null)
             {
                 UpdateCapacityText(currency.BrainPower);
-                UpdateRankText(currency.CumulativeBrainPower);
+                MarkRankDirty();
                 UpdateBrainPowerCounterText(currency.BrainPower);
                 UpdateCumulativeBrainPowerCounterText(currency.CumulativeBrainPower);
                 UpdateBPPSText();
@@ -210,7 +214,6 @@ namespace BrainDrain.UI
                 UpdatePointsText(currency.CurrentPoints);
                 currency.OnBrainPowerChanged += UpdateCapacityText;
                 currency.OnBrainPowerChanged += UpdateBrainPowerCounterText;
-                currency.OnCumulativeBrainPowerChanged += UpdateRankText;
                 currency.OnCumulativeBrainPowerChanged += UpdateCumulativeBrainPowerCounterText;
 
                 // OnCashChanged/OnPointsChanged are UnityEvents (not C# events like the above),
@@ -264,6 +267,8 @@ namespace BrainDrain.UI
                 UpdateRestorationProgressText(worldRestoration.CumulativePointsSpentOnRestoration);
                 worldRestoration.OnRestorationProgressChanged -= UpdateRestorationProgressText;
                 worldRestoration.OnRestorationProgressChanged += UpdateRestorationProgressText;
+                worldRestoration.OnRestorationStageChanged -= HandleStageChangedForRank;
+                worldRestoration.OnRestorationStageChanged += HandleStageChangedForRank;
             }
 
             // Re-evaluate the restoration text when the player performs their first Snotting,
@@ -272,6 +277,82 @@ namespace BrainDrain.UI
             {
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
                 RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForRestorationText;
+            }
+
+            FlushDirtyTexts();
+        }
+
+        private void LateUpdate()
+        {
+            if (!HasDirtyNumericText())
+            {
+                return;
+            }
+
+            if (Time.unscaledTime < nextTextFlushTime)
+            {
+                return;
+            }
+
+            nextTextFlushTime = Time.unscaledTime + TextFlushIntervalSeconds;
+            FlushDirtyTexts();
+        }
+
+        private bool HasDirtyNumericText()
+        {
+            return dirtyCapacity || dirtyBrainPower || dirtyCumulativeBrainPower || dirtyBpps
+                || dirtyCash || dirtyPoints || dirtyRank;
+        }
+
+        private void FlushDirtyTexts()
+        {
+            if (dirtyCapacity)
+            {
+                dirtyCapacity = false;
+                HUDNumericFormatter.SetCapacity(capacityText, pendingBrainPower);
+            }
+
+            if (dirtyBrainPower)
+            {
+                dirtyBrainPower = false;
+                HUDNumericFormatter.SetBrainPowerCounter(brainPowerCounterText, pendingBrainPower);
+            }
+
+            if (dirtyCumulativeBrainPower)
+            {
+                dirtyCumulativeBrainPower = false;
+                HUDNumericFormatter.SetCumulativeBrainPower(cumulativeBrainPowerCounterText, pendingCumulativeBrainPower);
+            }
+
+            if (dirtyRank)
+            {
+                dirtyRank = false;
+                int stageIdx = WorldRestorationManager.Instance?.CurrentStage?.stageIndex ?? 0;
+                HUDNumericFormatter.SetRank(rankText, GetStageRankTitle(stageIdx));
+            }
+
+            if (dirtyBpps)
+            {
+                dirtyBpps = false;
+                CurrencyManager currency = CurrencyManager.Instance;
+                if (currency != null)
+                {
+                    HUDNumericFormatter.SetBpps(bppsText, currency.IdleBPPS);
+                }
+            }
+
+            if (dirtyCash)
+            {
+                dirtyCash = false;
+                CurrencyManager currency = CurrencyManager.Instance;
+                double cps = currency != null ? currency.CashPerSecond : 0d;
+                HUDNumericFormatter.SetCash(cashText, pendingCash, cps);
+            }
+
+            if (dirtyPoints)
+            {
+                dirtyPoints = false;
+                HUDNumericFormatter.SetPoints(pointsText, pendingPoints, pendingPointsRebirthActivated);
             }
         }
 
@@ -282,7 +363,6 @@ namespace BrainDrain.UI
             {
                 currency.OnBrainPowerChanged -= UpdateCapacityText;
                 currency.OnBrainPowerChanged -= UpdateBrainPowerCounterText;
-                currency.OnCumulativeBrainPowerChanged -= UpdateRankText;
                 currency.OnCumulativeBrainPowerChanged -= UpdateCumulativeBrainPowerCounterText;
                 currency.OnCashChanged.RemoveListener(UpdateCashText);
                 currency.OnPointsChanged.RemoveListener(UpdatePointsText);
@@ -316,6 +396,7 @@ namespace BrainDrain.UI
             if (WorldRestorationManager.Instance != null)
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleStageChangedForRank;
             }
 
             if (premiumShopButton != null)
@@ -326,19 +407,15 @@ namespace BrainDrain.UI
 
         private void UpdateBrainPowerCounterText(double brainPower)
         {
-            if (brainPowerCounterText != null)
-            {
-                brainPowerCounterText.text = $"{NumberFormatter.Format(brainPower)} BRAIN POWER";
-            }
+            pendingBrainPower = brainPower;
+            dirtyBrainPower = true;
         }
 
         private void UpdateCapacityText(double brainPower)
         {
-            if (capacityText != null)
-            {
-                double percent = Math.Min(100.0, (brainPower / 500000.0) * 100.0);
-                capacityText.text = $"{percent:F1}% ABSORBED";
-            }
+            pendingBrainPower = brainPower;
+            dirtyCapacity = true;
+            dirtyBrainPower = true;
         }
 
         private void UpdatePlayerIQText(float playerIQ)
@@ -364,37 +441,45 @@ namespace BrainDrain.UI
             AnimationController.PlayIQFlash(playerIQText);
         }
 
-        private void UpdateRankText(double cumulativeBrainPower)
+        private void HandleStageChangedForRank(WorldRestorationStage _)
         {
-            if (rankText != null && GameManager.Instance != null)
+            MarkRankDirty();
+        }
+
+        private void MarkRankDirty()
+        {
+            dirtyRank = true;
+        }
+
+        private static string GetStageRankTitle(int stageIndex)
+        {
+            int rank = Mathf.Max(0, stageIndex - 1);
+            return rank switch
             {
-                rankText.text = GameManager.Instance.GetRankName(cumulativeBrainPower).ToUpper();
-            }
+                0 => "Cryo Nobody",
+                1 => "Illumisnotti Intern",
+                2 => "Metrics-Compliant Drone",
+                3 => "Synergy Synthesizer",
+                4 => "Holistic Disruptor",
+                _ => "Post-Human CEO",
+            };
         }
 
         private void UpdateCumulativeBrainPowerCounterText(double cumulativeBrainPower)
         {
-            if (cumulativeBrainPowerCounterText != null)
-            {
-                cumulativeBrainPowerCounterText.text = $"LIFETIME: {NumberFormatter.Format(cumulativeBrainPower)}";
-            }
+            pendingCumulativeBrainPower = cumulativeBrainPower;
+            dirtyCumulativeBrainPower = true;
         }
 
         private void UpdateRebirthCountText(int rebirthCount)
         {
-            if (rebirthCountText != null)
-            {
-                rebirthCountText.text = $"SNOTTINGS: {rebirthCount}";
-            }
+            HUDNumericFormatter.SetRebirthCount(rebirthCountText, rebirthCount);
         }
 
         /// <summary>Updates the Illumisnotti title shown under the IQ readout. Blank (no text) until the first Snotting.</summary>
         private void UpdateIllumisnottiTitleText(int rebirthCount)
         {
-            if (illumisnottiTitleText != null)
-            {
-                illumisnottiTitleText.text = RebirthManager.GetIllumisnottiTitle(rebirthCount).ToUpper();
-            }
+            HUDNumericFormatter.SetIllumisnottiTitle(illumisnottiTitleText, RebirthManager.GetIllumisnottiTitle(rebirthCount));
         }
 
         /// <summary>
@@ -404,66 +489,20 @@ namespace BrainDrain.UI
         /// </summary>
         private void UpdateBPPSText()
         {
-            if (bppsText == null)
-            {
-                return;
-            }
-
-            var currency = CurrencyManager.Instance;
-            if (currency != null)
-            {
-                bppsText.text = $"{NumberFormatter.Format(currency.IdleBPPS)} BPPS";
-            }
+            dirtyBpps = true;
         }
 
         private void UpdateCashText(double currentCash)
         {
-            if (cashText == null)
-            {
-                return;
-            }
-
-            var currency = CurrencyManager.Instance;
-            double cps = currency != null ? currency.CashPerSecond : 0d;
-            cashText.text = $"${NumberFormatter.Format(currentCash)} (${NumberFormatter.Format(cps)}/s)";
+            pendingCash = currentCash;
+            dirtyCash = true;
         }
 
         private void UpdatePointsText(double currentPoints)
         {
-            if (pointsText == null)
-            {
-                return;
-            }
-
-            bool isRebirthActivated = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
-            if (isRebirthActivated)
-            {
-                pointsText.text = $"{NumberFormatter.Format(currentPoints)} POINTS";
-                pointsText.color = Color.white;
-            }
-            else
-            {
-                // Pre-Snotting: points are Restoration Points used for World Restoration.
-                // Show the balance (not "LOCKED") so the player can see progress.
-                pointsText.text = $"{NumberFormatter.Format(currentPoints)} RESTORATION PTS";
-                pointsText.color = new Color(1f, 0.85f, 0.2f, 1f); // gold — matches the Snotting progress line
-            }
-        }
-
-        private void OnConvertClicked()
-        {
-            if (convertUIController != null)
-            {
-                convertUIController.OpenPanel();
-            }
-            else
-            {
-                var currency = CurrencyManager.Instance;
-                if (currency != null)
-                {
-                    currency.ConvertCashToPoints(currency.CurrentCash);
-                }
-            }
+            pendingPoints = currentPoints;
+            pendingPointsRebirthActivated = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
+            dirtyPoints = true;
         }
 
         private void HandleRebirthCountChangedForPoints(int rebirthCount)
@@ -531,18 +570,6 @@ namespace BrainDrain.UI
             var worldRestoration = WorldRestorationManager.Instance;
             double spent = worldRestoration != null ? worldRestoration.CumulativePointsSpentOnRestoration : 0d;
             UpdateRestorationProgressText(spent);
-        }
-
-        private void OnRestoreClicked()
-        {
-            var currency = CurrencyManager.Instance;
-            if (currency != null)
-            {
-                WorldRestorationManager.Instance?.TrySpendPointsOnRestoration(currency.CurrentPoints);
-            }
-            // Force an immediate button state refresh so the Snotting button goes live the
-            // moment the player hits 50K — don't wait for the next event fire.
-            cachedRebirthUI?.RefreshTriggerButton();
         }
     }
 }

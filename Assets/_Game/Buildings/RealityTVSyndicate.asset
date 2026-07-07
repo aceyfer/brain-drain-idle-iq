@@ -17,7 +17,8 @@ MonoBehaviour:
     into 4,000 time zones, dragging the planet's median IQ down with every rose
     ceremony.
   unlockCumulativeBrainPower: 185000
-  baseCost: 15000
+  costType: 1
+  baseCost: 90
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 320
   baseCashPerSecond: 40.0

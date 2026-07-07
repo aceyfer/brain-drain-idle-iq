@@ -15,7 +15,8 @@ MonoBehaviour:
   buildingName: Underground Economy
   description: The Snotty Council calls this illegal. You call it Tuesday.
   unlockCumulativeBrainPower: 500
-  baseCost: 75
+  costType: 1
+  baseCost: 15
   costMultiplier: 1.38
   baseBrainPowerPerSecond: 0
   baseCashPerSecond: 5.0

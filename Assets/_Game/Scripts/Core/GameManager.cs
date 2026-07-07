@@ -77,15 +77,22 @@ namespace BrainDrain.Core
         /// <summary>Index into <see cref="RankDefinitions"/> for the currently active rank.</summary>
         public int CurrentRankIndex => currentRankIndex;
 
-        /// <summary>Determines rank name based on cumulative Brain Power earned.</summary>
-        public string GetRankName(double cumulativeBrainPower)
+        /// <summary>Returns the display name for the currently active rank tier.</summary>
+        public string GetCurrentRankName()
         {
             if (rankDefinitions == null || rankDefinitions.Length == 0)
             {
                 return "Unknown";
             }
 
-            return rankDefinitions[CalculateRankIndex(cumulativeBrainPower)].rankName;
+            int index = Mathf.Clamp(currentRankIndex, 0, rankDefinitions.Length - 1);
+            return rankDefinitions[index].rankName;
+        }
+
+        /// <summary>Legacy accessor; rank is restoration-stage driven, not BP-derived.</summary>
+        public string GetRankName(double cumulativeBrainPower)
+        {
+            return GetCurrentRankName();
         }
 
         /// <summary>Fired once after the tick loop is running.</summary>
@@ -131,15 +138,15 @@ namespace BrainDrain.Core
         private void Start()
         {
             StartTickLoop();
-            SubscribeToCurrencyForRank();
-            UpdateRankFromCumulativeBrainPower(currencyManager != null ? currencyManager.CumulativeBrainPower : 0d);
+            SubscribeToRestorationForRank();
+            UpdateRankFromRestorationStage(WorldRestorationManager.Instance?.CurrentStage);
             OnGameInitialized?.Invoke();
         }
 
         private void OnDestroy()
         {
             StopTickLoop();
-            UnsubscribeFromCurrencyForRank();
+            UnsubscribeFromRestorationForRank();
 
             DOTween.KillAll(false);
             DOTween.Clear(false);
@@ -253,35 +260,37 @@ namespace BrainDrain.Core
             RequestSave();
         }
 
-        private void SubscribeToCurrencyForRank()
+        private void SubscribeToRestorationForRank()
         {
-            if (currencyManager == null)
+            WorldRestorationManager manager = WorldRestorationManager.Instance;
+            if (manager == null)
             {
                 return;
             }
 
-            currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChangedForRank;
-            currencyManager.OnCumulativeBrainPowerChanged += HandleCumulativeBrainPowerChangedForRank;
+            manager.OnRestorationStageChanged -= HandleRestorationStageChangedForRank;
+            manager.OnRestorationStageChanged += HandleRestorationStageChangedForRank;
         }
 
-        private void UnsubscribeFromCurrencyForRank()
+        private void UnsubscribeFromRestorationForRank()
         {
-            if (currencyManager == null)
+            WorldRestorationManager manager = WorldRestorationManager.Instance;
+            if (manager == null)
             {
                 return;
             }
 
-            currencyManager.OnCumulativeBrainPowerChanged -= HandleCumulativeBrainPowerChangedForRank;
+            manager.OnRestorationStageChanged -= HandleRestorationStageChangedForRank;
         }
 
-        private void HandleCumulativeBrainPowerChangedForRank(double cumulativeBrainPower)
+        private void HandleRestorationStageChangedForRank(WorldRestorationStage stage)
         {
-            UpdateRankFromCumulativeBrainPower(cumulativeBrainPower);
+            UpdateRankFromRestorationStage(stage);
         }
 
-        private void UpdateRankFromCumulativeBrainPower(double cumulativeBrainPower)
+        private void UpdateRankFromRestorationStage(WorldRestorationStage stage)
         {
-            int newRankIndex = CalculateRankIndex(cumulativeBrainPower);
+            int newRankIndex = stage?.stageIndex ?? 0;
             if (newRankIndex == currentRankIndex)
             {
                 return;
@@ -289,29 +298,6 @@ namespace BrainDrain.Core
 
             currentRankIndex = newRankIndex;
             OnRankChanged?.Invoke(currentRankIndex);
-        }
-
-        private int CalculateRankIndex(double cumulativeBrainPower)
-        {
-            if (rankDefinitions == null || rankDefinitions.Length == 0)
-            {
-                return 0;
-            }
-
-            int rankIndex = 0;
-            for (int i = 0; i < rankDefinitions.Length; i++)
-            {
-                if (cumulativeBrainPower >= rankDefinitions[i].threshold)
-                {
-                    rankIndex = i;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return rankIndex;
         }
     }
 }

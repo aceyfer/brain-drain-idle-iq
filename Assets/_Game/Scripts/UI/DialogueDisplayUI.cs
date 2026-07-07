@@ -63,6 +63,7 @@ namespace BrainDrain.UI
 
                 // Position offscreen on startup instead of deactivating the GameObject
                 panelRect.anchoredPosition = restingPosition - new Vector2(panelRect.rect.width, 0f);
+                panelRect.gameObject.SetActive(false);
             }
 
             if (lineText != null)
@@ -153,6 +154,7 @@ namespace BrainDrain.UI
         {
             yield return Slide(panelRect.anchoredPosition, target, SlideDurationSeconds);
             activeRoutine = null;
+            panelRect.gameObject.SetActive(false);
         }
 
         private void HandleDialogueLine(string line)
@@ -162,6 +164,7 @@ namespace BrainDrain.UI
                 return;
             }
 
+            panelRect.gameObject.SetActive(true);
             ApplyRebirthDegradation();
 
             float holdDuration = DialogueManager.Instance != null
@@ -272,6 +275,7 @@ namespace BrainDrain.UI
             }
 
             activeRoutine = null;
+            panelRect.gameObject.SetActive(false);
         }
 
         private IEnumerator Slide(Vector2 from, Vector2 to, float duration)

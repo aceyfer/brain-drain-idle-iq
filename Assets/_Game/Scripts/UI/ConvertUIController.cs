@@ -112,6 +112,22 @@ namespace BrainDrain.UI
             }
         }
 
+        /// <summary>Whether the convert panel is currently visible.</summary>
+        public bool IsOpen => convertPanel != null && convertPanel.activeSelf;
+
+        /// <summary>Toggles the convert panel open or closed.</summary>
+        public void TogglePanel()
+        {
+            if (IsOpen)
+            {
+                ClosePanel();
+            }
+            else
+            {
+                OpenPanel();
+            }
+        }
+
         private void HandleBrainPowerChanged(double _) => RefreshVisuals();
         private void HandleCashChanged(double _) => RefreshVisuals();
 

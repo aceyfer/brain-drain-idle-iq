@@ -75,7 +75,13 @@ namespace BrainDrain.Core
             return buildingLevels.TryGetValue(building.buildingName, out int level) ? level : 0;
         }
 
-        /// <summary>Returns the Brain Power cost for the next purchase of the given building.</summary>
+        /// <summary>Returns true when the building's next purchase is priced in Cash.</summary>
+        public static bool IsCashCost(BuildingData building)
+        {
+            return building != null && building.costType == CostType.Cash;
+        }
+
+        /// <summary>Returns the purchase cost for the next level of the given building.</summary>
         public double GetCurrentCost(BuildingData building)
         {
             if (building == null)
@@ -92,6 +98,21 @@ namespace BrainDrain.Core
         {
             ResolveReferences();
             return building != null && currencyManager != null && currencyManager.CumulativeBrainPower >= building.unlockCumulativeBrainPower;
+        }
+
+        /// <summary>Returns true when the player can afford the next purchase of the given building.</summary>
+        public bool CanAffordBuilding(BuildingData building)
+        {
+            ResolveReferences();
+            if (building == null || currencyManager == null || !IsUnlocked(building))
+            {
+                return false;
+            }
+
+            double cost = GetCurrentCost(building);
+            return IsCashCost(building)
+                ? currencyManager.CanAffordCash(cost)
+                : currencyManager.CanAffordBrainPower(cost);
         }
 
         /// <summary>
@@ -121,7 +142,10 @@ namespace BrainDrain.Core
             }
 
             double cost = GetCurrentCost(building);
-            if (!currencyManager.SpendBrainPower(cost))
+            bool spent = IsCashCost(building)
+                ? currencyManager.SpendCash(cost)
+                : currencyManager.SpendBrainPower(cost);
+            if (!spent)
             {
                 return;
             }

@@ -15,6 +15,7 @@ MonoBehaviour:
   buildingName: The Literal Library
   description: The Illumisnotty burned most of these. You're rebuilding.
   unlockCumulativeBrainPower: 0
+  costType: 0
   baseCost: 15
   costMultiplier: 1.25
   baseBrainPowerPerSecond: 0.1

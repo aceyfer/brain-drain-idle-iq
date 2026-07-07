@@ -16,7 +16,8 @@ MonoBehaviour:
   description: A walled compound of vape smoke and group chats screaming "WAGMI."
     Income spikes violently, then mysteriously vanishes into a rug pull.
   unlockCumulativeBrainPower: 110000
-  baseCost: 1200
+  costType: 1
+  baseCost: 55
   costMultiplier: 1.32
   baseBrainPowerPerSecond: 60
   baseCashPerSecond: 10.0

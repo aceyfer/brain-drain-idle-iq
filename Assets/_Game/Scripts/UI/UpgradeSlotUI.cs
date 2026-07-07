@@ -71,7 +71,7 @@ namespace BrainDrain.UI
             bool unlocked = currency != null && currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower;
             double cost = boundManager.GetCurrentCost(boundData);
             int level = boundManager.GetBuildingLevel(boundData);
-            bool affordable = unlocked && currency != null && currency.CanAffordBrainPower(cost);
+            bool affordable = unlocked && boundManager.CanAffordBuilding(boundData);
             UpdateAffordablePulse(affordable);
 
             if (countText != null)
@@ -133,6 +133,7 @@ namespace BrainDrain.UI
                     nameText.text = "??? CLASSIFIED ???";
                     nameText.fontSize = 32f;
                 }
+                if (countText != null) countText.text = string.Empty;
                 if (costText != null)
                 {
                     costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
@@ -150,7 +151,9 @@ namespace BrainDrain.UI
             }
             if (costText != null)
             {
-                costText.text = $"{NumberFormatter.Format(cost)} BP";
+                costText.text = UpgradeManager.IsCashCost(boundData)
+                    ? $"${NumberFormatter.Format(cost)}"
+                    : $"{NumberFormatter.Format(cost)} BP";
                 costText.fontSize = 30f;
             }
 

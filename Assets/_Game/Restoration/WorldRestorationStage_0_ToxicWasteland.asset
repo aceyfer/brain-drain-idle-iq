@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: WorldRestorationStage_0_ToxicWasteland
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.WorldRestorationStage
   stageIndex: 0
-  stageName: Toxic Wasteland
+  stageName: Cryo Chamber
   pointsRequired: 0

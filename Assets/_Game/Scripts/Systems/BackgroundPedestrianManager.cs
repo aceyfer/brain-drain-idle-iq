@@ -1,4 +1,5 @@
 using System.Collections;
+using BrainDrain.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,13 +22,8 @@ namespace BrainDrain.Systems
     }
 
     /// <summary>
-    /// Spawns and moves 2D pedestrian sprites in the background behind the player character.
-    /// Swaps the pedestrian sprite pool dynamically between Dystopian and Utopian sets
-    /// based on the active WorldRestorationStage index (polled per-spawn, pre-existing).
-    /// Also reflects WorldRestorationManager.RestorationPercent via PedestrianBehaviorStage
-    /// (event-subscribed, added 2026-06-22): pedestrians shuffle slower with a slumped tilt at
-    /// low restoration, walking upright and faster as restoration climbs toward 100%.
-    /// Includes a custom South Park-style wobble walk for early stages and a smooth hover-float for Stage 6.
+    /// Spawns and moves 2D pedestrian sprites in the UI street band behind the player character.
+    /// Stage 1 art only in the current view; South Park-style wobble with a Y ceiling clamp.
     /// </summary>
     public sealed class BackgroundPedestrianManager : MonoBehaviour
     {
@@ -38,7 +34,7 @@ namespace BrainDrain.Systems
         [SerializeField] private Sprite[] utopianPedestrianSprites;
 
         [Header("Pedestrian Prefabs")]
-        [Tooltip("The 6 pedestrian prefabs in order.")]
+        [Tooltip("The 6 pedestrian prefabs in order (Ped1..Ped6). Stage 1 art is read from each prefab.")]
         [SerializeField] private GameObject[] pedestrianPrefabs;
 
         [Header("Spawn Settings")]
@@ -48,12 +44,17 @@ namespace BrainDrain.Systems
         [Header("Movement Settings")]
         [SerializeField] private float minSpeed = 80f;
         [SerializeField] private float maxSpeed = 160f;
-        [SerializeField] private float yOffsetMin = -40f;
-        [SerializeField] private float yOffsetMax = 10f;
+        [Tooltip("Fixed Y baseline within PedestrianContainer (street floor).")]
+        [SerializeField] private float walkBaselineY = 0f;
+
+        [Header("Wobble (Stage 1)")]
+        [SerializeField] private float wobbleVerticalAmplitude = 14f;
+        [SerializeField] private float wobbleRotationAmplitude = 16f;
+        [SerializeField] private float wobbleFrequency = 8.5f;
 
         [Header("Dimensions")]
-        [SerializeField] private float pedestrianWidth = 80f;
-        [SerializeField] private float pedestrianHeight = 160f;
+        [SerializeField] private float pedestrianWidth = 140f;
+        [SerializeField] private float pedestrianHeight = 280f;
 
         [Header("Container")]
         [Tooltip("The RectTransform under Canvas where pedestrians are spawned. Must render behind the player character.")]
@@ -65,9 +66,8 @@ namespace BrainDrain.Systems
         [SerializeField] private float maxChatterInterval = 12f;
 
         private readonly System.Collections.Generic.List<RectTransform> activePedestrians = new System.Collections.Generic.List<RectTransform>();
+        private static readonly System.Collections.Generic.List<Sprite> StageOneSpriteBuffer = new System.Collections.Generic.List<Sprite>(8);
 
-        // -- RestorationPercent-driven behavior stage, added 2026-06-22 --
-        // Speed multiplier per stage. No new art/sprites, per spec.
         private static readonly float[] StageSpeedMultiplier = { 0.5f, 0.7f, 1.0f, 1.25f, 1.5f };
         private const float StumbleChancePerStep = 0.01f;
 
@@ -78,7 +78,6 @@ namespace BrainDrain.Systems
         {
             if (containerRect == null)
             {
-                // Self-fallback: look for a child or sibling named PedestrianContainer
                 var canvas = GameObject.Find("Canvas");
                 if (canvas != null)
                 {
@@ -90,16 +89,16 @@ namespace BrainDrain.Systems
                 }
             }
 
+            InitializeLegacyPedestrians();
+
             spawnLoop = StartCoroutine(SpawnLoopRoutine());
-            
-            // Add existing/pre-placed pedestrians in the container
+
             if (containerRect != null)
             {
                 for (int i = 0; i < containerRect.childCount; i++)
                 {
                     Transform child = containerRect.GetChild(i);
-                    RectTransform rt = child as RectTransform;
-                    if (rt != null && rt.gameObject.name.StartsWith("Ped"))
+                    if (child is RectTransform rt && child.name.StartsWith("Ped"))
                     {
                         activePedestrians.Add(rt);
                     }
@@ -130,12 +129,35 @@ namespace BrainDrain.Systems
             }
         }
 
-        /// <summary>
-        /// WorldRestorationManager has no dedicated "OnRestorationChanged" event -- this reuses
-        /// the existing OnRestorationProgressChanged (fires on every Points spend) as the
-        /// "something changed, recheck RestorationPercent" signal rather than adding a
-        /// functionally-duplicate event.
-        /// </summary>
+        /// <summary>Locks scene-placed legacy prefabs to Stage 1 art and enables their movement components.</summary>
+        private static void InitializeLegacyPedestrians()
+        {
+            PedestrianWalkController[] walkers = FindObjectsByType<PedestrianWalkController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < walkers.Length; i++)
+            {
+                PedestrianWalkController walk = walkers[i];
+                if (walk == null)
+                {
+                    continue;
+                }
+
+                walk.enabled = true;
+                walk.SetStage(1);
+
+                PedestrianWobble wobble = walk.GetComponent<PedestrianWobble>();
+                if (wobble != null)
+                {
+                    wobble.enabled = true;
+                }
+
+                Animator animator = walk.GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.enabled = true;
+                }
+            }
+        }
+
         private void HandleRestorationProgressChanged(double _)
         {
             RefreshBehaviorStage();
@@ -171,47 +193,18 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            // Determine active pool based on WorldRestorationStage index
-            var restoration = WorldRestorationManager.Instance;
-            bool isUtopian = restoration != null && restoration.CurrentStage != null && restoration.CurrentStage.stageIndex >= 2;
-            Sprite[] activePool = isUtopian ? utopianPedestrianSprites : dystopianPedestrianSprites;
-
-            if (activePool == null || activePool.Length == 0)
+            Sprite selectedSprite = PickStageOneSprite();
+            if (selectedSprite == null)
             {
-                // Fallback to whichever pool is non-empty, or the person silhouette if both empty
-                if (dystopianPedestrianSprites != null && dystopianPedestrianSprites.Length > 0)
-                {
-                    activePool = dystopianPedestrianSprites;
-                }
-                else if (utopianPedestrianSprites != null && utopianPedestrianSprites.Length > 0)
-                {
-                    activePool = utopianPedestrianSprites;
-                }
-                else
-                {
-                    // No sprites available
-                    return;
-                }
-            }
-
-            // Filter out null/missing sprite references before picking — a null sprite assigned to
-            // a UI Image renders as a solid white rectangle, which is the recurring "white box" bug.
-            Sprite[] validPool = System.Array.FindAll(activePool, s => s != null);
-            if (validPool.Length == 0)
-            {
-                Debug.LogWarning("[BackgroundPedestrianManager] All sprites in active pool are null or unloaded — skipping spawn.", this);
+                Debug.LogWarning("[BackgroundPedestrianManager] No Stage 1 pedestrian sprites available — skipping spawn.", this);
                 return;
             }
-            Sprite selectedSprite = validPool[Random.Range(0, validPool.Length)];
 
-            // Create UI GameObject
             var pedGo = new GameObject("Pedestrian", typeof(RectTransform));
             pedGo.transform.SetParent(containerRect, false);
 
             var rt = pedGo.GetComponent<RectTransform>();
             rt.sizeDelta = new Vector2(pedestrianWidth, pedestrianHeight);
-
-            // Anchors and pivot at bottom-center so they slide cleanly on the floor
             rt.anchorMin = new Vector2(0.5f, 0f);
             rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
@@ -221,39 +214,93 @@ namespace BrainDrain.Systems
             img.preserveAspect = true;
             img.raycastTarget = false;
 
-            // Random direction, speed, and vertical offset -- speed scaled by the current
-            // RestorationPercent behavior stage (frozen for this pedestrian's whole lifetime,
-            // matching the sprite-pool swap's existing "only affects new spawns" behavior).
             PedestrianBehaviorStage stage = currentBehaviorStage;
             bool walkRight = Random.value > 0.5f;
             float speed = Random.Range(minSpeed, maxSpeed) * StageSpeedMultiplier[(int)stage];
-            float yOffset = Random.Range(yOffsetMin, yOffsetMax);
 
             float containerHalfWidth = containerRect.rect.width * 0.5f;
             float spawnX = walkRight ? -containerHalfWidth - (pedestrianWidth * 0.5f) : containerHalfWidth + (pedestrianWidth * 0.5f);
             float targetX = walkRight ? containerHalfWidth + (pedestrianWidth * 0.5f) : -containerHalfWidth - (pedestrianWidth * 0.5f);
 
-            rt.anchoredPosition = new Vector2(spawnX, yOffset);
+            rt.anchoredPosition = new Vector2(spawnX, walkBaselineY);
+            rt.localScale = walkRight ? Vector3.one : new Vector3(-1f, 1f, 1f);
 
-            // Flip graphic if walking left (assuming sprite faces right naturally)
-            if (!walkRight)
-            {
-                rt.localScale = new Vector3(-1f, 1f, 1f);
-            }
-
-            // Determine matching Stage index directly from sprite naming convention
-            int pedStage = 1;
-            if (selectedSprite != null)
-            {
-                if (selectedSprite.name.Contains("Stage2")) pedStage = 2;
-                else if (selectedSprite.name.Contains("Stage3")) pedStage = 3;
-                else if (selectedSprite.name.Contains("Stage4")) pedStage = 4;
-                else if (selectedSprite.name.Contains("Stage5")) pedStage = 5;
-                else if (selectedSprite.name.Contains("Stage6")) pedStage = 6;
-            }
+            float maxAnchoredY = ComputeMaxAnchoredY(rt);
 
             activePedestrians.Add(rt);
-            StartCoroutine(MoveRoutine(rt, targetX, speed, stage, pedStage));
+            StartCoroutine(MoveRoutine(rt, targetX, speed, stage, maxAnchoredY));
+        }
+
+        private float ComputeMaxAnchoredY(RectTransform rt)
+        {
+            float containerHeight = containerRect.rect.height;
+            float pedHeight = rt.rect.height > 0f ? rt.rect.height : pedestrianHeight;
+            return Mathf.Max(walkBaselineY, containerHeight - pedHeight);
+        }
+
+        /// <summary>Picks Ped1..Ped6 Stage 1 art only; blocks Stage 2–6 sprites.</summary>
+        private Sprite PickStageOneSprite()
+        {
+            StageOneSpriteBuffer.Clear();
+
+            if (pedestrianPrefabs != null)
+            {
+                for (int i = 0; i < pedestrianPrefabs.Length; i++)
+                {
+                    GameObject prefab = pedestrianPrefabs[i];
+                    if (prefab == null)
+                    {
+                        continue;
+                    }
+
+                    SpriteRenderer sr = prefab.GetComponent<SpriteRenderer>();
+                    if (sr != null && sr.sprite != null && IsStageOneSprite(sr.sprite))
+                    {
+                        StageOneSpriteBuffer.Add(sr.sprite);
+                    }
+                }
+            }
+
+            if (StageOneSpriteBuffer.Count > 0)
+            {
+                return StageOneSpriteBuffer[Random.Range(0, StageOneSpriteBuffer.Count)];
+            }
+
+            if (dystopianPedestrianSprites != null)
+            {
+                for (int i = 0; i < dystopianPedestrianSprites.Length; i++)
+                {
+                    Sprite sprite = dystopianPedestrianSprites[i];
+                    if (IsStageOneSprite(sprite))
+                    {
+                        StageOneSpriteBuffer.Add(sprite);
+                    }
+                }
+            }
+
+            if (StageOneSpriteBuffer.Count == 0)
+            {
+                return null;
+            }
+
+            return StageOneSpriteBuffer[Random.Range(0, StageOneSpriteBuffer.Count)];
+        }
+
+        private static bool IsStageOneSprite(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return false;
+            }
+
+            string name = sprite.name;
+            if (name.Contains("Stage2") || name.Contains("Stage3") || name.Contains("Stage4")
+                || name.Contains("Stage5") || name.Contains("Stage6"))
+            {
+                return false;
+            }
+
+            return name.Contains("Stage1") || !name.Contains("Stage");
         }
 
         private IEnumerator ChatterLoopRoutine()
@@ -278,83 +325,60 @@ namespace BrainDrain.Systems
 
         private void SpawnChatterBubble(RectTransform pedestrian)
         {
-            if (chatterBubblePrefab == null || pedestrian == null || containerRect == null) return;
+            if (chatterBubblePrefab == null || pedestrian == null || containerRect == null)
+            {
+                return;
+            }
 
-            // Spawn directly under the pedestrian container so that the bubble remains independent of the pedestrian's local scale and wobble
             BrainDrain.UI.ChatterBubble bubble = Instantiate(chatterBubblePrefab, containerRect);
             RectTransform bubbleRt = bubble.GetComponent<RectTransform>();
             if (bubbleRt != null)
             {
                 bubbleRt.localScale = Vector3.one;
-                bubble.TrackPedestrian(pedestrian, pedestrianHeight * 0.5f);
+                bubble.TrackPedestrian(pedestrian, pedestrianHeight * 0.55f);
             }
 
-            string line = RandomChatterManager.Instance != null ? RandomChatterManager.Instance.GetRandomLine() : "brains...";
+            string line = "brains...";
+            if (RandomChatterManager.Instance != null)
+            {
+                int rankIndex = GameManager.Instance != null ? GameManager.Instance.CurrentRankIndex : 0;
+                line = RandomChatterManager.Instance.GetLineForRank(rankIndex);
+            }
+
             bubble.SetText(line);
         }
 
-        private IEnumerator MoveRoutine(RectTransform rt, float targetX, float speed, PedestrianBehaviorStage stage, int pedStage)
+        private IEnumerator MoveRoutine(RectTransform rt, float targetX, float speed, PedestrianBehaviorStage stage, float maxAnchoredY)
         {
             float direction = Mathf.Sign(targetX - rt.anchoredPosition.x);
-            float baseY = rt.anchoredPosition.y;
-            float elapsed = Random.Range(0f, 10f); // Desync initial walk cycle phase
+            float lookDirMultiplier = Mathf.Sign(rt.localScale.x);
+            if (lookDirMultiplier == 0f)
+            {
+                lookDirMultiplier = 1f;
+            }
+
+            float elapsed = Random.Range(0f, 10f);
 
             while (rt != null && (direction > 0f ? rt.anchoredPosition.x < targetX : rt.anchoredPosition.x > targetX))
             {
                 elapsed += Time.deltaTime;
 
-                // "Occasional stumble" for the Shuffling stage only: a brief full stop most
-                // steps don't trigger, no new art needed -- just a pause in the walk cycle.
                 if (stage == PedestrianBehaviorStage.Shuffling && Random.value < StumbleChancePerStep)
                 {
                     yield return new WaitForSeconds(0.3f);
                     continue;
                 }
 
-                // Compute evolving wobble and bounce parameters
-                float rotAngle = 0f;
-                float verticalOffset = 0f;
+                float rotAngle = Mathf.Sin(elapsed * wobbleFrequency) * wobbleRotationAmplitude;
+                float verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * wobbleFrequency)) * wobbleVerticalAmplitude;
 
-                if (pedStage == 1)
-                {
-                    // Cheesy South Park Wobble Walk: Slow, extreme back-and-forth tilt and high Y-bounce
-                    rotAngle = Mathf.Sin(elapsed * 8.5f) * 16f;
-                    verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * 8.5f)) * 14f;
-                }
-                else if (pedStage == 2)
-                {
-                    rotAngle = Mathf.Sin(elapsed * 10f) * 9f;
-                    verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * 10f)) * 8f;
-                }
-                else if (pedStage == 3)
-                {
-                    rotAngle = Mathf.Sin(elapsed * 11.5f) * 5.5f;
-                    verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * 11.5f)) * 5f;
-                }
-                else if (pedStage == 4)
-                {
-                    rotAngle = Mathf.Sin(elapsed * 13f) * 3f;
-                    verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * 13f)) * 2.5f;
-                }
-                else if (pedStage == 5)
-                {
-                    rotAngle = Mathf.Sin(elapsed * 14f) * 1f;
-                    verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * 14f)) * 1f;
-                }
-                else if (pedStage == 6)
-                {
-                    // WoW God Armor: Floating Hover. Zero rotational oscillation, smooth hovering float
-                    rotAngle = 0f;
-                    verticalOffset = Mathf.Sin(elapsed * 3.5f) * 8f;
-                }
-
-                // Preserve looking direction when applying rotational wobble
-                float lookDirMultiplier = Mathf.Sign(rt.localScale.x);
-                rt.localRotation = Quaternion.Euler(0f, 0f, rotAngle * lookDirMultiplier);
-
-                // Advance X translation & apply Y offset
                 float nextX = rt.anchoredPosition.x + direction * speed * Time.deltaTime;
-                rt.anchoredPosition = new Vector2(nextX, baseY + verticalOffset);
+                float desiredY = walkBaselineY + verticalOffset;
+                float clampedY = Mathf.Clamp(desiredY, walkBaselineY, maxAnchoredY);
+
+                rt.anchoredPosition = new Vector2(nextX, clampedY);
+                rt.localRotation = Quaternion.Euler(0f, 0f, rotAngle * lookDirMultiplier);
+                rt.localScale = new Vector3(lookDirMultiplier, 1f, 1f);
 
                 yield return null;
             }

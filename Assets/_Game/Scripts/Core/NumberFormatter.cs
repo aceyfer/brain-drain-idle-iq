@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace BrainDrain.Core
 {
@@ -35,6 +36,60 @@ namespace BrainDrain.Core
             }
 
             return scaled.ToString("0.00", CultureInfo.InvariantCulture) + Suffixes[suffixIndex];
+        }
+
+        /// <summary>
+        /// Appends a formatted value into an existing StringBuilder without allocating a new string.
+        /// Clears the builder before writing.
+        /// </summary>
+        public static void FormatInto(StringBuilder sb, double value)
+        {
+            sb.Clear();
+
+            if (value < 0d)
+            {
+                sb.Append('-');
+                AppendPositiveFormatted(sb, -value);
+                return;
+            }
+
+            AppendPositiveFormatted(sb, value);
+        }
+
+        /// <summary>
+        /// Appends a formatted value into an existing StringBuilder without clearing it first.
+        /// </summary>
+        public static void AppendFormatted(StringBuilder sb, double value)
+        {
+            if (value < 0d)
+            {
+                sb.Append('-');
+                AppendPositiveFormatted(sb, -value);
+                return;
+            }
+
+            AppendPositiveFormatted(sb, value);
+        }
+
+        private static void AppendPositiveFormatted(StringBuilder sb, double value)
+        {
+            if (value < 1000d)
+            {
+                sb.Append((long)value);
+                return;
+            }
+
+            int suffixIndex = 0;
+            double scaled = value;
+
+            while (scaled >= 1000d && suffixIndex < Suffixes.Length - 1)
+            {
+                scaled /= 1000d;
+                suffixIndex++;
+            }
+
+            sb.Append(scaled.ToString("0.00", CultureInfo.InvariantCulture));
+            sb.Append(Suffixes[suffixIndex]);
         }
     }
 }

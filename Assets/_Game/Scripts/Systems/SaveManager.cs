@@ -14,6 +14,13 @@ namespace BrainDrain.Systems
     [Serializable]
     public struct PlayerData
     {
+        /// <summary>
+        /// Incremented whenever new fields are added so LoadGame() can apply targeted
+        /// defaults rather than relying solely on JsonUtility's zero-fill behaviour.
+        /// Pre-v4 saves deserialise this as 0; the v3→v4 block in LoadGame handles them.
+        /// </summary>
+        public int saveVersion;
+
         public double currentBrains;
         public double cumulativeBrains;
         public double rebirthMultiplier;
@@ -93,6 +100,14 @@ namespace BrainDrain.Systems
         public int hotChickCount;
         /// <summary>The CurrencyManager.OfflineBPPSMultiplier computed on the last load, gathered live from CurrencyManager at save time (see SaveGame) so it round-trips correctly.</summary>
         public float offlineBPPSMultiplier;
+
+        // -- Progression spec §2.2 (2026-07-06) --
+        /// <summary>Active stage index. Defaults to 1 for all pre-v4 saves via the v3→v4 migration.</summary>
+        public int currentStage;
+        /// <summary>UTC DateTime.Ticks of the last playerIQ write. Stored as ticks (long) for the same reason lastActiveUnixSeconds uses a long: JsonUtility cannot serialise DateTime directly.</summary>
+        public long iqLastUpdateUtcTicks;
+        /// <summary>Stable string IDs of world-restoration milestones the player has permanently completed.</summary>
+        public List<string> completedRestorationIds;
     }
 
     /// <summary>
@@ -279,6 +294,21 @@ namespace BrainDrain.Systems
                 {
                     data.profanityUnlocked = true;
                     data.profanityEnabled = PlayerPrefs.GetInt("BrainDrain_ProfanityEnabled", 0) == 1;
+                }
+
+                // v3 → v4: progression spec §2.2. saveVersion deserialises as 0 on all
+                // pre-v4 saves (JsonUtility zero-fills missing fields), so this block fires
+                // for every save written before this version was introduced.
+                if (data.saveVersion < 4)
+                {
+                    data.currentStage = 1;
+                    data.iqLastUpdateUtcTicks = DateTime.UtcNow.Ticks;
+                    data.completedRestorationIds = new List<string>();
+                    data.saveVersion = 4;
+                }
+                else
+                {
+                    data.completedRestorationIds ??= new List<string>();
                 }
 
                 LoadedData = data;
@@ -643,7 +673,11 @@ namespace BrainDrain.Systems
                 firstLaunchUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 hotChickCount = 0,
-                offlineBPPSMultiplier = 1f
+                offlineBPPSMultiplier = 1f,
+                saveVersion = 4,
+                currentStage = 1,
+                iqLastUpdateUtcTicks = DateTime.UtcNow.Ticks,
+                completedRestorationIds = new List<string>()
             };
         }
     }

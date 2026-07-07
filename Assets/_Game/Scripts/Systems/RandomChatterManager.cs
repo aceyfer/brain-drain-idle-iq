@@ -157,14 +157,36 @@ namespace BrainDrain.Systems
         /// </summary>
         public string GetRandomLine()
         {
+            return GetLineForRank(0);
+        }
+
+        /// <summary>
+        /// Returns ambient chatter keyed to the player's current Idiocracy Game Rank index.
+        /// Low ranks skew Tier 1 (food rot), mid ranks mix Tier 2 (Illumisnotti), high ranks
+        /// blend all tiers with optional Tier 3 when unlocked and enabled.
+        /// </summary>
+        public string GetLineForRank(int rankIndex)
+        {
             bool includeTierThree = profanityUnlocked && profanityEnabled;
-            int capacity = tierOneLines.Count + tierTwoLines.Count + (includeTierThree ? tierThreeLines.Count : 0);
-            var pool = new List<string>(capacity);
-            pool.AddRange(tierOneLines);
-            pool.AddRange(tierTwoLines);
-            if (includeTierThree)
+            var pool = new List<string>(32);
+
+            if (rankIndex <= 1)
             {
-                pool.AddRange(tierThreeLines);
+                pool.AddRange(tierOneLines);
+            }
+            else if (rankIndex <= 3)
+            {
+                pool.AddRange(tierOneLines);
+                pool.AddRange(tierTwoLines);
+            }
+            else
+            {
+                pool.AddRange(tierOneLines);
+                pool.AddRange(tierTwoLines);
+                if (includeTierThree)
+                {
+                    pool.AddRange(tierThreeLines);
+                }
             }
 
             if (pool.Count == 0)

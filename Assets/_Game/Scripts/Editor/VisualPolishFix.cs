@@ -234,6 +234,80 @@ namespace BrainDrain.EditorTools
             Debug.Log("[VisualPolishFix] All polish fixes applied.");
         }
 
+        [MenuItem("BrainDrain/Fix Static UI Raycasts")]
+        public static void FixStaticUIRaycasts()
+        {
+            Transform safeArea = GameObject.Find("Canvas/CustomSafeArea")?.transform;
+            if (safeArea == null)
+            {
+                Debug.LogError("[VisualPolishFix] Canvas/CustomSafeArea not found.");
+                return;
+            }
+
+            int changed = DisableStaticRaycastsUnder(safeArea);
+            SaveScene($"[VisualPolishFix] Disabled raycastTarget on {changed} static UI graphic(s) under CustomSafeArea.");
+        }
+
+        private static int DisableStaticRaycastsUnder(Transform root)
+        {
+            int changed = 0;
+            Image[] images = root.GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (ShouldKeepRaycastTarget(image.gameObject))
+                {
+                    continue;
+                }
+
+                if (image.raycastTarget)
+                {
+                    image.raycastTarget = false;
+                    EditorUtility.SetDirty(image);
+                    changed++;
+                }
+            }
+
+            TextMeshProUGUI[] labels = root.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                TextMeshProUGUI label = labels[i];
+                if (ShouldKeepRaycastTarget(label.gameObject))
+                {
+                    continue;
+                }
+
+                if (label.raycastTarget)
+                {
+                    label.raycastTarget = false;
+                    EditorUtility.SetDirty(label);
+                    changed++;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool ShouldKeepRaycastTarget(GameObject go)
+        {
+            if (go.GetComponent<Button>() != null)
+            {
+                return true;
+            }
+
+            if (go.GetComponent<ScrollRect>() != null)
+            {
+                return true;
+            }
+
+            if (go.name == "MainTapButton" || go.name == "ShopOverlayShade")
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────────
 
         private static void SetObjectProperty(SerializedObject so, string propertyPath, Object value)

@@ -113,6 +113,8 @@ namespace BrainDrain.Systems
             OnRebirthCountChanged?.Invoke(RebirthCount);
         }
 
+        // OBSOLETE — HUD rankText now uses HUDController.GetStageRankTitle (stage-derived).
+        // Remaining callers (illumisnottiTitleText, RebirthUIController, IllumisnottiManagerUI, DebugCheats) not yet migrated.
         /// <summary>
         /// The Illumisnotti title earned at a given Snotting (Rebirth) tier, displayed from game
         /// start under the HUD's IQ readout and in the Illumisnotti panel. "Rebirth" is reflavored
