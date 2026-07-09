@@ -797,7 +797,6 @@ GameObject:
   - component: {fileID: 33811302}
   - component: {fileID: 33811304}
   - component: {fileID: 33811303}
-  - component: {fileID: 33811305}
   m_Layer: 0
   m_Name: Tab_BP
   m_TagString: Untagged
@@ -866,26 +865,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &33811305
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 33811301}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 531eab25ff4eeb54091694f71371b138, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.ShopTabView
-  tabPanels:
-  - tab: 0
-    tabCanvas: {fileID: 33811304}
-    scrollRect: {fileID: 26953933}
-    content: {fileID: 147464496}
-    tabButton: {fileID: 1570514766}
-  rowPrefab: {fileID: 1301091119739926809, guid: e3ceabd44f6444b4ca19b527f7ee7023, type: 3}
-  rowHeight: 180
 --- !u!1 &37830563
 GameObject:
   m_ObjectHideFlags: 0
@@ -1120,12 +1099,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
+  m_fontSize: 14
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 8
+  m_fontSizeMax: 14
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -1137,7 +1116,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -28068,7 +28047,6 @@ GameObject:
   - component: {fileID: 1151365135}
   - component: {fileID: 1151365137}
   - component: {fileID: 1151365136}
-  - component: {fileID: 1151365138}
   m_Layer: 0
   m_Name: Tab_RP
   m_TagString: Untagged
@@ -28137,26 +28115,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &1151365138
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1151365134}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 531eab25ff4eeb54091694f71371b138, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.ShopTabView
-  tabPanels:
-  - tab: 2
-    tabCanvas: {fileID: 1151365137}
-    scrollRect: {fileID: 225838523}
-    content: {fileID: 1699952872}
-    tabButton: {fileID: 395431489}
-  rowPrefab: {fileID: 1301091119739926809, guid: e3ceabd44f6444b4ca19b527f7ee7023, type: 3}
-  rowHeight: 180
 --- !u!1 &1155918297
 GameObject:
   m_ObjectHideFlags: 0
@@ -28258,7 +28216,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -34205,12 +34163,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
+  m_fontSize: 14
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 8
+  m_fontSizeMax: 14
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -34222,7 +34180,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -35580,6 +35538,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ac7dd41d643d68c419c31fbce54d230f, type: 2}
   - {fileID: 11400000, guid: 8fa63226a0c3d0c94a765be84f71273c, type: 2}
   - {fileID: 11400000, guid: af519d94a09777440918687457847275, type: 2}
+  - {fileID: 11400000, guid: f72f556d1bc9f8d4c991236e7cf5f4fb, type: 2}
+  - {fileID: 11400000, guid: b64392c13a6897f42995e6163f5f39ab, type: 2}
+  - {fileID: 11400000, guid: cb4a0f83d2188ae4ca61baf69067c086, type: 2}
+  - {fileID: 11400000, guid: a4e0d96c4f293f74db483cdfcf2fc7ca, type: 2}
+  - {fileID: 11400000, guid: 815ecf5506fd6854a9aaee13a929b152, type: 2}
+  - {fileID: 11400000, guid: ee826570105598f4eb78a20675f08584, type: 2}
+  - {fileID: 11400000, guid: 618b3cf7d6e47574e8c516da9e8cb141, type: 2}
+  - {fileID: 11400000, guid: cfbc81238c59ace4ca966b74676aab52, type: 2}
+  - {fileID: 11400000, guid: 8a37b59f07e989442a2aedab1659ee33, type: 2}
 --- !u!114 &1486179491
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -47939,7 +47906,6 @@ GameObject:
   - component: {fileID: 2006876342}
   - component: {fileID: 2006876344}
   - component: {fileID: 2006876343}
-  - component: {fileID: 2006876345}
   m_Layer: 0
   m_Name: Tab_Cash
   m_TagString: Untagged
@@ -48008,26 +47974,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &2006876345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2006876341}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 531eab25ff4eeb54091694f71371b138, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.ShopTabView
-  tabPanels:
-  - tab: 1
-    tabCanvas: {fileID: 2006876344}
-    scrollRect: {fileID: 813278902}
-    content: {fileID: 944307326}
-    tabButton: {fileID: 1217899411}
-  rowPrefab: {fileID: 1301091119739926809, guid: e3ceabd44f6444b4ca19b527f7ee7023, type: 3}
-  rowHeight: 180
 --- !u!1 &2010006898
 GameObject:
   m_ObjectHideFlags: 0
