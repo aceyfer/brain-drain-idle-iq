@@ -284,6 +284,13 @@ namespace BrainDrain.UI
             if (canvas != null)
             {
                 canvas.enabled = isVisible;
+
+                // Reassert every call, not just once in Awake -- a canvas left disabled
+                // since boot (Cash/RP, until first selected) didn't carry Awake's override
+                // through to its first real enable. Idempotent, two field writes, closes
+                // the gap regardless of the exact Unity-internal cause.
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = TabContentSortingOrder;
             }
 
             GraphicRaycaster raycaster = panel.GetComponent<GraphicRaycaster>();
@@ -593,9 +600,9 @@ namespace BrainDrain.UI
 
         private void NormalizeDrawOrder()
         {
-            SetOverrideSorting(bpTabPanel, TabContentSortingOrder);
-            SetOverrideSorting(cashTabPanel, TabContentSortingOrder);
-            SetOverrideSorting(rpTabPanel, TabContentSortingOrder);
+            // Tab content's sortingOrder is asserted every call in SetTabPanelPresentation
+            // (Awake's InitializeTabPresentation + every SelectTab call), not just once here
+            // -- see that method for why.
 
             // closeButton has no Canvas of its own today -- it's raycasted only via the root
             // canvas. Give it one so it can sort above the tab content regardless of whether
