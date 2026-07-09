@@ -248,6 +248,18 @@ namespace BrainDrain.UI
         {
             activeTab = tab;
 
+            if (tab == ShopTab.RpRestorations && rpSlots.Count == 0)
+            {
+                // BuildRestorationTab() may have found WorldRestorationManager.Instance null
+                // at Awake time -- a plain cross-object Awake-order race, not something Unity
+                // guarantees either way -- and produced zero rows, latched by BuildShop()'s
+                // built flag. Retry here instead of trusting any particular boot ordering: by
+                // the time a player actually opens this tab, WorldRestorationManager is
+                // virtually certain to exist, and if it somehow still doesn't, this is a
+                // harmless no-op that retries again next selection.
+                BuildRestorationTab();
+            }
+
             if (bpTabPanel != null) bpTabPanel.SetActive(tab == ShopTab.BpUpgrades);
             if (cashTabPanel != null) cashTabPanel.SetActive(tab == ShopTab.CashInvestments);
             if (rpTabPanel != null) rpTabPanel.SetActive(tab == ShopTab.RpRestorations);
