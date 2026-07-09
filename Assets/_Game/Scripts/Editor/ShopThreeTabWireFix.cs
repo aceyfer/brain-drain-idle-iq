@@ -21,6 +21,12 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Wire 3-Tab Shop")]
         public static void WireThreeTabShop()
         {
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("[ShopThreeTabWireFix] Refusing to run during Play Mode — this destroys and rebuilds live shop content.");
+                return;
+            }
+
             if (!EditorSceneManager.GetActiveScene().isLoaded
                 || EditorSceneManager.GetActiveScene().path != ScenePath)
             {
