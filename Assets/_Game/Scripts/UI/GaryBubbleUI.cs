@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using BrainDrain.Systems;
 
@@ -15,7 +16,7 @@ namespace BrainDrain.UI
     public sealed class GaryBubbleUI : MonoBehaviour
     {
         private const float SlideDuration = 0.3f;
-        private const float HoldDuration  = 3.5f;
+        private const float HoldDuration  = 4f;
 
         [SerializeField] private RectTransform bubblePanel;
         [SerializeField] private TextMeshProUGUI barkText;
@@ -30,12 +31,16 @@ namespace BrainDrain.UI
             if (bubblePanel != null)
             {
                 restingPos = bubblePanel.anchoredPosition;
-                // Park offscreen right; SetActive(false) so it's invisible until first bark
                 bubblePanel.anchoredPosition = restingPos + new Vector2(bubblePanel.rect.width + 20f, 0f);
                 bubblePanel.gameObject.SetActive(false);
+
+                Image panelImage = bubblePanel.GetComponent<Image>();
+                if (panelImage != null) panelImage.raycastTarget = false;
             }
 
-            // Subscribe before any potential early barks (mirrors DialogueDisplayUI.Awake pattern)
+            if (barkText != null) barkText.raycastTarget = false;
+            if (speakerLabel != null) speakerLabel.raycastTarget = false;
+
             if (GaryBarkManager.Instance != null)
             {
                 GaryBarkManager.Instance.OnGaryBark -= HandleGaryBark;
@@ -52,6 +57,7 @@ namespace BrainDrain.UI
         private void HandleGaryBark(string bark)
         {
             if (bubblePanel == null || barkText == null) return;
+            if (string.IsNullOrWhiteSpace(bark)) return;
 
             if (activeRoutine != null) StopCoroutine(activeRoutine);
 
