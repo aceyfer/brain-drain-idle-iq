@@ -48,6 +48,14 @@ namespace BrainDrain.UI
 
         private const float SlideDurationSeconds = 0.3f;
 
+        // Draw/raycast layering, owned in code rather than sibling order (see
+        // PROJECT_BIBLE.md §8) -- tab content sorts above shopPanel's backdrop and
+        // MainTapButton; closeButton sorts above the tab content in turn, so it stays
+        // reachable regardless of whether its screen rect happens to overlap the
+        // scroll area. shopPanel's own background stays at the root canvas's implicit 0.
+        private const int TabContentSortingOrder = 1;
+        private const int ShopChromeSortingOrder = 2;
+
         private readonly List<UpgradeSlotUI> bpSlots = new(8);
         private readonly List<UpgradeSlotUI> cashSlots = new(8);
         private readonly List<RestorationSlotUI> rpSlots = new(8);
@@ -81,6 +89,7 @@ namespace BrainDrain.UI
             // critical values now live here, not the .unity file. Must run before BuildShop()
             // so the freshly-instantiated rows' layout computes against final bounds.
             NormalizeTabGeometry();
+            NormalizeDrawOrder();
 
             if (closeButton != null)
             {
@@ -579,6 +588,47 @@ namespace BrainDrain.UI
             if (scrollRect != null)
             {
                 StretchRect(scrollRect.GetComponent<RectTransform>());
+            }
+        }
+
+        private void NormalizeDrawOrder()
+        {
+            SetOverrideSorting(bpTabPanel, TabContentSortingOrder);
+            SetOverrideSorting(cashTabPanel, TabContentSortingOrder);
+            SetOverrideSorting(rpTabPanel, TabContentSortingOrder);
+
+            // closeButton has no Canvas of its own today -- it's raycasted only via the root
+            // canvas. Give it one so it can sort above the tab content regardless of whether
+            // its corner happens to overlap the scroll area (it does, post-geometry-fix).
+            // shopPanel's own background Image stays raycastTarget=true and at the root
+            // canvas's implicit order 0 -- deliberate catch-all for any gap in the scroll
+            // content (row spacing, area below the last row) so nothing falls through to
+            // MainTapButton, per explicit instruction.
+            if (closeButton != null)
+            {
+                SetOverrideSorting(closeButton.gameObject, ShopChromeSortingOrder, ensureRaycaster: true);
+            }
+        }
+
+        private static void SetOverrideSorting(GameObject target, int sortingOrder, bool ensureRaycaster = false)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Canvas canvas = target.GetComponent<Canvas>();
+            if (canvas == null)
+            {
+                canvas = target.AddComponent<Canvas>();
+            }
+
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = sortingOrder;
+
+            if (ensureRaycaster && target.GetComponent<GraphicRaycaster>() == null)
+            {
+                target.AddComponent<GraphicRaycaster>();
             }
         }
 
