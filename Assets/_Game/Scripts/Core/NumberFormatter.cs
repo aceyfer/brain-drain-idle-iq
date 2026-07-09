@@ -23,6 +23,8 @@ namespace BrainDrain.Core
 
             if (value < 1000d)
             {
+                if (value > 0d && value < 1d)
+                    return value.ToString("0.##", CultureInfo.InvariantCulture);
                 return ((long)value).ToString(CultureInfo.InvariantCulture);
             }
 
@@ -75,7 +77,10 @@ namespace BrainDrain.Core
         {
             if (value < 1000d)
             {
-                sb.Append((long)value);
+                if (value > 0d && value < 1d)
+                    sb.Append(value.ToString("0.##", CultureInfo.InvariantCulture));
+                else
+                    sb.Append((long)value);
                 return;
             }
 
