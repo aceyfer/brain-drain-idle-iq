@@ -75,6 +75,13 @@ namespace BrainDrain.UI
             EnsureThreeTabLayout();
             WireTabButtons();
 
+            // Owns each tab panel's on-screen bounds in code, matching shopPanel exactly,
+            // regardless of whatever anchors got saved in the scene. Two scene-edit reports
+            // this session did not persist as expected (see PROJECT_BIBLE.md §8) -- geometry-
+            // critical values now live here, not the .unity file. Must run before BuildShop()
+            // so the freshly-instantiated rows' layout computes against final bounds.
+            NormalizeTabGeometry();
+
             if (closeButton != null)
             {
                 closeButton.onClick.AddListener(CloseShop);
@@ -92,7 +99,6 @@ namespace BrainDrain.UI
 
             if (shopPanel != null)
             {
-                shopPanelRect = shopPanel.GetComponent<RectTransform>();
                 if (shopPanelRect != null)
                 {
                     shopPanelRestingPosition = shopPanelRect.anchoredPosition;
@@ -536,6 +542,43 @@ namespace BrainDrain.UI
             if (shopRoot == null && bpTabPanel != null && bpTabPanel.transform.parent != null)
             {
                 shopRoot = bpTabPanel.transform.parent.gameObject;
+            }
+
+            if (shopPanelRect == null && shopPanel != null)
+            {
+                shopPanelRect = shopPanel.GetComponent<RectTransform>();
+            }
+        }
+
+        private void NormalizeTabGeometry()
+        {
+            if (shopPanelRect == null)
+            {
+                return;
+            }
+
+            NormalizeTabPanelRect(bpTabPanel, shopPanelRect);
+            NormalizeTabPanelRect(cashTabPanel, shopPanelRect);
+            NormalizeTabPanelRect(rpTabPanel, shopPanelRect);
+        }
+
+        private static void NormalizeTabPanelRect(GameObject tabPanel, RectTransform referenceRect)
+        {
+            RectTransform tabRect = tabPanel != null ? tabPanel.GetComponent<RectTransform>() : null;
+            if (tabRect == null)
+            {
+                return;
+            }
+
+            tabRect.anchorMin = referenceRect.anchorMin;
+            tabRect.anchorMax = referenceRect.anchorMax;
+            tabRect.offsetMin = Vector2.zero;
+            tabRect.offsetMax = Vector2.zero;
+
+            ScrollRect scrollRect = tabPanel.GetComponentInChildren<ScrollRect>(true);
+            if (scrollRect != null)
+            {
+                StretchRect(scrollRect.GetComponent<RectTransform>());
             }
         }
 
