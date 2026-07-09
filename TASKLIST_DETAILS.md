@@ -47,7 +47,7 @@ Select `Assets/_Game/Sprites/Backgrounds/BG1.jpg` → Inspector → Texture Type
 SceneManagerWiring, ShopPanelLayoutFix, PlaceholderArtGenerator, PedestrianAlphaTest, HUDMobileOverhaul, FixCOGSDialogueLayout, ConsolidateShopButton, COGSPortraitWireFix, RemoveMissingSceneScripts, MainUIControllerWireFix, PopulateBuildingTemplates, VisualPolishFix (6 items). Add the same isPlaying/isPlayingOrWillChangePlaymode guard pattern to each entry point. One batch commit. Pattern rule (Bible): wrap Editor-only API calls in try/catch at the chokepoint too — flags alone race.
 
 ## §9 PremiumShopManager vs GodTierStoreManager
-Relationship undocumented. Read-only audit: do both claim premium purchases? Who owns what? Outcome feeds §10. Document verdict in Bible; consolidate later if duplicated.
+Relationship undocumented. Read-only audit: do both claim premium purchases? Who owns what? Outcome feeds §10. Document verdict in Bible; consolidate later if duplicated. **Now step 1 of §16** — its findings determine which manager (or whether a new one) backs the third shop tab.
 
 ## §10 DECISION — No premium soft currency ("neurons")
 **Decision (2026-07-09, Aceyfer):** "Neurons" premium currency was never approved and is rejected. ALL premium purchases are direct real-world currency. Example: Bad Words Pack = **$5.00 USD**, not 50 neurons.
@@ -72,20 +72,40 @@ iOS target already selected in Editor. Build to a real device early — safe-are
 ## §15 Store presence
 Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), AcEclipse Games publisher identity.
 
+## §16 Replace third shop tab with Premium real-currency store — DECIDED 2026-07-09
+**Decision:** the RP/World Restoration shop tab is cut. That third tab slot becomes the Premium store (direct real-world currency, per the no-neurons decision in §10). World Restoration progression itself stays in the game — it's just no longer presented as a shop tab; how/where it surfaces instead is undecided, not scoped here.
+**Why now:** the RP tab's only remaining bug (BuildRestorationTab() Awake-order race, fixed in commit `5572122`) became moot the moment this decision landed — no point polishing a tab that's being replaced.
+**First step:** §9's PremiumShopManager vs GodTierStoreManager audit — determines which manager (or whether a new one) actually backs this tab before any UI work starts.
+**Not scoped tonight:** this is a NEW TASK for a future session, not built now.
+
+## §17 COGS portrait renders on Play Stop but not during Play
+Inverted visibility — portrait shows when Play mode *stops*, not while it's running. Separate, unrelated bug from anything touched this session. Flagged by Aceyfer during RP-tab testing; not diagnosed yet.
+
+## §18 Oversized pedestrians
+Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet — needs its own investigation pass.
+
 ---
 
 ## DECISION LOG
 - 2026-07-09 — Shop collapse: ShopUIController is the sole shop system; ShopTabView dormant + detached until virtualization AND real purchase routing exist. Guard in code is the switch.
 - 2026-07-09 — No premium soft currency; all premium purchases direct real-world pricing (§10).
 - 2026-07-09 — Scene YAML surgery (reparents/anchor-sensitive) = Editor-hands work, never raw YAML edits by agents. Component strips allowed only with verified zero dangling references.
+- 2026-07-09 — RP/World Restoration shop tab cut; slot becomes Premium direct-currency store (§16). Restoration progression stays in the game, just not as a shop tab. RP tab's lazy-rebuild fix (`5572122`) is kept in place as harmless — see changelog below for why.
 - Standing — Claude Code is sole code editor. One change, one commit. Diagnose before changing. No destructive git without explicit confirmation. Editor/Inspector work = Aceyfer (+ Unity AI when credits allow).
 
 ## CHANGELOG (this session, 2026-07-09)
 - Landed: commits 1–3 (NumberFormatter sub-1 currency, Gary bubble tap-blocking + hold-time, HUDController rank cold-boot sync).
-- Staged, holding: commit 4 (Awake BuildShop + scene-wide guard + Canvas toggle + collapse C#), commit 5 (9 buildings wired + scene), ShopThreeTabWireFix guard, AutoSceneFixes hardening.
-- Editor work done: 3× ShopTabView components removed (verified clean), ShopTabBar reparented under ShopPanel (PosY −3, last child).
+- Editor work done: 3× ShopTabView components removed (verified clean), ShopTabBar reparented under ShopPanel — reparent later confirmed to have never actually persisted (see below), superseded by the geometry-in-code fix.
 - Found & fixed en route: ShopTabView guard was a structural no-op (ancestry vs existence); ShopUIController never toggled Canvas.enabled; tab bar sibling order lost raycasts to MainTapButton; AutoSceneFixes delayCall race.
 - Closed as pre-existing/harmless: COGSPortraitController duplicate-destroy warning, BG1 warning (fix queued §6).
 - Resolved: CanvasGuard fight (§1) — play-mode guard, not a nested-canvas incompatibility. Stray element (§2) — was Tab_BP stuck in WorldSpace renderMode, same root cause as §1's revert target. FindObjectsSortMode (§3) — closed by inference, source never identified (see §3 note).
-- Full re-test (§4) passed green. Commit train (§5) landed in full — 9 commits, see §5 for hashes and order.
-- Tasks 1–5 (Shop Collapse Endgame) all complete as of this commit. Next up per TASKLIST.md: §6 (BG1 texture import), §7 (doc sync), §8 (batch-guard remaining 12 unguarded Editor tools), §9 (PremiumShopManager vs GodTierStoreManager audit).
+- Full re-test (§4) passed green. Commit train (§5) landed — 9 commits.
+
+### Post-train fixes (same session, continued after §5 landed)
+- `c25fa63` — **Boot ownership**: ShopRoot (Tab_BP/Cash/RP + ShopTabBar) is a sibling of shopPanel, not a descendant — shopPanel.SetActive() never reached it, so tab content and the tab strip rendered/raycast at all times, shop open or closed. ShopUIController now resolves shopRoot automatically and activates/deactivates it in lockstep with shopPanel. Also: `27fb988`'s claimed ShopTabBar reparent never actually persisted (corrected in `2f3fd06`) — fixed for real here via a pure sibling reorder (ShopRoot moved after MainTapButton in CustomSafeArea), not a reparent.
+- `e930d37` — **Layout-group corruption** (third scene-smuggling instance, logged `38a61e1`): all 16 buildings were correctly instantiated every time, but Content's VerticalLayoutGroup was saved disabled on all three tabs, so every row landed at the same position and fully overlapped ("one row per tab"). Cause: a coroutine meant to disable the layout group after one frame got killed by shopPanel deactivating before it could resume, yet the scene had it disabled anyway from an earlier successful run that got baked into a save. Fixed by re-enabling all three layout groups and deleting the coroutine mechanism entirely rather than repairing its timing.
+- `e0b0401` — **Geometry moved to code**: Tab_BP/Cash/RP were anchored full-screen while shopPanel is bottom-60% — two independently-sized overlapping rects. Rather than re-editing scene anchors (two prior scene-edit reports this session did not persist as expected, most notably `27fb988`), ShopUIController now normalizes each tab panel's anchors to match shopPanel exactly in code at Awake, making saved scene anchors irrelevant going forward.
+- `86bfa95` + `678aacb` — **Sorting layers**: the geometry fix exposed that shopPanel's own near-opaque, raycastTarget=true background (kept exactly as specified — the deliberate catch-all for any gap in the scroll content, so nothing falls through to MainTapButton) was rendering on top of and blocking the now-correctly-sized tab content. Fixed via `Canvas.overrideSorting` owned in code, not sibling order: tab content sorts above the backdrop, closeButton sorts above the tab content in turn (its corner overlaps the scroll area post-geometry-fix, so it needed its own explicit priority). Landed in two commits — the first covered BP only, because the sortingOrder assignment happened once in Awake while Cash/RP sat disabled from boot until first selected; `678aacb` moved the assignment into the same place `.enabled` was already being reasserted on every tab switch, closing the gap for Cash/RP/any future tab uniformly.
+- `5572122` — **RP lazy-build**: BuildRestorationTab() lost an Awake-order race against WorldRestorationManager and latched an empty result. Fixed with a lazy retry on first RP tab selection rather than depending on any particular boot ordering. **Superseded same session** by the decision to cut the RP tab entirely (§16) — kept in place as harmless dead code (see decision log).
+
+Tasks 1–5 (Shop Collapse Endgame) all complete — BP and Cash tabs fully verified end to end (open/close, tab switch, buy on both tabs, no exceptions). RP tab superseded by design decision, not left as an unresolved bug. Next up per TASKLIST.md: §6 (BG1 texture import), §7 (doc sync), §8 (batch-guard remaining 12 unguarded Editor tools), §16 (Premium store tab, starts with §9's audit), §17 (COGS portrait inverted visibility), §18 (oversized pedestrians).
