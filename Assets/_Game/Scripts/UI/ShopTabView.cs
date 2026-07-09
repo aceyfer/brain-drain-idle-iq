@@ -39,6 +39,17 @@ namespace BrainDrain.UI
 
         private void Awake()
         {
+            // ShopUIController owns these same content containers scene-wide (by shared
+            // RectTransform reference, not GameObject hierarchy — the two components are not
+            // parent/child) and destroys their children during BuildShop(). Disable self so the
+            // pool is never allocated into shared content. Remove this guard when ShopTabView is
+            // promoted to replace ShopUIController.
+            if (FindAnyObjectByType<ShopUIController>(FindObjectsInactive.Include) != null)
+            {
+                enabled = false;
+                return;
+            }
+
             BuildVirtualizedLists();
             WireTabButtons();
         }

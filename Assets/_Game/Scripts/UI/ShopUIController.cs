@@ -66,6 +66,7 @@ namespace BrainDrain.UI
 
         private void Awake()
         {
+            ResolveDependencies();
             EnsureThreeTabLayout();
             WireTabButtons();
 
@@ -73,6 +74,16 @@ namespace BrainDrain.UI
             {
                 closeButton.onClick.AddListener(CloseShop);
             }
+
+            // Build content while the panel is still active so OpenShop() → RefreshAllSlots()
+            // finds a populated slot list even before Start() has run.
+            BuildShop();
+
+            // Explicitly own each tab panel's Canvas/GraphicRaycaster state at boot rather than
+            // trusting whatever got saved in the scene. Post-collapse, ShopUIController is the
+            // only system responsible for this — previously ShopTabView's own SelectTab() call
+            // (via its now-removed guard) was silently covering this gap.
+            InitializeTabPresentation();
 
             if (shopPanel != null)
             {
@@ -199,9 +210,45 @@ namespace BrainDrain.UI
             if (cashTabPanel != null) cashTabPanel.SetActive(tab == ShopTab.CashInvestments);
             if (rpTabPanel != null) rpTabPanel.SetActive(tab == ShopTab.RpRestorations);
 
+            // Each tab panel owns its own nested Canvas + GraphicRaycaster. GameObject.SetActive
+            // alone doesn't flip either, and these panels are saved with Cash/RP's Canvas off by
+            // default, so without this they never render/raycast. ShopUIController now owns this
+            // state exclusively (see the "single shop system" note in PROJECT_BIBLE.md §8) —
+            // there is no second system covering this gap anymore.
+            SetTabPanelPresentation(bpTabPanel, tab == ShopTab.BpUpgrades);
+            SetTabPanelPresentation(cashTabPanel, tab == ShopTab.CashInvestments);
+            SetTabPanelPresentation(rpTabPanel, tab == ShopTab.RpRestorations);
+
             SetTabButtonHighlight(bpTabButton, tab == ShopTab.BpUpgrades);
             SetTabButtonHighlight(cashTabButton, tab == ShopTab.CashInvestments);
             SetTabButtonHighlight(rpTabButton, tab == ShopTab.RpRestorations);
+        }
+
+        private void InitializeTabPresentation()
+        {
+            SetTabPanelPresentation(bpTabPanel, activeTab == ShopTab.BpUpgrades);
+            SetTabPanelPresentation(cashTabPanel, activeTab == ShopTab.CashInvestments);
+            SetTabPanelPresentation(rpTabPanel, activeTab == ShopTab.RpRestorations);
+        }
+
+        private static void SetTabPanelPresentation(GameObject panel, bool isVisible)
+        {
+            if (panel == null)
+            {
+                return;
+            }
+
+            Canvas canvas = panel.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.enabled = isVisible;
+            }
+
+            GraphicRaycaster raycaster = panel.GetComponent<GraphicRaycaster>();
+            if (raycaster != null)
+            {
+                raycaster.enabled = isVisible;
+            }
         }
 
         private static void SetTabButtonHighlight(Button button, bool selected)
