@@ -47,6 +47,15 @@ namespace BrainDrain.EditorTools
         /// </summary>
         private static void EnforceOverlayOnAllCanvases()
         {
+            // This tool exists to catch authoring regressions in Edit Mode -- it must never
+            // touch live gameplay state or attempt a scene save during Play Mode (the latter
+            // throws InvalidOperationException on MarkSceneDirty; confirmed reproducing
+            // 2026-07-09 via GameObject.SetActive() calls firing hierarchyChanged mid-Play).
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             // Guard against re-entrancy: reverting + saving from inside OnSceneSaved would
             // otherwise trigger another sceneSaved event. Harmless on its own (the second pass
             // finds nothing left to fix), but skipping it outright is cleaner.
@@ -84,6 +93,10 @@ namespace BrainDrain.EditorTools
                 Scene activeScene = SceneManager.GetActiveScene();
                 EditorSceneManager.MarkSceneDirty(activeScene);
                 EditorSceneManager.SaveScene(activeScene);
+            }
+            catch (System.InvalidOperationException)
+            {
+                Debug.LogWarning("[CanvasGuard] Scene save rejected mid-call — play mode transition raced the guard.");
             }
             finally
             {
