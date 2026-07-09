@@ -72,7 +72,7 @@ namespace BrainDrain.EditorTools
 
             Debug.Log("[AutoSceneFixes] ShopPanel was saved inactive, which prevents its own ShopUIController.Awake() from ever running -- reactivating it.");
             shopUI.gameObject.SetActive(true);
-            MarkAndSaveScene();
+            MarkAndSaveScene(nameof(ReactivateShopPanelIfNeeded));
         }
 
         private static void RemoveDuplicateRandomEventManagers()
@@ -116,7 +116,7 @@ namespace BrainDrain.EditorTools
 
             if (removedAny)
             {
-                MarkAndSaveScene();
+                MarkAndSaveScene(nameof(RemoveDuplicateRandomEventManagers));
             }
         }
 
@@ -144,17 +144,24 @@ namespace BrainDrain.EditorTools
             }
         }
 
-        private static void MarkAndSaveScene()
+        private static void MarkAndSaveScene(string requestedBy)
         {
             if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                Debug.LogWarning("[AutoSceneFixes] Skipped scene save: play mode became active after the initial guard check (delayCall timing hole).");
+                Debug.LogWarning($"[AutoSceneFixes] Skipped scene save requested by {requestedBy}: play mode became active after the initial guard check (delayCall timing hole).");
                 return;
             }
 
-            var scene = EditorSceneManager.GetActiveScene();
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
+            try
+            {
+                var scene = EditorSceneManager.GetActiveScene();
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+            catch (System.InvalidOperationException)
+            {
+                Debug.LogWarning($"[AutoSceneFixes] Scene save requested by {requestedBy} was rejected mid-call — play mode transition raced the guard. Safe to ignore; the underlying scene state wasn't corrupted, just not saved this pass.");
+            }
         }
     }
 }
