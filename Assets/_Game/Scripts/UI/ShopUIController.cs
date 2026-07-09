@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -569,7 +568,6 @@ namespace BrainDrain.UI
             built = true;
             SubscribeToEvents();
             RefreshAllSlots();
-            StartCoroutine(DisableShopLayoutAfterInit());
         }
 
         private void BuildBuildingTabs()
@@ -670,57 +668,6 @@ namespace BrainDrain.UI
             for (int i = content.childCount - 1; i >= 0; i--)
             {
                 Destroy(content.GetChild(i).gameObject);
-            }
-        }
-
-        private IEnumerator DisableShopLayoutAfterInit()
-        {
-            Canvas.ForceUpdateCanvases();
-            yield return null;
-
-            DisableLayoutComponents(bpContent);
-            DisableLayoutComponents(cashContent);
-            DisableLayoutComponents(rpContent);
-
-            if (bpContent != null && bpContent.parent != null)
-            {
-                DisableLayoutComponents(bpContent.parent);
-            }
-
-            if (cashContent != null && cashContent.parent != null)
-            {
-                DisableLayoutComponents(cashContent.parent);
-            }
-
-            if (rpContent != null && rpContent.parent != null)
-            {
-                DisableLayoutComponents(rpContent.parent);
-            }
-        }
-
-        private static void DisableLayoutComponents(Transform target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            VerticalLayoutGroup vertical = target.GetComponent<VerticalLayoutGroup>();
-            if (vertical != null)
-            {
-                vertical.enabled = false;
-            }
-
-            HorizontalLayoutGroup horizontal = target.GetComponent<HorizontalLayoutGroup>();
-            if (horizontal != null)
-            {
-                horizontal.enabled = false;
-            }
-
-            ContentSizeFitter fitter = target.GetComponent<ContentSizeFitter>();
-            if (fitter != null)
-            {
-                fitter.enabled = false;
             }
         }
 
