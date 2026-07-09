@@ -62,6 +62,12 @@ namespace BrainDrain.UI
         private Vector2 shopPanelRestingPosition;
         private bool shopPanelRestingPositionCaptured;
 
+        // ShopRoot hosts Tab_BP/Tab_Cash/Tab_RP/ShopTabBar as a sibling branch of shopPanel, not
+        // a child of it -- shopPanel.SetActive() never reaches it. Resolved automatically from
+        // bpTabPanel's own parent rather than a new [SerializeField] so there's no Inspector
+        // wiring step to forget (see the ShopPanel Awake() trap precedent in PROJECT_BIBLE.md §8).
+        private GameObject shopRoot;
+
         public event Action ShopClosed;
 
         private void Awake()
@@ -95,6 +101,14 @@ namespace BrainDrain.UI
                 }
 
                 shopPanel.SetActive(false);
+            }
+
+            // ShopRoot (Tab_BP/Cash/RP + ShopTabBar) is a sibling of shopPanel, not a descendant
+            // of it -- deactivate it too, or its currently-selected tab's Canvas/GraphicRaycaster
+            // keeps rendering and receiving taps at all times, shop open or not.
+            if (shopRoot != null)
+            {
+                shopRoot.SetActive(false);
             }
         }
 
@@ -164,6 +178,10 @@ namespace BrainDrain.UI
             }
 
             shopPanel.SetActive(true);
+            if (shopRoot != null)
+            {
+                shopRoot.SetActive(true);
+            }
             SelectTab(activeTab);
             RefreshAllSlots();
 
@@ -185,11 +203,17 @@ namespace BrainDrain.UI
             {
                 Vector2 offscreenAbove = shopPanelRestingPosition + new Vector2(0f, shopPanelRect.rect.height);
                 GameObject panelToHide = shopPanel;
+                GameObject rootToHide = shopRoot;
                 AnimationController.PlaySlide(shopPanelRect, shopPanelRestingPosition, offscreenAbove, SlideDurationSeconds, () =>
                 {
                     if (panelToHide != null)
                     {
                         panelToHide.SetActive(false);
+                    }
+
+                    if (rootToHide != null)
+                    {
+                        rootToHide.SetActive(false);
                     }
 
                     ShopClosed?.Invoke();
@@ -198,6 +222,10 @@ namespace BrainDrain.UI
             else
             {
                 shopPanel.SetActive(false);
+                if (shopRoot != null)
+                {
+                    shopRoot.SetActive(false);
+                }
                 ShopClosed?.Invoke();
             }
         }
@@ -504,6 +532,11 @@ namespace BrainDrain.UI
             if (currencyManager == null)
             {
                 currencyManager = CurrencyManager.Instance;
+            }
+
+            if (shopRoot == null && bpTabPanel != null && bpTabPanel.transform.parent != null)
+            {
+                shopRoot = bpTabPanel.transform.parent.gameObject;
             }
         }
 
