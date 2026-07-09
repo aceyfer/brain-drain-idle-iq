@@ -279,6 +279,8 @@ namespace BrainDrain.UI
                 RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForRestorationText;
             }
 
+            // Always sync rank on cold boot regardless of whether CurrencyManager was ready above.
+            MarkRankDirty();
             FlushDirtyTexts();
         }
 
