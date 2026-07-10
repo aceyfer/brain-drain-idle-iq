@@ -131,10 +131,12 @@ namespace BrainDrain.Systems
                     if (pts.IsItemOwned(item))
                         pointsOwned.Add(item.itemId);
 
-            PremiumShopManager prem = PremiumShopManager.Instance;
-            if (prem != null)
-                foreach (PremiumItemData item in prem.Items)
-                    if (prem.IsItemPurchased(item.itemId))
+            // Premium ownership sources from GodTierStoreManager (the surviving premium manager
+            // per TASKLIST_DETAILS §9/§10 -- PremiumShopManager is retired).
+            GodTierStoreManager god = GodTierStoreManager.Instance;
+            if (god != null)
+                foreach (GodTierStoreItemData item in god.Items)
+                    if (god.IsItemOwned(item))
                         premiumOwned.Add(item.itemId);
         }
 
@@ -144,8 +146,8 @@ namespace BrainDrain.Systems
                 CashShopManager.Instance.OnItemsChanged += HandleCashShopChanged;
             if (PointsShopManager.Instance != null)
                 PointsShopManager.Instance.OnItemsChanged += HandlePointsShopChanged;
-            if (PremiumShopManager.Instance != null)
-                PremiumShopManager.Instance.OnItemsChanged += HandlePremiumShopChanged;
+            if (GodTierStoreManager.Instance != null)
+                GodTierStoreManager.Instance.OnItemsChanged += HandleGodTierStoreChanged;
         }
 
         private void UnbindShopEvents()
@@ -154,8 +156,8 @@ namespace BrainDrain.Systems
                 CashShopManager.Instance.OnItemsChanged -= HandleCashShopChanged;
             if (PointsShopManager.Instance != null)
                 PointsShopManager.Instance.OnItemsChanged -= HandlePointsShopChanged;
-            if (PremiumShopManager.Instance != null)
-                PremiumShopManager.Instance.OnItemsChanged -= HandlePremiumShopChanged;
+            if (GodTierStoreManager.Instance != null)
+                GodTierStoreManager.Instance.OnItemsChanged -= HandleGodTierStoreChanged;
         }
 
         private void HandleCashShopChanged()
@@ -176,12 +178,12 @@ namespace BrainDrain.Systems
                     RaiseItemPurchased(item.itemId);
         }
 
-        private void HandlePremiumShopChanged()
+        private void HandleGodTierStoreChanged()
         {
-            PremiumShopManager mgr = PremiumShopManager.Instance;
+            GodTierStoreManager mgr = GodTierStoreManager.Instance;
             if (mgr == null) return;
-            foreach (PremiumItemData item in mgr.Items)
-                if (mgr.IsItemPurchased(item.itemId) && premiumOwned.Add(item.itemId))
+            foreach (GodTierStoreItemData item in mgr.Items)
+                if (mgr.IsItemOwned(item) && premiumOwned.Add(item.itemId))
                     RaiseItemPurchased(item.itemId);
         }
 

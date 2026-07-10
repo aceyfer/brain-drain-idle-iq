@@ -35,10 +35,6 @@ namespace BrainDrain.UI
         [SerializeField] private Button convertButton;
         [SerializeField] private ConvertUIController convertUIController;
 
-        [Header("Premium Shop Control")]
-        [SerializeField] private Button premiumShopButton;
-        [SerializeField] private PremiumShopUIController premiumShopUIController;
-
         [Header("Points Locking Visibility")]
         [SerializeField] private Button pointsShopButton;
 
@@ -157,23 +153,6 @@ namespace BrainDrain.UI
         public void ForceUpdatePointsLockState(int rebirthCount)
         {
             UpdatePointsLockState(rebirthCount);
-        }
-
-        private void Awake()
-        {
-            if (premiumShopButton != null)
-            {
-                premiumShopButton.onClick.RemoveListener(OnPremiumShopClicked);
-                premiumShopButton.onClick.AddListener(OnPremiumShopClicked);
-            }
-        }
-
-        private void OnPremiumShopClicked()
-        {
-            if (premiumShopUIController != null)
-            {
-                premiumShopUIController.OpenShop();
-            }
         }
 
         private void Start()
@@ -399,11 +378,6 @@ namespace BrainDrain.UI
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleStageChangedForRank;
-            }
-
-            if (premiumShopButton != null)
-            {
-                premiumShopButton.onClick.RemoveListener(OnPremiumShopClicked);
             }
         }
 

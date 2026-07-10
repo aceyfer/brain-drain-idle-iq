@@ -195,33 +195,6 @@ namespace BrainDrain.EditorTools
             SaveScene("[VisualPolishFix] TapHandler particle container wired.");
         }
 
-        // ── 4. Wire PremiumShopUIController manager dependencies ──────────────────
-        // GodTierStoreManager and CurrencyManager are {fileID:0} on PremiumShopUIController.
-
-        [MenuItem("BrainDrain/Visual Polish/Wire PremiumShop Managers")]
-        public static void WirePremiumShopManagers()
-        {
-            PremiumShopUIController shopUI = Object.FindAnyObjectByType<PremiumShopUIController>(FindObjectsInactive.Include);
-            if (shopUI == null)
-            {
-                Debug.LogError("[VisualPolishFix] PremiumShopUIController not found in scene.");
-                return;
-            }
-
-            GodTierStoreManager storeManager = Object.FindAnyObjectByType<GodTierStoreManager>(FindObjectsInactive.Include);
-            CurrencyManager currencyManager = Object.FindAnyObjectByType<CurrencyManager>(FindObjectsInactive.Include);
-
-            if (storeManager == null) Debug.LogWarning("[VisualPolishFix] GodTierStoreManager not found.");
-            if (currencyManager == null) Debug.LogWarning("[VisualPolishFix] CurrencyManager not found.");
-
-            SerializedObject so = new SerializedObject(shopUI);
-            if (storeManager != null) SetObjectProperty(so, "premiumShopManager", storeManager);
-            if (currencyManager != null) SetObjectProperty(so, "currencyManager", currencyManager);
-            so.ApplyModifiedProperties();
-            EditorUtility.SetDirty(shopUI);
-            SaveScene("[VisualPolishFix] PremiumShopUIController managers wired.");
-        }
-
         // ── Run All ───────────────────────────────────────────────────────────────
 
         [MenuItem("BrainDrain/Visual Polish/Run All Polish Fixes")]
@@ -230,7 +203,6 @@ namespace BrainDrain.EditorTools
             WireAnimationControllerSprites();
             WireHUDCelebrationOverlay();
             WireTapHandlerParticleContainer();
-            WirePremiumShopManagers();
             Debug.Log("[VisualPolishFix] All polish fixes applied.");
         }
 
