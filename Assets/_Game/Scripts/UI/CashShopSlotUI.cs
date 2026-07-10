@@ -12,6 +12,14 @@ namespace BrainDrain.UI
     /// one-time permanent purchases, not repeatable building levels. The Hot Chick companion
     /// has its own dedicated row inside CashShopUIController rather than using this slot type,
     /// since it's a single sequential-tier progression, not a list of independent items.
+    ///
+    /// DEAD BRANCHES (2026-07-10): the seven itemId == "profanity_pack" special cases in this
+    /// file are unreachable -- ProfanityPack.asset was deleted and removed from CashShopManager's
+    /// items list when profanity moved to the God Tier Store's Bad Words Pack (direct real
+    /// currency only, TASKLIST_DETAILS §10). Left in place per the harmless-dead-code convention;
+    /// strip them during the parked Shop-3/Points/Cash family reconciliation. NOTE for Phase B:
+    /// the owned->toggle behavior these branches implemented (tap owned row to flip profanity
+    /// on/off) was the only in-game toggle UI -- the God Shop slot UI must provide an equivalent.
     /// </summary>
     public sealed class CashShopSlotUI : MonoBehaviour
     {

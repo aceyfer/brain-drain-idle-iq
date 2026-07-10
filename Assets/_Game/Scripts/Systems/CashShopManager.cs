@@ -118,13 +118,9 @@ namespace BrainDrain.Systems
 
         private static void ApplyItemEffect(CurrencyManager currencyManager, CashShopItemData item)
         {
-            if (item != null && item.itemId == "profanity_pack")
-            {
-                RandomChatterManager.Instance?.UnlockProfanity();
-                RandomChatterManager.Instance?.ToggleProfanity(true);
-                return;
-            }
-
+            // The profanity_pack special case was removed 2026-07-10: profanity is sold ONLY via
+            // the God Tier Store's Bad Words Pack (direct real currency, TASKLIST_DETAILS §10) --
+            // no in-game-currency path to it may exist. ProfanityPack.asset deleted in the same commit.
             switch (item.effectType)
             {
                 case CashShopEffectType.BrainPowerTapPercent:
