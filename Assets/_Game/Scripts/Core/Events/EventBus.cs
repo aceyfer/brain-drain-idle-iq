@@ -7,7 +7,7 @@ namespace BrainDrain.Core.Events
     // Payload structs — where T : struct on EventBus<T> prevents boxing on Raise.
     // -------------------------------------------------------------------------
 
-    public enum Currency { BrainPower, Cash, Points, Neurons }
+    public enum Currency { BrainPower, Cash, Points }
 
     public struct CurrencyChanged
     {

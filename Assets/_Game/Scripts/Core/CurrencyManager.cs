@@ -13,8 +13,8 @@ namespace BrainDrain.Core
     public sealed class PointsChangedUnityEvent : UnityEvent<double> { }
 
     /// <summary>
-    /// Tracks the three connected currency tiers (Brain Power, Cash, Points) plus premium
-    /// Neurons, and applies idle BPPS/CPS income each second. Brain Power is the original,
+    /// Tracks the three connected currency tiers (Brain Power, Cash, Points) and applies
+    /// idle BPPS/CPS income each second. Brain Power is the original,
     /// untouched tier; Cash and Points are an additive extension on top of it.
     /// </summary>
     public sealed class CurrencyManager : MonoBehaviour
@@ -23,7 +23,6 @@ namespace BrainDrain.Core
 
         private double brainPower;
         private double cumulativeBrainPower;
-        private int neurons;
         private double idleBpps;
         private double _rebirthMultiplier = 1.0;
 
@@ -86,9 +85,6 @@ namespace BrainDrain.Core
         /// <summary>Lifetime Brain Power earned. Never decreases when spending.</summary>
         public double CumulativeBrainPower => cumulativeBrainPower;
 
-        /// <summary>Current Neurons balance.</summary>
-        public int Neurons => neurons;
-
         /// <summary>Total idle Brain Power generated per second from buildings and upgrades.</summary>
         public double IdleBPPS => idleBpps;
 
@@ -137,9 +133,6 @@ namespace BrainDrain.Core
 
         /// <summary>Fired when lifetime Brain Power earned increases. Passes the new cumulative total.</summary>
         public event Action<double> OnCumulativeBrainPowerChanged;
-
-        /// <summary>Fired when the Neurons balance changes. Passes the new total.</summary>
-        public event Action<int> OnNeuronsChanged;
 
         /// <summary>
         /// Fired exactly once, the first time Brain Power is ever earned. In practice this is
@@ -547,39 +540,6 @@ namespace BrainDrain.Core
         public bool CanAffordPoints(double amount)
         {
             return amount > 0d && currentPoints >= amount;
-        }
-
-        /// <summary>Adds Neurons to the player's balance.</summary>
-        public void AddNeurons(int amount)
-        {
-            if (amount <= 0)
-            {
-                return;
-            }
-
-            neurons += amount;
-            OnNeuronsChanged?.Invoke(neurons);
-        }
-
-        /// <summary>
-        /// Attempts to spend Neurons. Returns true when the purchase succeeds.
-        /// </summary>
-        public bool SpendNeurons(int amount)
-        {
-            if (amount <= 0 || neurons < amount)
-            {
-                return false;
-            }
-
-            neurons -= amount;
-            OnNeuronsChanged?.Invoke(neurons);
-            return true;
-        }
-
-        /// <summary>Returns true when the player has enough Neurons for the given cost.</summary>
-        public bool CanAffordNeurons(int amount)
-        {
-            return amount > 0 && neurons >= amount;
         }
 
         private void SubscribeToGameTick()

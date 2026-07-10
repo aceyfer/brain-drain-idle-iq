@@ -90,7 +90,6 @@ namespace BrainDrain.Systems
             cm.OnBrainPowerChanged += HandleBrainPowerChanged;
             cm.OnCashChanged.AddListener(HandleCashChanged);
             cm.OnPointsChanged.AddListener(HandlePointsChanged);
-            cm.OnNeuronsChanged += HandleNeuronsChanged;
         }
 
         private void UnbindCurrencyEvents()
@@ -100,7 +99,6 @@ namespace BrainDrain.Systems
             cm.OnBrainPowerChanged -= HandleBrainPowerChanged;
             cm.OnCashChanged.RemoveListener(HandleCashChanged);
             cm.OnPointsChanged.RemoveListener(HandlePointsChanged);
-            cm.OnNeuronsChanged -= HandleNeuronsChanged;
         }
 
         private static void HandleBrainPowerChanged(double _) =>
@@ -111,9 +109,6 @@ namespace BrainDrain.Systems
 
         private static void HandlePointsChanged(double _) =>
             EventBus<CurrencyChanged>.Raise(new CurrencyChanged { currency = Currency.Points });
-
-        private static void HandleNeuronsChanged(int _) =>
-            EventBus<CurrencyChanged>.Raise(new CurrencyChanged { currency = Currency.Neurons });
 
         // ------------------------------------------------------------------ ItemPurchased
 
