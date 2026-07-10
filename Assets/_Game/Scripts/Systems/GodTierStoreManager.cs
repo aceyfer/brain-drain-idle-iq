@@ -128,6 +128,16 @@ namespace BrainDrain.Systems
                 case GodTierStoreEffectType.TrashCanFlexCosmetic:
                     HolographicTrashCanFlexOwned = true;
                     break;
+
+                case GodTierStoreEffectType.UnlockProfanityPack:
+                    if (RandomChatterManager.Instance != null)
+                    {
+                        RandomChatterManager.Instance.UnlockProfanity();
+                        // Force-enable only on PURCHASE. On load, the player's own on/off
+                        // choice (persisted by RandomChatterManager) must win -- see LoadState.
+                        RandomChatterManager.Instance.ToggleProfanity(true);
+                    }
+                    break;
             }
         }
 
@@ -161,6 +171,24 @@ namespace BrainDrain.Systems
             if (restoredOfflineExtensionHours > 0f)
             {
                 PlayerIQManager.Instance?.ExtendOfflineDecayWindow(restoredOfflineExtensionHours);
+            }
+
+            // Targeted re-sync for the ONE effect whose state lives outside this manager:
+            // RandomChatterManager persists profanity in its own PlayerPrefs keys, which can
+            // diverge from the JSON save (save file deleted for testing while prefs survive,
+            // or vice versa). UnlockProfanity() is internally guarded/idempotent, so re-calling
+            // is safe. Deliberately NOT ToggleProfanity(true) here -- enabled is the player's
+            // own toggle choice and must survive loads. Do NOT generalize this loop to other
+            // effect types: the offline-extension re-grant is already handled above via
+            // restoredOfflineExtensionHours, and re-applying it per-item would double-count.
+            foreach (GodTierStoreItemData item in items)
+            {
+                if (item != null
+                    && item.effectType == GodTierStoreEffectType.UnlockProfanityPack
+                    && ownedItemIds.Contains(item.itemId))
+                {
+                    RandomChatterManager.Instance?.UnlockProfanity();
+                }
             }
 
             OnItemsChanged?.Invoke();

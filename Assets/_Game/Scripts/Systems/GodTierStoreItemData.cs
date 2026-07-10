@@ -9,7 +9,8 @@ namespace BrainDrain.Systems
         UIThemeGlitchSlum,
         OfflineProgressionExtension,
         MembershipCardCosmetic,
-        TrashCanFlexCosmetic
+        TrashCanFlexCosmetic,
+        UnlockProfanityPack // APPEND-ONLY enum: assets store effectType as a raw int; inserting above this line remaps every existing .asset
     }
 
     /// <summary>
