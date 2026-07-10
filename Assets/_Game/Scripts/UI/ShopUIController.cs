@@ -9,7 +9,8 @@ using BrainDrain.Systems;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// Three-tab shop overlay: BP Upgrades, Cash Investments, and RP Restorations.
+    /// Three-tab shop overlay: BP Upgrades, Cash Investments, and the God Shop (direct
+    /// real-currency store backed by GodTierStoreManager; TASKLIST_DETAILS §10/§16).
     /// Each tab owns its own scroll content list; only one tab panel is visible at a time.
     /// </summary>
     public sealed class ShopUIController : MonoBehaviour
@@ -18,7 +19,7 @@ namespace BrainDrain.UI
         {
             BpUpgrades = 0,
             CashInvestments = 1,
-            RpRestorations = 2
+            GodShop = 2
         }
 
         [Header("Dependencies")]
@@ -37,9 +38,11 @@ namespace BrainDrain.UI
         [FormerlySerializedAs("content")]
         [SerializeField] private RectTransform bpContent;
         [SerializeField] private RectTransform cashContent;
+        // NOTE: the rp* serialized field names (rpTabButton/rpTabPanel/rpContent) are kept
+        // even though the third tab is now the God Shop -- renaming serialized fields breaks
+        // scene wiring, and scene saves are under a smuggling embargo (PROJECT_BIBLE.md §8).
         [SerializeField] private RectTransform rpContent;
         [SerializeField] private UpgradeSlotUI slotPrefab;
-        [SerializeField] private RestorationSlotUI restorationSlotPrefab;
 
         [Header("Panel Visibility")]
         [SerializeField] private GameObject shopPanel;
@@ -58,12 +61,12 @@ namespace BrainDrain.UI
 
         private readonly List<UpgradeSlotUI> bpSlots = new(8);
         private readonly List<UpgradeSlotUI> cashSlots = new(8);
-        private readonly List<RestorationSlotUI> rpSlots = new(8);
+        private readonly List<GodTierStoreSlotUI> godShopSlots = new(8);
         private static readonly List<BuildingData> SortedTemplatesBuffer = new(8);
 
         private bool built;
         private ShopTab activeTab = ShopTab.BpUpgrades;
-        private RestorationSlotUI runtimeRestorationSlotTemplate;
+        private GodTierStoreSlotUI runtimeGodShopSlotTemplate;
 
         private RectTransform shopPanelRect;
         private Vector2 shopPanelRestingPosition;
@@ -248,21 +251,17 @@ namespace BrainDrain.UI
         {
             activeTab = tab;
 
-            if (tab == ShopTab.RpRestorations && rpSlots.Count == 0)
+            if (tab == ShopTab.GodShop && godShopSlots.Count == 0)
             {
-                // BuildRestorationTab() may have found WorldRestorationManager.Instance null
-                // at Awake time -- a plain cross-object Awake-order race, not something Unity
-                // guarantees either way -- and produced zero rows, latched by BuildShop()'s
-                // built flag. Retry here instead of trusting any particular boot ordering: by
-                // the time a player actually opens this tab, WorldRestorationManager is
-                // virtually certain to exist, and if it somehow still doesn't, this is a
-                // harmless no-op that retries again next selection.
-                BuildRestorationTab();
+                // GodTierStoreManager.Instance may have been null at BuildShop() time -- the
+                // same cross-object Awake-order race the old RP tab hit (see 5572122). Retry
+                // on selection; harmless no-op if the manager still isn't up.
+                BuildGodShopTab();
             }
 
             if (bpTabPanel != null) bpTabPanel.SetActive(tab == ShopTab.BpUpgrades);
             if (cashTabPanel != null) cashTabPanel.SetActive(tab == ShopTab.CashInvestments);
-            if (rpTabPanel != null) rpTabPanel.SetActive(tab == ShopTab.RpRestorations);
+            if (rpTabPanel != null) rpTabPanel.SetActive(tab == ShopTab.GodShop);
 
             // Each tab panel owns its own nested Canvas + GraphicRaycaster. GameObject.SetActive
             // alone doesn't flip either, and these panels are saved with Cash/RP's Canvas off by
@@ -271,18 +270,44 @@ namespace BrainDrain.UI
             // there is no second system covering this gap anymore.
             SetTabPanelPresentation(bpTabPanel, tab == ShopTab.BpUpgrades);
             SetTabPanelPresentation(cashTabPanel, tab == ShopTab.CashInvestments);
-            SetTabPanelPresentation(rpTabPanel, tab == ShopTab.RpRestorations);
+            SetTabPanelPresentation(rpTabPanel, tab == ShopTab.GodShop);
+
+            // Reasserted on every selection, same philosophy as SetTabPanelPresentation
+            // above: label text is code-owned state; the scene's saved TMP text is not
+            // trusted (PROJECT_BIBLE.md §8).
+            AssertTabButtonLabels();
 
             SetTabButtonHighlight(bpTabButton, tab == ShopTab.BpUpgrades);
             SetTabButtonHighlight(cashTabButton, tab == ShopTab.CashInvestments);
-            SetTabButtonHighlight(rpTabButton, tab == ShopTab.RpRestorations);
+            SetTabButtonHighlight(rpTabButton, tab == ShopTab.GodShop);
+        }
+
+        private void AssertTabButtonLabels()
+        {
+            SetTabButtonLabel(bpTabButton, "BP UPGRADES");
+            SetTabButtonLabel(cashTabButton, "CASH INVESTMENTS");
+            SetTabButtonLabel(rpTabButton, "GOD SHOP");
+        }
+
+        private static void SetTabButtonLabel(Button button, string label)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            TMPro.TMP_Text text = button.GetComponentInChildren<TMPro.TMP_Text>(true);
+            if (text != null && text.text != label)
+            {
+                text.text = label;
+            }
         }
 
         private void InitializeTabPresentation()
         {
             SetTabPanelPresentation(bpTabPanel, activeTab == ShopTab.BpUpgrades);
             SetTabPanelPresentation(cashTabPanel, activeTab == ShopTab.CashInvestments);
-            SetTabPanelPresentation(rpTabPanel, activeTab == ShopTab.RpRestorations);
+            SetTabPanelPresentation(rpTabPanel, activeTab == ShopTab.GodShop);
         }
 
         private static void SetTabPanelPresentation(GameObject panel, bool isVisible)
@@ -330,7 +355,7 @@ namespace BrainDrain.UI
 
         private void OnBpTabClicked() => SelectTab(ShopTab.BpUpgrades);
         private void OnCashTabClicked() => SelectTab(ShopTab.CashInvestments);
-        private void OnRpTabClicked() => SelectTab(ShopTab.RpRestorations);
+        private void OnRpTabClicked() => SelectTab(ShopTab.GodShop);
 
         private void EnsureThreeTabLayout()
         {
@@ -384,14 +409,9 @@ namespace BrainDrain.UI
                 rpTabPanel = EnsureRuntimeClonedPanel(
                     panelRoot,
                     sourceScroll.gameObject,
-                    "RpRestorationsPanel",
-                    "RpRestorationsScrollView",
+                    "GodShopPanel",
+                    "GodShopScrollView",
                     out rpContent);
-
-                if (restorationSlotPrefab == null && slotPrefab != null)
-                {
-                    runtimeRestorationSlotTemplate = CreateRuntimeRestorationSlotTemplate(slotPrefab);
-                }
             }
         }
 
@@ -416,7 +436,7 @@ namespace BrainDrain.UI
 
             CreateRuntimeTabButton(tabBarGo.transform, "BpTabButton", "BP UPGRADES");
             CreateRuntimeTabButton(tabBarGo.transform, "CashTabButton", "CASH INVESTMENTS");
-            CreateRuntimeTabButton(tabBarGo.transform, "RpTabButton", "RP RESTORATIONS");
+            CreateRuntimeTabButton(tabBarGo.transform, "RpTabButton", "GOD SHOP");
             tabBarGo.transform.SetSiblingIndex(1);
             return tabBarGo.transform;
         }
@@ -524,21 +544,27 @@ namespace BrainDrain.UI
             return panel.gameObject;
         }
 
-        private RestorationSlotUI CreateRuntimeRestorationSlotTemplate(UpgradeSlotUI upgradePrefab)
+        private GodTierStoreSlotUI CreateRuntimeGodShopSlotTemplate(UpgradeSlotUI upgradePrefab)
         {
             GameObject instance = Instantiate(upgradePrefab.gameObject, transform);
-            instance.name = "RestorationSlotTemplate";
+            instance.name = "GodShopSlotTemplate";
             instance.SetActive(false);
 
-            Destroy(instance.GetComponent<UpgradeSlotUI>());
-            RestorationSlotUI restoration = instance.AddComponent<RestorationSlotUI>();
-            restoration.NameText = upgradePrefab.NameText;
-            restoration.DescriptionText = upgradePrefab.DescriptionText;
-            restoration.CostText = upgradePrefab.CostText;
-            restoration.BuyButton = upgradePrefab.BuyButton;
-            restoration.Background = upgradePrefab.Background;
+            // Capture the CLONE's own references before destroying its UpgradeSlotUI --
+            // Instantiate remaps internal refs onto the clone's children. (The retired
+            // restoration template read them off the source prefab instead, which only
+            // worked when slotPrefab was a scene object; do not copy that pattern.)
+            UpgradeSlotUI source = instance.GetComponent<UpgradeSlotUI>();
+            TMPro.TextMeshProUGUI nameLabel = source.NameText;
+            TMPro.TextMeshProUGUI descriptionLabel = source.DescriptionText;
+            TMPro.TextMeshProUGUI priceLabel = source.CostText;
+            Button buy = source.BuyButton;
+            Image backgroundImage = source.Background;
+            Destroy(source);
 
-            return restoration;
+            GodTierStoreSlotUI slot = instance.AddComponent<GodTierStoreSlotUI>();
+            slot.AssignRuntimeReferences(nameLabel, descriptionLabel, priceLabel, buy, backgroundImage);
+            return slot;
         }
 
         private static void StretchRect(RectTransform rect)
@@ -672,10 +698,10 @@ namespace BrainDrain.UI
             ClearContentChildren(rpContent);
             bpSlots.Clear();
             cashSlots.Clear();
-            rpSlots.Clear();
+            godShopSlots.Clear();
 
             BuildBuildingTabs();
-            BuildRestorationTab();
+            BuildGodShopTab();
 
             built = true;
             SubscribeToEvents();
@@ -734,39 +760,47 @@ namespace BrainDrain.UI
             }
         }
 
-        private void BuildRestorationTab()
+        private void BuildGodShopTab()
         {
-            if (rpContent == null || restorationSlotPrefab == null && runtimeRestorationSlotTemplate == null)
+            if (rpContent == null)
             {
                 return;
             }
 
-            RestorationSlotUI prefab = restorationSlotPrefab != null
-                ? restorationSlotPrefab
-                : runtimeRestorationSlotTemplate;
-
-            WorldRestorationManager manager = WorldRestorationManager.Instance;
-            if (manager == null)
+            GodTierStoreManager store = GodTierStoreManager.Instance;
+            if (store == null)
             {
                 return;
             }
 
-            IReadOnlyList<WorldRestorationStage> stages = manager.Stages;
-            int slotIndex = 0;
-
-            for (int i = 0; i < stages.Count; i++)
+            if (runtimeGodShopSlotTemplate == null)
             {
-                WorldRestorationStage stage = stages[i];
-                if (stage == null || stage.pointsRequired <= 0d)
+                if (slotPrefab == null)
+                {
+                    return;
+                }
+
+                runtimeGodShopSlotTemplate = CreateRuntimeGodShopSlotTemplate(slotPrefab);
+            }
+
+            ClearContentChildren(rpContent);
+            godShopSlots.Clear();
+
+            IReadOnlyList<GodTierStoreItemData> items = store.Items;
+            for (int i = 0; i < items.Count; i++)
+            {
+                GodTierStoreItemData item = items[i];
+                if (item == null)
                 {
                     continue;
                 }
 
-                RestorationSlotUI slot = Instantiate(prefab, rpContent);
-                slot.name = $"RestorationSlot_{stage.stageIndex}";
-                slot.transform.SetSiblingIndex(slotIndex++);
-                slot.Bind(stage);
-                rpSlots.Add(slot);
+                GodTierStoreSlotUI slot = Instantiate(runtimeGodShopSlotTemplate, rpContent);
+                slot.name = $"GodShopSlot_{item.itemId}";
+                slot.gameObject.SetActive(true);
+                slot.Bind(item, store);
+                slot.RefreshState();
+                godShopSlots.Add(slot);
             }
         }
 
@@ -803,11 +837,11 @@ namespace BrainDrain.UI
                 upgradeManager.OnBuildingsChanged += RefreshAllSlots;
             }
 
-            WorldRestorationManager restoration = WorldRestorationManager.Instance;
-            if (restoration != null)
+            GodTierStoreManager store = GodTierStoreManager.Instance;
+            if (store != null)
             {
-                restoration.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
-                restoration.OnRestorationProgressChanged += HandleRestorationProgressChanged;
+                store.OnItemsChanged -= HandleGodShopItemsChanged;
+                store.OnItemsChanged += HandleGodShopItemsChanged;
             }
         }
 
@@ -826,16 +860,16 @@ namespace BrainDrain.UI
                 upgradeManager.OnBuildingsChanged -= RefreshAllSlots;
             }
 
-            if (WorldRestorationManager.Instance != null)
+            if (GodTierStoreManager.Instance != null)
             {
-                WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                GodTierStoreManager.Instance.OnItemsChanged -= HandleGodShopItemsChanged;
             }
         }
 
         private void HandleCurrencyChanged(double _) => RefreshAllSlots();
         private void HandleCashChanged(double _) => RefreshAllSlots();
         private void HandlePointsChanged(double _) => RefreshAllSlots();
-        private void HandleRestorationProgressChanged(double _) => RefreshAllSlots();
+        private void HandleGodShopItemsChanged() => RefreshAllSlots();
 
         private void RefreshAllSlots()
         {
@@ -849,9 +883,9 @@ namespace BrainDrain.UI
                 cashSlots[i]?.RefreshState(currencyManager);
             }
 
-            for (int i = 0; i < rpSlots.Count; i++)
+            for (int i = 0; i < godShopSlots.Count; i++)
             {
-                rpSlots[i]?.RefreshState(currencyManager);
+                godShopSlots[i]?.RefreshState();
             }
         }
     }

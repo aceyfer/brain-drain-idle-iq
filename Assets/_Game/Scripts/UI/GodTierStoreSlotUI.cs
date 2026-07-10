@@ -30,6 +30,25 @@ namespace BrainDrain.UI
         private GodTierStoreItemData boundData;
         private GodTierStoreManager boundManager;
 
+        /// <summary>
+        /// Populates the private serialized references for runtime-created instances (the
+        /// UpgradeSlotUI-clone template pattern in ShopUIController). Scene/prefab instances
+        /// keep their Inspector-serialized fields and never call this.
+        /// </summary>
+        public void AssignRuntimeReferences(
+            TextMeshProUGUI nameLabel,
+            TextMeshProUGUI descriptionLabel,
+            TextMeshProUGUI priceLabel,
+            Button buy,
+            Image backgroundImage)
+        {
+            nameText = nameLabel;
+            descriptionText = descriptionLabel;
+            priceText = priceLabel;
+            buyButton = buy;
+            background = backgroundImage;
+        }
+
         public void Bind(GodTierStoreItemData data, GodTierStoreManager manager)
         {
             boundData = data;
@@ -44,7 +63,27 @@ namespace BrainDrain.UI
 
         private void HandleBuyClicked()
         {
-            boundManager?.StubPurchase(boundData);
+            if (boundData == null || boundManager == null)
+            {
+                return;
+            }
+
+            // Owned Bad Words Pack: the button becomes the profanity on/off toggle -- the
+            // affordance the retired Cash slot used to own (see CashShopSlotUI's dead-branch
+            // note). Purchase force-enables; after that the player's choice rules.
+            if (boundData.effectType == GodTierStoreEffectType.UnlockProfanityPack
+                && boundManager.IsItemOwned(boundData))
+            {
+                RandomChatterManager chatter = RandomChatterManager.Instance;
+                if (chatter != null)
+                {
+                    chatter.ToggleProfanity(!chatter.ProfanityEnabled);
+                    RefreshState();
+                }
+                return;
+            }
+
+            boundManager.StubPurchase(boundData);
         }
 
         public void RefreshState()
@@ -58,13 +97,25 @@ namespace BrainDrain.UI
             if (descriptionText != null) descriptionText.text = boundData.description;
 
             bool owned = boundManager.IsItemOwned(boundData);
+            bool profanityToggle = owned
+                && boundData.effectType == GodTierStoreEffectType.UnlockProfanityPack;
+
             if (priceText != null)
             {
-                priceText.text = owned ? "OWNED" : boundData.realMoneyPriceDisplay;
+                if (profanityToggle)
+                {
+                    RandomChatterManager chatter = RandomChatterManager.Instance;
+                    bool on = chatter != null && chatter.ProfanityEnabled;
+                    priceText.text = on ? "OWNED \u00b7 ON" : "OWNED \u00b7 OFF";
+                }
+                else
+                {
+                    priceText.text = owned ? "OWNED" : boundData.realMoneyPriceDisplay;
+                }
             }
 
             ApplyAccent(owned ? OwnedColor : AvailableColor);
-            if (buyButton != null) buyButton.interactable = !owned;
+            if (buyButton != null) buyButton.interactable = !owned || profanityToggle;
         }
 
         private void ApplyAccent(Color accent)
