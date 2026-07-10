@@ -1,3 +1,5 @@
+> Superseded by the §10 direct-real-currency decision (2026-07-09/10) — retained for archaeology only, not current.
+
 # Project Overview
 - Game Title: Brain Drain
 - High-Level Concept: An addictive incremental idle clicker game where players harvest Brain Power (BP), convert it to Cash ($), and eventually points to restore the world and dismantle the Illumisnotti faction.

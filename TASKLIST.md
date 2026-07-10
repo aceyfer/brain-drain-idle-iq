@@ -12,16 +12,16 @@
 > Note: BP and Cash tabs fully verified working end to end. RP tab superseded by design decision — see §16; not a bug, not blocking.
 
 ## NEXT — Stability & Hygiene
+- [x] 16a. God Shop Phase A — consolidation: Bad Words Pack migrated into God Tier Store as direct $5.00 item, ProfanityPack (2,500 Cash) killed, PremiumShop trio + slot prefab deleted, all code refs stripped, neuron currency purged repo-wide (details §16, commits 939222f/1024b91/eb8a638/0b5048a/cf51935/34841b7)
+- [ ] 16b. God Shop Phase B — build the God Shop tab UI (the third shop tab slot), backed solely by GodTierStoreManager (details §16)
 - [ ] 6. BG1.jpg texture import → Sprite (2D and UI) — kills stageSprites[0] warning (details §6)
 - [ ] 7. Doc sync commit — Bible §6 economy table to 16 buildings; CLAUDE.md inventory refresh (details §7)
 - [ ] 8. Guard the 12 unguarded Editor tools (batch, one commit) (details §8)
-- [ ] 9. PremiumShopManager vs GodTierStoreManager — read-only check for duplicate responsibility (details §9; now step 1 of §16)
-- [ ] 16. Replace third shop tab (RP/World Restoration) with Premium real-currency store — starts with §9's audit (details §16)
 - [ ] 17. COGS portrait renders on Play Stop but not during Play — inverted visibility (details §17)
 - [ ] 18. Oversized pedestrians (details §18)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
-- [ ] 10. KILL "neurons" premium currency — never approved. All premium = direct real-world currency. Bad Words Pack = $5, not 50 neurons. Audit shop specs + code for any neuron references, purge, log decision (details §10)
+- [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $5.00 (details §10)
 
 ## THEN — Path to Market
 - [ ] 11. Define "first playable" cut line — what ships v1, what waits (details §11)

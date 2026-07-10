@@ -1,3 +1,5 @@
+> Superseded by the §10 direct-real-currency decision (2026-07-09/10) — retained for archaeology only, not current.
+
 # Project Overview
 - Game Title: Brain Drain
 - High-Level Concept: Mobile portrait idle/clicker focused on "brain rot" progression and satirical corporate/social media themes.

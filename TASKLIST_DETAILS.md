@@ -46,13 +46,13 @@ Select `Assets/_Game/Sprites/Backgrounds/BG1.jpg` → Inspector → Texture Type
 ## §8 Unguarded Editor tools (12)
 SceneManagerWiring, ShopPanelLayoutFix, PlaceholderArtGenerator, PedestrianAlphaTest, HUDMobileOverhaul, FixCOGSDialogueLayout, ConsolidateShopButton, COGSPortraitWireFix, RemoveMissingSceneScripts, MainUIControllerWireFix, PopulateBuildingTemplates, VisualPolishFix (6 items). Add the same isPlaying/isPlayingOrWillChangePlaymode guard pattern to each entry point. One batch commit. Pattern rule (Bible): wrap Editor-only API calls in try/catch at the chokepoint too — flags alone race.
 
-## §9 PremiumShopManager vs GodTierStoreManager
-Relationship undocumented. Read-only audit: do both claim premium purchases? Who owns what? Outcome feeds §10. Document verdict in Bible; consolidate later if duplicated. **Now step 1 of §16** — its findings determine which manager (or whether a new one) backs the third shop tab.
+## §9 PremiumShopManager vs GodTierStoreManager — RESOLVED 2026-07-10
+**Verdict:** duplicated responsibility, both claimed premium purchases. Resolution: `GodTierStoreManager` is the sole surviving premium manager; the entire `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` trio + its slot prefab were deleted, and every code reference (`EconomyManager`, `HUDController`, `VisualPolishFix`) was stripped and repointed at `GodTierStoreManager`. Folded into and closed by §16 Phase A — see there for commit hashes.
 
-## §10 DECISION — No premium soft currency ("neurons")
+## §10 DECISION — No premium soft currency ("neurons") — RESOLVED 2026-07-10
 **Decision (2026-07-09, Aceyfer):** "Neurons" premium currency was never approved and is rejected. ALL premium purchases are direct real-world currency. Example: Bad Words Pack = **$5.00 USD**, not 50 neurons.
 **Rationale:** owner intent; simpler economy; no soft-currency obfuscation layer.
-**Actions:** grep specs + code + UI strings for "neuron" (any casing); remove/replace with direct pricing; check PremiumShopManager/GodTierStoreManager price fields; update Bible Settled Decisions.
+**Done:** neuron currency purged repo-wide (code + CLAUDE.md), Bad Words Pack landed in God Tier Store at direct $5.00, the 2,500-Cash ProfanityPack (an in-game-currency path to profanity content, violating the no-soft-currency rule on its own terms even without literal "neurons") was killed outright rather than repriced. See §16 Phase A for commit hashes.
 **Note:** direct-price IAP is fine on both stores; price tiers are set in App Store Connect/Play Console, not hardcoded — code should reference product IDs, not dollar amounts (see §12).
 
 ## §11 First-playable cut line
@@ -72,11 +72,19 @@ iOS target already selected in Editor. Build to a real device early — safe-are
 ## §15 Store presence
 Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), AcEclipse Games publisher identity.
 
-## §16 Replace third shop tab with Premium real-currency store — DECIDED 2026-07-09
-**Decision:** the RP/World Restoration shop tab is cut. That third tab slot becomes the Premium store (direct real-world currency, per the no-neurons decision in §10). World Restoration progression itself stays in the game — it's just no longer presented as a shop tab; how/where it surfaces instead is undecided, not scoped here.
+## §16 Replace third shop tab with "God Shop" real-currency store — DECIDED 2026-07-09, Phase A COMPLETE 2026-07-10
+**Decision:** the RP/World Restoration shop tab is cut. That third tab slot becomes the **God Shop** (direct real-world currency only, per the no-neurons decision in §10, backed solely by `GodTierStoreManager`). World Restoration progression itself stays in the game — it's just no longer presented as a shop tab; how/where it surfaces instead is undecided, not scoped here.
 **Why now:** the RP tab's only remaining bug (BuildRestorationTab() Awake-order race, fixed in commit `5572122`) became moot the moment this decision landed — no point polishing a tab that's being replaced.
-**First step:** §9's PremiumShopManager vs GodTierStoreManager audit — determines which manager (or whether a new one) actually backs this tab before any UI work starts.
-**Not scoped tonight:** this is a NEW TASK for a future session, not built now.
+
+**Phase A — Consolidation — COMPLETE 2026-07-10.** §9's audit (do both `PremiumShopManager` and `GodTierStoreManager` claim premium purchases?) ran first and confirmed duplication; everything below is its resolution plus the no-neurons purge from §10, landed together as one arc:
+1. `939222f` — Bad Words Pack migrated into God Tier Store as a direct $5.00 real-currency item (first God Shop item).
+2. `1024b91` — 2,500-Cash `ProfanityPack` killed (an in-game-currency path to the same content the God Shop now sells directly — had to go regardless of the literal "neuron" wording).
+3. `eb8a638` — `PremiumShopPanel`/`PremiumShopButton`/`PremiumShopManager` component removed from the scene (math-audited pure subtraction, see the scene-audit method in Bible §8).
+4. `0b5048a` — all code references to the PremiumShop trio stripped; `EconomyManager` premium tracking repointed to `GodTierStoreManager`.
+5. `cf51935` — the retired `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` source files + slot prefab deleted outright.
+6. `34841b7` — neuron premium currency purged repo-wide (`CurrencyManager`, `EventBus`, `EconomyManager`, `CLAUDE.md`).
+
+**Phase B — Build the God Shop tab UI — NOT STARTED, now top of NEXT.** The third shop tab slot itself doesn't exist yet — Phase A only removed the old occupant and its dependencies. Requirements carried forward from the retired Cash slot (see the dead-branch comment in `CashShopSlotUI.cs`): the God Shop slot UI must provide the **owned→profanity-toggle affordance** the old Cash Bad Words row used to own (tap an owned row to flip `RandomChatterManager.ProfanityEnabled`) — that behavior has no home anywhere right now since the branches implementing it in `CashShopSlotUI.cs` are dead (see decision log). Backed solely by `GodTierStoreManager`; no second manager, no scene-anchor guessing — reuse the geometry/draw-order-owned-in-code pattern from the BP/Cash tab work (Bible §8) rather than hand-authoring anchors again.
 
 ## §17 COGS portrait renders on Play Stop but not during Play
 Inverted visibility — portrait shows when Play mode *stops*, not while it's running. Separate, unrelated bug from anything touched this session. Flagged by Aceyfer during RP-tab testing; not diagnosed yet.
@@ -91,6 +99,10 @@ Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet �
 - 2026-07-09 — No premium soft currency; all premium purchases direct real-world pricing (§10).
 - 2026-07-09 — Scene YAML surgery (reparents/anchor-sensitive) = Editor-hands work, never raw YAML edits by agents. Component strips allowed only with verified zero dangling references.
 - 2026-07-09 — RP/World Restoration shop tab cut; slot becomes Premium direct-currency store (§16). Restoration progression stays in the game, just not as a shop tab. RP tab's lazy-rebuild fix (`5572122`) is kept in place as harmless — see changelog below for why.
+- 2026-07-10 — Store named **"God Shop"**. Direct real currency only, no soft-currency layer, backed solely by `GodTierStoreManager`. Bad Words Pack ($5.00) is its first item.
+- 2026-07-10 — The 2,500-Cash `ProfanityPack` was killed, not repriced — it was an in-game-currency path to the same content the God Shop now sells directly, which violates the no-soft-currency-path-to-premium-content rule (§10, hardened by §7 below) regardless of whether it was literally called "neurons."
+- 2026-07-10 — `CashShopSlotUI`'s seven dead `itemId == "profanity_pack"` special-case branches are **retained**, not deleted, per the project's standing dead-code convention (leave commented/flagged dead branches for the specific pass that owns cleaning them up, don't opportunistically strip in an unrelated commit) — they'll be stripped during the still-PARKED Cash-family reconciliation, not now.
+- 2026-07-10 — Phase B requirement logged: the God Shop slot UI must reimplement the owned→profanity-toggle affordance the old Cash slot used to own (tap an owned row to flip `RandomChatterManager.ProfanityEnabled`), since that behavior currently has no home now that the branches implementing it are dead.
 - Standing — Claude Code is sole code editor. One change, one commit. Diagnose before changing. No destructive git without explicit confirmation. Editor/Inspector work = Aceyfer (+ Unity AI when credits allow).
 
 ## CHANGELOG (this session, 2026-07-09)
@@ -109,3 +121,13 @@ Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet �
 - `5572122` — **RP lazy-build**: BuildRestorationTab() lost an Awake-order race against WorldRestorationManager and latched an empty result. Fixed with a lazy retry on first RP tab selection rather than depending on any particular boot ordering. **Superseded same session** by the decision to cut the RP tab entirely (§16) — kept in place as harmless dead code (see decision log).
 
 Tasks 1–5 (Shop Collapse Endgame) all complete — BP and Cash tabs fully verified end to end (open/close, tab switch, buy on both tabs, no exceptions). RP tab superseded by design decision, not left as an unresolved bug. Next up per TASKLIST.md: §6 (BG1 texture import), §7 (doc sync), §8 (batch-guard remaining 12 unguarded Editor tools), §16 (Premium store tab, starts with §9's audit), §17 (COGS portrait inverted visibility), §18 (oversized pedestrians).
+
+### God Shop Phase A — consolidation (session, 2026-07-10)
+Applied as a series of pre-generated patches, each verified (diff-audited against an expected fileID/name set, not eyeballed — see Bible §8's scene-audit method entry) before commit:
+- `939222f` — Bad Words Pack migrated into God Tier Store as a direct $5.00 real-currency item.
+- `1024b91` — 2,500-Cash ProfanityPack removed from CashShopManager (scene reference + asset + .meta).
+- `eb8a638` — PremiumShopPanel/PremiumShopButton/PremiumShopManager component removed from the scene. First attempt at this (Editor-hands, uncommitted) came back contaminated with unrelated Win-window geometry drift and PointsConversionGroup fileID churn from a Unity resave — discarded via `git checkout --` and redone from a clean, pre-built patch instead of trying to hand-clean the contaminated save. See Bible §8's scene-smuggling instance #4 for the full account.
+- `0b5048a` — code references to the PremiumShop trio stripped (`VisualPolishFix.cs`, `HUDController.cs`, `EconomyManager.cs`); EconomyManager premium tracking repointed to GodTierStoreManager. This patch was generated before `eb8a638` but only applied after — handed over right as the prior session hit its limit, before it could be applied; a rerun of the trio-deletion commit correctly stopped and reported when its own sanity grep caught the still-live references, which is what surfaced this ordering gap.
+- `cf51935` — PremiumShopManager.cs/.meta, PremiumShopUIController.cs/.meta, PremiumShopSlotUI.cs/.meta, and the PremiumShopSlotUI prefab/.meta deleted outright. Sanity grep after: zero live references anywhere in `Assets` except the expected `HUDMobileOverhaul.cs` name-string (`Find("PremiumShopButton")`) and one explanatory comment.
+- `34841b7` — neuron premium currency purged repo-wide: `CurrencyManager.cs`, `Core/Events/EventBus.cs`, `Systems/EconomyManager.cs`, `CLAUDE.md`. Verified zero case-insensitive "neuron" hits across `Assets/_Game/Scripts` and `CLAUDE.md` before commit.
+All six pushed to `origin/main` (`8828543..34841b7`). Phase B (build the actual God Shop tab UI) is scoped in §16 above, not started.
