@@ -289,6 +289,8 @@ namespace BrainDrain.UI
             SetTabButtonLabel(rpTabButton, "GOD SHOP");
         }
 
+        private const string CodeOwnedTabLabelName = "CodeOwnedTabLabel";
+
         private static void SetTabButtonLabel(Button button, string label)
         {
             if (button == null)
@@ -296,10 +298,58 @@ namespace BrainDrain.UI
                 return;
             }
 
-            TMPro.TMP_Text text = button.GetComponentInChildren<TMPro.TMP_Text>(true);
-            if (text != null && text.text != label)
+            // Code owns the ENTIRE tab-button face, not just one text field. The scene's
+            // Tab_RP button carried RP-era leftovers (progress readout, convert icon) that
+            // stacked into unreadable clutter once the label changed; instead of chasing
+            // whichever children a saved scene happens to have, disable them all and render
+            // a single code-owned label. Idempotent; applied uniformly to all three tabs so
+            // they stay visually consistent. (PROJECT_BIBLE.md §8 -- assert state ownership
+            // in code at the point of use; scene saves are embargoed anyway.)
+            Transform buttonTransform = button.transform;
+            for (int i = 0; i < buttonTransform.childCount; i++)
             {
-                text.text = label;
+                Transform child = buttonTransform.GetChild(i);
+                if (child.name != CodeOwnedTabLabelName && child.gameObject.activeSelf)
+                {
+                    child.gameObject.SetActive(false);
+                }
+            }
+
+            Transform existing = buttonTransform.Find(CodeOwnedTabLabelName);
+            TMPro.TextMeshProUGUI tmp;
+            if (existing == null)
+            {
+                GameObject textGo = new GameObject(
+                    CodeOwnedTabLabelName, typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+                textGo.transform.SetParent(buttonTransform, false);
+
+                RectTransform textRect = (RectTransform)textGo.transform;
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = Vector2.zero;
+                textRect.offsetMax = Vector2.zero;
+
+                tmp = textGo.GetComponent<TMPro.TextMeshProUGUI>();
+                tmp.fontStyle = TMPro.FontStyles.Bold;
+                tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                tmp.color = Color.white;
+                tmp.raycastTarget = false;
+                tmp.enableAutoSizing = true;
+                tmp.fontSizeMin = 10f;
+                tmp.fontSizeMax = 20f;
+            }
+            else
+            {
+                tmp = existing.GetComponent<TMPro.TextMeshProUGUI>();
+                if (!existing.gameObject.activeSelf)
+                {
+                    existing.gameObject.SetActive(true);
+                }
+            }
+
+            if (tmp != null && tmp.text != label)
+            {
+                tmp.text = label;
             }
         }
 
