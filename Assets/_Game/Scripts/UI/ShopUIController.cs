@@ -67,6 +67,7 @@ namespace BrainDrain.UI
         private bool built;
         private ShopTab activeTab = ShopTab.BpUpgrades;
         private GodTierStoreSlotUI runtimeGodShopSlotTemplate;
+        private RebirthUIController rebirthUI;
 
         private RectTransform shopPanelRect;
         private Vector2 shopPanelRestingPosition;
@@ -199,6 +200,13 @@ namespace BrainDrain.UI
             {
                 shopRoot.SetActive(true);
             }
+
+            // The rebirth trigger is deliberately SetAsLastSibling'd above everything in the
+            // HUD, which parks it on top of the shop's tab bar. Suppress it while the shop
+            // is open -- via RebirthUIController's own flag, never by touching its
+            // GameObject directly.
+            SetRebirthTriggerSuppressed(true);
+
             SelectTab(activeTab);
             RefreshAllSlots();
 
@@ -233,6 +241,7 @@ namespace BrainDrain.UI
                         rootToHide.SetActive(false);
                     }
 
+                    SetRebirthTriggerSuppressed(false);
                     ShopClosed?.Invoke();
                 });
             }
@@ -243,6 +252,7 @@ namespace BrainDrain.UI
                 {
                     shopRoot.SetActive(false);
                 }
+                SetRebirthTriggerSuppressed(false);
                 ShopClosed?.Invoke();
             }
         }
@@ -913,6 +923,22 @@ namespace BrainDrain.UI
             if (GodTierStoreManager.Instance != null)
             {
                 GodTierStoreManager.Instance.OnItemsChanged -= HandleGodShopItemsChanged;
+            }
+
+            // Never leave the rebirth trigger suppressed past this controller's lifetime.
+            SetRebirthTriggerSuppressed(false);
+        }
+
+        private void SetRebirthTriggerSuppressed(bool suppressed)
+        {
+            if (rebirthUI == null)
+            {
+                rebirthUI = FindAnyObjectByType<RebirthUIController>(FindObjectsInactive.Include);
+            }
+
+            if (rebirthUI != null)
+            {
+                rebirthUI.SetTriggerSuppressed(suppressed);
             }
         }
 

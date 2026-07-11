@@ -27,6 +27,21 @@ namespace BrainDrain.UI
         /// <summary>Exposes the configured threshold so HUDController can display progress toward it without duplicating the value.</summary>
         public double SnottingUnlockThreshold => pointsSpentUnlockThreshold;
 
+        private bool triggerSuppressed;
+
+        /// <summary>
+        /// Hides the HUD trigger button while overlapping UI (the shop) is open. This
+        /// controller stays the SOLE owner of the button's active state -- callers set the
+        /// flag, and every visibility re-assert (including OnRestorationProgressChanged)
+        /// respects it, so no second system ever fights this one over SetActive
+        /// (PROJECT_BIBLE.md §8, the ShopUIController/ShopTabView double-wiring scar).
+        /// </summary>
+        public void SetTriggerSuppressed(bool suppressed)
+        {
+            triggerSuppressed = suppressed;
+            ApplyTriggerButtonVisibility();
+        }
+
         private static readonly Color ButtonColorLocked = new Color(0.35f, 0.35f, 0.35f, 0.85f);
         private static readonly Color ButtonColorReady  = new Color(1f, 0.078f, 0.576f, 1f);
 
@@ -106,7 +121,11 @@ namespace BrainDrain.UI
                 return;
             }
 
-            rebirthTriggerButton.SetActive(true);
+            rebirthTriggerButton.SetActive(!triggerSuppressed);
+            if (triggerSuppressed)
+            {
+                return;
+            }
 
             double spent = WorldRestorationManager.Instance != null
                 ? WorldRestorationManager.Instance.CumulativePointsSpentOnRestoration
