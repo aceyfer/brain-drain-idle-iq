@@ -141,7 +141,7 @@ namespace BrainDrain.UI
             double estimatedCash = bp / 1000d; // Exchange rate: 1000 BP = 1 $
             if (bpToCashStatusText != null)
             {
-                bpToCashStatusText.text = $"Current BP: {NumberFormatter.Format(bp)}\nRate: 1,000 BP ➔ $1\nYields: ${NumberFormatter.Format(estimatedCash)}";
+                bpToCashStatusText.text = $"Current BP: {NumberFormatter.Format(bp)}\nRate: 1,000 BP -> $1\nYields: ${NumberFormatter.Format(estimatedCash)}";
                 bpToCashStatusText.fontSize = 28f;
             }
 
@@ -188,7 +188,7 @@ namespace BrainDrain.UI
 
             if (cashToPointsStatusText != null)
             {
-                cashToPointsStatusText.text = $"Current $: ${NumberFormatter.Format(cash)}\nRate: $1 ➔ {rate:F2} Restoration Points\nYields: {NumberFormatter.Format(estimatedPoints)} Pts";
+                cashToPointsStatusText.text = $"Current $: ${NumberFormatter.Format(cash)}\nRate: $1 -> {rate:F2} Restoration Points\nYields: {NumberFormatter.Format(estimatedPoints)} Pts";
                 cashToPointsStatusText.fontSize = 28f;
             }
 
