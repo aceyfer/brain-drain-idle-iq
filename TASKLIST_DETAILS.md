@@ -72,7 +72,7 @@ iOS target already selected in Editor. Build to a real device early — safe-are
 ## §15 Store presence
 Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), AcEclipse Games publisher identity.
 
-## §16 Replace third shop tab with "God Shop" real-currency store — DECIDED 2026-07-09, Phase A COMPLETE 2026-07-10
+## §16 Replace third shop tab with "God Shop" real-currency store — SHIPPED 2026-07-11 (decided 2026-07-09, Phase A complete 2026-07-10, Phase B complete 2026-07-11)
 **Decision:** the RP/World Restoration shop tab is cut. That third tab slot becomes the **God Shop** (direct real-world currency only, per the no-neurons decision in §10, backed solely by `GodTierStoreManager`). World Restoration progression itself stays in the game — it's just no longer presented as a shop tab; how/where it surfaces instead is undecided, not scoped here.
 **Why now:** the RP tab's only remaining bug (BuildRestorationTab() Awake-order race, fixed in commit `5572122`) became moot the moment this decision landed — no point polishing a tab that's being replaced.
 
@@ -83,14 +83,32 @@ Name check (trademark/collision), age rating questionnaire (satire + "Bad Words 
 4. `0b5048a` — all code references to the PremiumShop trio stripped; `EconomyManager` premium tracking repointed to `GodTierStoreManager`.
 5. `cf51935` — the retired `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` source files + slot prefab deleted outright.
 6. `34841b7` — neuron premium currency purged repo-wide (`CurrencyManager`, `EventBus`, `EconomyManager`, `CLAUDE.md`).
+Doc closeout for Phase A: `516ce70`.
 
-**Phase B — Build the God Shop tab UI — NOT STARTED, now top of NEXT.** The third shop tab slot itself doesn't exist yet — Phase A only removed the old occupant and its dependencies. Requirements carried forward from the retired Cash slot (see the dead-branch comment in `CashShopSlotUI.cs`): the God Shop slot UI must provide the **owned→profanity-toggle affordance** the old Cash Bad Words row used to own (tap an owned row to flip `RandomChatterManager.ProfanityEnabled`) — that behavior has no home anywhere right now since the branches implementing it in `CashShopSlotUI.cs` are dead (see decision log). Backed solely by `GodTierStoreManager`; no second manager, no scene-anchor guessing — reuse the geometry/draw-order-owned-in-code pattern from the BP/Cash tab work (Bible §8) rather than hand-authoring anchors again.
+**Phase B — Build the God Shop tab UI — COMPLETE 2026-07-11.** Backed solely by `GodTierStoreManager`; no second manager, no scene-anchor guessing — reused the geometry/draw-order-owned-in-code pattern from the BP/Cash tab work (Bible §8) rather than hand-authoring anchors again.
+1. `8d15c22` (**B1**) — third tab retargeted from RP to `ShopTab.GodShop`; runtime `GodTierStoreSlotUI` template built with clone-refs-captured-first (the retired `RestorationSlotUI` runtime template read its field references directly off the *source* prefab instead of off the clone it just instantiated — a live footgun now documented as a do-not-copy pattern, since editing the clone's fields wrote into the wrong object). Bad Words Pack's owned→profanity-toggle affordance (tap an owned row to flip `RandomChatterManager.ProfanityEnabled`) rebuilt here, replacing the dead `CashShopSlotUI` branches (see deferred list below).
+2. `0f0809c` (**B2**) — tab buttons render a single code-owned label. `Tab_RP`'s button carried RP-era leftover children (a progress readout, a convert icon) that stacked into unreadable clutter once the label text changed to "GOD SHOP" — fixed by having code own the entire button face (disable all pre-existing children, render one label) rather than chasing whatever a saved scene happens to have.
+3. `9cb8075` (**B3**) — the rebirth trigger button suppressed while the shop is open. It draws above the tab bar (established sorting order) and was burying the "GOD SHOP" tab label whenever both were visible. Suppression owned by `RebirthUIController`'s own visibility gate — a sole-owner pattern (one flag, one place setting it) rather than two systems fighting over the same button's `SetActive` state.
+4. `de5d4c0` (**B4**) — `➔` replaced with `->` in `ConvertUIController`'s status text. The glyph isn't in `LiberationSans SDF`'s character set, so TMP fell back to a substitute font and spammed console warnings every refresh.
 
 ## §17 COGS portrait renders on Play Stop but not during Play
 Inverted visibility — portrait shows when Play mode *stops*, not while it's running. Separate, unrelated bug from anything touched this session. Flagged by Aceyfer during RP-tab testing; not diagnosed yet.
 
 ## §18 Oversized pedestrians
 Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet — needs its own investigation pass.
+
+## §19 Deferred — dead code awaiting explicit rip approval, and open cosmetics
+Nothing here blocks anything; logged so it doesn't get silently forgotten or opportunistically ripped mid-unrelated-commit.
+
+**Dead code, retained pending explicit approval to remove:**
+- `RestorationSlotUI` — the RP-tab slot prefab/script, unused now that the third tab is the God Shop. Also the source of the clone-refs-captured-first footgun documented in §16 Phase B1 — worth reading before anyone reaches for this class as a template again.
+- `GodTierStoreUIController` — superseded by the God Shop tab work landing directly in `ShopUIController`; not wired to anything live.
+- `CashShopSlotUI`'s seven dead `itemId == "profanity_pack"` special-case branches — still retained per the dead-code convention (§10 decision log), still slated for the still-PARKED Cash-family reconciliation, not this pass.
+- `ShopQuery`/`ShopTabView`'s own, separate `ShopTab` enums — both still say `RpRestorations`, not `GodShop`. These are part of the dormant `ShopTabView` virtualization system (parked, per `TASKLIST.md`'s PARKED list), not `ShopUIController`'s enum (which was renamed in B1) — don't conflate the two when this family eventually gets reconciled.
+
+**Open cosmetics, not blocking:**
+- God Shop tab labels currently render in TMP's default fallback font rather than the project's usual font asset — a one-line font-asset assignment if the visual mismatch bothers us; not diagnosed as broken, just unstyled.
+- The rebirth-unlock threshold (50,000 RP spent, per Bible §4) has not actually been tested in an unlocked state since the RP tab was cut — worth a real Play-mode pass to confirm the "SNOTTING" trigger button still correctly reveals itself at that threshold now that RP is no longer a shop tab.
 
 ---
 
@@ -131,3 +149,11 @@ Applied as a series of pre-generated patches, each verified (diff-audited agains
 - `cf51935` — PremiumShopManager.cs/.meta, PremiumShopUIController.cs/.meta, PremiumShopSlotUI.cs/.meta, and the PremiumShopSlotUI prefab/.meta deleted outright. Sanity grep after: zero live references anywhere in `Assets` except the expected `HUDMobileOverhaul.cs` name-string (`Find("PremiumShopButton")`) and one explanatory comment.
 - `34841b7` — neuron premium currency purged repo-wide: `CurrencyManager.cs`, `Core/Events/EventBus.cs`, `Systems/EconomyManager.cs`, `CLAUDE.md`. Verified zero case-insensitive "neuron" hits across `Assets/_Game/Scripts` and `CLAUDE.md` before commit.
 All six pushed to `origin/main` (`8828543..34841b7`). Phase B (build the actual God Shop tab UI) is scoped in §16 above, not started.
+
+### God Shop Phase B — build-out (session, 2026-07-11)
+Also applied as pre-generated patches, each verified against an exact expected file list before commit — see §16 Phase B for the full per-commit detail:
+- `8d15c22` (B1) — God Shop tab UI + owned-toggle affordance.
+- `0f0809c` (B2) — code-owned single tab-button label.
+- `9cb8075` (B3) — rebirth-trigger suppression while the shop is open. First patch attempt for this (v1) was generated against a stale pre-B2 base and failed `git apply` atomically — caught by apply-atomicity itself, nothing partially written, no cleanup needed; a corrected v2 patch (regenerated against `0f0809c`, stash-verified) applied clean. See Bible §8's patch-handoff mirror rule, added specifically off this incident.
+- `de5d4c0` (B4) — convert-arrow-glyph replacement, closing out the last known cosmetic rough edge from the shop work.
+All four pushed to `origin/main` (`8d15c22..de5d4c0`). §16 is now fully shipped, both phases. Deferred dead-code ledger and open cosmetics logged in §19, not ripped/fixed this pass.
