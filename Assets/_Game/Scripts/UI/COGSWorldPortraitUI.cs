@@ -5,11 +5,11 @@ using BrainDrain.Systems;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// Keeps a persistent world-area Image in sync with COGSPortraitController's current
-    /// stage. Distinct from DialogueDisplayUI's own avatarImage, which only exists inside the
-    /// transient dialogue panel and slides in/out with each line -- this is COGS's actual
-    /// presence in the world area, always visible regardless of whether she's currently
-    /// "talking". Both can coexist; this doesn't replace DialogueDisplayUI's avatar slot.
+    /// RETIRED BY DESIGN (Aceyfer, Jul 12 2026): COGS appears only inside the dialogue
+    /// panel; a persistent world-area portrait just consumed screen space. This script now
+    /// only asserts its Image off (presentation state is code-owned, Bible §8) because
+    /// scene edits are embargoed -- the hosting GameObject and this script are ledgered in
+    /// §19 for full removal in the post-embargo scene cleanup pass.
     /// </summary>
     public sealed class COGSWorldPortraitUI : MonoBehaviour
     {
@@ -17,41 +17,9 @@ namespace BrainDrain.UI
 
         private void Start()
         {
-            if (COGSPortraitController.Instance != null)
+            if (portraitImage != null)
             {
-                COGSPortraitController.Instance.OnStageChanged.AddListener(HandleStageChanged);
-
-                // Covers both Start() orderings: if COGSPortraitController already resolved its
-                // initial stage before this ran, apply it now. If not, the listener above will
-                // catch it once COGSPortraitController.Start() runs (still within Awake-then-
-                // Start ordering guarantees for the same frame).
-                if (COGSPortraitController.Instance.CurrentStage != null)
-                {
-                    HandleStageChanged(COGSPortraitController.Instance.CurrentStage);
-                }
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (COGSPortraitController.Instance != null)
-            {
-                COGSPortraitController.Instance.OnStageChanged.RemoveListener(HandleStageChanged);
-            }
-        }
-
-        private void HandleStageChanged(COGSStage stage)
-        {
-            if (portraitImage != null && stage != null)
-            {
-                portraitImage.sprite = stage.portraitSprite;
-
-                // Presentation state is code-owned (Bible §8): this Image was left disabled in
-                // the serialized scene (m_Enabled: 0 since the scene-surgery session that added
-                // it), so COGS never rendered here at all (§17). Assert at point of use:
-                // visible exactly when a stage sprite exists, so a missing sprite can never
-                // draw as a white quad either.
-                portraitImage.enabled = stage.portraitSprite != null;
+                portraitImage.enabled = false;
             }
         }
     }
