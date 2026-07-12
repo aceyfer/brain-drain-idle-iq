@@ -61,9 +61,12 @@ namespace BrainDrain.UI
                     glowOutline.effectDistance = Vector2.zero;
                 }
 
-                // Position offscreen on startup instead of deactivating the GameObject
+                // Position offscreen on startup. The GameObject stays ACTIVE: it is shared
+                // with COGSPortraitController, and deactivating it froze that controller's
+                // Start (stage never resolved until the first dialogue line) and hid it from
+                // active-only Instance lookups, spawning the (Auto) impostor (§17).
+                // Visibility is owned entirely by anchoredPosition: offscreen-left when hidden.
                 panelRect.anchoredPosition = restingPosition - new Vector2(panelRect.rect.width, 0f);
-                panelRect.gameObject.SetActive(false);
             }
 
             if (lineText != null)
@@ -154,7 +157,6 @@ namespace BrainDrain.UI
         {
             yield return Slide(panelRect.anchoredPosition, target, SlideDurationSeconds);
             activeRoutine = null;
-            panelRect.gameObject.SetActive(false);
         }
 
         private void HandleDialogueLine(string line)
@@ -164,7 +166,6 @@ namespace BrainDrain.UI
                 return;
             }
 
-            panelRect.gameObject.SetActive(true);
             ApplyRebirthDegradation();
 
             float holdDuration = DialogueManager.Instance != null
@@ -275,7 +276,6 @@ namespace BrainDrain.UI
             }
 
             activeRoutine = null;
-            panelRect.gameObject.SetActive(false);
         }
 
         private IEnumerator Slide(Vector2 from, Vector2 to, float duration)
