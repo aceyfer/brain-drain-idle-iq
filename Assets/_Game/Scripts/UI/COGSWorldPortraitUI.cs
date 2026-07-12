@@ -45,6 +45,13 @@ namespace BrainDrain.UI
             if (portraitImage != null && stage != null)
             {
                 portraitImage.sprite = stage.portraitSprite;
+
+                // Presentation state is code-owned (Bible §8): this Image was left disabled in
+                // the serialized scene (m_Enabled: 0 since the scene-surgery session that added
+                // it), so COGS never rendered here at all (§17). Assert at point of use:
+                // visible exactly when a stage sprite exists, so a missing sprite can never
+                // draw as a white quad either.
+                portraitImage.enabled = stage.portraitSprite != null;
             }
         }
     }
