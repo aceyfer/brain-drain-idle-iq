@@ -20,6 +20,10 @@ namespace BrainDrain.Systems
         [SerializeField] private float streetMinY = -2f;
         [SerializeField] private float streetMaxY = 2f;
 
+        [Header("Sizing")]
+        [Tooltip("Rendered world height every pedestrian is normalized to on SetStage, regardless of source art resolution or stale scene scale overrides.")]
+        [SerializeField] private float targetWorldHeight = 4.5f;
+
         [Header("Stage Sprites")]
         [Tooltip("Indexed 0-5, matching CurrentStage 1-6.")]
         [SerializeField] private Sprite[] stageSprites = new Sprite[6];
@@ -78,6 +82,30 @@ namespace BrainDrain.Systems
             {
                 spriteRenderer.sprite = stageSprites[spriteIndex];
             }
+
+            NormalizeWorldHeight();
+        }
+
+        /// <summary>Presentation state is code-owned (Bible §8): source art spans 1350-1780px
+        /// at PPU 100 (13.5-17.8 raw world units) and scene instances carry inconsistent
+        /// hand-tuned scale overrides (some 0.3, most untouched at 1.0 -- the §18 giants).
+        /// Asserting size at point of use makes every archetype, every stage sprite, and any
+        /// future art drop render at the same height without touching scene or art files.</summary>
+        private void NormalizeWorldHeight()
+        {
+            if (spriteRenderer == null || spriteRenderer.sprite == null || targetWorldHeight <= 0f)
+            {
+                return;
+            }
+
+            float rawHeight = spriteRenderer.sprite.bounds.size.y;
+            if (rawHeight <= 0f)
+            {
+                return;
+            }
+
+            float factor = targetWorldHeight / rawHeight;
+            transform.localScale = new Vector3(factor, factor, 1f);
         }
     }
 }
