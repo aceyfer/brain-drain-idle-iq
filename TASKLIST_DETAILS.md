@@ -35,8 +35,10 @@ Final order and hashes:
 10. (this commit) — Bible §8 scar-tissue updates + TASKLIST/TASKLIST_DETAILS sync
 TMP font assets deliberately left uncommitted throughout, per the Bible's standing "never commit TMP font assets" rule.
 
-## §6 BG1.jpg import
-Select `Assets/_Game/Sprites/Backgrounds/BG1.jpg` → Inspector → Texture Type: **Sprite (2D and UI)** → Apply. Editor-side task (Aceyfer). Kills `[BackgroundStageView] stageSprites[0] is missing`. No commit needed beyond the .meta change — include with doc-sync commit.
+## §6 BG1-BG6 sprite import — RESOLVED 2026-07-12
+**Corrected diagnosis:** the actual fix was Texture Importer **Sprite Mode: Multiple → Single** (not Texture Type, which was already correctly set to Sprite (2D and UI)) on all six backgrounds — Multiple mode left `spriteID` empty and never generated the `fileID: 21300000` sub-asset every scene reference expected. Fixed on all six, not just BG1: `Assets/_Game/Sprites/Backgrounds/BG1.jpg.meta` through `BG6.png.meta`.
+**Result:** healed 7 dangling scene references in one shot — the 6x `BackgroundStageView.stageSprites[]` entries plus `SkylineBG`'s own `m_Sprite` reference — without touching `SampleScene.unity` at all (the scene already pointed at the correct GUID/fileID combination; the asset just wasn't producing that fileID until the import mode changed).
+**Commit:** `36c76c1`. Six `.meta` files, nothing else.
 
 ## §7 Doc sync
 - Bible §6 economy table: 7 → 16 buildings (add JumperCables, DefrostDrip, CranialMicrowave, SynapseSpaceHeater, CryoSludgeEspresso, IQOverclockChip, LemonadeGriftStand, DoomscrollBillboard, HOAProtectionRacket).
@@ -91,8 +93,14 @@ Doc closeout for Phase A: `516ce70`.
 3. `9cb8075` (**B3**) — the rebirth trigger button suppressed while the shop is open. It draws above the tab bar (established sorting order) and was burying the "GOD SHOP" tab label whenever both were visible. Suppression owned by `RebirthUIController`'s own visibility gate — a sole-owner pattern (one flag, one place setting it) rather than two systems fighting over the same button's `SetActive` state.
 4. `de5d4c0` (**B4**) — `➔` replaced with `->` in `ConvertUIController`'s status text. The glyph isn't in `LiberationSans SDF`'s character set, so TMP fell back to a substitute font and spammed console warnings every refresh.
 
-## §17 COGS portrait renders on Play Stop but not during Play
-Inverted visibility — portrait shows when Play mode *stops*, not while it's running. Separate, unrelated bug from anything touched this session. Flagged by Aceyfer during RP-tab testing; not diagnosed yet.
+## §17 COGS portrait/dialogue visibility — RESOLVED 2026-07-12
+**Symptom as originally reported:** COGS portrait rendered when Play Mode *stopped*, not during Play — inverted visibility.
+**Root causes, three stacked** (each one only became visible once the prior was fixed):
+1. **Duplicate-destroy of shared host** (`1e01517`) — `COGSPortraitController`'s duplicate-singleton guard destroyed the *shared host GameObject* rather than just its own component, and its `Find` call excluded inactive objects — so a correctly-configured-but-inactive instance lost to an empty auto-bootstrapped stand-in. Fixed: destroy the component, not the host; `Find` now includes inactive; a configured instance always beats an empty auto-host.
+2. **Awake self-deactivation froze the co-hosted controller** (`7fac5d8`) — `DialogueDisplayUI` self-`SetActive(false)`'d its own panel to hide it, but `COGSPortraitController` lives on the *same* GameObject — deactivating it froze `COGSPortraitController.Start()` before it ever ran, and (per the singleton-teardown pattern) let an `(Auto)` impostor spawn instead. Fixed: the dialogue panel now stays permanently active; visibility is owned by its own offscreen anchored-position, not `SetActive`.
+3. **Boot-nub regression from fix 2** (`05c7c13`) — moving hidden-state ownership to position math broke specifically at `Awake()`, because `rect.width` reads `0` before the first layout pass runs, so the offscreen-position math computed a wrong (still-onscreen) position at boot. Fixed: hidden state is now gated by `CanvasGroup.alpha`, independent of any layout-dependent size read.
+4. **Image serialized `m_Enabled: 0`** (`5d3085c`) — separately, `COGSWorldPortraitUI`'s own `Image` component was saved disabled in the scene, so even with the controller/visibility chain fully correct, nothing would render. Fixed: `enabled` asserted explicitly at the point of use (same "own it in code, don't trust scene state" pattern as the shop work), not left to whatever the scene happened to save.
+**Commits:** `1e01517`, `7fac5d8`, `05c7c13`, `5d3085c`. Closes §17.
 
 ## §18 Oversized pedestrians
 Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet — needs its own investigation pass.
@@ -109,6 +117,17 @@ Nothing here blocks anything; logged so it doesn't get silently forgotten or opp
 **Open cosmetics, not blocking:**
 - God Shop tab labels currently render in TMP's default fallback font rather than the project's usual font asset — a one-line font-asset assignment if the visual mismatch bothers us; not diagnosed as broken, just unstyled.
 - The rebirth-unlock threshold (50,000 RP spent, per Bible §4) has not actually been tested in an unlocked state since the RP tab was cut — worth a real Play-mode pass to confirm the "SNOTTING" trigger button still correctly reveals itself at that threshold now that RP is no longer a shop tab.
+
+**Deferred, audited not fixed (added 2026-07-12, off the §17 COGSPortraitController hardening pass):**
+- `GodTierStoreManager`'s `Instance` auto-bootstrap has an `isShuttingDown` guard scoped to app-quit only — a scene-transition teardown (loading a second scene) could still spawn a ghost auto-host, the same class of bug just fixed in `COGSPortraitController`. **Currently unreachable**: the project is single-scene, so there's no scene-transition teardown path to trigger it [Codex audit F6, verified]. Revisit if a second scene is ever added.
+- The same self-bootstrapping-singleton pattern template that caused the §17 bug exists in other managers beyond `COGSPortraitController` (now hardened) — worth a pattern-level review pass across all of them, but only once a second scene actually makes the failure mode reachable; not urgent while single-scene.
+- `ShopUIController.restorationSlotPrefab` — a dead serialized field (RP-tab-era leftover, cut when the third tab became the God Shop) still sits in the saved scene. Unity will drop it automatically the next time the scene gets a legitimate save; not worth a dedicated commit to remove by hand.
+
+## §20 Dialogue pacing/queue in DialogueManager
+Lines currently interrupt each other — no queue, no minimum-gap pacing, no flood coalescing when multiple triggers fire close together. Goal: add a queue + minimum-gap pacing + flood coalescing (collapse rapid-fire triggers into one line rather than stacking/interrupting). Needs a `DialogueManager` audit first, then design sign-off from Aceyfer before implementation. Not started.
+
+## §21 World portrait position tune
+The world portrait's position is code-owned (per §17's fixes) but may overlap THE SNOTTING (rebirth trigger) button on screen — pending Aceyfer's visual check in Play Mode before this is scoped as a real bug or closed as fine. Not started.
 
 ---
 

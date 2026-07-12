@@ -13,11 +13,13 @@
 
 ## NEXT — Stability & Hygiene
 - [x] 16. God Shop — COMPLETE end to end. Phase A consolidation (commits `939222f`..`34841b7` + docs `516ce70`); Phase B build-out (`8d15c22` tab UI + owned-toggle, `0f0809c` code-owned tab labels, `9cb8075` rebirth-trigger suppression, `de5d4c0` convert-arrow-glyph cleanup) (details §16)
-- [ ] 6. BG1.jpg texture import → Sprite (2D and UI) — kills stageSprites[0] warning — now the top NEXT item (details §6)
+- [x] 6. BG1-BG6 Sprite Mode Multiple→Single (not Texture Type) — healed 7 dangling refs: 6x stageSprites + SkylineBG m_Sprite (details §6, commit `36c76c1`)
 - [ ] 7. Doc sync commit — Bible §6 economy table to 16 buildings; CLAUDE.md inventory refresh (details §7)
 - [ ] 8. Guard the 12 unguarded Editor tools (batch, one commit) (details §8)
-- [ ] 17. COGS portrait renders on Play Stop but not during Play — inverted visibility (details §17)
+- [x] 17. COGS portrait/dialogue visibility — four stacked root causes fixed (details §17, commits `1e01517`/`7fac5d8`/`05c7c13`/`5d3085c`)
 - [ ] 18. Oversized pedestrians (details §18)
+- [ ] 20. Dialogue pacing/queue in DialogueManager — lines interrupt each other; needs audit + design sign-off (details §20)
+- [ ] 21. World portrait position tune (code-owned) if it overlaps THE SNOTTING button — pending Aceyfer's visual check (details §21)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $5.00 (details §10)
