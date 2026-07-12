@@ -21,8 +21,8 @@ namespace BrainDrain.Systems
         [SerializeField] private float streetMaxY = 2f;
 
         [Header("Sizing")]
-        [Tooltip("Rendered world height every pedestrian is normalized to on SetStage, regardless of source art resolution or stale scene scale overrides.")]
-        [SerializeField] private float targetWorldHeight = 4.5f;
+        [Tooltip("Rendered world height every pedestrian is normalized to on SetStage, regardless of source art resolution or stale scene scale overrides. Main Camera is orthographic size 5 -> 10 visible world units, so 1.2 renders ~12% of screen height.")]
+        [SerializeField] private float targetWorldHeight = 1.2f;
 
         [Header("Stage Sprites")]
         [Tooltip("Indexed 0-5, matching CurrentStage 1-6.")]
