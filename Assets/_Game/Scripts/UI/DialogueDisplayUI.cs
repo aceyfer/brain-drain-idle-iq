@@ -34,6 +34,7 @@ namespace BrainDrain.UI
         [SerializeField] private TMP_FontAsset lowIQFontAsset;
 
         private TMP_FontAsset defaultFontAsset;
+        private CanvasGroup panelGroup;
         private Vector2 restingPosition;
         private Coroutine activeRoutine;
         private Outline glowOutline;
@@ -61,12 +62,18 @@ namespace BrainDrain.UI
                     glowOutline.effectDistance = Vector2.zero;
                 }
 
-                // Position offscreen on startup. The GameObject stays ACTIVE: it is shared
-                // with COGSPortraitController, and deactivating it froze that controller's
-                // Start (stage never resolved until the first dialogue line) and hid it from
-                // active-only Instance lookups, spawning the (Auto) impostor (§17).
-                // Visibility is owned entirely by anchoredPosition: offscreen-left when hidden.
-                panelRect.anchoredPosition = restingPosition - new Vector2(panelRect.rect.width, 0f);
+                // The GameObject stays ACTIVE: it is shared with COGSPortraitController, and
+                // deactivating it froze that controller's Start and hid it from active-only
+                // Instance lookups, spawning the (Auto) impostor (§17). Hidden state is gated
+                // by CanvasGroup alpha, NOT by position math: panelRect.rect.width is 0 at
+                // Awake (no layout pass yet), so offscreen-left computed here actually left
+                // the panel poking into view at boot (§17 pt2 regression).
+                panelGroup = panelRect.GetComponent<CanvasGroup>();
+                if (panelGroup == null)
+                {
+                    panelGroup = panelRect.gameObject.AddComponent<CanvasGroup>();
+                }
+                SetPanelHidden(true);
             }
 
             if (lineText != null)
@@ -157,6 +164,7 @@ namespace BrainDrain.UI
         {
             yield return Slide(panelRect.anchoredPosition, target, SlideDurationSeconds);
             activeRoutine = null;
+            SetPanelHidden(true);
         }
 
         private void HandleDialogueLine(string line)
@@ -178,6 +186,16 @@ namespace BrainDrain.UI
             }
 
             activeRoutine = StartCoroutine(SlideRoutine(line, holdDuration));
+        }
+
+        /// <summary>Single owner of the panel's hidden/shown state (code-owned presentation
+        /// state, Bible §8). Alpha + raycast gating, never GameObject SetActive.</summary>
+        private void SetPanelHidden(bool hidden)
+        {
+            if (panelGroup == null) return;
+            panelGroup.alpha = hidden ? 0f : 1f;
+            panelGroup.blocksRaycasts = !hidden;
+            panelGroup.interactable = !hidden;
         }
 
         /// <summary>
@@ -252,6 +270,7 @@ namespace BrainDrain.UI
         private IEnumerator SlideRoutine(string line, float holdDuration)
         {
             lineText.text = line;
+            SetPanelHidden(false);
 
             if (glowRoutine != null) StopCoroutine(glowRoutine);
             glowRoutine = StartCoroutine(GlowPulseRoutine());
@@ -276,6 +295,7 @@ namespace BrainDrain.UI
             }
 
             activeRoutine = null;
+            SetPanelHidden(true);
         }
 
         private IEnumerator Slide(Vector2 from, Vector2 to, float duration)
