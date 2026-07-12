@@ -30,7 +30,15 @@ namespace BrainDrain.Systems
         private static COGSPortraitController instance;
         private static bool isShuttingDown;
 
-        /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.</summary>
+        /// <summary>True only on instances spawned by the Instance getter's auto-bootstrap path.
+        /// Lets Awake distinguish a disposable auto-host from a configured scene instance.</summary>
+        private bool wasAutoCreated;
+
+        /// <summary>Self-bootstrapping: creates a hosting GameObject on first access if nothing placed one in the scene.
+        /// The Find INCLUDES inactive objects: the scene instance lives on COGS_Narrator_Panel, which
+        /// DialogueDisplayUI deactivates during Awake -- a default (active-only) Find during that window
+        /// missed it and spawned an unconfigured "(Auto)" impostor that later won the duplicate race and
+        /// destroyed the entire panel (§17).</summary>
         public static COGSPortraitController Instance
         {
             get
@@ -40,12 +48,13 @@ namespace BrainDrain.Systems
                     return instance;
                 }
 
-                instance = FindAnyObjectByType<COGSPortraitController>();
+                instance = FindAnyObjectByType<COGSPortraitController>(FindObjectsInactive.Include);
                 if (instance == null)
                 {
                     if (isShuttingDown) return null;
                     var hostObject = new GameObject("COGSPortraitController (Auto)");
                     instance = hostObject.AddComponent<COGSPortraitController>();
+                    instance.wasAutoCreated = true;
                 }
 
                 return instance;
@@ -60,9 +69,23 @@ namespace BrainDrain.Systems
             isShuttingDown = false;
             if (instance != null && instance != this)
             {
-                Debug.LogWarning("[COGSPortraitController] Duplicate instance destroyed.", this);
-                Destroy(gameObject);
-                return;
+                // A configured scene instance always beats an unconfigured auto-created host:
+                // the auto-host has an empty stages list and can never resolve a stage.
+                if (instance.wasAutoCreated && !wasAutoCreated && stages.Count > 0)
+                {
+                    Debug.LogWarning("[COGSPortraitController] Configured scene instance replacing empty auto-created host.", this);
+                    Destroy(instance.gameObject); // dedicated "(Auto)" host object, exists only to carry the component
+                }
+                else
+                {
+                    // NEVER Destroy(gameObject) here: this component may share its host with
+                    // unrelated systems (the scene instance lives on COGS_Narrator_Panel alongside
+                    // DialogueDisplayUI). Destroying the shared host took the entire narrator
+                    // panel down every Play session (§17). Destroy only this component.
+                    Debug.LogWarning("[COGSPortraitController] Duplicate component destroyed (component only, host GameObject preserved).", this);
+                    Destroy(this);
+                    return;
+                }
             }
 
             instance = this;
