@@ -102,8 +102,14 @@ Doc closeout for Phase A: `516ce70`.
 4. **Image serialized `m_Enabled: 0`** (`5d3085c`) — separately, `COGSWorldPortraitUI`'s own `Image` component was saved disabled in the scene, so even with the controller/visibility chain fully correct, nothing would render. Fixed: `enabled` asserted explicitly at the point of use (same "own it in code, don't trust scene state" pattern as the shop work), not left to whatever the scene happened to save.
 **Commits:** `1e01517`, `7fac5d8`, `05c7c13`, `5d3085c`. Closes §17.
 
-## §18 Oversized pedestrians
-Flagged by Aceyfer, not yet diagnosed. No detail beyond the report itself yet — needs its own investigation pass.
+## §18 Oversized pedestrians — RESOLVED 2026-07-13
+**Root causes, three, each its own population of "giants":**
+1. **Unnormalized source art + inconsistent hand scales** (`aba3091`, `0ec69f9`) — pedestrian source art spans 1350-1780px with inconsistent per-scene scale overrides. Fixed with a code-owned `targetWorldHeight` normalization at point of use in `PedestrianWalkController.cs`, first at `4.5` (`aba3091`), then recalibrated to `1.2` (`0ec69f9`) once the actual camera math was worked through: camera is `orthoSize 5` (10 visible world units top-to-bottom), so `4.5` rendered pedestrians at 45% of screen height; `1.2` ≈ 12%, the intended scale.
+2. **Animator sprite-swap overriding normalization** (`49cda11`) — Unity-AI-authored Animator Controllers on the walker prefabs were swapping sprites mid-walk-cycle *after* the normalization pass had already computed a scale for a *different* sprite (different pixel dimensions), producing giants again despite the fix in cause 1. Fixed by disabling the walker Animators entirely — `PedestrianWobble` already owns motion, the Animators were redundant for the actual gameplay-visible behavior.
+3. **Rank-figure diorama compositing over the game via Diorama Camera** (`6d7f709`, closes §18) — a *separate* population from the walking pedestrians: `DioramaManager`'s rank-figure diorama was compositing oversized figures over the main game view through its own Diorama Camera. Retired by design — figures asserted off in code; physical scene/GameObject removal ledgered in §19 for post-embargo cleanup, not done here.
+**Commits:** `aba3091`, `0ec69f9`, `49cda11`, `6d7f709`.
+
+**Related, same investigation arc — bubble readability (`de8d202`):** chatter bubble duration now scales with text length (`max(4s, 2s + 0.06s/char)`, prefab previously pinned to a flat `2s`) and font size floor asserted `20-28pt` (prefab previously allowed as low as `14pt`). **Not fully closed** — bubble *rect sizing* (as opposed to duration/font) may still need a follow-up pass; pending Aceyfer's verdict from a fresh Play-mode look.
 
 ## §19 Deferred — dead code awaiting explicit rip approval, and open cosmetics
 Nothing here blocks anything; logged so it doesn't get silently forgotten or opportunistically ripped mid-unrelated-commit.
@@ -123,6 +129,10 @@ Nothing here blocks anything; logged so it doesn't get silently forgotten or opp
 - The same self-bootstrapping-singleton pattern template that caused the §17 bug exists in other managers beyond `COGSPortraitController` (now hardened) — worth a pattern-level review pass across all of them, but only once a second scene actually makes the failure mode reachable; not urgent while single-scene.
 - `ShopUIController.restorationSlotPrefab` — a dead serialized field (RP-tab-era leftover, cut when the third tab became the God Shop) still sits in the saved scene. Unity will drop it automatically the next time the scene gets a legitimate save; not worth a dedicated commit to remove by hand.
 - Remove COGSWorldPortraitUI GameObject (scene fileIDs 706123450000000001-005, direct Canvas child) + COGSWorldPortraitUI.cs + its .meta once scene-save embargo lifts. Script currently asserts the Image off.
+- Delete `_DioramaContainer` + the five `Diorama_*` figure mounts + `DioramaManager.cs` + the Diorama Camera (retired by design at §18's closing commit `6d7f709`; figures already asserted off in code, physical scene/script removal still pending).
+- Delete `Pedestrian_1`/`Pedestrian_2`/`Pedestrian_3` — spriteless placeholder `Image` components sitting under the pedestrian manager's rect, no sprite assigned, dead weight.
+- `BackgroundStageView.stageSprites` prefab wiring is still only partially complete: 17/34 slots wired. Two are blocked on missing art (Aceyfer TODO), not a wiring gap: `Ped1_Stage1.png` and `Ped6_Stage6.png` don't exist yet.
+- `Ped1`'s Stage1/Stage2 animation clips have empty sprite keyframes — currently moot since walker Animators are disabled (§18, `49cda11`), but relevant again if Animators are ever re-enabled for any reason.
 
 ## §20 Dialogue pacing/queue in DialogueManager
 Lines currently interrupt each other — no queue, no minimum-gap pacing, no flood coalescing when multiple triggers fire close together. Goal: add a queue + minimum-gap pacing + flood coalescing (collapse rapid-fire triggers into one line rather than stacking/interrupting). Needs a `DialogueManager` audit first, then design sign-off from Aceyfer before implementation. Not started.

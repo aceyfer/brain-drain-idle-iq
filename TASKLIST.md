@@ -17,7 +17,7 @@
 - [ ] 7. Doc sync commit — Bible §6 economy table to 16 buildings; CLAUDE.md inventory refresh (details §7)
 - [ ] 8. Guard the 12 unguarded Editor tools (batch, one commit) (details §8)
 - [x] 17. COGS portrait/dialogue visibility — four stacked root causes fixed (details §17, commits `1e01517`/`7fac5d8`/`05c7c13`/`5d3085c`)
-- [ ] 18. Oversized pedestrians (details §18)
+- [x] 18. Oversized pedestrians — CLOSED. Three root causes: unnormalized source art + inconsistent hand scales, Animator sprite-swap overriding normalization, rank-figure diorama compositing over the game via Diorama Camera (details §18, commits `aba3091`/`0ec69f9`/`49cda11`/`6d7f709`)
 - [ ] 20. Dialogue pacing/queue in DialogueManager — lines interrupt each other; needs audit + design sign-off (details §20)
 - [ ] 21. World portrait position tune (code-owned) if it overlaps THE SNOTTING button — pending Aceyfer's visual check (details §21)
 
