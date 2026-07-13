@@ -78,14 +78,24 @@ namespace BrainDrain.UI
         }
 
         /// <summary>
-        /// Sets the string text of the label.
+        /// Sets the label text, asserts the readability floor on the font, and scales the
+        /// bubble's lifetime with reading length. Presentation state is code-owned (Bible
+        /// §8): the prefab serialized floatDuration 2s and TMP auto-sizing down to 14pt --
+        /// unreadable, and dialogue is this game's identity. Duration: max(4s, 2s + 0.06s
+        /// per character), so a typical bark holds 5-7s.
         /// </summary>
         public void SetText(string text)
         {
             if (textLabel != null)
             {
                 textLabel.text = text;
+                textLabel.enableAutoSizing = true;
+                textLabel.fontSizeMin = 20f;
+                textLabel.fontSizeMax = 28f;
             }
+
+            int chars = string.IsNullOrEmpty(text) ? 0 : text.Length;
+            floatDuration = Mathf.Max(4f, 2f + chars * 0.06f);
         }
 
         private void Update()
