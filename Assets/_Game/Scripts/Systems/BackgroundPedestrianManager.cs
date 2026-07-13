@@ -150,10 +150,16 @@ namespace BrainDrain.Systems
                     wobble.enabled = true;
                 }
 
+                // Animators stay DISABLED (§18 root cause): the Unity-AI-era controllers
+                // swap m_Sprite every frame to arbitrary sub-sprites, overriding SetStage's
+                // assignment AFTER NormalizeWorldHeight computed scale for a different
+                // sprite -- small-sprite scale x large-sprite pixels = the giants. Several
+                // clips also have empty sprite keyframes (null the renderer entirely).
+                // PedestrianWobble owns idle motion; stageSprites is the only sprite path.
                 Animator animator = walk.GetComponent<Animator>();
                 if (animator != null)
                 {
-                    animator.enabled = true;
+                    animator.enabled = false;
                 }
             }
         }
