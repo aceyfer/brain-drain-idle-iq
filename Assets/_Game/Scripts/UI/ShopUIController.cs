@@ -782,7 +782,14 @@ namespace BrainDrain.UI
             {
                 if (a == null) return b == null ? 0 : 1;
                 if (b == null) return -1;
-                return a.unlockCumulativeBrainPower.CompareTo(b.unlockCumulativeBrainPower);
+                int byUnlock = a.unlockCumulativeBrainPower.CompareTo(b.unlockCumulativeBrainPower);
+                if (byUnlock != 0) return byUnlock;
+                // Tie-breakers: most buildings share unlock=0 and List.Sort is UNSTABLE,
+                // so equal keys previously landed in arbitrary order per rebuild (the
+                // "shop items shuffle" bug). Equal unlock -> cheapest first, then name.
+                int byCost = a.baseCost.CompareTo(b.baseCost);
+                if (byCost != 0) return byCost;
+                return string.CompareOrdinal(a.buildingName, b.buildingName);
             });
 
             int bpIndex = 0;
