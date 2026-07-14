@@ -16,8 +16,10 @@ namespace BrainDrain.Systems
     /// IQ milestone), picks a matching NarratorLine at random (filtered by trigger type,
     /// building name, and current RebirthCount range), and fires OnDialogueLine for UI to
     /// display. Never repeats the same line twice in a row; queues up to 2 lines while one is
-    /// displaying. Gated on RebirthCount rather than PlayerIQ, since PlayerIQ only ever
-    /// increases in the current model and can't represent a degrading tone.
+    /// displaying, with a minimum gap between lines, same-trigger coalescing in the queue, and
+    /// a per-trigger cooldown on repeatable triggers (SS20). Line-pool tier selection is gated
+    /// on WorldRestorationManager.RestorationPercent (switched from RebirthCount 2026-06-22 --
+    /// see TryFireLine).
     ///
     /// Also accepts ad-hoc lines that bypass the trigger/pool system entirely (e.g. ChapterManager's
     /// COGS reaction lines) via EnqueueDirectLine -- these go through the exact same display/queue
@@ -29,6 +31,33 @@ namespace BrainDrain.Systems
         private const float DefaultDisplayDurationSeconds = 3f;
         private const int TapsWithoutPurchaseThreshold = 25;
         private const double SnottingReadyThreshold = 50_000d;
+
+        /// <summary>
+        /// Pause between one line finishing and the next queued line displaying. Must exceed
+        /// DialogueDisplayUI's total slide overhead (2x SlideDurationSeconds = 0.6s): the UI
+        /// occupies the screen for displayDuration + 0.6s, while this manager's timer only
+        /// waits displayDuration -- without this gap the next OnDialogueLine fires mid-slide-out
+        /// and visibly yanks the panel back (the SS20 "lines interrupt each other" symptom).
+        /// 1.0s = 0.6s slide overhead + 0.4s breathing room. If DialogueDisplayUI's
+        /// SlideDurationSeconds ever changes, revisit this constant.
+        /// </summary>
+        private const float MinGapSeconds = 1f;
+
+        /// <summary>
+        /// Repeatable triggers (see RepeatableTriggers) can't fire again within this window.
+        /// Kills line floods from the 10s cash auto-convert tick, fast idle-income IQ-milestone
+        /// bursts, and rapid tap streaks -- one-shot triggers (First*, Rebirth, stage changes)
+        /// are exempt since they structurally can't flood.
+        /// </summary>
+        private const float RepeatTriggerCooldownSeconds = 20f;
+
+        private static readonly HashSet<NarratorTriggerType> RepeatableTriggers = new()
+        {
+            NarratorTriggerType.IQMilestone,
+            NarratorTriggerType.CashConverted,
+            NarratorTriggerType.TapWithoutPurchase,
+            NarratorTriggerType.EventOutcome,
+        };
 
         /// <summary>One line ready to display, regardless of whether it came from the NarratorLine pool or was injected directly.</summary>
         private readonly struct DialogueEntry
@@ -79,7 +108,10 @@ namespace BrainDrain.Systems
         /// <summary>The display duration of the line most recently sent via OnDialogueLine.</summary>
         public float CurrentDisplayDurationSeconds { get; private set; } = DefaultDisplayDurationSeconds;
 
-        private readonly Queue<DialogueEntry> queuedEntries = new();
+        /// <summary>FIFO pending list (index 0 = next up). A List rather than a Queue so
+        /// same-trigger coalescing can replace a stale queued entry in place.</summary>
+        private readonly List<DialogueEntry> queuedEntries = new();
+        private readonly Dictionary<NarratorTriggerType, float> lastRepeatableFireTime = new();
         private bool isDisplaying;
         private NarratorLine lastPlayedLine;
         private int tapsSinceLastPurchase;
@@ -313,6 +345,17 @@ namespace BrainDrain.Systems
 
         private void TryFireLine(NarratorTriggerType triggerType, string buildingName)
         {
+            // Flood gate: repeatable triggers respect a cooldown (SS20). Checked before
+            // candidate selection so a suppressed fire costs nothing.
+            if (RepeatableTriggers.Contains(triggerType))
+            {
+                if (lastRepeatableFireTime.TryGetValue(triggerType, out float lastTime)
+                    && Time.time - lastTime < RepeatTriggerCooldownSeconds)
+                {
+                    return;
+                }
+            }
+
             // Tier selection switched 2026-06-22 from RebirthCount to WorldRestorationManager's
             // RestorationPercent -- RebirthCount-gated tone tiers meant a player who never
             // rebirths sees the exact same 6 lines forever, while restoration progress climbs
@@ -341,6 +384,12 @@ namespace BrainDrain.Systems
                 : candidates;
 
             NarratorLine chosen = pickFrom[Random.Range(0, pickFrom.Count)];
+
+            if (RepeatableTriggers.Contains(triggerType))
+            {
+                lastRepeatableFireTime[triggerType] = Time.time;
+            }
+
             Enqueue(new DialogueEntry(chosen.dialogueLine, chosen.displayDurationSeconds, chosen));
         }
 
@@ -378,7 +427,8 @@ namespace BrainDrain.Systems
                 StopCoroutine(activeDisplayCoroutine);
             }
 
-            queuedEntries.Clear();
+            // Interrupts the active line but PRESERVES the queue (changed for SS20 -- was
+            // queuedEntries.Clear()): pending pool lines resume after this one finishes + gap.
             Display(new DialogueEntry(line, displayDurationSeconds, null));
         }
 
@@ -390,12 +440,30 @@ namespace BrainDrain.Systems
                 return;
             }
 
+            // Burst coalescing (SS20): a pool-driven entry replaces any queued entry of the
+            // same trigger type in place -- newest wins, queue position kept. Direct lines
+            // (null SourceLine) never coalesce against each other.
+            if (entry.SourceLine != null)
+            {
+                for (int i = 0; i < queuedEntries.Count; i++)
+                {
+                    NarratorLine queuedSource = queuedEntries[i].SourceLine;
+                    if (queuedSource != null && queuedSource.triggerType == entry.SourceLine.triggerType)
+                    {
+                        queuedEntries[i] = entry;
+                        return;
+                    }
+                }
+            }
+
             if (queuedEntries.Count >= MaxQueueDepth)
             {
+                // Was a silent bare return (SS20 audit High #1) -- still drops, but never silently.
+                Debug.Log($"[DialogueManager] Queue full ({MaxQueueDepth}), dropping line: \"{entry.Text}\"");
                 return;
             }
 
-            queuedEntries.Enqueue(entry);
+            queuedEntries.Add(entry);
         }
 
         private void Display(DialogueEntry entry)
@@ -413,11 +481,19 @@ namespace BrainDrain.Systems
         {
             yield return new WaitForSeconds(duration);
 
-            isDisplaying = false;
+            // Min-gap pacing (SS20): isDisplaying stays TRUE through the gap so lines arriving
+            // mid-gap queue rather than displaying instantly (which would defeat the gap).
+            yield return new WaitForSeconds(MinGapSeconds);
 
             if (queuedEntries.Count > 0)
             {
-                Display(queuedEntries.Dequeue());
+                DialogueEntry next = queuedEntries[0];
+                queuedEntries.RemoveAt(0);
+                Display(next);
+            }
+            else
+            {
+                isDisplaying = false;
             }
         }
     }
