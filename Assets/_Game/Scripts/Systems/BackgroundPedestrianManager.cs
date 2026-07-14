@@ -129,7 +129,13 @@ namespace BrainDrain.Systems
             }
         }
 
-        /// <summary>Locks scene-placed legacy prefabs to Stage 1 art and enables their movement components.</summary>
+        /// <summary>RETIRED BY DESIGN (Aceyfer, Jul 14 2026): the scene-placed legacy world
+        /// walkers (PedestrianContainer root / Ped1-6_Prefab) rendered as the SS18 "giants" --
+        /// a serialized targetWorldHeight of 4.5 on the scene instances vs the intended 1.2.
+        /// The UI pedestrian population this manager spawns is the sole surviving one.
+        /// Presentation state is code-owned (Bible SS8), so this asserts the legacy objects
+        /// OFF each boot instead of enabling them; GameObjects, PedestrianWalkController, and
+        /// PedestrianWobble are ledgered in SS19 for physical removal in a scene cleanup pass.</summary>
         private static void InitializeLegacyPedestrians()
         {
             PedestrianWalkController[] walkers = FindObjectsByType<PedestrianWalkController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -141,26 +147,7 @@ namespace BrainDrain.Systems
                     continue;
                 }
 
-                walk.enabled = true;
-                walk.SetStage(1);
-
-                PedestrianWobble wobble = walk.GetComponent<PedestrianWobble>();
-                if (wobble != null)
-                {
-                    wobble.enabled = true;
-                }
-
-                // Animators stay DISABLED (§18 root cause): the Unity-AI-era controllers
-                // swap m_Sprite every frame to arbitrary sub-sprites, overriding SetStage's
-                // assignment AFTER NormalizeWorldHeight computed scale for a different
-                // sprite -- small-sprite scale x large-sprite pixels = the giants. Several
-                // clips also have empty sprite keyframes (null the renderer entirely).
-                // PedestrianWobble owns idle motion; stageSprites is the only sprite path.
-                Animator animator = walk.GetComponent<Animator>();
-                if (animator != null)
-                {
-                    animator.enabled = false;
-                }
+                walk.gameObject.SetActive(false);
             }
         }
 
