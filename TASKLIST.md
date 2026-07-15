@@ -15,7 +15,7 @@
 - [x] 16. God Shop — COMPLETE end to end. Phase A consolidation (commits `939222f`..`34841b7` + docs `516ce70`); Phase B build-out (`8d15c22` tab UI + owned-toggle, `0f0809c` code-owned tab labels, `9cb8075` rebirth-trigger suppression, `de5d4c0` convert-arrow-glyph cleanup) (details §16)
 - [x] 6. BG1-BG6 Sprite Mode Multiple→Single (not Texture Type) — healed 7 dangling refs: 6x stageSprites + SkylineBG m_Sprite (details §6, commit `36c76c1`)
 - [ ] 7. Doc sync commit — Bible §6 economy table to 16 buildings; CLAUDE.md inventory refresh (details §7)
-- [ ] 8. Guard the 12 unguarded Editor tools (batch, one commit) (details §8)
+- [x] 8. Guard the 12 unguarded Editor tools — CLOSED. All 19 MenuItem entry points guarded via shared `EditorToolGuard` helper, batch commit `e1ba781` (details §8)
 - [x] 17. COGS portrait/dialogue visibility — four stacked root causes fixed (details §17, commits `1e01517`/`7fac5d8`/`05c7c13`/`5d3085c`)
 - [x] 18. Oversized pedestrians — CLOSED. Three root causes: unnormalized source art + inconsistent hand scales, Animator sprite-swap overriding normalization, rank-figure diorama compositing over the game via Diorama Camera (details §18, commits `aba3091`/`0ec69f9`/`49cda11`/`6d7f709`)
 - [x] 20. Dialogue pacing/queue in DialogueManager — CLOSED. Codex findings audited (1 factual error caught); commits: `3e44480` pacing (min-gap + cooldown + coalescing), `780eb8a` shop sort determinism, `06aaa87` legacy walker retirement (details §20)
