@@ -67,25 +67,40 @@ The first playable is DONE when, on a fresh save, a player can: tap and feel sat
 ## 6. The Economy — final numbers (matches `.asset` files; if they diverge, the asset files won)
 
 ```
-TAP ──▶ Brain Power ──▶ BP Store (7 buildings + infrastructure)
+TAP ──▶ Brain Power ──▶ Shop: BP UPGRADES tab (8 buildings + infrastructure)
                              ├─▶ idle BPPS  ├─▶ PlayerIQ (+1/purchase; 1:1 infra)
-                             └─▶ Underground Economy ──▶ Cash
-Cash ──▶ Cash Store (items, Hot Chick)  or  convert ──▶ Restoration Points (RP)
-RP ──▶ RP Store + World Restoration (dystopia → utopia)
-Real Money ──▶ God Tier Store (stubbed, post-first-playable)
+Cash ──▶ Shop: CASH INVESTMENTS tab (8 buildings)  or  convert ──▶ Restoration Points (RP)
+RP ──▶ World Restoration only (dystopia → utopia; RP shop tab CUT, see §16/§10)
+Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still stubbed, §12)
 ```
 
-**Buildings** (unlock gate = *cumulative* BP ever earned — NOT baseCost; these two have been confused repeatedly, check which one you're looking at):
+**Buildings — 16 total, 8 per tab, split by `costType`** (unlock gate = *cumulative* BP ever earned — NOT baseCost; these two have been confused repeatedly, check which one you're looking at). Purchases deduct the building's own `costType` currency (`UpgradeManager.TryBuyBuilding` routes to `SpendCash` or `SpendBrainPower`). Where a production field is absent from the `.asset` YAML, Unity uses the C# default — `baseBrainPowerPerSecond` **1**, `baseCashPerSecond` **0** — marked (d) below.
 
-| Building | Unlock (cumulative BP) | baseCost | costMult | Income |
+*BP UPGRADES tab (costType BrainPower):*
+| Building | Unlock (cum. BP) | baseCost | costMult | Income |
 |---|---|---|---|---|
+| Jumper Cables | 0 | 15 | 1.12 | 1 BPPS |
 | The Literal Library | 0 | 15 | 1.25 | 0.1 BPPS |
-| Doomscroll Engine | 0 | 10 | 1.21 | 0.3 BPPS |
-| Underground Economy | 500 | 75 | 1.38 | 5.0 CPS (only early Cash source) |
-| Podcaster Soundboard | 25,000 | 150 | 1.21 | 5 BPPS |
-| Crypto Bro Compound | 110,000 | 1,200 | 1.32 | 60 BPPS + 10 CPS |
-| Reality TV Syndicate | 185,000 | 15,000 | 1.21 | 320 BPPS + 40 CPS |
-| Brain Rot Think Tank | 725,000 | 200,000 | 1.21 | 4,500 BPPS + 200 CPS |
+| Defrost Drip | 0 | 25 | 1.10 | 0.5 BPPS |
+| Cranial Microwave | 0 | 150 | 1.11 | 3 BPPS |
+| Synapse Space Heater | 0 | 900 | 1.12 | 12 BPPS |
+| IQ Overclock Chip | 0 | 2,500 | 1.15 | 10 BPPS |
+| Cryo-Sludge Espresso | 0 | 5,000 | 1.13 | 45 BPPS |
+| Brain-Rot Think Tank | 725,000 | 200,000 | 1.21 | 4,500 BPPS + 200 CPS |
+
+*CASH INVESTMENTS tab (costType Cash):*
+| Building | Unlock (cum. BP) | baseCost (Cash) | costMult | Income |
+|---|---|---|---|---|
+| Doomscroll Engine | 0 | 4 | 1.21 | 0.3 BPPS |
+| Lemonade Grift Stand | 0 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
+| Doomscroll Billboard | 0 | 250 | 1.14 | 1 BPPS (d) + 5 CPS |
+| HOA Protection Racket | 0 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
+| Underground Economy | 500 | 15 | 1.38 | 5 CPS (0 BPPS explicit) |
+| Podcaster Soundboard | 25,000 | 30 | 1.21 | 5 BPPS + 0 CPS (d) |
+| Crypto-Bro Compound | 110,000 | 55 | 1.32 | 60 BPPS + 10 CPS |
+| Reality TV Syndicate | 185,000 | 90 | 1.21 | 320 BPPS + 40 CPS |
+
+**Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Lemonade/Billboard/HOA produce 1 BPPS purely via the missing-field default, possibly unintended. (c) 11 of 16 buildings share unlock=0 — shop display order for those is now cost-then-name (`780eb8a`), but the unlock *gating* curve itself is flat early.
 
 **Key tuned values (final):**
 - PlayerIQ starts 100, climbs forever; offline-only decay toward floor 60 over 8h; idle income scaled by IQ/100 (cap 1.0). *(Observed working 2026-07-03: a decayed save showed IQ 68 — intended behavior, not a bug.)*
