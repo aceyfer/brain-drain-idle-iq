@@ -152,8 +152,14 @@ The original framing ("no queue") was stale — a depth-2 queue already existed.
 ### §20b Dialogue log panel + button (scoped 2026-07-15, not started)
 GTA-style scrollable history of narrator lines (Aceyfer request): DialogueManager keeps a line history; a button opens a scroll panel to re-read past lines. Also the natural home for anti-repeat (skip lines already in recent history). Design + patch when picked up.
 
-## §21 World portrait position tune
-The world portrait's position is code-owned (per §17's fixes) but may overlap THE SNOTTING (rebirth trigger) button on screen — pending Aceyfer's visual check in Play Mode before this is scoped as a real bug or closed as fine. Not started.
+## §21 World portrait position tune — CLOSED 2026-07-15
+Verified clear by Aceyfer in Play mode: nothing overlaps or crowds THE SNOTTING button/badge (top-right). Largely moot since the world portrait itself was retired in the §17/§18 arc. No action taken, none needed.
+
+## §22 Balance re-sim + Cash bootstrap fix — DONE 2026-07-15
+The 16-building economy had never been re-simulated (the original `balance_sim.js` modeled the old 7-building set). A fresh greedy-buyer sim against the real `.asset` values found ONE structural break and confirmed the rest:
+- **Cash economy deadlock (FIXED, `29f9672`):** every Cash-tab building cost Cash, including Underground Economy (15 Cash) — the intended BP→Cash bridge. With no Cash source until Brain-Rot Think Tank (725k cumBP) or a lucky Illumisnotti Leak event, the whole tab was chicken-and-egg locked; sim showed CPS=0 for 3+ days at 30 min/day. Fix: Underground Economy back to its Bible-tuned `costType: BrainPower`, `baseCost: 75`. Post-fix curve: first Snotting day 4 @ 30 min/day, day 2 @ 60 min/day (3 taps/s greedy-optimal — real players land a day or two later), Utopia ~day 7+ @ 60 min. Daily IQ-decay return hook confirmed working (income at 60% each morning until ~40 taps restore).
+- **Bible §6 anomalies (a) IQ Overclock inversion and (b) default-1-BPPS on 3 Cash buildings: LEFT AS-IS by Aceyfer's call** — the original values came from a deliberate speed-run tuning pass for the daily-return loop, and the sim confirms both are noise (high tiers dominate). (c) flat unlock curve: also left; shop sort (`780eb8a`) keeps display sane.
+- Underground Economy's shop position (below all unlock-0 buildings despite the 75 cost) is the unlock-first sort working as designed; its ×1.38 multiplier self-limits spam (level 10 ≈ 1,360 BP). Slot UI's per-level CPS display includes the player's effective Cash multiplier — a rebirth-stacked test save showing "+$12/s" for a $5/s base is correct, not a bug.
 
 ---
 
