@@ -51,6 +51,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/COGS/Wire COGS Portraits")]
         public static void WireCOGSPortraits()
         {
+            if (EditorToolGuard.BlockedByPlayMode("COGSPortraitWireFix.WireCOGSPortraits")) return;
             bool anyError = false;
 
             // Step 1: force-reimport all textures so Unity applies our pre-written meta settings.
@@ -126,6 +127,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/COGS/Inspect COGS Portrait Wiring")]
         public static void InspectCOGSPortraitWiring()
         {
+            if (EditorToolGuard.BlockedByPlayMode("COGSPortraitWireFix.InspectCOGSPortraitWiring")) return;
             foreach (var (texturePath, stagePath) in PortraitMap)
             {
                 COGSStage stage = AssetDatabase.LoadAssetAtPath<COGSStage>(stagePath);

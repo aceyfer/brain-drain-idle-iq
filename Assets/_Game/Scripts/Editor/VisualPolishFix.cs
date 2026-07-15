@@ -29,6 +29,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Visual Polish/Wire AnimationController Sprites")]
         public static void WireAnimationControllerSprites()
         {
+            if (EditorToolGuard.BlockedByPlayMode("VisualPolishFix.WireAnimationControllerSprites")) return;
             AnimationController ac = Object.FindAnyObjectByType<AnimationController>(FindObjectsInactive.Include);
             if (ac == null)
             {
@@ -90,6 +91,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Visual Polish/Wire HUD Celebration Overlay")]
         public static void WireHUDCelebrationOverlay()
         {
+            if (EditorToolGuard.BlockedByPlayMode("VisualPolishFix.WireHUDCelebrationOverlay")) return;
             HUDController hud = Object.FindAnyObjectByType<HUDController>(FindObjectsInactive.Include);
             if (hud == null)
             {
@@ -154,6 +156,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Visual Polish/Wire TapHandler Particle Container")]
         public static void WireTapHandlerParticleContainer()
         {
+            if (EditorToolGuard.BlockedByPlayMode("VisualPolishFix.WireTapHandlerParticleContainer")) return;
             PlayerTapHandler tapHandler = Object.FindAnyObjectByType<PlayerTapHandler>(FindObjectsInactive.Include);
             if (tapHandler == null)
             {
@@ -200,6 +203,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Visual Polish/Run All Polish Fixes")]
         public static void RunAll()
         {
+            if (EditorToolGuard.BlockedByPlayMode("VisualPolishFix.RunAll")) return;
             WireAnimationControllerSprites();
             WireHUDCelebrationOverlay();
             WireTapHandlerParticleContainer();
@@ -209,6 +213,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Fix Static UI Raycasts")]
         public static void FixStaticUIRaycasts()
         {
+            if (EditorToolGuard.BlockedByPlayMode("VisualPolishFix.FixStaticUIRaycasts")) return;
             Transform safeArea = GameObject.Find("Canvas/CustomSafeArea")?.transform;
             if (safeArea == null)
             {

@@ -21,6 +21,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Wire Main UI Controller")]
         public static void WireMainUIController()
         {
+            if (EditorToolGuard.BlockedByPlayMode("MainUIControllerWireFix.WireMainUIController")) return;
             if (!EditorSceneManager.GetActiveScene().isLoaded
                 || EditorSceneManager.GetActiveScene().path != ScenePath)
             {
@@ -84,6 +85,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Fix Pedestrian Visuals")]
         public static void FixPedestrianVisuals()
         {
+            if (EditorToolGuard.BlockedByPlayMode("MainUIControllerWireFix.FixPedestrianVisuals")) return;
             if (!EditorSceneManager.GetActiveScene().isLoaded
                 || EditorSceneManager.GetActiveScene().path != ScenePath)
             {
@@ -103,6 +105,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Wire Background Stage View")]
         public static void WireBackgroundStageView()
         {
+            if (EditorToolGuard.BlockedByPlayMode("MainUIControllerWireFix.WireBackgroundStageView")) return;
             if (!EditorSceneManager.GetActiveScene().isLoaded
                 || EditorSceneManager.GetActiveScene().path != ScenePath)
             {

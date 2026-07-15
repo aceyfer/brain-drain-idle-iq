@@ -18,6 +18,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Consolidate Shop Button")]
         public static void Run()
         {
+            if (EditorToolGuard.BlockedByPlayMode("ConsolidateShopButton.Run")) return;
             bool anyChange = false;
 
             // 1. Relabel ShopButton → "SHOP" via SerializedObject so m_text is written directly

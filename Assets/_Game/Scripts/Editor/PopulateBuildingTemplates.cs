@@ -20,6 +20,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Populate Building Templates")]
         public static void Populate()
         {
+            if (EditorToolGuard.BlockedByPlayMode("PopulateBuildingTemplates.Populate")) return;
             if (!EditorSceneManager.GetActiveScene().isLoaded
                 || EditorSceneManager.GetActiveScene().path != ScenePath)
             {

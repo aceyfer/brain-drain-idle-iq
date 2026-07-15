@@ -29,6 +29,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Generate Placeholder Art/COGS + Player Character")]
         public static void GenerateAll()
         {
+            if (EditorToolGuard.BlockedByPlayMode("PlaceholderArtGenerator.GenerateAll")) return;
             Directory.CreateDirectory(COGSArtFolder);
             Directory.CreateDirectory(CharacterArtFolder);
             Directory.CreateDirectory(CharacterDataFolder);

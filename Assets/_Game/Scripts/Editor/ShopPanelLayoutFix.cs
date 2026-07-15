@@ -33,6 +33,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Fix Shop Panel Layout")]
         public static void FixShopPanelLayout()
         {
+            if (EditorToolGuard.BlockedByPlayMode("ShopPanelLayoutFix.FixShopPanelLayout")) return;
             ShopUIController shopUI = Object.FindAnyObjectByType<ShopUIController>(FindObjectsInactive.Include);
             if (shopUI == null)
             {

@@ -17,6 +17,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Remove Missing Scene Scripts")]
         public static void RemoveMissingScripts()
         {
+            if (EditorToolGuard.BlockedByPlayMode("RemoveMissingSceneScripts.RemoveMissingScripts")) return;
             Scene scene = SceneManager.GetActiveScene();
             GameObject[] allObjects = scene.GetRootGameObjects();
 

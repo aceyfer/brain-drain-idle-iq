@@ -37,6 +37,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Fix HUD Layout (Mobile Overhaul)")]
         private static void RunOverhaul()
         {
+            if (EditorToolGuard.BlockedByPlayMode("HUDMobileOverhaul.RunOverhaul")) return;
             HUDController hud = Object.FindAnyObjectByType<HUDController>();
             if (hud == null)
             {

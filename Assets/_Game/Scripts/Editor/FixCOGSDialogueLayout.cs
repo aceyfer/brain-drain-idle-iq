@@ -36,6 +36,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Fix COGS Dialogue Layout")]
         private static void RunFix()
         {
+            if (EditorToolGuard.BlockedByPlayMode("FixCOGSDialogueLayout.RunFix")) return;
             var dialogueUI = Object.FindAnyObjectByType<DialogueDisplayUI>();
             if (dialogueUI == null)
             {

@@ -7,6 +7,7 @@ public class PedestrianAlphaTest : EditorWindow
     [MenuItem("Tools/Brain Drain/TEST Single Sprite Fix")]
     public static void TestSingleSprite()
     {
+        if (EditorToolGuard.BlockedByPlayMode("PedestrianAlphaTest.TestSingleSprite")) return;
         string path = "Assets/_Game/Sprites/Pedestrians/Ped1_Stage1.png";
 
         TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;

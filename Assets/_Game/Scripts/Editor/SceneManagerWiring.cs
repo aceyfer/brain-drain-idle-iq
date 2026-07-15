@@ -23,6 +23,7 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Wire Scene Managers/RandomEventManager + DialogueManager")]
         public static void WireSceneManagers()
         {
+            if (EditorToolGuard.BlockedByPlayMode("SceneManagerWiring.WireSceneManagers")) return;
             GameObject systemsParent = GameObject.Find(SystemsParentName);
             if (systemsParent == null)
             {
