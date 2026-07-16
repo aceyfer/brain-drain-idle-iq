@@ -11,8 +11,6 @@ GameObject:
   - component: {fileID: 4253812096188721802}
   - component: {fileID: 2191633716565679815}
   - component: {fileID: 2180029679616929481}
-  - component: {fileID: 3620768867880952380}
-  - component: {fileID: 1236947535801673648}
   m_Layer: 0
   m_Name: Ped6_Prefab
   m_TagString: Untagged
@@ -116,45 +114,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3620768867880952380
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 119683712585905479}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 407dad49044fd8449826c4a2d9f393db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PedestrianWalkController
-  minSpeed: 30
-  maxSpeed: 80
-  leftBoundX: -10
-  rightBoundX: 10
-  streetMinY: -2
-  streetMaxY: 2
-  stageSprites:
-  - {fileID: -7220630031577373946, guid: 13513ff65920fb443939fadad1536b3a, type: 3}
-  - {fileID: 1125261803159842708, guid: 5424eb7af951bda4a975abc11a9ed48a, type: 3}
-  - {fileID: 866175282978753671, guid: e810c8d5991f03b44a1ebb9ed297863e, type: 3}
-  - {fileID: -8153758755981493347, guid: 564876ef650ca6e40a85dad6f8b30362, type: 3}
-  - {fileID: -8411269270189104607, guid: a02449c3f36aec747aa1e858dfa467ac, type: 3}
-  - {fileID: 4052491598225663676, guid: 19147f32c481265479749fd5d54efd4f, type: 3}
-  spriteRenderer: {fileID: 2191633716565679815}
---- !u!114 &1236947535801673648
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 119683712585905479}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2b72f4935fd450448cb07eb22e88cf9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PedestrianWobble
-  yAmplitude: 0.08
-  yFrequencyMin: 1.2
-  yFrequencyMax: 2
-  maxZRotationDegrees: 2

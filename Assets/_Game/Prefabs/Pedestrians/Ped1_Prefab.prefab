@@ -11,8 +11,6 @@ GameObject:
   - component: {fileID: 6545180444201190115}
   - component: {fileID: 1055605638696234558}
   - component: {fileID: 4499899923367506708}
-  - component: {fileID: 3866263519970402363}
-  - component: {fileID: 5431434228041836236}
   m_Layer: 0
   m_Name: Ped1_Prefab
   m_TagString: Untagged
@@ -116,45 +114,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3866263519970402363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7384180015171193596}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 407dad49044fd8449826c4a2d9f393db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PedestrianWalkController
-  minSpeed: 30
-  maxSpeed: 80
-  leftBoundX: -10
-  rightBoundX: 10
-  streetMinY: -2
-  streetMaxY: 2
-  stageSprites:
-  - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
-  - {fileID: -9157900419861997769, guid: 5b666186fd7406e489f8cfd79a112cf2, type: 3}
-  - {fileID: 9057677870770557258, guid: b885268538ad7df418dfb39c04fc6295, type: 3}
-  - {fileID: -8107581593755355517, guid: c1d314bb906bf0242b412e872761ddff, type: 3}
-  - {fileID: -3571926462660673159, guid: b363a295d9f2d5642b9719abc4956b1f, type: 3}
-  - {fileID: 5419756896672918869, guid: bcb74fda3e0c55a4eb048d970ca7ffee, type: 3}
-  spriteRenderer: {fileID: 1055605638696234558}
---- !u!114 &5431434228041836236
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7384180015171193596}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2b72f4935fd450448cb07eb22e88cf9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.PedestrianWobble
-  yAmplitude: 0.08
-  yFrequencyMin: 1.2
-  yFrequencyMax: 2
-  maxZRotationDegrees: 2
