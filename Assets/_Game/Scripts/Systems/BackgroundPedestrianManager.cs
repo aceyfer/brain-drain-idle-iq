@@ -89,7 +89,7 @@ namespace BrainDrain.Systems
                 }
             }
 
-            InitializeLegacyPedestrians();
+            // Legacy world walkers physically removed §19 pass A (2b5919c); UI population below is the only pedestrian system.
 
             spawnLoop = StartCoroutine(SpawnLoopRoutine());
 
@@ -126,28 +126,6 @@ namespace BrainDrain.Systems
             if (WorldRestorationManager.Instance != null)
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
-            }
-        }
-
-        /// <summary>RETIRED BY DESIGN (Aceyfer, Jul 14 2026): the scene-placed legacy world
-        /// walkers (PedestrianContainer root / Ped1-6_Prefab) rendered as the SS18 "giants" --
-        /// a serialized targetWorldHeight of 4.5 on the scene instances vs the intended 1.2.
-        /// The UI pedestrian population this manager spawns is the sole surviving one.
-        /// Presentation state is code-owned (Bible SS8), so this asserts the legacy objects
-        /// OFF each boot instead of enabling them; GameObjects, PedestrianWalkController, and
-        /// PedestrianWobble are ledgered in SS19 for physical removal in a scene cleanup pass.</summary>
-        private static void InitializeLegacyPedestrians()
-        {
-            PedestrianWalkController[] walkers = FindObjectsByType<PedestrianWalkController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < walkers.Length; i++)
-            {
-                PedestrianWalkController walk = walkers[i];
-                if (walk == null)
-                {
-                    continue;
-                }
-
-                walk.gameObject.SetActive(false);
             }
         }
 

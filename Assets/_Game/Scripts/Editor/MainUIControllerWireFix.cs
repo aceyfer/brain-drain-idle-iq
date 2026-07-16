@@ -82,26 +82,6 @@ namespace BrainDrain.EditorTools
             Debug.Log("[MainUIControllerWireFix] MainUIController wired and pedestrian container re-anchored.");
         }
 
-        [MenuItem("BrainDrain/Fix Pedestrian Visuals")]
-        public static void FixPedestrianVisuals()
-        {
-            if (EditorToolGuard.BlockedByPlayMode("MainUIControllerWireFix.FixPedestrianVisuals")) return;
-            if (!EditorSceneManager.GetActiveScene().isLoaded
-                || EditorSceneManager.GetActiveScene().path != ScenePath)
-            {
-                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            }
-
-            FixUIPedestrianContainer();
-            ReactivateLegacyPedestrianContainer();
-            ForceLegacyPedestriansStageOne();
-            UpdateBackgroundPedestrianManagerDefaults();
-
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            EditorSceneManager.SaveOpenScenes();
-            Debug.Log("[MainUIControllerWireFix] Pedestrian visuals restored: legacy container active, Stage 1 locked, BPM scale/wobble updated.");
-        }
-
         [MenuItem("BrainDrain/Wire Background Stage View")]
         public static void WireBackgroundStageView()
         {
@@ -248,77 +228,6 @@ namespace BrainDrain.EditorTools
         {
             rankProp.FindPropertyRelative("rankName").stringValue = rankName;
             rankProp.FindPropertyRelative("threshold").intValue = threshold;
-        }
-
-        private static void UpdateBackgroundPedestrianManagerDefaults()
-        {
-            BackgroundPedestrianManager manager = Object.FindAnyObjectByType<BackgroundPedestrianManager>(FindObjectsInactive.Include);
-            if (manager == null)
-            {
-                Debug.LogWarning("[MainUIControllerWireFix] BackgroundPedestrianManager not found.");
-                return;
-            }
-
-            SerializedObject so = new SerializedObject(manager);
-            so.FindProperty("pedestrianWidth").floatValue = 140f;
-            so.FindProperty("pedestrianHeight").floatValue = 280f;
-            so.FindProperty("walkBaselineY").floatValue = 0f;
-            so.FindProperty("wobbleVerticalAmplitude").floatValue = 14f;
-            so.FindProperty("wobbleRotationAmplitude").floatValue = 16f;
-            so.FindProperty("wobbleFrequency").floatValue = 8.5f;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(manager);
-        }
-
-        private static void ForceLegacyPedestriansStageOne()
-        {
-            PedestrianWalkController[] walkers = Object.FindObjectsByType<PedestrianWalkController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < walkers.Length; i++)
-            {
-                PedestrianWalkController walk = walkers[i];
-                if (walk == null)
-                {
-                    continue;
-                }
-
-                walk.enabled = true;
-                walk.SetStage(1);
-                EditorUtility.SetDirty(walk);
-
-                PedestrianWobble wobble = walk.GetComponent<PedestrianWobble>();
-                if (wobble != null)
-                {
-                    wobble.enabled = true;
-                    EditorUtility.SetDirty(wobble);
-                }
-
-                Animator animator = walk.GetComponent<Animator>();
-                if (animator != null)
-                {
-                    animator.enabled = true;
-                    EditorUtility.SetDirty(animator);
-                }
-
-                if (walk.transform.localScale != Vector3.one)
-                {
-                    walk.transform.localScale = Vector3.one;
-                    EditorUtility.SetDirty(walk.transform);
-                }
-            }
-        }
-
-        private static void ReactivateLegacyPedestrianContainer()
-        {
-            GameObject[] roots = EditorSceneManager.GetActiveScene().GetRootGameObjects();
-            for (int i = 0; i < roots.Length; i++)
-            {
-                if (roots[i].name == "PedestrianContainer" && roots[i].GetComponent<RectTransform>() == null)
-                {
-                    roots[i].SetActive(true);
-                    EditorUtility.SetDirty(roots[i]);
-                    return;
-                }
-            }
         }
 
         private static void AssignButton(SerializedObject so, string propertyName, string objectName)
