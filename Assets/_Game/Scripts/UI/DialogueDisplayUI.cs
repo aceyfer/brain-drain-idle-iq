@@ -39,6 +39,8 @@ namespace BrainDrain.UI
         private Coroutine activeRoutine;
         private Outline glowOutline;
         private Coroutine glowRoutine;
+        private DialogueManager subscribedDialogueManager;
+        private COGSPortraitController subscribedPortraitController;
 
         private void Awake()
         {
@@ -90,33 +92,37 @@ namespace BrainDrain.UI
             // Register listeners in Awake before deactivating the GameObject, ensuring they are bound
             if (DialogueManager.Instance != null)
             {
-                DialogueManager.Instance.OnDialogueLine.AddListener(HandleDialogueLine);
+                subscribedDialogueManager = DialogueManager.Instance;
+                subscribedDialogueManager.OnDialogueLine.AddListener(HandleDialogueLine);
             }
 
             if (COGSPortraitController.Instance != null)
             {
-                COGSPortraitController.Instance.OnStageChanged.AddListener(HandleStageChanged);
+                subscribedPortraitController = COGSPortraitController.Instance;
+                subscribedPortraitController.OnStageChanged.AddListener(HandleStageChanged);
 
-                if (COGSPortraitController.Instance.CurrentStage != null)
+                if (subscribedPortraitController.CurrentStage != null)
                 {
-                    HandleStageChanged(COGSPortraitController.Instance.CurrentStage);
+                    HandleStageChanged(subscribedPortraitController.CurrentStage);
                 }
             }
         }
 
         private void OnDestroy()
         {
-            // Only unregister if the singleton instances actually exist during shutdown to prevent leaks
-            var dialogueManager = FindAnyObjectByType<DialogueManager>();
-            if (dialogueManager != null)
+            // Unsubscribe from the exact instances Awake subscribed to, not a fresh lookup --
+            // Instance-vs-Find asymmetry could otherwise miss the original object during
+            // teardown (§19-4a).
+            if (subscribedDialogueManager != null)
             {
-                dialogueManager.OnDialogueLine.RemoveListener(HandleDialogueLine);
+                subscribedDialogueManager.OnDialogueLine.RemoveListener(HandleDialogueLine);
+                subscribedDialogueManager = null;
             }
 
-            var portraitController = FindAnyObjectByType<COGSPortraitController>();
-            if (portraitController != null)
+            if (subscribedPortraitController != null)
             {
-                portraitController.OnStageChanged.RemoveListener(HandleStageChanged);
+                subscribedPortraitController.OnStageChanged.RemoveListener(HandleStageChanged);
+                subscribedPortraitController = null;
             }
         }
 
