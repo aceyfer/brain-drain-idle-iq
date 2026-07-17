@@ -204,7 +204,7 @@ namespace BrainDrain.Systems
                 playerIQManager.OnOfflineDecayApplied += HandleOfflineDecayApplied;
             }
 
-            PlayerTapHandler tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            PlayerTapHandler tapHandler = PlayerTapHandler.Instance;
             if (tapHandler != null)
             {
                 tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
@@ -253,7 +253,7 @@ namespace BrainDrain.Systems
                 playerIQManager.OnOfflineDecayApplied -= HandleOfflineDecayApplied;
             }
 
-            PlayerTapHandler tapHandler = FindAnyObjectByType<PlayerTapHandler>();
+            PlayerTapHandler tapHandler = PlayerTapHandler.Instance;
             if (tapHandler != null)
             {
                 tapHandler.OnTapRewardEarned -= HandleTapRewardEarned;
