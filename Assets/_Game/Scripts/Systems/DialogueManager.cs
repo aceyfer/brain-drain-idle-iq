@@ -15,9 +15,11 @@ namespace BrainDrain.Systems
     /// Listens for gameplay triggers (first tap, building purchase, rebirth, event outcome,
     /// IQ milestone), picks a matching NarratorLine at random (filtered by trigger type,
     /// building name, and current RebirthCount range), and fires OnDialogueLine for UI to
-    /// display. Never repeats the same line twice in a row; queues up to 2 lines while one is
-    /// displaying, with a minimum gap between lines, same-trigger coalescing in the queue, and
-    /// a per-trigger cooldown on repeatable triggers (SS20). Line-pool tier selection is gated
+    /// display. Avoids repeating any line seen in the last 10 history entries (falling back to
+    /// a narrower last-line check, then the unfiltered candidate pool, so anti-repeat filtering
+    /// can never itself suppress a fire -- SS20b); queues up to 2 lines while one is displaying,
+    /// with a minimum gap between lines, same-trigger coalescing in the queue, and a per-trigger
+    /// cooldown on repeatable triggers (SS20). Line-pool tier selection is gated
     /// on WorldRestorationManager.RestorationPercent (switched from RebirthCount 2026-06-22 --
     /// see TryFireLine).
     ///
@@ -28,6 +30,7 @@ namespace BrainDrain.Systems
     public sealed class DialogueManager : MonoBehaviour
     {
         private const int MaxQueueDepth = 2;
+        private const int MaxHistoryEntries = 50;
         private const float DefaultDisplayDurationSeconds = 3f;
         private const int TapsWithoutPurchaseThreshold = 25;
         private const double SnottingReadyThreshold = 50_000d;
@@ -74,11 +77,29 @@ namespace BrainDrain.Systems
             }
         }
 
+        /// <summary>One recorded line in the session's dialogue history, exposed via History for UI (the dialogue log panel, SS20b).</summary>
+        public readonly struct DialogueLogEntry
+        {
+            public readonly string Text;
+            public readonly float SessionTime;
+            public readonly NarratorLine SourceLine;
+
+            public DialogueLogEntry(string text, float sessionTime, NarratorLine sourceLine)
+            {
+                Text = text;
+                SessionTime = sessionTime;
+                SourceLine = sourceLine;
+            }
+        }
+
         [Header("Line Pool")]
         [SerializeField] private List<NarratorLine> narratorLines = new();
 
         /// <summary>Fired with the line of dialogue to display. Concrete UnityEvent so it's wireable in the Inspector too.</summary>
         public DialogueLineUnityEvent OnDialogueLine = new();
+
+        /// <summary>Fired whenever a line is appended to History -- consumed by the dialogue log panel UI (SS20b).</summary>
+        public event System.Action OnHistoryChanged;
 
         private static DialogueManager instance;
         private static bool isShuttingDown;
@@ -108,9 +129,13 @@ namespace BrainDrain.Systems
         /// <summary>The display duration of the line most recently sent via OnDialogueLine.</summary>
         public float CurrentDisplayDurationSeconds { get; private set; } = DefaultDisplayDurationSeconds;
 
+        /// <summary>Read-only view of the session's dialogue history (oldest first), capped at MaxHistoryEntries -- backs the dialogue log panel UI (SS20b).</summary>
+        public IReadOnlyList<DialogueLogEntry> History => history;
+
         /// <summary>FIFO pending list (index 0 = next up). A List rather than a Queue so
         /// same-trigger coalescing can replace a stale queued entry in place.</summary>
         private readonly List<DialogueEntry> queuedEntries = new();
+        private readonly List<DialogueLogEntry> history = new();
         private readonly Dictionary<NarratorTriggerType, float> lastRepeatableFireTime = new();
         private bool isDisplaying;
         private NarratorLine lastPlayedLine;
@@ -379,9 +404,30 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            List<NarratorLine> pickFrom = candidates.Count > 1
-                ? candidates.Where(line => line != lastPlayedLine).ToList()
-                : candidates;
+            // Anti-repeat (SS20b): avoid any line seen in the last 10 history entries, falling
+            // back to the narrower last-line check, then the unfiltered candidate pool -- never
+            // let anti-repeat filtering itself empty the list and silently suppress a fire.
+            int recentWindowStart = Mathf.Max(0, history.Count - 10);
+            HashSet<NarratorLine> recentLines = new();
+            for (int i = recentWindowStart; i < history.Count; i++)
+            {
+                if (history[i].SourceLine != null)
+                {
+                    recentLines.Add(history[i].SourceLine);
+                }
+            }
+
+            List<NarratorLine> pickFrom = candidates.Where(line => !recentLines.Contains(line)).ToList();
+            if (pickFrom.Count == 0)
+            {
+                pickFrom = candidates.Count > 1
+                    ? candidates.Where(line => line != lastPlayedLine).ToList()
+                    : candidates;
+            }
+            if (pickFrom.Count == 0)
+            {
+                pickFrom = candidates;
+            }
 
             NarratorLine chosen = pickFrom[Random.Range(0, pickFrom.Count)];
 
@@ -471,6 +517,13 @@ namespace BrainDrain.Systems
             lastPlayedLine = entry.SourceLine;
             isDisplaying = true;
             CurrentDisplayDurationSeconds = entry.Duration;
+
+            history.Add(new DialogueLogEntry(entry.Text, Time.unscaledTime, entry.SourceLine));
+            while (history.Count > MaxHistoryEntries)
+            {
+                history.RemoveAt(0);
+            }
+            OnHistoryChanged?.Invoke();
 
             OnDialogueLine?.Invoke(entry.Text);
 
