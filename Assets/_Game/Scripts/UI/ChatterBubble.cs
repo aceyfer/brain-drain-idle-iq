@@ -84,7 +84,10 @@ namespace BrainDrain.UI
         /// bubble's lifetime with reading length. Presentation state is code-owned (Bible
         /// §8): the prefab serialized floatDuration 2s and TMP auto-sizing down to 14pt --
         /// unreadable, and dialogue is this game's identity. Duration: max(4s, 2s + 0.06s
-        /// per character), so a typical bark holds 5-7s.
+        /// per character), so a typical bark holds 5-7s. Also asserts a dark background chip
+        /// (0.06, 0.06, 0.1, 0.92), white label text, a 24pt font-size floor, and a 300x90
+        /// minimum rect so text stops wrapping inside a tiny chip -- the prefab shipped with
+        /// white-on-white text and an undersized rect, both unreadable in practice.
         /// </summary>
         public void SetText(string text)
         {
@@ -92,8 +95,24 @@ namespace BrainDrain.UI
             {
                 textLabel.text = text;
                 textLabel.enableAutoSizing = true;
-                textLabel.fontSizeMin = 20f;
+                textLabel.fontSizeMin = 24f;
                 textLabel.fontSizeMax = 28f;
+                textLabel.color = Color.white;
+            }
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = new Color(0.06f, 0.06f, 0.1f, 0.92f);
+            }
+
+            if (rectTransform == null)
+            {
+                rectTransform = GetComponent<RectTransform>();
+            }
+
+            if (rectTransform != null)
+            {
+                rectTransform.sizeDelta = Vector2.Max(rectTransform.sizeDelta, new Vector2(300f, 90f));
             }
 
             int chars = string.IsNullOrEmpty(text) ? 0 : text.Length;
