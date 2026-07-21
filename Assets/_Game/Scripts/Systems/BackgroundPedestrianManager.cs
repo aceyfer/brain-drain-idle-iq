@@ -67,6 +67,8 @@ namespace BrainDrain.Systems
 
         private readonly System.Collections.Generic.List<RectTransform> activePedestrians = new System.Collections.Generic.List<RectTransform>();
         private static readonly System.Collections.Generic.List<Sprite> StageOneSpriteBuffer = new System.Collections.Generic.List<Sprite>(8);
+        private static readonly System.Collections.Generic.HashSet<Sprite> OnScreenSpritesBuffer = new System.Collections.Generic.HashSet<Sprite>(8);
+        private static readonly System.Collections.Generic.List<Sprite> FilteredSpriteBuffer = new System.Collections.Generic.List<Sprite>(8);
 
         private static readonly float[] StageSpeedMultiplier = { 0.5f, 0.7f, 1.0f, 1.25f, 1.5f };
         private const float StumbleChancePerStep = 0.01f;
@@ -209,7 +211,12 @@ namespace BrainDrain.Systems
             return Mathf.Max(walkBaselineY, containerHeight - pedHeight);
         }
 
-        /// <summary>Picks Ped1..Ped6 Stage 1 art only; blocks Stage 2–6 sprites.</summary>
+        /// <summary>
+        /// Picks Ped1..Ped6 Stage 1 art only; blocks Stage 2–6 sprites. Prefers a sprite that
+        /// isn't already walking on screen, so identical pedestrians don't spawn together by
+        /// chance; falls back to the full candidate pool once population exceeds sprite
+        /// variety (never returns null just because every candidate is already on screen).
+        /// </summary>
         private Sprite PickStageOneSprite()
         {
             StageOneSpriteBuffer.Clear();
@@ -232,12 +239,7 @@ namespace BrainDrain.Systems
                 }
             }
 
-            if (StageOneSpriteBuffer.Count > 0)
-            {
-                return StageOneSpriteBuffer[Random.Range(0, StageOneSpriteBuffer.Count)];
-            }
-
-            if (dystopianPedestrianSprites != null)
+            if (StageOneSpriteBuffer.Count == 0 && dystopianPedestrianSprites != null)
             {
                 for (int i = 0; i < dystopianPedestrianSprites.Length; i++)
                 {
@@ -254,7 +256,34 @@ namespace BrainDrain.Systems
                 return null;
             }
 
-            return StageOneSpriteBuffer[Random.Range(0, StageOneSpriteBuffer.Count)];
+            OnScreenSpritesBuffer.Clear();
+            for (int i = 0; i < activePedestrians.Count; i++)
+            {
+                RectTransform ped = activePedestrians[i];
+                if (ped == null)
+                {
+                    continue;
+                }
+
+                Sprite onScreenSprite = ped.GetComponent<Image>()?.sprite;
+                if (onScreenSprite != null)
+                {
+                    OnScreenSpritesBuffer.Add(onScreenSprite);
+                }
+            }
+
+            FilteredSpriteBuffer.Clear();
+            for (int i = 0; i < StageOneSpriteBuffer.Count; i++)
+            {
+                if (!OnScreenSpritesBuffer.Contains(StageOneSpriteBuffer[i]))
+                {
+                    FilteredSpriteBuffer.Add(StageOneSpriteBuffer[i]);
+                }
+            }
+
+            System.Collections.Generic.List<Sprite> candidates =
+                FilteredSpriteBuffer.Count > 0 ? FilteredSpriteBuffer : StageOneSpriteBuffer;
+            return candidates[Random.Range(0, candidates.Count)];
         }
 
         private static bool IsStageOneSprite(Sprite sprite)
