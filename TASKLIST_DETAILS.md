@@ -114,6 +114,10 @@ Doc closeout for Phase A: `516ce70`.
 ## §19 Deferred — dead code awaiting explicit rip approval, and open cosmetics
 Nothing here blocks anything; logged so it doesn't get silently forgotten or opportunistically ripped mid-unrelated-commit.
 
+**Protocol note, added 2026-07-21 (mirrors `PROJECT_BIBLE.md` §8):** every commit adding a new `.cs` file must be immediately followed by committing its Unity-generated `.meta` before any scene referencing that script's GUID ships. The §20b C3/C4 split left `DialogueLogPanelUI.cs.meta` untracked while `eae2c5d` (scene wiring) already referenced its GUID — a fresh clone would have had Unity assign a *different* GUID to the orphaned script and silently broken the scene wiring. Caught in-session, fixed by committing the `.meta` (`8bb4edc`) before push.
+
+**Pending decision — untracked working-tree artifacts from other AI lanes (added 2026-07-21):** `.cursor/`, `CODEX_FINDINGS.md`, and assorted `.patch` files (`cash-bootstrap-fix.patch`, `retire-legacy-walkers.patch`, `s20-dialogue-pacing.patch`, `s20-docs-closeout.patch`, `s21-s22-docs.patch`, `s7-doc-sync.patch`, `s8-docs-closeout.patch`, `s8-guard-editor-tools.patch`, `shop-sort-tiebreak.patch`) sit untracked in the working tree. Each needs a per-file call from Aceyfer — commit, `.gitignore`, or delete — same machine-local-state risk class as the `Phase2AThreeIssueEditor.cs` marker files below: invisible to git, present only on this machine, silently different (or absent) on a fresh clone.
+
 **Dead code, retained pending explicit approval to remove:**
 - `RestorationSlotUI` — the RP-tab slot prefab/script, unused now that the third tab is the God Shop. Also the source of the clone-refs-captured-first footgun documented in §16 Phase B1 — worth reading before anyone reaches for this class as a template again.
 - `GodTierStoreUIController` — superseded by the God Shop tab work landing directly in `ShopUIController`; not wired to anything live.
@@ -163,8 +167,23 @@ The original framing ("no queue") was stale — a depth-2 queue already existed.
 **Adjacent fixes landed same arc:** `780eb8a` — shop item shuffle: 11/16 buildings share `unlockCumulativeBrainPower=0` and `List.Sort` is unstable, so equal keys landed in arbitrary order per rebuild; comparator now tie-breaks by `baseCost` then name. `06aaa87` — the §18 "giants" were the scene-placed legacy world walkers (`PedestrianContainer` root / Ped1-6) rendering at a scene-serialized `targetWorldHeight` of **4.5** (vs the intended 1.2 from `0ec69f9`), and `BackgroundPedestrianManager.InitializeLegacyPedestrians()` was force-re-enabling them every boot; the method now asserts them OFF each boot instead (retirement pattern, same as COGSWorldPortraitUI/DioramaManager). UI pedestrian population is the sole survivor.
 **Codex audit verdict (Cooldown Protocol, Bible §12):** trigger inventory, queue mechanics, and pipeline-separation findings verified accurate; one factual error caught (claimed `PlayerTapHandler` has no `.Instance` — it does, at :37, non-auto-creating); one material analytical miss (the timer desync above). Findings 4a/4b routed to §19; 4c matched the existing §19 pattern-review entry.
 
-### §20b Dialogue log panel + button (scoped 2026-07-15, not started)
-GTA-style scrollable history of narrator lines (Aceyfer request): DialogueManager keeps a line history; a button opens a scroll panel to re-read past lines. Also the natural home for anti-repeat (skip lines already in recent history). Design + patch when picked up.
+### §20b Dialogue log panel + button — SHIPPED 2026-07-19 (code pending final play-check)
+GTA-style scrollable history of narrator lines (Aceyfer request), also the natural home for anti-repeat (skip lines already in recent history).
+**Feature code (C3, `e2b08d1`):** `DialogueManager` keeps a 50-entry ring-buffer line history plus a 10-line anti-repeat window (falls back gracefully once history is shorter than the window); new `DialogueLogPanelUI` renders it.
+**Scene wiring (C4, `eae2c5d`):** log panel + HUD open button wired into `SampleScene.unity`.
+**`.meta` (`8bb4edc`):** the C3/C4 split left `DialogueLogPanelUI.cs.meta` untracked while `eae2c5d` already referenced its GUID — committed after the fact once caught; GUID (`fda989633beb4a74aa3e3ec561ddba53`) verified matching the scene's `m_Script` reference. See the new protocol note under §19 and `PROJECT_BIBLE.md` §8 — this is the finding that produced it.
+**Remaining before CLOSED:**
+(a) Cosmetic layout pass (Aceyfer's Editor hands, steps agreed in-session): panel dark/resize, LogText ~30pt, buttons moved to corners.
+(b) Play-check: empty-log message, live update while the panel is open, X close, confirm narrator slide is unaffected.
+**Note:** `LogCloseButton` is parented under `LogScrollView` instead of the panel directly — harmless, folded into the cosmetic pass above as a tidy-up candidate, not a bug.
+**Note:** the open button reads "Dia-Log" in-scene — cosmetic-pass candidate.
+
+### §20c Chatter bubble + pedestrian spawner fixes — SHIPPED 2026-07-21 (code-only), Aceyfer play-check pending
+Three commits, all `.cs`-only — no scene/prefab edits:
+1. `429617a` — fade curve. `ChatterBubble.Update()` faded linearly from the moment of spawn (`alpha = 1f - t`) — the real "fades too quick" complaint despite `SetText`'s longer duration. Now holds full opacity through 70% of lifetime, fading only over the final 30%.
+2. `c83fa76` — readability. Dark background chip (`0.06, 0.06, 0.1, 0.92`), white label text, 24pt font-size floor (was 20pt), 300×90 minimum rect — code-owned per Bible §8/§2.3. Supersedes the earlier `de8d202` SetText half-fix (§18): that pass raised duration and the font floor to 20pt but left contrast (white text going white-on-white) and rect sizing untouched — this closes both the §18 "not fully closed" note and the §19 "chatter bubbles unreadable" open-cosmetic entry, pending play-check confirmation below.
+3. `8940ee6` — duplicate-NPC fix. `PickStageOneSprite` picked with replacement, so visually identical pedestrians could walk together by chance (confirmed on-screen by Aceyfer). Now excludes sprites already active on screen, falling back to the full candidate pool once population exceeds sprite variety (never returns null because of the filter).
+**Pending:** Aceyfer play-check — bubble readability/spacing in Play mode, and duplicate-sprite frequency over a longer session.
 
 ## §21 World portrait position tune — CLOSED 2026-07-15
 Verified clear by Aceyfer in Play mode: nothing overlaps or crowds THE SNOTTING button/badge (top-right). Largely moot since the world portrait itself was retired in the §17/§18 arc. No action taken, none needed.

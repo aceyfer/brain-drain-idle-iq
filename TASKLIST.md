@@ -19,7 +19,8 @@
 - [x] 17. COGS portrait/dialogue visibility — four stacked root causes fixed (details §17, commits `1e01517`/`7fac5d8`/`05c7c13`/`5d3085c`)
 - [x] 18. Oversized pedestrians — CLOSED. Three root causes: unnormalized source art + inconsistent hand scales, Animator sprite-swap overriding normalization, rank-figure diorama compositing over the game via Diorama Camera (details §18, commits `aba3091`/`0ec69f9`/`49cda11`/`6d7f709`)
 - [x] 20. Dialogue pacing/queue in DialogueManager — CLOSED. Codex findings audited (1 factual error caught); commits: `3e44480` pacing (min-gap + cooldown + coalescing), `780eb8a` shop sort determinism, `06aaa87` legacy walker retirement (details §20)
-- [ ] 20b. Dialogue log panel + button (GTA-style narrator-line history; also enables anti-repeat) — scoped, not started (details §20)
+- [~] 20b. Dialogue log panel + button (GTA-style narrator-line history; also enables anti-repeat) — SHIPPED, play-check pending (details §20)
+- [~] 20c. Chatter bubble fade curve + readability + pedestrian duplicate-NPC fix — SHIPPED, play-check pending (details §20)
 - [x] 21. World portrait overlap check — CLOSED, verified clear by Aceyfer in Play mode 2026-07-15 (moot anyway: world portrait retired §17/§18); SNOTTING badge sits alone top-right (details §21)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
