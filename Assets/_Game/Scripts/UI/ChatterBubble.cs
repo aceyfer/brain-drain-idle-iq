@@ -4,8 +4,10 @@ using TMPro;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// Displays a temporary floating UI speech bubble that drifts upward and fades out,
-    /// tracking a target pedestrian's X coordinate if available.
+    /// Displays a temporary floating UI speech bubble that drifts upward while tracking a
+    /// target pedestrian's X coordinate if available. Holds full opacity for the first 70%
+    /// of its lifetime, then fades linearly to zero over the final 30% (avoids the bubble
+    /// looking half-gone at mid-life despite SetText's longer duration).
     /// </summary>
     public sealed class ChatterBubble : MonoBehaviour
     {
@@ -118,10 +120,11 @@ namespace BrainDrain.UI
                 rectTransform.anchoredPosition = new Vector2(lastKnownX, currentY);
             }
 
-            // Fade out
+            // Fade out: hold full opacity through 70% of lifetime, then fade over the last 30%
             if (canvasGroup != null)
             {
-                canvasGroup.alpha = 1f - t;
+                float alpha = t < 0.7f ? 1f : 1f - ((t - 0.7f) / 0.3f);
+                canvasGroup.alpha = Mathf.Clamp01(alpha);
             }
 
             if (elapsed >= floatDuration)
