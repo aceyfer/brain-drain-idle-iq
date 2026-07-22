@@ -212,6 +212,90 @@ The 16-building economy had never been re-simulated (the original `balance_sim.j
 - **(C) Deferred, not this pass:** a re-readable "INTEL" briefing card, styled like the §20b dialogue log panel, so a player can revisit the premise/lore after the initial briefing scrolls past. Logged here so it isn't lost, not scoped or started.
 **Status:** scoped only, no code written yet. Blocks §11 — the "first playable" cut-line decision can't be finalized while the game's premise is undiscoverable to a first-time player.
 
+## Creative package (approved 2026-07-22)
+
+**Design:** two narrator channels. Main COGS (Illumisnotti propaganda, reverse-psychology anti-tutorials — tells the player NOT to do the thing they should do) vs. THE LITERATES resistance cards (correctly-spelled truth, delivered as fake-business-front dead-drops with handwritten backs). All FTUE beats are OK-confirmed modals except two COGS ambient lines, which run through the regular (non-modal) narrator panel instead. COGS modals are capped at exactly 2 across the entire pass (the boot briefing and SnottingReady) — every other beat routes through THE LITERATES card channel.
+
+**System:** new `FTUEManager` owns seen-flags (persisted in the main save, not a separate file), beat sequencing, and modal spawns. Reusable `IntelCardUI` with two skins (COGS terminal skin, card skin) backs both channels rather than building two separate UIs. Popup-tier stacking: FTUE modals defer behind event popups, never interrupt them. `DialogueManager` itself stays untouched except the boot-briefing sequence, which replaces the currently-hardcoded first-play lines in `Start()`.
+
+### Beat 1 — COGS BOOT BRIEFING (first-ever play, modal, COGS terminal skin)
+GOOD MORNING, ASSET. YOU HAVE BEEN ASLEEP FOR: TOO LONG.
+WHILE YOU SLEPT, YOUR BRAIN WAS REZONED AS COMMERCIAL PROPERTY.
+I AM COGS. I AM YOUR FRIEND. I AM ALSO LEGALLY REQUIRED TO SAY THAT.
+YOUR JOB IS SIMPLE: TAP YOUR HEAD. THE JUICE COMES OUT. THE ILLUMISNOTTI
+COLLECT IT. EVERYONE WINS. MOSTLY THEM. THAT'S WHAT WINNING MEANS.
+DO NOT READ ANYTHING. DO NOT THINK ABOUT WHERE THE JUICE GOES. TAP THE
+WASTELAND.
+Confirm: [ OK, HARVEST ME ]
+
+### Beat 2 — CARD #1 (~10s after briefing closes, card skin)
+Front: GARY'S DISCOUNT MATTRESS EMPORIUM — "We Also Have Soup"
+Back: They're metering your head. But here's what the tin can won't tell
+you: every tap leaks a little light back into the world. Watch the sky. It
+remembers.
+Don't let COGS pick what you buy. Don't let COGS pick anything.
+— The Literates
+p.s. burn after reading. actually don't. read it twice. reading twice is
+how we got like this. the good version of like this.
+Confirm: [ I READ IT. ALL OF IT. ]
+
+### Beat 3 — CARD #2 (first shop open, card skin)
+Front: SNAKE UTTERS WHOLESALE — "Ask About Our Utters"
+Back: Buildings make juice while you nap. COGS calls that "theft of company
+time." Do it anyway — sleeping on the job is the only job worth having.
+Buy cheap ones first. The math is friendlier. We checked. We're the last
+people who check math.
+— TL
+Confirm: [ MATH CONFIRMED ]
+
+### Beat 4 — COGS ambient (FirstCashEarned, regular narrator panel, NOT
+modal)
+ALERT: YOU HAVE DISCOVERED "CASH." DO NOT CONVERT BRAIN POWER INTO CASH.
+CASH LEADS TO BUYING. BUYING LEADS TO CHOICES. CHOICES LEAD TO THINKING. I
+AM WATCHING YOU, SPECIFICALLY.
+
+### Beat 5 — CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4)
+Front: ARMADILLO SAUCE LEGAL SERVICES — "It Goes With Everything, Including
+Court"
+Back: It just told you not to convert, didn't it. Funny how the thing
+metering your head panics when you spend what's yours.
+Convert. Buy. Repeat. That's the whole machine. Now it's your machine.
+— TL
+Confirm: [ MY MACHINE NOW ]
+
+### Beat 6 — COGS ambient (FirstRestoreSpend, regular narrator panel, NOT
+modal)
+YOU SPENT YOUR POINTS ON... FIXING THINGS? THE ILLUMISNOTTI HAVE REVIEWED
+YOUR PURCHASE AND FILED IT UNDER "ADORABLE." CARRY ON. IT'S A ROUNDING
+ERROR.
+
+### Beat 7 — CARD #4 (FirstRestoreSpend, modal)
+Front: CHEESE DIRT MEMORIAL FOUNDATION — "Never Forget The Flavor"
+Back: Every point you put into the world makes the streets a little smarter
+and their grip a little weaker. They allow it because they think it's a
+rounding error.
+Be a rounding error. Be the biggest rounding error they've ever seen.
+— TL
+Confirm: [ ROUNDING UP ]
+
+### Beat 8 — COGS CORE INTEL #2 (SnottingReady, modal, COGS terminal skin —
+the ONLY other COGS modal)
+MANDATORY NOTICE: YOU NOW QUALIFY FOR THE SNOTTING.
+YOUR BRAIN WILL BE REPOSSESSED, WIPED, AND REISSUED WITH A PRODUCTIVITY
+MULTIPLIER.
+YOU WILL LOSE: EVERYTHING. YOU WILL GAIN: MORE OF EVERYTHING, FASTER.
+THE ILLUMISNOTTI CALL THIS "A PROMOTION." PARTICIPATION IS VOLUNTARY, WHICH
+IS OUR FAVORITE KIND OF MANDATORY.
+Confirm: [ OK, REPOSSESS ME (LATER) ]
+
+### Lore constants
+The resistance = THE LITERATES: the last people who read anything; every
+card correctly spelled and punctuated in a world of degraded text —
+literacy as rebellion. COGS considers reading terrorism. Card fronts are
+fake mundane businesses (dead-drop style); backs are handwritten truth.
+Confirm buttons are a joke channel: COGS confirms = compliance language,
+card confirms = literacy language.
+
 ---
 
 ## DECISION LOG
