@@ -27,6 +27,7 @@
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $5.00 (details §10)
 
 ## THEN — Path to Market
+- [ ] 23. FTUE / comprehension pass (COGS-narrated onboarding) — scoped, BLOCKS §11 (details §23)
 - [ ] 11. Define "first playable" cut line — what ships v1, what waits (details §11)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
 - [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)

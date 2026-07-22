@@ -204,6 +204,14 @@ The 16-building economy had never been re-simulated (the original `balance_sim.j
 - **Bible §6 anomalies (a) IQ Overclock inversion and (b) default-1-BPPS on 3 Cash buildings: LEFT AS-IS by Aceyfer's call** — the original values came from a deliberate speed-run tuning pass for the daily-return loop, and the sim confirms both are noise (high tiers dominate). (c) flat unlock curve: also left; shop sort (`780eb8a`) keeps display sane.
 - Underground Economy's shop position (below all unlock-0 buildings despite the 75 cost) is the unlock-first sort working as designed; its ×1.38 multiplier self-limits spam (level 10 ≈ 1,360 BP). Slot UI's per-level CPS display includes the player's effective Cash multiplier — a rebirth-stacked test save showing "+$12/s" for a $5/s base is correct, not a bug.
 
+## §23 FTUE / comprehension pass (COGS-narrated onboarding) — scoped 2026-07-22, BLOCKS §11
+**Problem:** the core loop is mechanically playable, but its meaning — that COGS is narrating for the Illumisnotti (the player's actual employer), the brain-harvesting premise, the dystopia→utopia World Restoration arc, and what Snotting/rebirth even represents — is undiscoverable in-game. Nothing currently teaches any of this; a first-time player taps, buys buildings, and sees numbers go up with zero narrative context. This directly blocks §11's two-minute-click bar (a fresh player has to understand what they're doing well before the two-minute mark, not eventually piece it together from narrator barks alone).
+**Scope agreed with Claude (chat):**
+- **(A) First-ever-play scripted COGS boot briefing (4-5 lines).** Needs a new scripted-sequence path in `DialogueManager` — the current queue (depth 2, min-gap/cooldown/coalescing per §20) is built for independent, self-contained trigger-driven barks, not an ordered narrative chain that must play start-to-finish once at boot. This is new mechanism, not a reuse of the existing queue.
+- **(B) Contextual one-shot `NarratorLine`s on existing triggers** (`FirstCashEarned`, `FirstRestoreSpend`, `SnottingReady`) — in-character explanations of each mechanic the first time the player actually encounters it, riding the existing trigger/pool infrastructure (no new plumbing, just new gated-once lines).
+- **(C) Deferred, not this pass:** a re-readable "INTEL" briefing card, styled like the §20b dialogue log panel, so a player can revisit the premise/lore after the initial briefing scrolls past. Logged here so it isn't lost, not scoped or started.
+**Status:** scoped only, no code written yet. Blocks §11 — the "first playable" cut-line decision can't be finalized while the game's premise is undiscoverable to a first-time player.
+
 ---
 
 ## DECISION LOG
