@@ -108,6 +108,17 @@ namespace BrainDrain.Systems
         public long iqLastUpdateUtcTicks;
         /// <summary>Stable string IDs of world-restoration milestones the player has permanently completed.</summary>
         public List<string> completedRestorationIds;
+
+        // -- §23 FTUE seen-flags (2026-07-22) -- gate each onboarding beat to fire at most once
+        // ever. Bools zero-fill to false on saves predating these fields, which is already the
+        // correct "never seen" default -- no migration guard needed, unlike tapMultiplier/the
+        // shop multipliers above where 0 isn't a legitimate value.
+        public bool ftueBootBriefingSeen;
+        public bool ftueCard1Seen;
+        public bool ftueCard2Seen;
+        public bool ftueCashBeatSeen;
+        public bool ftueRestoreBeatSeen;
+        public bool ftueSnottingIntelSeen;
     }
 
     /// <summary>
@@ -677,7 +688,13 @@ namespace BrainDrain.Systems
                 saveVersion = 4,
                 currentStage = 1,
                 iqLastUpdateUtcTicks = DateTime.UtcNow.Ticks,
-                completedRestorationIds = new List<string>()
+                completedRestorationIds = new List<string>(),
+                ftueBootBriefingSeen = false,
+                ftueCard1Seen = false,
+                ftueCard2Seen = false,
+                ftueCashBeatSeen = false,
+                ftueRestoreBeatSeen = false,
+                ftueSnottingIntelSeen = false
             };
         }
     }
