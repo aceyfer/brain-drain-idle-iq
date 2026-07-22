@@ -29,6 +29,9 @@
 .DS_Store
 Thumbs.db
 
+# Machine-local MCP config with session token; never commit
+.cursor/
+
 # Crashlytics
 crashlytics-build.properties
 
