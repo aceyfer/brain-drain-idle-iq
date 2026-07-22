@@ -296,6 +296,19 @@ fake mundane businesses (dead-drop style); backs are handwritten truth.
 Confirm buttons are a joke channel: COGS confirms = compliance language,
 card confirms = literacy language.
 
+**§23 implementation status (checked against `git log`, 2026-07-22): scoped only, no code written yet.** No `FTUEManager`, `IntelCardUI`, or boot-briefing sequencing exist in the repo — only the two docs commits (`10c792c` scope, `0325a0d` creative package) have landed. Not started.
+
+## §24 Dialogue log v2 + The Pocket — scoped 2026-07-22, not started, after §23
+Three parts, one section since they share the log panel's UI surface:
+**(a) Log polish (bug, found 2026-07-22):** `LogScrollView`'s default `Image` covers the dark panel chip laid down in the §20b layout tune (`6f3dba5`) — the scroll view's own background renders on top of `DialogueLogPanel`'s dark color, washing the log out. Root cause identified, fix not yet written: assert the scroll view's `Image.color.a = 0` code-owned in `DialogueLogPanelUI.Awake()` (same "own it in code, don't trust scene state" pattern as Bible §8's other scar-tissue entries), plus a general readability pass on the log contents while that file's open.
+**(b) Split the log into two tabs:** COGS (the existing `DialogueManager` history, already built §20b) and STREET (pedestrian chatter). STREET requires new plumbing — `RandomChatterManager`/`BackgroundPedestrianManager`'s chatter lines are currently fire-and-forget (no history at all, per §19's pipeline-separation note off the §20 audit); recording spawned chatter into a STREET-side history mirrors what `DialogueManager` already does for its own lines, but is new work, not a tab-swap over existing data.
+**(c) THE POCKET:** a persistent inventory of collected Literates cards. Every card confirmed during §23's FTUE pass gets added to the pocket and stays re-readable afterward — **this absorbs and supersedes §23 part C** (the standalone re-readable INTEL card idea is now just the pocket). Pocket button sits near the existing Dia-Log open button; the card list reuses §23's `IntelCardUI` card skin for re-display rather than building new card-rendering UI; collected-card IDs persist in save data (new `SaveManager` field, same pattern as every other persisted collection in this project).
+**Status:** scoped only, no code written. Depends on §23 landing first (the pocket has nothing to collect until FTUE cards exist).
+
+## §25 CONCEPT — COGS counterfeits the resistance — logged 2026-07-22, NOT SCOPED, post-first-playable
+Aceyfer idea, endgame content: at a late restoration/rank threshold, COGS catches on to THE LITERATES and starts slipping its own fake cards into circulation (GLaDOS-style) — near-perfect typography with a subtly wrong spelling, and advice that reads like resistance wisdom but quietly serves the Illumisnotti (e.g. "The Literates say: converting cash is for suckers"). The player has to learn to spot forgeries — deepens §23/§24's "read carefully" theme from a narrative flavor into an actual mechanic (a wrong read costs something, or a correct catch rewards something — mechanic itself undefined).
+**Status:** concept only, not scoped, no acceptance criteria, no system design. Deliberately parked until first-playable ships — logged here so a good idea from a real conversation doesn't get lost before then.
+
 ---
 
 ## DECISION LOG

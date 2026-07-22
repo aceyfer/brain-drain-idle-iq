@@ -28,6 +28,7 @@
 
 ## THEN — Path to Market
 - [ ] 23. FTUE / comprehension pass (COGS-narrated onboarding) — scoped, BLOCKS §11 (details §23)
+- [ ] 24. Dialogue log v2 + The Pocket (log polish, COGS/STREET tab split, card pocket — supersedes §23c) — scoped, not started, after §23 (details §24)
 - [ ] 11. Define "first playable" cut line — what ships v1, what waits (details §11)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
 - [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)
@@ -38,3 +39,4 @@
 - ShopTabView virtualization + real purchase routing (dormant by design)
 - Shop-3/Points family (PointsShopPanel/CashShopPanel/ConvertPanel) reconciliation
 - UIBlockDebugger legacy-Input rewrite (quarantined)
+- §25 concept: COGS counterfeits the resistance (endgame content, post-first-playable) — not scoped (details §25)
