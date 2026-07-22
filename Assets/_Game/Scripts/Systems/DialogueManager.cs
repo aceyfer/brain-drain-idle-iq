@@ -163,13 +163,8 @@ namespace BrainDrain.Systems
         {
             SubscribeToEvents();
 
-            bool isFirstEverPlay = CurrencyManager.Instance != null
-                && CurrencyManager.Instance.CumulativeBrainPower == 0d
-                && (RebirthManager.Instance == null || RebirthManager.Instance.RebirthCount == 0);
-            if (isFirstEverPlay)
-            {
-                ShowPriorityLine("TAP THE WASTELAND. BRAIN POWER WON'T GENERATE ITSELF.", 5f);
-            }
+            // First-ever-play boot line used to be hardcoded here; FTUEManager (§23) now owns
+            // first-ever-play detection and the boot briefing sequence in its place.
         }
 
         private void OnApplicationQuit()

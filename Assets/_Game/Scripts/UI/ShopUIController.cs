@@ -81,6 +81,9 @@ namespace BrainDrain.UI
 
         public event Action ShopClosed;
 
+        /// <summary>Fired every time the shop is opened. Added for FTUEManager's §23 "first shop open" beat -- no prior shop-open signal existed (only ShopClosed).</summary>
+        public event Action ShopOpened;
+
         private void Awake()
         {
             ResolveDependencies();
@@ -215,6 +218,8 @@ namespace BrainDrain.UI
                 Vector2 offscreenAbove = shopPanelRestingPosition + new Vector2(0f, shopPanelRect.rect.height);
                 AnimationController.PlaySlide(shopPanelRect, offscreenAbove, shopPanelRestingPosition, SlideDurationSeconds);
             }
+
+            ShopOpened?.Invoke();
         }
 
         public void CloseShop()

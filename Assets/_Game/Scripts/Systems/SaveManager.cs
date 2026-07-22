@@ -394,6 +394,16 @@ namespace BrainDrain.Systems
                 data.profanityEnabled = RandomChatterManager.Instance.ProfanityEnabled;
             }
 
+            if (FTUEManager.Instance != null)
+            {
+                data.ftueBootBriefingSeen = FTUEManager.Instance.BootBriefingSeen;
+                data.ftueCard1Seen = FTUEManager.Instance.Card1Seen;
+                data.ftueCard2Seen = FTUEManager.Instance.Card2Seen;
+                data.ftueCashBeatSeen = FTUEManager.Instance.CashBeatSeen;
+                data.ftueRestoreBeatSeen = FTUEManager.Instance.RestoreBeatSeen;
+                data.ftueSnottingIntelSeen = FTUEManager.Instance.SnottingIntelSeen;
+            }
+
             if (CashShopManager.Instance != null)
             {
                 data.cashShopOwnedItemIds = new List<string>();
@@ -598,6 +608,13 @@ namespace BrainDrain.Systems
             PlayerTapHandler.Instance?.SetTapMultiplier(data.tapMultiplier);
             CashShopManager.Instance?.LoadState(data.cashShopOwnedItemIds);
             RandomChatterManager.Instance?.LoadState(data.profanityUnlocked, data.profanityEnabled);
+            FTUEManager.Instance?.LoadState(
+                data.ftueBootBriefingSeen,
+                data.ftueCard1Seen,
+                data.ftueCard2Seen,
+                data.ftueCashBeatSeen,
+                data.ftueRestoreBeatSeen,
+                data.ftueSnottingIntelSeen);
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
