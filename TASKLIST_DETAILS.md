@@ -60,6 +60,8 @@ SceneManagerWiring, ShopPanelLayoutFix, PlaceholderArtGenerator, PedestrianAlpha
 ## §11 First-playable cut line
 Proposal to react to (Aceyfer decides): v1 ships = core click loop, 6-stage World Restoration, 16-building shop, ranks, Gary + COGS barks, rebirth, offline decay. v1 waits = ShopTabView virtualization, Shop-3/Points polish, chapter art beyond current, Bad Words Pack (needs §12). Write the verdict here, then the Bible First-Playable Checklist becomes the single source.
 
+**Verdict (Aceyfer, 2026-07-23): PROVISIONALLY PASSED — "playable."** Provisional because §26's economy display/design audit (opened same day) surfaced description-vs-implementation mismatches and an undocumented IQ mechanic that should get an explicit approve/reject pass before this is called fully closed. Nothing found blocks play; all findings are either cosmetic (wrong flavor text) or docs staleness (Bible §6).
+
 **Play-check items moved from §20b (2026-07-21), not dropped by closing that task:**
 - [ ] Dialogue log empty-state message displays correctly
 - [ ] Dialogue log updates live while the panel is open
@@ -321,6 +323,20 @@ Three parts, one section since they share the log panel's UI surface:
 ## §25 CONCEPT — COGS counterfeits the resistance — logged 2026-07-22, NOT SCOPED, post-first-playable
 Aceyfer idea, endgame content: at a late restoration/rank threshold, COGS catches on to THE LITERATES and starts slipping its own fake cards into circulation (GLaDOS-style) — near-perfect typography with a subtly wrong spelling, and advice that reads like resistance wisdom but quietly serves the Illumisnotti (e.g. "The Literates say: converting cash is for suckers"). The player has to learn to spot forgeries — deepens §23/§24's "read carefully" theme from a narrative flavor into an actual mechanic (a wrong read costs something, or a correct catch rewards something — mechanic itself undefined).
 **Status:** concept only, not scoped, no acceptance criteria, no system design. Deliberately parked until first-playable ships — logged here so a good idea from a real conversation doesn't get lost before then.
+
+## §26 Economy display/design audit — opened 2026-07-23, READ-ONLY REPORT FILED, pending Aceyfer approve/reject
+Read-only audit of all 16 building `.asset` files against their `description` text and the live `UpgradeSlotUI` display formula, plus a separate verification pass on `PlayerIQManager.DecayOvercharge` wiring and the HUD's OVERCHARGED label threshold. No code or asset changes made this pass. Findings, ranked by player-facing severity, each with a proposed fix awaiting Aceyfer's call:
+
+1. **HIGH — Jumper Cables.** Description promises "+BP per tap"; implementation is passive 1 BP/s idle income identical to any other building. Verified zero code path connects any `BuildingData` field to `PlayerTapHandler.tapMultiplier` (only `RebirthManager`/Cash-Shop items touch it). Shop slot shows the false tap promise and the real "+1 BP/s" in the same text block. *Proposed fix: reword description to match reality.*
+2. **HIGH — IQ Overclock Chip.** Description promises "Raises max IQ"; implementation is the same flat +1 PlayerIQ every building grants on purchase (`UpgradeManager.TryBuyBuilding`, unconditional), plus ordinary BPPS. No "max IQ" stat exists anywhere to raise. *Proposed fix: reword description, or scope a real unique mechanic separately.*
+3. **HIGH — Undocumented "Overcharged IQ" system** (landed commit `7a8eacf`, 2026-06-30, bundled/un-synced). `CurrencyManager.GetIQProductionMultiplier()` now extends to 1.25x at IQ 200, and `PlayerIQManager.DecayOvercharge()` is a genuine live decay loop (subscribed to `GameManager.OnSecondTick`) draining IQ above 100 back toward 100 at 0.1/sec — both contradict CLAUDE.md/Bible's current documented IQ model ("no live decay," "clamped to max 1"). Wiring verified correct and firing as intended, not broken. Design tension flagged: the fixed decay rate vs. exponentially-scaling building costs may make the 1.25x bonus rarely sustain. *Proposed fix: doc-sync CLAUDE.md/Bible §6 (no code change); Aceyfer confirms the decay-vs-bonus pacing is intentional.*
+4. **MEDIUM — OVERCHARGED HUD label "fires at exactly IQ 100."** Not a comparison bug — `HUDController.cs` already uses `> 100f`, correctly strict. The appearance comes from `:F0` display rounding combined with finding #3's decay loop parking real IQ in the 100.0–100.99 band for long stretches. *Proposed fix: none required on logic; cosmetic tweak (extra decimal or higher visual threshold) optional.*
+5. **MEDIUM — Bible §6 economy table stale for Underground Economy; documented "8 per tab" split is currently wrong.** Actual asset (`baseCost: 75`, `costType: BrainPower`) matches §22's own fix commit `29f9672`, but Bible §6's table still shows pre-fix values (`baseCost 15`, listed under Cash tab). Real live split is 9 BP / 7 Cash, not 8/8. Docs-only issue, not a gameplay bug. *Proposed fix: update Bible §6's table row + "8 per tab" language.*
+6. **LOW — Three uncoordinated Overcharge-adjacent thresholds** (HUD `>100`, `GaryBarkManager` bark at 125, production curve 100–200) — matches this codebase's existing "independent trackers by convention" pattern, not inherently broken. *Proposed fix: none required; confirm intentional.*
+7. **LOW — `PlayerIQManager.Start()` subscribes to `OnSecondTick` without this codebase's usual defensive `-=`/`+=` double-subscribe guard.** Likely harmless (`Start()` runs once) but a convention deviation. *Proposed fix: add the guard next time the file is open.*
+8. **Noted, not ranked — Doomscroll Engine** costs Cash but produces 0 Cash (0.3 BPPS only). Nothing promises otherwise; §22's re-sim already passed the overall economy.
+
+**Status:** report filed, no fixes applied. Awaiting Aceyfer's per-finding approve/reject before any of the above lands as code/docs changes.
 
 ---
 
