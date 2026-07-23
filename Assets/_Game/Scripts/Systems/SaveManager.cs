@@ -119,6 +119,13 @@ namespace BrainDrain.Systems
         public bool ftueCashBeatSeen;
         public bool ftueRestoreBeatSeen;
         public bool ftueSnottingIntelSeen;
+
+        // -- §23 Beat 9 "THE NAME" reveal (added 2026-07-23) -- fires at >= 180s of cumulative
+        // first-play session time. ftueNameRevealElapsedSeconds persists the running timer so a
+        // player who quits before the threshold resumes the countdown next session instead of
+        // restarting it; 0f zero-fills correctly for saves predating this field.
+        public bool ftueNameRevealSeen;
+        public float ftueNameRevealElapsedSeconds;
     }
 
     /// <summary>
@@ -711,7 +718,9 @@ namespace BrainDrain.Systems
                 ftueCard2Seen = false,
                 ftueCashBeatSeen = false,
                 ftueRestoreBeatSeen = false,
-                ftueSnottingIntelSeen = false
+                ftueSnottingIntelSeen = false,
+                ftueNameRevealSeen = false,
+                ftueNameRevealElapsedSeconds = 0f
             };
         }
     }
