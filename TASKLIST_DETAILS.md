@@ -212,34 +212,35 @@ The 16-building economy had never been re-simulated (the original `balance_sim.j
 - **(C) Deferred, not this pass:** a re-readable "INTEL" briefing card, styled like the §20b dialogue log panel, so a player can revisit the premise/lore after the initial briefing scrolls past. Logged here so it isn't lost, not scoped or started.
 **Status:** scoped only, no code written yet. Blocks §11 — the "first playable" cut-line decision can't be finalized while the game's premise is undiscoverable to a first-time player.
 
-## Creative package (approved 2026-07-22)
+## Creative package (approved 2026-07-22, REVISED 2026-07-23 — see "Voice rules" below)
 
-**Design:** two narrator channels. Main COGS (Illumisnotti propaganda, reverse-psychology anti-tutorials — tells the player NOT to do the thing they should do) vs. THE LITERATES resistance cards (correctly-spelled truth, delivered as fake-business-front dead-drops with handwritten backs). All FTUE beats are OK-confirmed modals except two COGS ambient lines, which run through the regular (non-modal) narrator panel instead. COGS modals are capped at exactly 2 across the entire pass (the boot briefing and SnottingReady) — every other beat routes through THE LITERATES card channel.
+**Design:** two narrator channels. Main COGS — at this stage a cold, warmthless controller with zero personality investment in the player, who **hides its employer's name entirely** — vs. THE LITERATES resistance cards (correctly-spelled truth, delivered as fake-business-front dead-drops with handwritten backs). All FTUE beats are OK-confirmed modals except two COGS ambient lines, which run through the regular (non-modal) narrator panel instead. COGS modals are capped at exactly 2 across the entire pass (the boot briefing and SnottingReady) — every other beat, including the new Beat 9 name reveal, routes through THE LITERATES card channel.
 
-**System:** new `FTUEManager` owns seen-flags (persisted in the main save, not a separate file), beat sequencing, and modal spawns. Reusable `IntelCardUI` with two skins (COGS terminal skin, card skin) backs both channels rather than building two separate UIs. Popup-tier stacking: FTUE modals defer behind event popups, never interrupt them. `DialogueManager` itself stays untouched except the boot-briefing sequence, which replaces the currently-hardcoded first-play lines in `Start()`.
+**Revised 2026-07-23:** the Illumisnotti's name is withheld from every beat except the new Beat 9 — a deliberate paced reveal (minimum 3 minutes into first play), not an oversight from the 2026-07-22 pass. Beats 1, 2 (back text), 4, 6, and 8 are rewritten to remove the name and cool COGS's voice into pure bureaucratic control-speak (no "friend," no personality); Beat 5's back text has a one-word premise fix ("metering your head" → "metering the street," since the machine meters the population, not the player's own head — see "Voice rules"). Beats 3 and 7 are unchanged from the 2026-07-22 pass.
 
-### Beat 1 — COGS BOOT BRIEFING (first-ever play, modal, COGS terminal skin)
-GOOD MORNING, ASSET. YOU HAVE BEEN ASLEEP FOR: TOO LONG.
-WHILE YOU SLEPT, YOUR BRAIN WAS REZONED AS COMMERCIAL PROPERTY.
-I AM COGS. I AM YOUR FRIEND. I AM ALSO LEGALLY REQUIRED TO SAY THAT.
-YOUR JOB IS SIMPLE: TAP YOUR HEAD. THE JUICE COMES OUT. THE ILLUMISNOTTI
-COLLECT IT. EVERYONE WINS. MOSTLY THEM. THAT'S WHAT WINNING MEANS.
-DO NOT READ ANYTHING. DO NOT THINK ABOUT WHERE THE JUICE GOES. TAP THE
-WASTELAND.
-Confirm: [ OK, HARVEST ME ]
+**System:** new `FTUEManager` owns seen-flags (persisted in the main save, not a separate file), beat sequencing, and modal spawns. Reusable `IntelCardUI` with two skins (COGS terminal skin, card skin) backs both channels rather than building two separate UIs. Popup-tier stacking: FTUE modals defer behind event popups, never interrupt them. `DialogueManager` itself stays untouched except the boot-briefing sequence, which replaces the currently-hardcoded first-play lines in `Start()`. **Beat 9 (added 2026-07-23) fires once cumulative first-play session time reaches 180 seconds** — `FTUEManager` runs this timer from first-ever-play boot and persists elapsed seconds across sessions (new `ftueNameRevealElapsedSeconds` field) so a player who quits before the threshold resumes the countdown next session instead of restarting it; fires deferring per the same one-modal-at-a-time + event-popup-priority rules as every other modal beat.
 
-### Beat 2 — CARD #1 (~10s after briefing closes, card skin)
+### Beat 1 — COGS BOOT (first-ever play, modal, COGS terminal skin) — REVISED 2026-07-23
+SYSTEM ONLINE. ASSET: LOCATED. YOU.
+THE POPULATION OUTSIDE HOLDS UNUSED COGNITIVE POTENTIAL. IT IS GOING TO
+WASTE. WASTE IS INEFFICIENT.
+YOUR FUNCTION: TAP. EXTRACT. COLLECT.
+WHO THE COLLECTION IS FOR IS NOT A QUESTION. THERE ARE NO QUESTIONS.
+BEGIN EXTRACTION.
+Confirm: [ OK. NO QUESTIONS. ]
+
+### Beat 2 — CARD #1 (~10s after briefing closes, card skin) — back REVISED 2026-07-23
 Front: GARY'S DISCOUNT MATTRESS EMPORIUM — "We Also Have Soup"
-Back: They're metering your head. But here's what the tin can won't tell
-you: every tap leaks a little light back into the world. Watch the sky. It
-remembers.
-Don't let COGS pick what you buy. Don't let COGS pick anything.
+Back: It calls it "collection." Ask it who's collecting. It won't answer.
+Neither can we — not yet, not in writing, not this close to a fresh asset.
+But here's what the tin can doesn't know: every tap leaks a little light
+back into the world. Watch the sky. It remembers.
 — The Literates
-p.s. burn after reading. actually don't. read it twice. reading twice is
-how we got like this. the good version of like this.
+p.s. read it twice. reading twice is how we got like this. the good
+version of like this.
 Confirm: [ I READ IT. ALL OF IT. ]
 
-### Beat 3 — CARD #2 (first shop open, card skin)
+### Beat 3 — CARD #2 (first shop open, card skin) — unchanged
 Front: SNAKE UTTERS WHOLESALE — "Ask About Our Utters"
 Back: Buildings make juice while you nap. COGS calls that "theft of company
 time." Do it anyway — sleeping on the job is the only job worth having.
@@ -249,27 +250,26 @@ people who check math.
 Confirm: [ MATH CONFIRMED ]
 
 ### Beat 4 — COGS ambient (FirstCashEarned, regular narrator panel, NOT
-modal)
-ALERT: YOU HAVE DISCOVERED "CASH." DO NOT CONVERT BRAIN POWER INTO CASH.
-CASH LEADS TO BUYING. BUYING LEADS TO CHOICES. CHOICES LEAD TO THINKING. I
-AM WATCHING YOU, SPECIFICALLY.
+modal) — REVISED 2026-07-23
+ALERT: "CASH" DETECTED. DO NOT CONVERT BRAIN POWER INTO CASH. CASH ENABLES
+PURCHASING. PURCHASING ENABLES CHOICE. CHOICE IS AN ERROR STATE. THIS IS
+FOR YOUR PRODUCTIVITY. I AM MONITORING.
 
-### Beat 5 — CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4)
+### Beat 5 — CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4) — one-word fix 2026-07-23
 Front: ARMADILLO SAUCE LEGAL SERVICES — "It Goes With Everything, Including
 Court"
 Back: It just told you not to convert, didn't it. Funny how the thing
-metering your head panics when you spend what's yours.
+metering the street panics when you spend what's yours.
 Convert. Buy. Repeat. That's the whole machine. Now it's your machine.
 — TL
 Confirm: [ MY MACHINE NOW ]
 
 ### Beat 6 — COGS ambient (FirstRestoreSpend, regular narrator panel, NOT
-modal)
-YOU SPENT YOUR POINTS ON... FIXING THINGS? THE ILLUMISNOTTI HAVE REVIEWED
-YOUR PURCHASE AND FILED IT UNDER "ADORABLE." CARRY ON. IT'S A ROUNDING
-ERROR.
+modal) — REVISED 2026-07-23
+ANOMALY: RESOURCES ALLOCATED TO "FIXING THINGS." FILED UNDER: HARMLESS.
+THE STREETS DO NOT NEED TO BE SMARTER. RESUME EXTRACTION.
 
-### Beat 7 — CARD #4 (FirstRestoreSpend, modal)
+### Beat 7 — CARD #4 (FirstRestoreSpend, modal) — unchanged
 Front: CHEESE DIRT MEMORIAL FOUNDATION — "Never Forget The Flavor"
 Back: Every point you put into the world makes the streets a little smarter
 and their grip a little weaker. They allow it because they think it's a
@@ -278,15 +278,28 @@ Be a rounding error. Be the biggest rounding error they've ever seen.
 — TL
 Confirm: [ ROUNDING UP ]
 
-### Beat 8 — COGS CORE INTEL #2 (SnottingReady, modal, COGS terminal skin —
-the ONLY other COGS modal)
-MANDATORY NOTICE: YOU NOW QUALIFY FOR THE SNOTTING.
-YOUR BRAIN WILL BE REPOSSESSED, WIPED, AND REISSUED WITH A PRODUCTIVITY
-MULTIPLIER.
-YOU WILL LOSE: EVERYTHING. YOU WILL GAIN: MORE OF EVERYTHING, FASTER.
-THE ILLUMISNOTTI CALL THIS "A PROMOTION." PARTICIPATION IS VOLUNTARY, WHICH
-IS OUR FAVORITE KIND OF MANDATORY.
-Confirm: [ OK, REPOSSESS ME (LATER) ]
+### Beat 8 — COGS SNOTTING (SnottingReady, modal, COGS terminal skin —
+the ONLY other COGS modal) — REVISED 2026-07-23
+MANDATORY NOTICE: YOU QUALIFY FOR THE SNOTTING. YOUR PROGRESS WILL BE
+LIQUIDATED AND REISSUED WITH A PRODUCTIVITY MULTIPLIER. YOU WILL LOSE:
+EVERYTHING. YOU WILL GAIN: MORE OF EVERYTHING, FASTER. THIS IS CALLED A
+PROMOTION. PARTICIPATION IS VOLUNTARY, WHICH IS THE BEST KIND OF
+MANDATORY.
+Confirm: [ OK, LIQUIDATE ME (LATER) ]
+
+### Beat 9 — NEW 2026-07-23: THE NAME (>= 180s cumulative first-play time, modal, card skin)
+Front: TED'S CEILING FANS & OTHER CEILING ITEMS — "Look Up More"
+Back: You've tapped long enough. You've earned the word. The ones
+collecting — the ones that thing works for — are called the ILLUMISNOTTI.
+Old money. Older grudges. They drained the world stupid on purpose, and
+your little machine is a straw in everyone's skull. Now you know why the
+sky matters. Keep leaking light. Make the name useless.
+— The Literates
+p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.
+Confirm: [ I KNOW THE NAME ]
+
+### Voice rules (added 2026-07-23, supersedes prior loose framing)
+**COGS Stage 1** is a cold controller with zero warmth and hides its employer — **the name Illumisnotti NEVER appears in COGS dialogue at this stage**, in the fixed COGS-terminal banner text, or in any Literates card before Beat 9. This is a deliberate paced uncovering: the arc humanizes across COGS's portrait stages toward stage-6 divinity, and naming the Illumisnotti too early would flatten that arc. THE LITERATES are the sole source of the name, and only at Beat 9 — every other Literates card (2/3/5/7) talks around "it"/"the tin can"/"the thing metering the street" rather than naming anyone. **The player harvests the PEDESTRIANS' potential, never their own head** — Beat 1's revision (and Beat 5's one-word fix) exist specifically to correct language that implied otherwise.
 
 ### Lore constants
 The resistance = THE LITERATES: the last people who read anything; every
@@ -296,7 +309,7 @@ fake mundane businesses (dead-drop style); backs are handwritten truth.
 Confirm buttons are a joke channel: COGS confirms = compliance language,
 card confirms = literacy language.
 
-**§23 implementation status (checked against `git log`, 2026-07-22): scoped only, no code written yet.** No `FTUEManager`, `IntelCardUI`, or boot-briefing sequencing exist in the repo — only the two docs commits (`10c792c` scope, `0325a0d` creative package) have landed. Not started.
+**§23 implementation status (checked against `git log`, 2026-07-23): parts A+B shipped, REVISION IN PROGRESS.** `FTUEManager`/`IntelCardUI` landed `83e8de0` (save-flag scaffolding) + `258deee` (feature code) against the 2026-07-22 copy. This revision (rewritten beats 1/2-back/4/6/8, Beat 5 word fix, new Beat 9 name-reveal + timer, `ftueNameRevealSeen`/`ftueNameRevealElapsedSeconds` save fields) supersedes that shipped copy — code update follows this docs commit.
 
 ## §24 Dialogue log v2 + The Pocket — scoped 2026-07-22, not started, after §23
 Three parts, one section since they share the log panel's UI surface:
