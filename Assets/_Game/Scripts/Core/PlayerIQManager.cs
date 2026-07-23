@@ -47,7 +47,10 @@ namespace BrainDrain.Core
         private void Start()
         {
             if (GameManager.Instance != null)
+            {
+                GameManager.Instance.OnSecondTick -= DecayOvercharge;
                 GameManager.Instance.OnSecondTick += DecayOvercharge;
+            }
         }
 
         private void OnDestroy()

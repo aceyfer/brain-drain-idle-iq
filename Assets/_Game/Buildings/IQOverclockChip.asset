@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: IQOverclockChip
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: IQ Overclock Chip
-  description: Raises max IQ. Mild forehead smoke is normal.
+  description: Overclocks your headspace for a flat IQ bump and steady Brain
+    Power. Mild forehead smoke is normal.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 2500
