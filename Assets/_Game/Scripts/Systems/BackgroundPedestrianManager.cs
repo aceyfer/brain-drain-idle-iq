@@ -346,6 +346,10 @@ namespace BrainDrain.Systems
             }
 
             bubble.SetText(line);
+
+            // Recorded here, at the point of actual speech -- not inside GetLineForRank, which
+            // could be called speculatively without a bubble ever displaying the result (§24b).
+            RandomChatterManager.Instance?.RecordSpokenLine(line);
         }
 
         private IEnumerator MoveRoutine(RectTransform rt, float targetX, float speed, PedestrianBehaviorStage stage, float maxAnchoredY)

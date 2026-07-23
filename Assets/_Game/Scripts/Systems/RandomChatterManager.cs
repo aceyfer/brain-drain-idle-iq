@@ -16,6 +16,22 @@ namespace BrainDrain.Systems
         private const string ProfanityEnabledPrefsKey = "BrainDrain_ProfanityEnabled";
         private const string SystemsParentName = "_Systems";
 
+        /// <summary>Mirrors DialogueManager.MaxHistoryEntries exactly -- same cap, same reasoning.</summary>
+        private const int MaxHistoryEntries = 50;
+
+        /// <summary>One recorded pedestrian chatter line for the §24b STREET log tab, mirroring DialogueManager.DialogueLogEntry (minus SourceLine -- chatter lines are plain strings, not NarratorLine assets).</summary>
+        public readonly struct ChatterLogEntry
+        {
+            public readonly string Text;
+            public readonly float SessionTime;
+
+            public ChatterLogEntry(string text, float sessionTime)
+            {
+                Text = text;
+                SessionTime = sessionTime;
+            }
+        }
+
         private static RandomChatterManager instance;
         private static bool isShuttingDown;
 
@@ -115,6 +131,14 @@ namespace BrainDrain.Systems
 
         /// <summary>Fired when profanity unlocked or enabled/disabled states change.</summary>
         public event System.Action OnProfanitySettingsChanged;
+
+        private readonly List<ChatterLogEntry> history = new List<ChatterLogEntry>();
+
+        /// <summary>Read-only view of the session's pedestrian chatter history (oldest first), capped at MaxHistoryEntries -- backs the §24b STREET log tab.</summary>
+        public IReadOnlyList<ChatterLogEntry> History => history;
+
+        /// <summary>Fired whenever a line is appended to History -- consumed by DialogueLogPanelUI's STREET tab (§24b).</summary>
+        public event System.Action OnHistoryChanged;
 
         private void Awake()
         {
@@ -222,6 +246,28 @@ namespace BrainDrain.Systems
                 PlayerPrefs.Save();
                 OnProfanitySettingsChanged?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// Records a chatter line into History at the moment it's actually spoken (called from
+        /// BackgroundPedestrianManager's bubble spawn site, right after SetText) -- deliberately
+        /// NOT called from inside GetLineForRank/GetRandomLine, since those could be invoked
+        /// speculatively without a bubble ever actually displaying the result.
+        /// </summary>
+        public void RecordSpokenLine(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            history.Add(new ChatterLogEntry(text, Time.unscaledTime));
+            while (history.Count > MaxHistoryEntries)
+            {
+                history.RemoveAt(0);
+            }
+
+            OnHistoryChanged?.Invoke();
         }
 
         /// <summary>
