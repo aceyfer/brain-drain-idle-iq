@@ -29,8 +29,8 @@
 ## THEN — Path to Market
 - [ ] 23. FTUE / comprehension pass (COGS-narrated onboarding) — scoped, BLOCKS §11 (details §23)
 - [ ] 24. Dialogue log v2 + The Pocket (log polish, COGS/STREET tab split, card pocket — supersedes §23c) — scoped, not started, after §23 (details §24)
-- [~] 11. Define "first playable" cut line — what ships v1, what waits — PROVISIONALLY PASSED (Aceyfer verdict "playable", 2026-07-23) pending §26 math/display audit resolutions (details §11)
-- [ ] 26. Economy display/design audit — mismatches found (Jumper Cables/IQ Overclock Chip description-vs-implementation, undocumented Overcharged IQ system, stale Bible §6 economy table) — report filed, pending Aceyfer approve/reject per finding (details §26)
+- [x] 11. Define "first playable" cut line — what ships v1, what waits — **PASSED**. First-playable achieved 2026-07-23, Aceyfer verdict (details §11)
+- [x] 26. Economy display/design audit — CLOSED. Jumper Cables/IQ Overclock Chip descriptions fixed, PlayerIQManager subscribe guard added (`f0ba24d`); Overcharged IQ system + Underground Economy's 9BP/7Cash split doc-synced into CLAUDE.md/Bible §6; remaining findings confirmed intentional, no action needed (details §26)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
 - [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)
 - [ ] 14. Device build + test on real phone (iOS target visible in editor) (details §14)

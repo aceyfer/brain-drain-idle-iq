@@ -67,14 +67,14 @@ The first playable is DONE when, on a fresh save, a player can: tap and feel sat
 ## 6. The Economy — final numbers (matches `.asset` files; if they diverge, the asset files won)
 
 ```
-TAP ──▶ Brain Power ──▶ Shop: BP UPGRADES tab (8 buildings + infrastructure)
+TAP ──▶ Brain Power ──▶ Shop: BP UPGRADES tab (9 buildings + infrastructure)
                              ├─▶ idle BPPS  ├─▶ PlayerIQ (+1/purchase; 1:1 infra)
-Cash ──▶ Shop: CASH INVESTMENTS tab (8 buildings)  or  convert ──▶ Restoration Points (RP)
+Cash ──▶ Shop: CASH INVESTMENTS tab (7 buildings)  or  convert ──▶ Restoration Points (RP)
 RP ──▶ World Restoration only (dystopia → utopia; RP shop tab CUT, see §16/§10)
 Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still stubbed, §12)
 ```
 
-**Buildings — 16 total, 8 per tab, split by `costType`** (unlock gate = *cumulative* BP ever earned — NOT baseCost; these two have been confused repeatedly, check which one you're looking at). Purchases deduct the building's own `costType` currency (`UpgradeManager.TryBuyBuilding` routes to `SpendCash` or `SpendBrainPower`). Where a production field is absent from the `.asset` YAML, Unity uses the C# default — `baseBrainPowerPerSecond` **1**, `baseCashPerSecond` **0** — marked (d) below.
+**Buildings — 16 total, split by `costType`: 9 BP / 7 Cash** (corrected 2026-07-23, §26 audit — was documented as 8/8 since the original 2026-07-15 doc sync; that count predates `29f9672`'s Underground Economy fix moving it to `costType: BrainPower`, and this table was never re-synced after). Unlock gate = *cumulative* BP ever earned — NOT baseCost; these two have been confused repeatedly, check which one you're looking at. Purchases deduct the building's own `costType` currency (`UpgradeManager.TryBuyBuilding` routes to `SpendCash` or `SpendBrainPower`). Where a production field is absent from the `.asset` YAML, Unity uses the C# default — `baseBrainPowerPerSecond` **1**, `baseCashPerSecond` **0** — marked (d) below.
 
 *BP UPGRADES tab (costType BrainPower):*
 | Building | Unlock (cum. BP) | baseCost | costMult | Income |
@@ -86,6 +86,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 | Synapse Space Heater | 0 | 900 | 1.12 | 12 BPPS |
 | IQ Overclock Chip | 0 | 2,500 | 1.15 | 10 BPPS |
 | Cryo-Sludge Espresso | 0 | 5,000 | 1.13 | 45 BPPS |
+| Underground Economy | 500 | **75** | 1.38 | 5 CPS (0 BPPS explicit) |
 | Brain-Rot Think Tank | 725,000 | 200,000 | 1.21 | 4,500 BPPS + 200 CPS |
 
 *CASH INVESTMENTS tab (costType Cash):*
@@ -95,15 +96,16 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 | Lemonade Grift Stand | 0 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
 | Doomscroll Billboard | 0 | 250 | 1.14 | 1 BPPS (d) + 5 CPS |
 | HOA Protection Racket | 0 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
-| Underground Economy | 500 | 15 | 1.38 | 5 CPS (0 BPPS explicit) |
 | Podcaster Soundboard | 25,000 | 30 | 1.21 | 5 BPPS + 0 CPS (d) |
 | Crypto-Bro Compound | 110,000 | 55 | 1.32 | 60 BPPS + 10 CPS |
 | Reality TV Syndicate | 185,000 | 90 | 1.21 | 320 BPPS + 40 CPS |
 
 **Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Lemonade/Billboard/HOA produce 1 BPPS purely via the missing-field default, possibly unintended. (c) 11 of 16 buildings share unlock=0 — shop display order for those is now cost-then-name (`780eb8a`), but the unlock *gating* curve itself is flat early.
 
+**Overcharged IQ (landed `7a8eacf`, 2026-06-30 — undocumented until the 2026-07-23 §26 audit; pacing CONFIRMED INTENTIONAL by Aceyfer on closure):** above IQ 100, `CurrencyManager.GetIQProductionMultiplier()` keeps rising instead of clamping at 1.0 — linearly up to **1.25x at IQ 200**, capped there. Counterbalanced by `PlayerIQManager.DecayOvercharge()`, a genuine live decay loop (subscribed to `GameManager.OnSecondTick`, unlike every other IQ change in this system) that drains any IQ above 100 back toward 100 at **0.1/sec** while the app is open — the only exception to "PlayerIQ never decays while running" elsewhere in this doc. HUD shows an "OVERCHARGED" label whenever IQ > 100 (`HUDController.cs`); its apparent "lights up at exactly 100" (reported 2026-07-23) is a `:F0` display-rounding artifact of IQ hovering in the 100.0–100.99 decay band, not a comparison bug — the code's threshold is already the correct strict `>`.
+
 **Key tuned values (final):**
-- PlayerIQ starts 100, climbs forever; offline-only decay toward floor 60 over 8h; idle income scaled by IQ/100 (cap 1.0). *(Observed working 2026-07-03: a decayed save showed IQ 68 — intended behavior, not a bug.)*
+- PlayerIQ starts 100, climbs forever; offline-only decay toward floor 60 over 8h; idle income scaled by IQ/100 below 100 (floor 0.25x), and by the Overcharged curve above 100 (up to 1.25x at IQ 200, decaying back at 0.1/sec — see above). *(Observed working 2026-07-03: a decayed save showed IQ 68 — intended behavior, not a bug.)*
 - Snotting (Rebirth): per-Snotting permanent +5% BP mult, +10% Cash mult, +5% RP conversion, +5% tap mult; full current-run wipe
 - Snotting button visibility gate: **50,000 RP spent on Restoration**
 - World Restoration stage thresholds (RP spent): 0 / 2,500 / 10,000 / 50,000 / 250,000 / 1,000,000
