@@ -409,6 +409,8 @@ namespace BrainDrain.Systems
                 data.ftueCashBeatSeen = FTUEManager.Instance.CashBeatSeen;
                 data.ftueRestoreBeatSeen = FTUEManager.Instance.RestoreBeatSeen;
                 data.ftueSnottingIntelSeen = FTUEManager.Instance.SnottingIntelSeen;
+                data.ftueNameRevealSeen = FTUEManager.Instance.NameRevealSeen;
+                data.ftueNameRevealElapsedSeconds = FTUEManager.Instance.NameRevealElapsedSeconds;
             }
 
             if (CashShopManager.Instance != null)
@@ -621,7 +623,9 @@ namespace BrainDrain.Systems
                 data.ftueCard2Seen,
                 data.ftueCashBeatSeen,
                 data.ftueRestoreBeatSeen,
-                data.ftueSnottingIntelSeen);
+                data.ftueSnottingIntelSeen,
+                data.ftueNameRevealSeen,
+                data.ftueNameRevealElapsedSeconds);
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);

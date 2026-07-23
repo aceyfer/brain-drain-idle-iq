@@ -8,18 +8,21 @@ namespace BrainDrain.Systems
 {
     /// <summary>
     /// §23 FTUE / comprehension pass: two narrator channels teaching the game's premise on
-    /// first encounter -- main COGS (Illumisnotti propaganda, capped at exactly 2 modals total:
-    /// the boot briefing and SnottingReady) and THE LITERATES resistance cards (every other
-    /// beat, delivered as fake-business-front dead-drops via IntelCardUI's LiteratesCard skin).
-    /// Self-bootstrapping singleton (RandomChatterManager's pattern -- Instance, isShuttingDown,
-    /// parented under _Systems) that owns first-ever-play detection (identical criteria to the
-    /// one DialogueManager.Start() used before this pass replaced its hardcoded boot line), beat
-    /// sequencing, seen-flag gating, and one-modal-at-a-time FIFO spawning. Every beat fires at
-    /// most once ever; seen-flags persist through SaveManager/PlayerData (SaveManager gathers
-    /// them via the public flag properties below and restores them via LoadState -- see
-    /// SaveManager.ApplyLoadedDataToSystems). All copy is verbatim from TASKLIST_DETAILS.md §23's
-    /// "Creative package" section -- that document is the copy source of truth; do not paraphrase
-    /// when editing these constants.
+    /// first encounter -- main COGS (a cold, warmthless controller, capped at exactly 2 modals
+    /// total: the boot briefing and SnottingReady) and THE LITERATES resistance cards (every
+    /// other beat, delivered as fake-business-front dead-drops via IntelCardUI's LiteratesCard
+    /// skin). REVISED 2026-07-23: the Illumisnotti's name is withheld from every beat except
+    /// Beat 9 ("THE NAME") -- COGS never says it (including its own terminal banner text), and
+    /// no Literates card names it before Beat 9 fires. Self-bootstrapping singleton
+    /// (RandomChatterManager's pattern -- Instance, isShuttingDown, parented under _Systems)
+    /// that owns first-ever-play detection (identical criteria to the one DialogueManager.Start()
+    /// used before this pass replaced its hardcoded boot line), beat sequencing, seen-flag
+    /// gating, a real-time countdown to Beat 9, and one-modal-at-a-time FIFO spawning. Every beat
+    /// fires at most once ever; seen-flags (and Beat 9's elapsed countdown) persist through
+    /// SaveManager/PlayerData (SaveManager gathers them via the public properties below and
+    /// restores them via LoadState -- see SaveManager.ApplyLoadedDataToSystems). All copy is
+    /// verbatim from TASKLIST_DETAILS.md §23's "Creative package" section -- that document is the
+    /// copy source of truth; do not paraphrase when editing these constants.
     /// </summary>
     public sealed class FTUEManager : MonoBehaviour
     {
@@ -33,23 +36,26 @@ namespace BrainDrain.Systems
         private const float EventPopupRetryDelaySeconds = 1f;
         private const float AmbientDisplayDurationSeconds = 6f;
 
-        private const string CogsHeader = "ILLUMISNOTTI MANDATORY BROADCAST";
+        /// <summary>Beat 9 "THE NAME" fires once this many seconds of cumulative first-play session time have elapsed (see the Update() timer below).</summary>
+        private const float NameRevealThresholdSeconds = 180f;
 
-        // ---- Beat 1: COGS BOOT BRIEFING (first-ever play, modal, COGS terminal skin) ----
+        /// <summary>Fixed COGS-terminal banner text for both COGS modals (Beats 1 and 8). Deliberately contains no reference to the Illumisnotti -- COGS hides its employer's name entirely until Beat 9 (see class doc comment).</summary>
+        private const string CogsHeader = "MANDATORY BROADCAST";
+
+        // ---- Beat 1: COGS BOOT (first-ever play, modal, COGS terminal skin) -- REVISED 2026-07-23 ----
         private const string Beat1Body =
-            "GOOD MORNING, ASSET. YOU HAVE BEEN ASLEEP FOR: TOO LONG. WHILE YOU SLEPT, YOUR BRAIN WAS REZONED AS COMMERCIAL PROPERTY. " +
-            "I AM COGS. I AM YOUR FRIEND. I AM ALSO LEGALLY REQUIRED TO SAY THAT. " +
-            "YOUR JOB IS SIMPLE: TAP YOUR HEAD. THE JUICE COMES OUT. THE ILLUMISNOTTI COLLECT IT. EVERYONE WINS. MOSTLY THEM. THAT'S WHAT WINNING MEANS. " +
-            "DO NOT READ ANYTHING. DO NOT THINK ABOUT WHERE THE JUICE GOES. TAP THE WASTELAND.";
-        private const string Beat1Confirm = "OK, HARVEST ME";
+            "SYSTEM ONLINE. ASSET: LOCATED. YOU. " +
+            "THE POPULATION OUTSIDE HOLDS UNUSED COGNITIVE POTENTIAL. IT IS GOING TO WASTE. WASTE IS INEFFICIENT. " +
+            "YOUR FUNCTION: TAP. EXTRACT. COLLECT. " +
+            "WHO THE COLLECTION IS FOR IS NOT A QUESTION. THERE ARE NO QUESTIONS. BEGIN EXTRACTION.";
+        private const string Beat1Confirm = "OK. NO QUESTIONS.";
 
-        // ---- Beat 2: CARD #1 (~10s after briefing closes, card skin) ----
+        // ---- Beat 2: CARD #1 (~10s after briefing closes, card skin) -- back REVISED 2026-07-23 ----
         private const string Beat2Front = "GARY'S DISCOUNT MATTRESS EMPORIUM — \"We Also Have Soup\"";
         private const string Beat2Back =
-            "They're metering your head. But here's what the tin can won't tell you: every tap leaks a little light back into the world. Watch the sky. It remembers.\n" +
-            "Don't let COGS pick what you buy. Don't let COGS pick anything.\n" +
+            "It calls it \"collection.\" Ask it who's collecting. It won't answer. Neither can we — not yet, not in writing, not this close to a fresh asset. But here's what the tin can doesn't know: every tap leaks a little light back into the world. Watch the sky. It remembers.\n" +
             "— The Literates\n" +
-            "p.s. burn after reading. actually don't. read it twice. reading twice is how we got like this. the good version of like this.";
+            "p.s. read it twice. reading twice is how we got like this. the good version of like this.";
         private const string Beat2Confirm = "I READ IT. ALL OF IT.";
 
         // ---- Beat 3: CARD #2 (first shop open, card skin) ----
@@ -60,21 +66,21 @@ namespace BrainDrain.Systems
             "— TL";
         private const string Beat3Confirm = "MATH CONFIRMED";
 
-        // ---- Beat 4: COGS ambient (FirstCashEarned, regular narrator panel, NOT modal) ----
+        // ---- Beat 4: COGS ambient (FirstCashEarned, regular narrator panel, NOT modal) -- REVISED 2026-07-23 ----
         private const string Beat4Ambient =
-            "ALERT: YOU HAVE DISCOVERED \"CASH.\" DO NOT CONVERT BRAIN POWER INTO CASH. CASH LEADS TO BUYING. BUYING LEADS TO CHOICES. CHOICES LEAD TO THINKING. I AM WATCHING YOU, SPECIFICALLY.";
+            "ALERT: \"CASH\" DETECTED. DO NOT CONVERT BRAIN POWER INTO CASH. CASH ENABLES PURCHASING. PURCHASING ENABLES CHOICE. CHOICE IS AN ERROR STATE. THIS IS FOR YOUR PRODUCTIVITY. I AM MONITORING.";
 
-        // ---- Beat 5: CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4) ----
+        // ---- Beat 5: CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4) -- one-word fix 2026-07-23 ----
         private const string Beat5Front = "ARMADILLO SAUCE LEGAL SERVICES — \"It Goes With Everything, Including Court\"";
         private const string Beat5Back =
-            "It just told you not to convert, didn't it. Funny how the thing metering your head panics when you spend what's yours.\n" +
+            "It just told you not to convert, didn't it. Funny how the thing metering the street panics when you spend what's yours.\n" +
             "Convert. Buy. Repeat. That's the whole machine. Now it's your machine.\n" +
             "— TL";
         private const string Beat5Confirm = "MY MACHINE NOW";
 
-        // ---- Beat 6: COGS ambient (FirstRestoreSpend, regular narrator panel, NOT modal) ----
+        // ---- Beat 6: COGS ambient (FirstRestoreSpend, regular narrator panel, NOT modal) -- REVISED 2026-07-23 ----
         private const string Beat6Ambient =
-            "YOU SPENT YOUR POINTS ON... FIXING THINGS? THE ILLUMISNOTTI HAVE REVIEWED YOUR PURCHASE AND FILED IT UNDER \"ADORABLE.\" CARRY ON. IT'S A ROUNDING ERROR.";
+            "ANOMALY: RESOURCES ALLOCATED TO \"FIXING THINGS.\" FILED UNDER: HARMLESS. THE STREETS DO NOT NEED TO BE SMARTER. RESUME EXTRACTION.";
 
         // ---- Beat 7: CARD #4 (FirstRestoreSpend, modal) ----
         private const string Beat7Front = "CHEESE DIRT MEMORIAL FOUNDATION — \"Never Forget The Flavor\"";
@@ -84,12 +90,20 @@ namespace BrainDrain.Systems
             "— TL";
         private const string Beat7Confirm = "ROUNDING UP";
 
-        // ---- Beat 8: COGS CORE INTEL #2 (SnottingReady, modal, COGS terminal skin -- the ONLY other COGS modal) ----
+        // ---- Beat 8: COGS SNOTTING (SnottingReady, modal, COGS terminal skin -- the ONLY other COGS modal) -- REVISED 2026-07-23 ----
         private const string Beat8Body =
-            "MANDATORY NOTICE: YOU NOW QUALIFY FOR THE SNOTTING. YOUR BRAIN WILL BE REPOSSESSED, WIPED, AND REISSUED WITH A PRODUCTIVITY MULTIPLIER. " +
+            "MANDATORY NOTICE: YOU QUALIFY FOR THE SNOTTING. YOUR PROGRESS WILL BE LIQUIDATED AND REISSUED WITH A PRODUCTIVITY MULTIPLIER. " +
             "YOU WILL LOSE: EVERYTHING. YOU WILL GAIN: MORE OF EVERYTHING, FASTER. " +
-            "THE ILLUMISNOTTI CALL THIS \"A PROMOTION.\" PARTICIPATION IS VOLUNTARY, WHICH IS OUR FAVORITE KIND OF MANDATORY.";
-        private const string Beat8Confirm = "OK, REPOSSESS ME (LATER)";
+            "THIS IS CALLED A PROMOTION. PARTICIPATION IS VOLUNTARY, WHICH IS THE BEST KIND OF MANDATORY.";
+        private const string Beat8Confirm = "OK, LIQUIDATE ME (LATER)";
+
+        // ---- Beat 9: THE NAME (>= 180s cumulative first-play time, modal, card skin) -- NEW 2026-07-23 ----
+        private const string Beat9Front = "TED'S CEILING FANS & OTHER CEILING ITEMS — \"Look Up More\"";
+        private const string Beat9Back =
+            "You've tapped long enough. You've earned the word. The ones collecting — the ones that thing works for — are called the ILLUMISNOTTI. Old money. Older grudges. They drained the world stupid on purpose, and your little machine is a straw in everyone's skull. Now you know why the sky matters. Keep leaking light. Make the name useless.\n" +
+            "— The Literates\n" +
+            "p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.";
+        private const string Beat9Confirm = "I KNOW THE NAME";
 
         /// <summary>One pending modal request, FIFO-queued so only one IntelCardUI is ever on screen at a time.</summary>
         private readonly struct ModalRequest
@@ -154,6 +168,8 @@ namespace BrainDrain.Systems
         private bool cashBeatSeen;
         private bool restoreBeatSeen;
         private bool snottingIntelSeen;
+        private bool nameRevealSeen;
+        private float nameRevealElapsedSeconds;
 
         // Transient (not persisted) guards against double-enqueuing the same beat while it's
         // already queued/showing but not yet confirmed -- e.g. the player opening the shop twice
@@ -162,6 +178,7 @@ namespace BrainDrain.Systems
         private bool card2Requested;
         private bool restoreBeatRequested;
         private bool snottingIntelRequested;
+        private bool nameRevealRequested;
 
         public bool BootBriefingSeen => bootBriefingSeen;
         public bool Card1Seen => card1Seen;
@@ -169,6 +186,10 @@ namespace BrainDrain.Systems
         public bool CashBeatSeen => cashBeatSeen;
         public bool RestoreBeatSeen => restoreBeatSeen;
         public bool SnottingIntelSeen => snottingIntelSeen;
+        public bool NameRevealSeen => nameRevealSeen;
+
+        /// <summary>Running countdown toward Beat 9, persisted so a player who quits before NameRevealThresholdSeconds resumes next session instead of restarting.</summary>
+        public float NameRevealElapsedSeconds => nameRevealElapsedSeconds;
 
         private readonly List<ModalRequest> modalQueue = new();
         private bool modalShowing;
@@ -210,6 +231,28 @@ namespace BrainDrain.Systems
             if (isFirstEverPlay && !bootBriefingSeen)
             {
                 EnqueueModal(IntelCardSkin.COGSTerminal, CogsHeader, Beat1Body, Beat1Confirm, HandleBootBriefingConfirmed);
+            }
+        }
+
+        /// <summary>
+        /// Beat 9's countdown: accumulates real time (matching the rest of this codebase's use of
+        /// Time.deltaTime -- Time.timeScale never changes here, per IntelCardUI's own contract, so
+        /// unscaled vs. scaled makes no practical difference) toward NameRevealThresholdSeconds.
+        /// Stops accumulating once requested/seen so the elapsed value freezes rather than
+        /// climbing indefinitely past the threshold.
+        /// </summary>
+        private void Update()
+        {
+            if (nameRevealSeen || nameRevealRequested)
+            {
+                return;
+            }
+
+            nameRevealElapsedSeconds += Time.deltaTime;
+            if (nameRevealElapsedSeconds >= NameRevealThresholdSeconds)
+            {
+                nameRevealRequested = true;
+                EnqueueModal(IntelCardSkin.LiteratesCard, Beat9Front, Beat9Back, Beat9Confirm, HandleNameRevealConfirmed);
             }
         }
 
@@ -337,13 +380,20 @@ namespace BrainDrain.Systems
             snottingIntelSeen = true;
         }
 
+        private void HandleNameRevealConfirmed()
+        {
+            nameRevealSeen = true;
+        }
+
         /// <summary>
-        /// Restores seen-flags from a save. Runs before this component's own Start() (see
-        /// Bootstrap's doc comment), so the first-ever-play boot-briefing check above always
-        /// sees the correct restored bootBriefingSeen value.
+        /// Restores seen-flags (and Beat 9's elapsed countdown) from a save. Runs before this
+        /// component's own Start() (see Bootstrap's doc comment), so the first-ever-play
+        /// boot-briefing check above always sees the correct restored bootBriefingSeen value, and
+        /// Update()'s countdown resumes from the restored elapsed value rather than 0.
         /// </summary>
         public void LoadState(bool restoredBootBriefingSeen, bool restoredCard1Seen, bool restoredCard2Seen,
-            bool restoredCashBeatSeen, bool restoredRestoreBeatSeen, bool restoredSnottingIntelSeen)
+            bool restoredCashBeatSeen, bool restoredRestoreBeatSeen, bool restoredSnottingIntelSeen,
+            bool restoredNameRevealSeen, float restoredNameRevealElapsedSeconds)
         {
             bootBriefingSeen = restoredBootBriefingSeen;
             card1Seen = restoredCard1Seen;
@@ -351,6 +401,8 @@ namespace BrainDrain.Systems
             cashBeatSeen = restoredCashBeatSeen;
             restoreBeatSeen = restoredRestoreBeatSeen;
             snottingIntelSeen = restoredSnottingIntelSeen;
+            nameRevealSeen = restoredNameRevealSeen;
+            nameRevealElapsedSeconds = restoredNameRevealElapsedSeconds;
         }
 
         private IEnumerator SpawnCardAfterDelay(float delaySeconds, IntelCardSkin skin, string header, string body, string confirmText, System.Action onConfirmed)
