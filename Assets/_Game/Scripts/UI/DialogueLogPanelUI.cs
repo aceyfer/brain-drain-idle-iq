@@ -37,6 +37,33 @@ namespace BrainDrain.UI
                 SetPanelHidden(true);
             }
 
+            // Unity's default Scroll View ships opaque light-gray Images (on the ScrollRect's
+            // own GameObject and its Viewport child) that cover the panel's dark chip laid down
+            // in the §20b layout tune, washing the log out (§24a, found 2026-07-22). Code-owned
+            // per Bible §8 so it can't regress via an Editor reset: kill only the visual (alpha
+            // 0), leave the Viewport's Mask/raycast function untouched.
+            if (scrollRect != null)
+            {
+                Image scrollRectImage = scrollRect.GetComponent<Image>();
+                if (scrollRectImage != null)
+                {
+                    Color scrollRectColor = scrollRectImage.color;
+                    scrollRectColor.a = 0f;
+                    scrollRectImage.color = scrollRectColor;
+                }
+
+                if (scrollRect.viewport != null)
+                {
+                    Image viewportImage = scrollRect.viewport.GetComponent<Image>();
+                    if (viewportImage != null)
+                    {
+                        Color viewportColor = viewportImage.color;
+                        viewportColor.a = 0f;
+                        viewportImage.color = viewportColor;
+                    }
+                }
+            }
+
             if (openButton != null)
             {
                 openButton.onClick.RemoveListener(ToggleOpen);
