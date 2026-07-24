@@ -49,8 +49,11 @@ namespace BrainDrain.Systems
         /// <summary>
         /// Repeatable triggers (see RepeatableTriggers) can't fire again within this window.
         /// Kills line floods from the 10s cash auto-convert tick, fast idle-income IQ-milestone
-        /// bursts, and rapid tap streaks -- one-shot triggers (First*, Rebirth, stage changes)
-        /// are exempt since they structurally can't flood.
+        /// bursts, rapid tap streaks, and building-purchase spam-buy sessions (added 2026-07-24 --
+        /// a live test's spam-buy burst queued one comment per purchase, landing lines at
+        /// [00:41]/[00:46]/[00:50] in the dialogue log; now only the burst's first purchase
+        /// speaks, the rest stay silent for 20s) -- one-shot triggers (First*, Rebirth, stage
+        /// changes) are exempt since they structurally can't flood.
         /// </summary>
         private const float RepeatTriggerCooldownSeconds = 20f;
 
@@ -60,6 +63,7 @@ namespace BrainDrain.Systems
             NarratorTriggerType.CashConverted,
             NarratorTriggerType.TapWithoutPurchase,
             NarratorTriggerType.EventOutcome,
+            NarratorTriggerType.BuildingPurchase,
         };
 
         /// <summary>One line ready to display, regardless of whether it came from the NarratorLine pool or was injected directly.</summary>
@@ -292,6 +296,10 @@ namespace BrainDrain.Systems
             EnqueueDirectLine("OPEN BP SHOP → BUY BUILDINGS → EARN BRAIN POWER WHILE YOU SLEEP.", 4f);
         }
 
+        /// <summary>Resets the tap-without-purchase counter and attempts a purchase-comment
+        /// line. BuildingPurchase is a RepeatableTriggers member (added 2026-07-24), so
+        /// TryFireLine's own 20s cooldown coalesces spam-buy bursts into a single line rather
+        /// than one per purchase.</summary>
         private void HandleBuildingPurchased(BuildingData building)
         {
             tapsSinceLastPurchase = 0;
