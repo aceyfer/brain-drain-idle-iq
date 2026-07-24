@@ -62,8 +62,12 @@ namespace BrainDrain.Systems
 
         [Header("Chatter Bubbles")]
         [SerializeField] private BrainDrain.UI.ChatterBubble chatterBubblePrefab;
-        [SerializeField] private float minChatterInterval = 5f;
-        [SerializeField] private float maxChatterInterval = 12f;
+        /// <summary>Cadence relaxed 5s→12s (§24 polish, 2026-07-24): the original 5-12s range read
+        /// as too chatty per Aceyfer's live test, confirmed by STREET log timestamps landing
+        /// ~6-10s apart. Force-reassigned in Start() below since the scene's saved Inspector
+        /// values (5/12) would otherwise silently override these new field defaults.</summary>
+        [SerializeField] private float minChatterInterval = 12f;
+        [SerializeField] private float maxChatterInterval = 25f;
 
         private readonly System.Collections.Generic.List<RectTransform> activePedestrians = new System.Collections.Generic.List<RectTransform>();
         private static readonly System.Collections.Generic.List<Sprite> StageOneSpriteBuffer = new System.Collections.Generic.List<Sprite>(8);
@@ -78,6 +82,14 @@ namespace BrainDrain.Systems
 
         private void Start()
         {
+            // Code-owned override (§24 polish, 2026-07-24): the scene's saved Inspector values
+            // for these two fields (5/12, the pre-tune cadence) would otherwise take precedence
+            // over the field defaults above via normal Unity deserialization, silently
+            // reintroducing the too-chatty cadence without a scene edit ever showing up in a
+            // diff. Forced here so 12-25s is guaranteed regardless of what's serialized.
+            minChatterInterval = 12f;
+            maxChatterInterval = 25f;
+
             if (containerRect == null)
             {
                 var canvas = GameObject.Find("Canvas");
