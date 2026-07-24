@@ -276,6 +276,8 @@ namespace BrainDrain.UI
             }
         }
 
+        private const float ContentBottomPadding = 20f;
+
         private void Rebuild()
         {
             if (logText == null)
@@ -290,6 +292,19 @@ namespace BrainDrain.UI
             else
             {
                 RebuildStreet();
+            }
+
+            // Neither Content nor LogText carries a ContentSizeFitter (confirmed in the §24
+            // width-chain investigation), so nothing else grows Content to match the actual
+            // text height -- without this, ScrollRect has no real scroll range once the log
+            // exceeds one screen. ForceMeshUpdate() first so preferredHeight reflects the text
+            // just assigned above, not whatever was measured last frame.
+            logText.ForceMeshUpdate();
+            logText.rectTransform.sizeDelta = new Vector2(0f, logText.preferredHeight);
+
+            if (scrollRect != null && scrollRect.content != null)
+            {
+                scrollRect.content.sizeDelta = new Vector2(0f, logText.preferredHeight + ContentBottomPadding);
             }
         }
 
