@@ -62,8 +62,15 @@ namespace BrainDrain.UI
             // Unity's default Scroll View ships opaque light-gray Images (on the ScrollRect's
             // own GameObject and its Viewport child) that cover the panel's dark chip laid down
             // in the §20b layout tune, washing the log out (§24a, found 2026-07-22). Code-owned
-            // per Bible §8 so it can't regress via an Editor reset: kill only the visual (alpha
-            // 0), leave the Viewport's Mask/raycast function untouched.
+            // per Bible §8 so it can't regress via an Editor reset: kill only the visual.
+            // The ScrollRect's own Image has no Mask, so zeroing its alpha is harmless. The
+            // Viewport's Image is different -- it's the legacy Mask component's stencil source;
+            // zeroing its alpha alone (the original §24a fix) culls the graphic, the stencil
+            // never writes, and every Viewport child (LogText, both tabs' content, empty states)
+            // gets clipped invisible along with it -- the exact "panel opens, body totally empty"
+            // regression Aceyfer caught (§24a-2, 2026-07-24). Fix: swap the legacy Mask for
+            // RectMask2D first -- it clips by rect alone and needs no graphic to function -- then
+            // the Viewport's Image can be safely zeroed for looks only, same as the ScrollRect's.
             if (scrollRect != null)
             {
                 Image scrollRectImage = scrollRect.GetComponent<Image>();
@@ -76,6 +83,17 @@ namespace BrainDrain.UI
 
                 if (scrollRect.viewport != null)
                 {
+                    Mask legacyViewportMask = scrollRect.viewport.GetComponent<Mask>();
+                    if (legacyViewportMask != null)
+                    {
+                        Destroy(legacyViewportMask);
+                    }
+
+                    if (scrollRect.viewport.GetComponent<RectMask2D>() == null)
+                    {
+                        scrollRect.viewport.gameObject.AddComponent<RectMask2D>();
+                    }
+
                     Image viewportImage = scrollRect.viewport.GetComponent<Image>();
                     if (viewportImage != null)
                     {
