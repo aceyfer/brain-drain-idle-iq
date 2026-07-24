@@ -104,6 +104,33 @@ namespace BrainDrain.UI
                 }
             }
 
+            // Code-owned width chain (§24 polish, 2026-07-24). Investigated the actual scene
+            // wiring: Content (scrollRect.content) is already correctly stretched horizontally
+            // (anchorMin.x 0, anchorMax.x 1, sizeDelta.x 0) -- it was never the constraint.
+            // LogText's own RectTransform is the culprit: a non-stretched point anchor
+            // (0.5, 0.5) with a hardcoded 200-unit-wide sizeDelta, entirely decoupled from
+            // Content's width -- that fixed 200-unit box is the "narrow column" Aceyfer saw.
+            // Neither Content nor LogText carries a VerticalLayoutGroup or ContentSizeFitter at
+            // all (checked both GameObjects), so there's no existing auto-sizing behavior to
+            // preserve -- only sizeDelta.x is touched on either rect below; sizeDelta.y is left
+            // exactly as authored on both.
+            if (scrollRect != null && scrollRect.content != null)
+            {
+                RectTransform contentRect = scrollRect.content;
+                contentRect.anchorMin = new Vector2(0f, contentRect.anchorMin.y);
+                contentRect.anchorMax = new Vector2(1f, contentRect.anchorMax.y);
+                contentRect.sizeDelta = new Vector2(0f, contentRect.sizeDelta.y);
+            }
+
+            if (logText != null)
+            {
+                RectTransform logTextRect = logText.rectTransform;
+                logTextRect.anchorMin = new Vector2(0f, 1f);
+                logTextRect.anchorMax = new Vector2(1f, 1f);
+                logTextRect.pivot = new Vector2(0.5f, 1f);
+                logTextRect.sizeDelta = new Vector2(0f, logTextRect.sizeDelta.y);
+            }
+
             BuildTabBar();
 
             if (openButton != null)
