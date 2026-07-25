@@ -98,16 +98,15 @@ namespace BrainDrain.Systems
         // -- Hot Chick offline BPPS decay (2026-06-22) --
         /// <summary>How many Hot Chicks have been purchased (0-6). Extends the offline-BPPS-decay window by 24h each.</summary>
         public int hotChickCount;
-        /// <summary>The CurrencyManager.OfflineBPPSMultiplier computed on the last load, gathered live from CurrencyManager at save time (see SaveGame) so it round-trips correctly.</summary>
-        public float offlineBPPSMultiplier;
 
-        // -- Progression spec §2.2 (2026-07-06) --
-        /// <summary>Active stage index. Defaults to 1 for all pre-v4 saves via the v3→v4 migration.</summary>
-        public int currentStage;
-        /// <summary>UTC DateTime.Ticks of the last playerIQ write. Stored as ticks (long) for the same reason lastActiveUnixSeconds uses a long: JsonUtility cannot serialise DateTime directly.</summary>
-        public long iqLastUpdateUtcTicks;
-        /// <summary>Stable string IDs of world-restoration milestones the player has permanently completed.</summary>
-        public List<string> completedRestorationIds;
+        // Dead-field cleanup (2026-07-24): four persisted fields were never read back on load and
+        // have been removed. offlineBPPSMultiplier was gathered on save but load always recomputes
+        // it from elapsed offline time via SetOfflineBPPSMultiplier (CurrencyManager defaults to 1f
+        // on its own). The three progression §2.2 fields -- currentStage, iqLastUpdateUtcTicks,
+        // completedRestorationIds -- were consumed by no system: live stage derives from
+        // worldRestorationPointsSpent (WorldRestorationManager.CurrentStage) and IQ offline timing
+        // from lastActiveUnixSeconds. JsonUtility ignores the leftover keys in older save JSON, so
+        // no migration is needed. Re-add with real read-back logic if a feature ever needs them.
 
         // -- §23 FTUE seen-flags (2026-07-22) -- gate each onboarding beat to fire at most once
         // ever. Bools zero-fill to false on saves predating these fields, which is already the
@@ -314,19 +313,11 @@ namespace BrainDrain.Systems
                     data.profanityEnabled = PlayerPrefs.GetInt("BrainDrain_ProfanityEnabled", 0) == 1;
                 }
 
-                // v3 → v4: progression spec §2.2. saveVersion deserialises as 0 on all
-                // pre-v4 saves (JsonUtility zero-fills missing fields), so this block fires
-                // for every save written before this version was introduced.
+                // v3 → v4 originally stamped the progression §2.2 fields (now removed as dead).
+                // The version bump is kept so the stamp still advances on pre-v4 saves.
                 if (data.saveVersion < 4)
                 {
-                    data.currentStage = 1;
-                    data.iqLastUpdateUtcTicks = DateTime.UtcNow.Ticks;
-                    data.completedRestorationIds = new List<string>();
                     data.saveVersion = 4;
-                }
-                else
-                {
-                    data.completedRestorationIds ??= new List<string>();
                 }
 
                 LoadedData = data;
@@ -387,7 +378,6 @@ namespace BrainDrain.Systems
                 data.shopAllMultiplier = currencyManager.ShopAllMultiplier;
                 data.shopCashToPointsMultiplier = currencyManager.ShopCashToPointsMultiplier;
                 data.shopAllPointGainsMultiplier = currencyManager.ShopAllPointGainsMultiplier;
-                data.offlineBPPSMultiplier = currencyManager.OfflineBPPSMultiplier;
             }
 
             if (CompanionManager.Instance != null)
@@ -712,11 +702,7 @@ namespace BrainDrain.Systems
                 firstLaunchUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 hotChickCount = 0,
-                offlineBPPSMultiplier = 1f,
                 saveVersion = 4,
-                currentStage = 1,
-                iqLastUpdateUtcTicks = DateTime.UtcNow.Ticks,
-                completedRestorationIds = new List<string>(),
                 ftueBootBriefingSeen = false,
                 ftueCard1Seen = false,
                 ftueCard2Seen = false,
