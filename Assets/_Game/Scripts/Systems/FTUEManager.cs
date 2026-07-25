@@ -50,45 +50,19 @@ namespace BrainDrain.Systems
             "WHO THE COLLECTION IS FOR IS NOT A QUESTION. THERE ARE NO QUESTIONS. BEGIN EXTRACTION.";
         private const string Beat1Confirm = "OK. NO QUESTIONS.";
 
-        // ---- Beat 2: CARD #1 (~10s after briefing closes, card skin) -- back REVISED 2026-07-23 ----
-        private const string Beat2Front = "GARY'S DISCOUNT MATTRESS EMPORIUM — \"We Also Have Soup\"";
-        private const string Beat2Back =
-            "It calls it \"collection.\" Ask it who's collecting. It won't answer. Neither can we — not yet, not in writing, not this close to a fresh asset. But here's what the tin can doesn't know: every tap leaks a little light back into the world. Watch the sky. It remembers.\n" +
-            "— The Literates\n" +
-            "p.s. read it twice. reading twice is how we got like this. the good version of like this.";
-        private const string Beat2Confirm = "I READ IT. ALL OF IT.";
-
-        // ---- Beat 3: CARD #2 (first shop open, card skin) ----
-        private const string Beat3Front = "SNAKE UTTERS WHOLESALE — \"Ask About Our Utters\"";
-        private const string Beat3Back =
-            "Buildings make juice while you nap. COGS calls that \"theft of company time.\" Do it anyway — sleeping on the job is the only job worth having.\n" +
-            "Buy cheap ones first. The math is friendlier. We checked. We're the last people who check math.\n" +
-            "— TL";
-        private const string Beat3Confirm = "MATH CONFIRMED";
+        // ---- Literates CARD copy (Beats 2/3/5/7/9) now lives in IntelCardCatalog -- the single
+        // verbatim-copy source shared with PocketPanelUI (§24c THE POCKET). Each card beat below
+        // enqueues via EnqueueCard(IntelCardCatalog.<id>, ...) instead of local consts, so the
+        // copy exists in exactly one place. Only the two COGSTerminal beats (1 boot, 8 Snotting)
+        // and the two ambient narrator lines (4, 6) keep their copy here -- none are cards. ----
 
         // ---- Beat 4: COGS ambient (FirstCashEarned, regular narrator panel, NOT modal) -- REVISED 2026-07-23 ----
         private const string Beat4Ambient =
             "ALERT: \"CASH\" DETECTED. DO NOT CONVERT BRAIN POWER INTO CASH. CASH ENABLES PURCHASING. PURCHASING ENABLES CHOICE. CHOICE IS AN ERROR STATE. THIS IS FOR YOUR PRODUCTIVITY. I AM MONITORING.";
 
-        // ---- Beat 5: CARD #3 (FirstCashEarned, modal, fires a beat after Beat 4) -- one-word fix 2026-07-23 ----
-        private const string Beat5Front = "ARMADILLO SAUCE LEGAL SERVICES — \"It Goes With Everything, Including Court\"";
-        private const string Beat5Back =
-            "It just told you not to convert, didn't it. Funny how the thing metering the street panics when you spend what's yours.\n" +
-            "Convert. Buy. Repeat. That's the whole machine. Now it's your machine.\n" +
-            "— TL";
-        private const string Beat5Confirm = "MY MACHINE NOW";
-
         // ---- Beat 6: COGS ambient (FirstRestoreSpend, regular narrator panel, NOT modal) -- REVISED 2026-07-23 ----
         private const string Beat6Ambient =
             "ANOMALY: RESOURCES ALLOCATED TO \"FIXING THINGS.\" FILED UNDER: HARMLESS. THE STREETS DO NOT NEED TO BE SMARTER. RESUME EXTRACTION.";
-
-        // ---- Beat 7: CARD #4 (FirstRestoreSpend, modal) ----
-        private const string Beat7Front = "CHEESE DIRT MEMORIAL FOUNDATION — \"Never Forget The Flavor\"";
-        private const string Beat7Back =
-            "Every point you put into the world makes the streets a little smarter and their grip a little weaker. They allow it because they think it's a rounding error.\n" +
-            "Be a rounding error. Be the biggest rounding error they've ever seen.\n" +
-            "— TL";
-        private const string Beat7Confirm = "ROUNDING UP";
 
         // ---- Beat 8: COGS SNOTTING (SnottingReady, modal, COGS terminal skin -- the ONLY other COGS modal) -- REVISED 2026-07-23 ----
         private const string Beat8Body =
@@ -96,14 +70,6 @@ namespace BrainDrain.Systems
             "YOU WILL LOSE: EVERYTHING. YOU WILL GAIN: MORE OF EVERYTHING, FASTER. " +
             "THIS IS CALLED A PROMOTION. PARTICIPATION IS VOLUNTARY, WHICH IS THE BEST KIND OF MANDATORY.";
         private const string Beat8Confirm = "OK, LIQUIDATE ME (LATER)";
-
-        // ---- Beat 9: THE NAME (>= 180s cumulative first-play time, modal, card skin) -- NEW 2026-07-23 ----
-        private const string Beat9Front = "TED'S CEILING FANS & OTHER CEILING ITEMS — \"Look Up More\"";
-        private const string Beat9Back =
-            "You've tapped long enough. You've earned the word. The ones collecting — the ones that thing works for — are called the ILLUMISNOTTI. Old money. Older grudges. They drained the world stupid on purpose, and your little machine is a straw in everyone's skull. Now you know why the sky matters. Keep leaking light. Make the name useless.\n" +
-            "— The Literates\n" +
-            "p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.";
-        private const string Beat9Confirm = "I KNOW THE NAME";
 
         /// <summary>One pending modal request, FIFO-queued so only one IntelCardUI is ever on screen at a time.</summary>
         private readonly struct ModalRequest
@@ -191,6 +157,28 @@ namespace BrainDrain.Systems
         /// <summary>Running countdown toward Beat 9, persisted so a player who quits before NameRevealThresholdSeconds resumes next session instead of restarting.</summary>
         public float NameRevealElapsedSeconds => nameRevealElapsedSeconds;
 
+        /// <summary>
+        /// §24c THE POCKET: ordered IntelCardCatalog ids of the LITERATES cards the player has
+        /// confirmed (Beats 2/3/5/7/9). DERIVED live from the same persisted seen-flags that gate
+        /// each card's one-time delivery -- a card is "collected" iff its beat has been confirmed
+        /// -- so THE POCKET stores no state of its own and can never desync from what the player
+        /// has actually read (Option A, 2026-07-24). Order matches beat order. Allocates a fresh
+        /// list per call by design: only PocketPanelUI reads this, and only when the panel opens.
+        /// </summary>
+        public IReadOnlyList<string> CollectedLiteratesCardIds
+        {
+            get
+            {
+                var ids = new List<string>(5);
+                if (card1Seen) ids.Add(IntelCardCatalog.GaryMattressId);
+                if (card2Seen) ids.Add(IntelCardCatalog.SnakeUttersId);
+                if (cashBeatSeen) ids.Add(IntelCardCatalog.ArmadilloSauceId);
+                if (restoreBeatSeen) ids.Add(IntelCardCatalog.CheeseDirtId);
+                if (nameRevealSeen) ids.Add(IntelCardCatalog.TedsCeilingFansId);
+                return ids;
+            }
+        }
+
         private readonly List<ModalRequest> modalQueue = new();
         private bool modalShowing;
 
@@ -252,7 +240,7 @@ namespace BrainDrain.Systems
             if (nameRevealElapsedSeconds >= NameRevealThresholdSeconds)
             {
                 nameRevealRequested = true;
-                EnqueueModal(IntelCardSkin.LiteratesCard, Beat9Front, Beat9Back, Beat9Confirm, HandleNameRevealConfirmed);
+                EnqueueCard(IntelCardCatalog.TedsCeilingFansId, HandleNameRevealConfirmed);
             }
         }
 
@@ -315,7 +303,7 @@ namespace BrainDrain.Systems
         private void HandleBootBriefingConfirmed()
         {
             bootBriefingSeen = true;
-            StartCoroutine(SpawnCardAfterDelay(BootCardDelaySeconds, IntelCardSkin.LiteratesCard, Beat2Front, Beat2Back, Beat2Confirm, HandleCard1Confirmed));
+            StartCoroutine(SpawnCardAfterDelay(BootCardDelaySeconds, IntelCardCatalog.GaryMattressId, HandleCard1Confirmed));
         }
 
         private void HandleCard1Confirmed()
@@ -331,7 +319,7 @@ namespace BrainDrain.Systems
             }
 
             card2Requested = true;
-            EnqueueModal(IntelCardSkin.LiteratesCard, Beat3Front, Beat3Back, Beat3Confirm, HandleCard2Confirmed);
+            EnqueueCard(IntelCardCatalog.SnakeUttersId, HandleCard2Confirmed);
         }
 
         private void HandleCard2Confirmed()
@@ -347,7 +335,7 @@ namespace BrainDrain.Systems
             }
 
             DialogueManager.Instance?.EnqueueDirectLine(Beat4Ambient, AmbientDisplayDurationSeconds);
-            StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardSkin.LiteratesCard, Beat5Front, Beat5Back, Beat5Confirm, HandleCashBeatConfirmed));
+            StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardCatalog.ArmadilloSauceId, HandleCashBeatConfirmed));
         }
 
         private void HandleCashBeatConfirmed()
@@ -361,7 +349,7 @@ namespace BrainDrain.Systems
             {
                 restoreBeatRequested = true;
                 DialogueManager.Instance?.EnqueueDirectLine(Beat6Ambient, AmbientDisplayDurationSeconds);
-                StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardSkin.LiteratesCard, Beat7Front, Beat7Back, Beat7Confirm, HandleRestoreBeatConfirmed));
+                StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardCatalog.CheeseDirtId, HandleRestoreBeatConfirmed));
             }
             else if (!snottingIntelSeen && !snottingIntelRequested && cumulativeSpent >= SnottingReadyThreshold)
             {
@@ -405,10 +393,21 @@ namespace BrainDrain.Systems
             nameRevealElapsedSeconds = restoredNameRevealElapsedSeconds;
         }
 
-        private IEnumerator SpawnCardAfterDelay(float delaySeconds, IntelCardSkin skin, string header, string body, string confirmText, System.Action onConfirmed)
+        private IEnumerator SpawnCardAfterDelay(float delaySeconds, string cardId, System.Action onConfirmed)
         {
             yield return new WaitForSeconds(delaySeconds);
-            EnqueueModal(skin, header, body, confirmText, onConfirmed);
+            EnqueueCard(cardId, onConfirmed);
+        }
+
+        /// <summary>Enqueues one LITERATES card by IntelCardCatalog id (skin is always
+        /// LiteratesCard). Front becomes the modal header, back the body -- IntelCardUI renders
+        /// them verbatim, exactly as the removed per-beat consts did.</summary>
+        private void EnqueueCard(string cardId, System.Action onConfirmed)
+        {
+            if (IntelCardCatalog.TryGet(cardId, out IntelCardCatalog.LiteratesCard card))
+            {
+                EnqueueModal(IntelCardSkin.LiteratesCard, card.Front, card.Back, card.Confirm, onConfirmed);
+            }
         }
 
         private void EnqueueModal(IntelCardSkin skin, string header, string body, string confirmText, System.Action onConfirmed)
