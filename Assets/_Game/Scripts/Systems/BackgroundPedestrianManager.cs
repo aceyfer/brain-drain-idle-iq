@@ -62,6 +62,11 @@ namespace BrainDrain.Systems
 
         [Header("Chatter Bubbles")]
         [SerializeField] private BrainDrain.UI.ChatterBubble chatterBubblePrefab;
+
+        // One bubble at a time (2026-07-25): holds the currently-live chatter bubble. Unity's
+        // overloaded == reports it null once the bubble self-destroys at end of life, so a simple
+        // null check gates the next spawn -- guarantees zero bubble overlap.
+        private BrainDrain.UI.ChatterBubble activeChatterBubble;
         /// <summary>Cadence relaxed 5s→12s (§24 polish, 2026-07-24): the original 5-12s range read
         /// as too chatty per Aceyfer's live test, confirmed by STREET log timestamps landing
         /// ~6-10s apart. Force-reassigned in Start() below since the scene's saved Inspector
@@ -324,6 +329,13 @@ namespace BrainDrain.Systems
 
                 activePedestrians.RemoveAll(p => p == null);
 
+                // One bubble at a time: if the previous bubble is still alive, skip this cycle
+                // rather than stacking a second (overlapping) bubble.
+                if (activeChatterBubble != null)
+                {
+                    continue;
+                }
+
                 if (activePedestrians.Count > 0 && chatterBubblePrefab != null)
                 {
                     RectTransform chosenPed = activePedestrians[Random.Range(0, activePedestrians.Count)];
@@ -343,6 +355,7 @@ namespace BrainDrain.Systems
             }
 
             BrainDrain.UI.ChatterBubble bubble = Instantiate(chatterBubblePrefab, containerRect);
+            activeChatterBubble = bubble;
             RectTransform bubbleRt = bubble.GetComponent<RectTransform>();
             if (bubbleRt != null)
             {
