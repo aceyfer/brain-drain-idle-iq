@@ -32,6 +32,14 @@ namespace BrainDrain.Systems
         private const int MaxQueueDepth = 2;
         private const int MaxHistoryEntries = 50;
         private const float DefaultDisplayDurationSeconds = 3f;
+
+        /// <summary>
+        /// Hard floor on how long any line stays on screen, regardless of its requested Duration.
+        /// A short requested duration on a dense line (e.g. the opening COGS extraction burst) was
+        /// closing before it could be read. Applied in Display() to every line -- direct, pooled,
+        /// and priority alike. Tune here if lines still feel rushed / too slow.
+        /// </summary>
+        private const float MinLineDisplaySeconds = 4.5f;
         private const int TapsWithoutPurchaseThreshold = 25;
         private const double SnottingReadyThreshold = 50_000d;
 
@@ -519,7 +527,7 @@ namespace BrainDrain.Systems
         {
             lastPlayedLine = entry.SourceLine;
             isDisplaying = true;
-            CurrentDisplayDurationSeconds = entry.Duration;
+            CurrentDisplayDurationSeconds = Mathf.Max(entry.Duration, MinLineDisplaySeconds);
 
             history.Add(new DialogueLogEntry(entry.Text, Time.unscaledTime, entry.SourceLine));
             while (history.Count > MaxHistoryEntries)
