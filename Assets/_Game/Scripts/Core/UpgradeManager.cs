@@ -58,10 +58,7 @@ namespace BrainDrain.Core
 
         private void OnDestroy()
         {
-            if (lockTickSubscribed && GameManager.Instance != null)
-            {
-                GameManager.Instance.OnSecondTick -= HandleLockRestoreTick;
-            }
+            UnsubscribeLockTick();
         }
 
         /// <summary>Returns the current owned level for a building template.</summary>
@@ -213,6 +210,26 @@ namespace BrainDrain.Core
             lockTickSubscribed = true;
         }
 
+        private void UnsubscribeLockTick()
+        {
+            if (lockTickSubscribed && GameManager.Instance != null)
+            {
+                GameManager.Instance.OnSecondTick -= HandleLockRestoreTick;
+            }
+            lockTickSubscribed = false;
+        }
+
+        /// <summary>Discards all pending building locks WITHOUT restoring their suppressed output,
+        /// and stops the restore tick. Used by the rebirth/Snotting reset: ExecuteRebirth zeros idle
+        /// BPPS/CPS wholesale, so a pending RestoreIdleBPPS/RestoreCashPerSecond (both additive) would
+        /// inject a pre-reset building's production onto the zeroed baseline of the new run -- phantom
+        /// income the player never earned. Clearing the locks here prevents that.</summary>
+        private void ClearActiveBuildingLocks()
+        {
+            activeBuildingLocks.Clear();
+            UnsubscribeLockTick();
+        }
+
         private void HandleLockRestoreTick()
         {
             for (int i = activeBuildingLocks.Count - 1; i >= 0; i--)
@@ -227,12 +244,23 @@ namespace BrainDrain.Core
                 currencyManager?.RestoreCashPerSecond(entry.cps);
                 activeBuildingLocks.RemoveAt(i);
             }
+
+            // Stop the per-second tick once the last lock has expired; a new lock re-subscribes via
+            // SubscribeToGameTickForLocks (its duplicate guard makes re-subscription safe). Removing a
+            // handler during its own OnSecondTick dispatch is safe -- the current invocation completes.
+            if (activeBuildingLocks.Count == 0)
+            {
+                UnsubscribeLockTick();
+            }
         }
 
-        /// <summary>Clears all owned building levels back to baseline and notifies UI to refresh.</summary>
+        /// <summary>Clears all owned building levels back to baseline and notifies UI to refresh.
+        /// Also discards any pending building locks (see ClearActiveBuildingLocks) so a lock that
+        /// was active at Snotting time can't restore pre-reset production into the new run.</summary>
         public void ResetBuildings()
         {
             buildingLevels.Clear();
+            ClearActiveBuildingLocks();
             OnBuildingsChanged?.Invoke();
         }
 
