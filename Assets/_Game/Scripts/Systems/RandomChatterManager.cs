@@ -19,6 +19,11 @@ namespace BrainDrain.Systems
         /// <summary>Mirrors DialogueManager.MaxHistoryEntries exactly -- same cap, same reasoning.</summary>
         private const int MaxHistoryEntries = 50;
 
+        /// <summary>How many most-recent spoken lines GetLineForRank excludes from its pool, so
+        /// ambient chatter doesn't visibly loop (Tier 1's pool is small). Kept below the smallest
+        /// tier pool; filtering falls back to the full pool if it would empty, so a line always fires.</summary>
+        private const int RecentChatterWindow = 6;
+
         /// <summary>One recorded pedestrian chatter line for the §24b STREET log tab, mirroring DialogueManager.DialogueLogEntry (minus SourceLine -- chatter lines are plain strings, not NarratorLine assets).</summary>
         public readonly struct ChatterLogEntry
         {
@@ -218,7 +223,30 @@ namespace BrainDrain.Systems
                 return string.Empty;
             }
 
-            return pool[Random.Range(0, pool.Count)];
+            // Anti-repeat: drop any line spoken in the last RecentChatterWindow history entries.
+            // If that would empty the pool (tiny pool + long window), fall back to the full pool so
+            // a line always fires. Mirrors DialogueManager's last-N narrator anti-repeat.
+            int windowStart = Mathf.Max(0, history.Count - RecentChatterWindow);
+            HashSet<string> recent = new HashSet<string>();
+            for (int i = windowStart; i < history.Count; i++)
+            {
+                recent.Add(history[i].Text);
+            }
+
+            List<string> pickFrom = new List<string>(pool.Count);
+            for (int i = 0; i < pool.Count; i++)
+            {
+                if (!recent.Contains(pool[i]))
+                {
+                    pickFrom.Add(pool[i]);
+                }
+            }
+            if (pickFrom.Count == 0)
+            {
+                pickFrom = pool;
+            }
+
+            return pickFrom[Random.Range(0, pickFrom.Count)];
         }
 
         /// <summary>Permanently unlocks the Tier 3 profanity pack and persists the choice to PlayerPrefs.</summary>
