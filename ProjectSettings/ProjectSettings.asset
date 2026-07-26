@@ -12,7 +12,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: AcEclipse Games
+  companyName: Eighth Kind Studios
   productName: 'Brain Drain: Idle IQ'
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
