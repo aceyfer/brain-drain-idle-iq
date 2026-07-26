@@ -341,6 +341,8 @@ namespace BrainDrain.UI
                 return;
             }
 
+            panelGroup.transform.SetAsLastSibling();
+
             RebuildList();
             SetPanelHidden(false);
             isVisible = true;

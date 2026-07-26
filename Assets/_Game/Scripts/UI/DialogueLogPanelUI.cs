@@ -191,6 +191,8 @@ namespace BrainDrain.UI
         {
             if (panelRoot == null) return;
 
+            panelRoot.SetAsLastSibling();
+
             activeTab = LogTab.Cogs;
             UpdateTabVisuals();
             Rebuild();
