@@ -27,8 +27,8 @@
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $5.00 (details §10)
 
 ## THEN — Path to Market
-- [ ] 23. FTUE / comprehension pass (COGS-narrated onboarding) — scoped, BLOCKS §11 (details §23)
-- [x] 24. Dialogue log v2 + The Pocket — CLOSED. (a) washout/width/height fixes (`64bc500`/`446af70`/`452eee6`/`26624e1`), (b) COGS/STREET tabs + chatter history + cadence tune (`aa3b298`/`6445834`/`df36d36`), (c) THE POCKET card inventory, derive-from-flags (`36b0d3c`/`23a9707`) — all shipped, (c) pending Aceyfer Play-mode verification (details §24)
+- [x] 23. FTUE / comprehension pass (COGS-narrated onboarding) — SHIPPED & live-tested. FTUEManager + code-built IntelCardUI (`258deee`), FTUE seen-flags in save (`83e8de0`), Beat 9 Illumisnotti name-reveal (`52da27b`/`0b37537`); unblocked §11 (details §23)
+- [x] 24. Dialogue log v2 + The Pocket — CLOSED. (a) washout/width/height fixes (`64bc500`/`446af70`/`452eee6`/`26624e1`), (b) COGS/STREET tabs + chatter history + cadence tune (`aa3b298`/`6445834`/`df36d36`), (c) THE POCKET card inventory, derive-from-flags (`36b0d3c`/`23a9707`) — all shipped & (c) Play-mode verified 2026-07-26; (d) post-ship UI fixes — opened-panel z-order + log tab-bar padding so the Dia-Log close-X isn't stolen by the Pocket button and clears the STREET tab (`6142a3d`/`d3ba6f3`) (details §24)
 - [x] 11. Define "first playable" cut line — what ships v1, what waits — **PASSED**. First-playable achieved 2026-07-23, Aceyfer verdict (details §11)
 - [x] 26. Economy display/design audit — CLOSED. Jumper Cables/IQ Overclock Chip descriptions fixed, PlayerIQManager subscribe guard added (`f0ba24d`); Overcharged IQ system + Underground Economy's 9BP/7Cash split doc-synced into CLAUDE.md/Bible §6; remaining findings confirmed intentional, no action needed (details §26)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
