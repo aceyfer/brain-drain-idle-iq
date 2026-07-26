@@ -398,7 +398,7 @@ namespace BrainDrain.UI
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.spacing = 4f;
-            layout.padding = new RectOffset(8, 8, 8, 8);
+            layout.padding = new RectOffset(8, 88, 8, 8);
 
             cogsTabImage = CreateTabButton(tabBarObject.transform, "COGS", () => SelectTab(LogTab.Cogs), out cogsTabLabel);
             streetTabImage = CreateTabButton(tabBarObject.transform, "STREET", () => SelectTab(LogTab.Street), out streetTabLabel);
