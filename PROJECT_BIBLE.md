@@ -199,3 +199,12 @@ Repurposed from the enemy's own attention-harvesting infrastructure, the Doomscr
 
 ### StupAid H2O (formerly Defrost Drip)
 StupAid is the mega-brand that swallowed nutrition whole after self-sufficient agriculture was criminalized generations back. The old crops rotted from disuse; the knowledge of how to grow, store, and feed was scrubbed so completely that the elites themselves no longer remember it existed -- they simply inherited ownership of the last working supply and never questioned it. StupAid H2O is the bottled remainder of what a human brain genuinely needs, sold back at markup to a population that has no memory of ever making its own. The tragedy isn't that they hoard it. It's that nobody left alive remembers there was an alternative.
+
+### Tinfoil Headband (formerly Cranial Microwave)
+The third eye -- the pineal gland -- is a receiver, and generations ago the controllers learned to jam and siphon its signal, skimming cognitive bandwidth off an entire population that never knew it was broadcasting. The Tinfoil Headband is crude, low-tech counter-surveillance: worn like ordinary sportswear so it draws no attention, lined with foil that blocks the siphon. It grants no power of its own -- it stops the theft. What reads as a gain is simply the return of bandwidth that was always yours, no longer leaking to the tower.
+
+### Hyperbolic Brain Chamber (formerly Synapse Space Heater)
+Dreams keep their own clock. A minute of REM can hold a year of lived experience, and the resistance learned to weaponize that gap. The Hyperbolic Brain Chamber induces a controlled, dilated dream-state: the body rests for an hour while the mind lives far longer, training and rehearsing in compressed time, then wakes sharper than the hours should allow. It is the closest thing to cheating the clock a human brain can survive -- most of the time. Not everyone who goes under comes back the same, and a few don't come back at all.
+
+### Pineal Overclock (formerly IQ Overclock Chip)
+Where the Tinfoil Headband defends the third eye, the Pineal Overclock awakens it. The gland was never removed -- it was calcified on purpose, by fluoridated everything and a curriculum that taught people it was a myth. There is no implant and no chip; the "overclock" is purely the decalcification and activation of hardware every human is born with. The IQ spike, the intuition, the faint smoke behind the brow -- all of it was latent, dormant, waiting. The controllers' finest trick was convincing a species it needed their technology to reach abilities it already had.

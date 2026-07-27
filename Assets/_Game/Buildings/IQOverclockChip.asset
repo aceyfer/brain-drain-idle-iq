@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: IQOverclockChip
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: IQ Overclock Chip
-  description: Overclocks your headspace for a flat IQ bump and steady Brain
-    Power. Mild forehead smoke is normal.
+  buildingName: Pineal Overclock
+  description: Decalcify and overclock the third eye you were born with. No implant, no chip — just the gland they hoped you'd forget. Real IQ bump; mild forehead smoke is normal.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 2500

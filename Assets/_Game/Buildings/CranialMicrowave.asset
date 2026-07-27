@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: CranialMicrowave
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Cranial Microwave
-  description: DO NOT use the popcorn setting.
+  buildingName: Tinfoil Headband
+  description: Looks like sportswear. Lined with tinfoil that jams the signals trying to hack your third eye. Block the leeches and the bandwidth is yours again.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 150

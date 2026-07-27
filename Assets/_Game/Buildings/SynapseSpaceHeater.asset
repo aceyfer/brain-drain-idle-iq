@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: SynapseSpaceHeater
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Synapse Space Heater
-  description: Warms thoughts to room temperature.
+  buildingName: Hyperbolic Brain Chamber
+  description: An hour inside is a year of thinking outside. Your mind trains in dilated dream-time and comes back sharper — assuming it comes back.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 900

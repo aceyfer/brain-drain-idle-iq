@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: CryoSludgeEspresso
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Cryo-Sludge Espresso
-  description: Brewed from tube runoff. FDA unaware.
+  buildingName: Cryo Plunge Tank
+  description: Three minutes of screaming cold, then hours of clarity you didn't earn. The recovery-bros were right about exactly one thing.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 5000
