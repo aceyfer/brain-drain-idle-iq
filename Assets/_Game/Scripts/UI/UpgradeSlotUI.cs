@@ -108,6 +108,11 @@ namespace BrainDrain.UI
                         if (perLevel.Length > 0) perLevel += "  ";
                         perLevel += $"+${NumberFormatter.Format(singleCash)}/s";
                     }
+                    if (boundData.tapBrainPowerPerLevel > 0)
+                    {
+                        if (perLevel.Length > 0) perLevel += "  ";
+                        perLevel += $"+{NumberFormatter.Format(boundData.tapBrainPowerPerLevel)} BP/tap";
+                    }
 
                     string totalLine = "";
                     if (level > 0)
@@ -121,9 +126,13 @@ namespace BrainDrain.UI
                         string totalC = boundData.baseCashPerSecond > 0
                             ? $"+${NumberFormatter.Format(totalCash)}/s"
                             : "";
-                        string totalParts = totalBP.Length > 0 && totalC.Length > 0
-                            ? $"{totalBP}  {totalC}"
-                            : $"{totalBP}{totalC}";
+                        string totalTap = boundData.tapBrainPowerPerLevel > 0
+                            ? $"+{NumberFormatter.Format(level * boundData.tapBrainPowerPerLevel)} BP/tap"
+                            : "";
+                        string totalParts = "";
+                        if (totalBP.Length > 0) totalParts = totalBP;
+                        if (totalC.Length > 0) totalParts += (totalParts.Length > 0 ? "  " : "") + totalC;
+                        if (totalTap.Length > 0) totalParts += (totalParts.Length > 0 ? "  " : "") + totalTap;
                         totalLine = $"\n<color=#FFD700>TOTAL ({level}×): {totalParts}</color>";
                     }
 

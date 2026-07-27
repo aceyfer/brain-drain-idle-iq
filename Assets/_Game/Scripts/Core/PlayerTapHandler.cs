@@ -84,7 +84,8 @@ namespace BrainDrain.Core
                 return;
             }
 
-            double brainPowerEarned = baseTapBrainPower * tapMultiplier * GetTemporaryTapFactor();
+            double tapBase = baseTapBrainPower + (UpgradeManager.Instance != null ? UpgradeManager.Instance.GetTotalTapBrainPowerBonus() : 0d);
+            double brainPowerEarned = tapBase * tapMultiplier * GetTemporaryTapFactor();
             currencyManager.AddBrainPower(brainPowerEarned);
             PlayerIQManager.Instance?.RestoreIQFromTap();
 

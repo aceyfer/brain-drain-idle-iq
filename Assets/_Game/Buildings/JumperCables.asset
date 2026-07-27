@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: JumperCables
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Jumper Cables
-  description: Car battery, meet temporal lobe. Trickle-feeds Brain Power while
-    you're away — no tapping required.
+  buildingName: Apex Brain Greens
+  description: A scoop of pond-colored powder, 47 ingredients nobody regulated.
+    Every tap hits harder. The whole feed swears by it.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 15
   costMultiplier: 1.12
-  baseBrainPowerPerSecond: 1
+  baseBrainPowerPerSecond: 0
+  tapBrainPowerPerLevel: 0.02

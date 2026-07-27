@@ -90,6 +90,18 @@ namespace BrainDrain.Core
             return building.baseCost * Math.Pow(building.costMultiplier, level);
         }
 
+        /// <summary>Sum of flat Brain-Power-per-tap bonuses from every owned level of every building with a non-zero tapBrainPowerPerLevel (currently only Apex Brain Greens). Read by PlayerTapHandler.OnTap each tap.</summary>
+        public double GetTotalTapBrainPowerBonus()
+        {
+            double sum = 0d;
+            foreach (BuildingData building in buildingTemplates)
+            {
+                if (building == null || building.tapBrainPowerPerLevel <= 0d) continue;
+                sum += GetBuildingLevel(building) * building.tapBrainPowerPerLevel;
+            }
+            return sum;
+        }
+
         /// <summary>Returns true when the player's cumulative Brain Power meets the building's unlock requirement.</summary>
         public bool IsUnlocked(BuildingData building)
         {
