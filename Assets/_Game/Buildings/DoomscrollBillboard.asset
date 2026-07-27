@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DoomscrollBillboard
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Doomscroll Billboard
-  description: Ads so dumb they loop back to profitable.
+  description: It scrolls the truth instead of the feed. The more it spreads, the madder the controllers get.
   unlockCumulativeBrainPower: 0
   costType: 1
   baseCost: 250

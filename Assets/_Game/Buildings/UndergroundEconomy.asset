@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: UndergroundEconomy
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Underground Economy
-  description: The Snotty Council calls this illegal. You call it Tuesday.
+  buildingName: Snott Market Exchange
+  description: The whole exchange got bought out centuries ago and never sold back. This is where the war to reclaim it trades.
   unlockCumulativeBrainPower: 500
   costType: 0
   baseCost: 75

@@ -188,3 +188,14 @@ During Claude (chat) cooldowns, the division of labor is strict:
 - **Codex** runs **read-only diagnosis only**, writing findings to `CODEX_FINDINGS.md` at the repo root (untracked — not committed, not part of the shipped history). No edits, no git writes, no code proposals — findings as text only, cited file+line, ranked.
 - **Findings get audited by Claude (chat) before any patch is written off of them.** A Codex finding is an input to a design decision, not a decision itself.
 - **Nothing ships during cooldowns.** Mechanical patch application (Claude Code) and read-only diagnosis (Codex) can both proceed in parallel, but no commit lands that wasn't fully specified *before* the cooldown started, and no new investigation converts directly into a patch without Claude (chat) reviewing the findings first, cooldown or not.
+
+## Building Lore — Expanded (2026-07-26)
+
+### Snott Market Exchange (formerly Underground Economy)
+Every stock market on the planet was quietly acquired, floor by floor, generations ago -- bought outright by owners who never intended to sell a single share back. The global economy has run as a closed loop ever since: their capital, their rules, their war. The Snott Market Exchange is the resistance's parallel bourse, a bootleg trading floor built in the cracks of the official one, where reclaimed wealth is laundered back into the hands of the people who generated it. It is not a metaphor for economic warfare. It is the front line of it.
+
+### Doomscroll Billboard
+Repurposed from the enemy's own attention-harvesting infrastructure, the Doomscroll Billboard turns the doom-feed against its makers. Where the original screens were engineered to numb and pacify, this one broadcasts everything that was buried -- counter-programming delivered at the same relentless scroll-speed people were already addicted to. Every verified truth that propagates strips a little narrative control from the ones upstairs, and they feel each one. Their response is always the same, and always disproportionate.
+
+### StupAid H2O (formerly Defrost Drip)
+StupAid is the mega-brand that swallowed nutrition whole after self-sufficient agriculture was criminalized generations back. The old crops rotted from disuse; the knowledge of how to grow, store, and feed was scrubbed so completely that the elites themselves no longer remember it existed -- they simply inherited ownership of the last working supply and never questioned it. StupAid H2O is the bottled remainder of what a human brain genuinely needs, sold back at markup to a population that has no memory of ever making its own. The tragedy isn't that they hoard it. It's that nobody left alive remembers there was an alternative.
