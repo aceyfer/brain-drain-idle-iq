@@ -222,7 +222,7 @@ namespace BrainDrain.Systems
             // LoadState sets multipliers to current values (preserving them) and zeros balances.
             // ExecuteRebirth(0,0,0) then zeros idleBpps/cashPerSecond (LoadState doesn't touch
             // those); the +=0 on multipliers is a no-op.
-            cm.LoadState(0d, 0d, cm.RebirthMultiplier, 0d, cm.CashMultiplier, 0d, cm.PointsConversionRate, false);
+            cm.LoadState(0d, 0d, cm.RebirthMultiplier, 0d, cm.CashMultiplier, 0d, cm.PointsConversionRate, false, 0d);
             cm.ExecuteRebirth(0d, 0d, 0d);
             wrm.ResetProgress();
             PlayerIQManager.Instance?.ResetForRebirth();
@@ -291,7 +291,7 @@ namespace BrainDrain.Systems
 
             UpgradeManager.Instance?.ResetBuildings();
             // Set exact permanent multipliers for N Snottings; zero all balances.
-            cm.LoadState(0d, 0d, rebirthMult, 0d, cashMult, 0d, pointsRate, false);
+            cm.LoadState(0d, 0d, rebirthMult, 0d, cashMult, 0d, pointsRate, false, 0d);
             // Zero idleBpps/cashPerSecond (LoadState doesn't touch them); +=0 on mults is no-op.
             cm.ExecuteRebirth(0d, 0d, 0d);
             PlayerTapHandler.Instance?.SetTapMultiplier(tapMult);
