@@ -29,6 +29,7 @@ namespace BrainDrain.Systems
         public List<BuildingSaveEntry> buildingLevels;
 
         public double currentCash;
+        public double cumulativeCash;
         public double cashMultiplier;
         public double currentPoints;
         public double pointsConversionRate;
@@ -341,6 +342,7 @@ namespace BrainDrain.Systems
                 data.cumulativeBrains = currencyManager.CumulativeBrainPower;
                 data.rebirthMultiplier = currencyManager.RebirthMultiplier;
                 data.currentCash = currencyManager.CurrentCash;
+                data.cumulativeCash = currencyManager.CumulativeCash;
                 data.cashMultiplier = currencyManager.CashMultiplier;
                 data.currentPoints = currencyManager.CurrentPoints;
                 data.pointsConversionRate = currencyManager.PointsConversionRate;
@@ -565,7 +567,8 @@ namespace BrainDrain.Systems
                 data.cashMultiplier,
                 data.currentPoints,
                 data.pointsConversionRate,
-                data.autoConvertCash);
+                data.autoConvertCash,
+                data.cumulativeCash);
             CurrencyManager.Instance?.LoadShopMultipliers(
                 data.shopCashMultiplier,
                 data.shopAllMultiplier,

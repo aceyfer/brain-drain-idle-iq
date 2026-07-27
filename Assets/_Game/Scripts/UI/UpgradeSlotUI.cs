@@ -68,10 +68,20 @@ namespace BrainDrain.UI
                 return;
             }
 
-            bool unlocked = currency != null && currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower;
             double cost = boundManager.GetCurrentCost(boundData);
             int level = boundManager.GetBuildingLevel(boundData);
-            bool affordable = unlocked && boundManager.CanAffordBuilding(boundData);
+
+            // Reveal = first-affordable latch: owned, or lifetime currency ever reached base cost.
+            // Cumulative BP / cash are monotonic, so this never un-reveals on spend.
+            bool isCash = UpgradeManager.IsCashCost(boundData);
+            bool everAfforded = currency != null && (isCash
+                ? currency.CumulativeCash >= boundData.baseCost
+                : currency.CumulativeBrainPower >= boundData.baseCost);
+            bool unlocked = level > 0 || everAfforded;
+
+            // Purchase still gated by the BP progression gate (economy unchanged).
+            bool pastPurchaseGate = currency != null && currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower;
+            bool affordable = unlocked && pastPurchaseGate && boundManager.CanAffordBuilding(boundData);
             UpdateAffordablePulse(affordable);
 
             if (countText != null)
@@ -136,7 +146,9 @@ namespace BrainDrain.UI
                 if (countText != null) countText.text = string.Empty;
                 if (costText != null)
                 {
-                    costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
+                    costText.text = isCash
+                        ? $"${NumberFormatter.Format(boundData.baseCost)} REQUIRED"
+                        : $"{NumberFormatter.Format(boundData.baseCost)} BP REQUIRED";
                     costText.fontSize = 28f;
                 }
                 ApplyAccent(LockedColor);
@@ -151,9 +163,11 @@ namespace BrainDrain.UI
             }
             if (costText != null)
             {
-                costText.text = UpgradeManager.IsCashCost(boundData)
-                    ? $"${NumberFormatter.Format(cost)}"
-                    : $"{NumberFormatter.Format(cost)} BP";
+                costText.text = !pastPurchaseGate
+                    ? $"REACH {NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP"
+                    : isCash
+                        ? $"${NumberFormatter.Format(cost)}"
+                        : $"{NumberFormatter.Format(cost)} BP";
                 costText.fontSize = 30f;
             }
 

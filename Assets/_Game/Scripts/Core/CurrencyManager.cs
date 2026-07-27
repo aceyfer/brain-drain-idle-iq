@@ -23,6 +23,7 @@ namespace BrainDrain.Core
 
         private double brainPower;
         private double cumulativeBrainPower;
+        private double cumulativeCash;
         private double idleBpps;
         private double _rebirthMultiplier = 1.0;
 
@@ -84,6 +85,9 @@ namespace BrainDrain.Core
 
         /// <summary>Lifetime Brain Power earned. Never decreases when spending.</summary>
         public double CumulativeBrainPower => cumulativeBrainPower;
+
+        /// <summary>Lifetime cash earned (monotonic, resets on rebirth) -- powers the shop first-affordable reveal latch.</summary>
+        public double CumulativeCash => cumulativeCash;
 
         /// <summary>Total idle Brain Power generated per second from buildings and upgrades.</summary>
         public double IdleBPPS => idleBpps;
@@ -229,7 +233,9 @@ namespace BrainDrain.Core
                 return;
             }
 
-            currentCash += amount * cashMultiplier * shopCashMultiplier * shopAllMultiplier * GetTemporaryAllMultiplierFactor();
+            double addedCash = amount * cashMultiplier * shopCashMultiplier * shopAllMultiplier * GetTemporaryAllMultiplierFactor();
+            currentCash += addedCash;
+            cumulativeCash += addedCash;
             OnCashChanged?.Invoke(currentCash);
 
             if (!hasEarnedFirstCash)
@@ -391,6 +397,7 @@ namespace BrainDrain.Core
             cumulativeBrainPower = 0d;
             idleBpps = 0d;
             currentCash = 0d;
+            cumulativeCash = 0d;
             cashPerSecond = 0d;
             currentPoints = 0d;
 
@@ -413,13 +420,15 @@ namespace BrainDrain.Core
             double restoredCashMultiplier,
             double restoredPoints,
             double restoredPointsConversionRate,
-            bool restoredAutoConvertCash)
+            bool restoredAutoConvertCash,
+            double restoredCumulativeCash)
         {
             brainPower = restoredBrainPower;
             cumulativeBrainPower = restoredCumulativeBrainPower;
             _rebirthMultiplier = restoredRebirthMultiplier;
 
             currentCash = restoredCash;
+            cumulativeCash = System.Math.Max(restoredCumulativeCash, restoredCash);
             cashMultiplier = restoredCashMultiplier;
             currentPoints = restoredPoints;
             pointsConversionRate = restoredPointsConversionRate;
