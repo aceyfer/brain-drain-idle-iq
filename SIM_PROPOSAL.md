@@ -132,3 +132,96 @@ down toward ~10–20% for the remainder of that calendar day, resetting at day r
 change would make the six thresholds above hold regardless of how many hours someone plays in one
 sitting, without needing any per-building nerf beyond what's proposed here. This was not implemented
 — design-direction only, per this task's analysis-only scope.
+
+---
+
+## 2026-07-28 — Daily active-engagement cap: Phase 1 sim re-run (ANALYSIS ONLY)
+
+Approved design being tested: full rate for the first **45 minutes** of counted productive time per
+calendar day (tap + idle combined, not tap-specific), then all Brain Power/Cash gains scale to **15%**
+for the remainder of that day. Resets at calendar-day rollover. No asset or `.cs` edit in this section
+— sim only, per Phase 1 scope.
+
+### Modeling correction: PlayerIQ offline decay now has a real currency effect
+
+The prior run treated the IQ multiplier as a wash. Modeled explicitly this time, matching
+`PlayerIQManager.cs`/`CurrencyManager.cs` exactly:
+
+- `GetIQProductionMultiplier()`: `Lerp(0.25, 1.0)` across IQ 1→100, then `Lerp(1.0, 1.25)` across IQ
+  100→200. Applies to **idle BPPS/CPS only** — tap income stays exempt, per the existing code comment.
+- Offline decay (`PlayerIQManager.ApplyOfflineDecay`): linear toward the floor (`MinPlayerIQ = 1`,
+  **not** the stale "floor 60" figure from `CLAUDE.md` — the actual constant is `1`), reaching the
+  floor at 8 hours offline (`OfflineDecayMaxHours`) and no further past that.
+- Recovery (`RestoreIQFromTap`): +1 IQ per tap while IQ < 100, no effect at/above 100.
+- Overcharge decay: −0.1 IQ/sec while IQ > 100, only while the app is running (`DecayOvercharge`).
+- Building/infrastructure purchases still add flat `+1` IQ each, uncapped by the new throttle (that's
+  a separate mechanic from currency gains).
+
+### Three profiles, six proposed thresholds, cap applied to tap+idle
+
+Tap rate 1.5/sec while actively engaged (unchanged assumption); full 16-building greedy mixed-play
+policy (same as section 1 above).
+
+| Stage | CASUAL (30 min/day, decays to IQ 1 daily) | ENGAGED (2 hr/day, decays daily) | GRINDER (7 hr/day, no decay) |
+|---|---|---|---|
+| S1 | day 2 (40.8 min active) | day 1 (40.2 min active) | day 1 (40.2 min active) |
+| S2 | day 4 (1.94 hr active) | day 2 (3.77 hr active) | day 2 (7.16 hr active) |
+| S3 | day 7 (3.46 hr active) | day 4 (6.55 hr active) | day 2 (13.75 hr active) |
+| S4 | day 18 (8.78 hr active) | day 10 (18.22 hr active) | day 6 (1.47 days active) |
+| S5 | day 36 (17.65 hr active) | day 19 (1.52 days active) | day 11 (2.94 days active) |
+| S6 | day 92 (163,910s active) | day 49 (346,210s active) | **day 27 (663,400s active)** |
+
+CASUAL and ENGAGED never reach Stage 6 inside 30 days (day 92 and day 49 respectively — comfortably
+clear). **GRINDER reaches Stage 6 on day 27 — inside the first month.**
+
+### Acceptance criterion: FAILED
+
+The single acceptance criterion ("Stage 6 must be unreachable within the first month by any of these
+profiles") is **not met** as specified (45 min full-rate / 15% throttle, current proposed S6 threshold
+of 152,334,201). Not silently retuned — three options below, with numbers, for Aceyfer to pick from:
+
+| Option | Change | GRINDER's new S6 day | Notes |
+|---|---|---:|---|
+| **A1 — tighter throttle** | Keep 45-min full-rate window, drop throttle 15%→**10%** | day 33 | Smallest single-number change; ~3-day buffer past day 30, thin but not a knife-edge — CASUAL/ENGAGED barely move (they rarely hit the throttled tail) |
+| **A2 — tighter window + throttle** | 45min→**30min** full-rate, 15%→**10%** throttle | day 40 | More comfortable ~10-day buffer; changes two numbers instead of one |
+| **B — raise S6 threshold only** | `pointsRequired` 152,334,201 → **~210,000,000** (+38%), cap stays 45min/15% as approved | day 35 | Keeps the approved cap numbers untouched; only moves the one threshold this task already has in scope to edit later |
+| **C — non-economic gate** | Add a hard calendar-day floor to Stage 6 (e.g. `daysSinceFirstLaunch >= 35`) *in addition to* the Points threshold | N/A — structural, not economy-tunable | Most robust to future economy/building changes (doesn't rely on re-tuning if buildings are added/rebalanced later), but is a new gate type `WorldRestorationManager` doesn't currently have |
+
+No option was applied. All three are compatible with the approved cap design (tap+idle combined,
+45min/15%, calendar-day reset) as stated — A1/A2 adjust the cap's own numbers, B/C leave the cap as
+approved and adjust something else instead.
+
+### Apex Brain Greens under the cap
+
+Compared the existing greedy mixed-play policy (which buys Apex Brain Greens like any other
+BP-pool building when it's cheapest-affordable) against an otherwise-identical policy with Apex
+excluded entirely, under ENGAGED and GRINDER:
+
+| Profile | Stage | WITH Apex | Apex EXCLUDED |
+|---|---|---|---|
+| ENGAGED | S2 | day 2 (13,580s) | day 2 (10,370s) |
+| ENGAGED | S3 | day 4 (23,590s) | day 4 (22,940s) |
+| ENGAGED | S6 | NEVER (<40d) | NEVER (<40d) |
+| GRINDER | S3 | day 2 (49,510s) | day 2 (45,230s) |
+| GRINDER | S4 | day 6 (126,600s) | day 5 (123,010s) |
+| GRINDER | S6 | day 27 (663,400s) | day 27 (655,590s) |
+
+**Apex Brain Greens saves zero minutes of the daily 45-minute allowance.** The cap is gated on
+real elapsed clock-seconds, not on currency earned — buying Apex changes *how much* BP a tap yields,
+not *how many real seconds* count toward the daily budget, so by construction it cannot shrink the
+allowance-consumption side of the equation at all.
+
+Worse: under the greedy-cheapest-first policy, buildings WITH Apex in rotation are consistently the
+same or **slightly slower** to each stage than Apex-excluded (e.g. ENGAGED Stage 2: 13,580s vs 10,370s
+active — Apex-excluded is ~24% faster to the same threshold). Apex's cost competes against StupAid
+H2O/The Literal Library for the same early BP budget, and those buy idle BPPS that compounds forever,
+while Apex only pays off during the fraction of session time actually spent tapping. Under this cap,
+where idle production dominates total output regardless of engagement level, **Apex Brain Greens is
+effectively dead weight** in an efficient build — this was already marginal before the cap (see the
+robustness check in section 1: tap rate barely moved outcomes even without any cap), and the cap does
+not change that calculus in Apex's favor since it throttles tap and idle identically.
+
+### Status
+
+**Phase 1 complete. STOP — awaiting Aceyfer's approval and choice among Options A1/A2/B/C before any
+Phase 2 implementation work begins.**
