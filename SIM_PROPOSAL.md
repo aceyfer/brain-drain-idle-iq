@@ -221,7 +221,213 @@ effectively dead weight** in an efficient build — this was already marginal be
 robustness check in section 1: tap rate barely moved outcomes even without any cap), and the cap does
 not change that calculus in Apex's favor since it throttles tap and idle identically.
 
+### Status (superseded below — Option B chosen)
+
+~~Phase 1 complete. STOP — awaiting Aceyfer's approval and choice among Options A1/A2/B/C before any
+Phase 2 implementation work begins.~~ Resolved: Option B, with a larger buffer (250,000,000, not
+210,000,000). See the next section.
+
+---
+
+## 2026-07-28 (addendum) — Option B confirmation, Points Shop rescale, Apex diagnosis
+
+Cap left exactly as approved (45 min full-rate, 15% throttle, tap+idle combined, calendar-day reset).
+A1/A2 numbers untouched (not applied — Option B was chosen instead). All of this section is analysis
+only: no asset or `.cs` edit, no commit besides this file.
+
+### Option B confirmed with the larger buffer
+
+Re-ran GRINDER (7 hr/day, no decay) against Stage 6 `pointsRequired = 250,000,000` (not the originally
+proposed 210,000,000):
+
+**GRINDER reaches Stage 6 on day 41** (1,030,130s cumulative active) — an 11-day buffer past day 30,
+versus the thin ~5-day buffer the original 210,000,000 figure would have given. CASUAL (day 92) and
+ENGAGED (day 49) both already cleared 30 days comfortably and are unaffected by raising S6 further.
+Rationale accepted: Stage 6 is terminal content, so the overshoot costs nothing, and the wider margin
+is more defensible against a more efficient build than the one this sim models.
+
+**Final six thresholds** (supersedes the section-1 table above for `pointsRequired`, which used
+152,334,201 for S6):
+
+| Stage | `pointsRequired` |
+|---|---:|
+| S1 | 146,514 |
+| S2 | 2,132,885 |
+| S3 | 5,658,229 |
+| S4 | 20,764,149 |
+| S5 | 49,723,516 |
+| S6 | **250,000,000** |
+
+### 1. Points Shop rescale
+
+**Current data** (`Assets/_Game/PointsShop/*.asset`):
+
+| Item | Cost | Gate (RebirthCount / WorldStage) |
+|---|---:|---|
+| Snott County Redistricting | 500 | 0 / stage 1 |
+| Illumisnotti Leak Network | 2,500 | 1 / none |
+| Neighborhood Defrost | 10,000 | 0 / none |
+| The Snotty Guard | 10,000 | 2 / none |
+| Dream Insertion Broadcast | 50,000 | 3 / stage 3 |
+| Snott Family Crest Takeover | 250,000 | 5 / stage 4 |
+| The Grand Snotting | 1,000,000 | 7 / stage 5 |
+
+Total: 1,323,000 RP — 0.53% of the new S6 threshold.
+
+**When each becomes raw-RP-affordable under the new curve** (cumulative RP earned, ignoring gates,
+capped economy, ENGAGED and GRINDER profiles):
+
+| Item | ENGAGED | GRINDER |
+|---|---|---|
+| Snott County Redistricting (500) | day 1, 16.7 min active | day 1, 16.7 min active |
+| Illumisnotti Leak Network (2,500) | day 1, 22.3 min active | day 1, 22.3 min active |
+| Neighborhood Defrost / Snotty Guard (10,000) | day 1, 25.8 min active | day 1, 25.8 min active |
+| Dream Insertion Broadcast (50,000) | day 1, 32.8 min active | day 1, 32.8 min active |
+| Snott Family Crest Takeover (250,000) | day 1, 49.3 min active | day 1, 49.3 min active |
+| The Grand Snotting (1,000,000) | day 2, 2.33 hr active | day 1, 4.00 hr active |
+
+Confirmed the concern: every item is raw-affordable within the first day or two — the *only* thing
+currently delaying a purchase in practice is each item's `gateRebirthCount`/`gateWorldStageIndex`, not
+its cost. Cost is not doing any pacing work at all right now.
+
+**Why the old costs make sense, and how to rescale them**: checking each cost against the currently-authored
+(if not fully scene-wired — see caveat below) six restoration thresholds (2,500 / 10,000 / 50,000 /
+250,000 / 1,000,000 for S1–S5) shows the original design is a clean, clearly-intentional pattern —
+every item costs exactly **100% of one stage's `pointsRequired`**, except the cheapest item at a
+discounted 20%:
+
+| Item | Cost | = % of old stage... |
+|---|---:|---|
+| Snott County Redistricting | 500 | 20% of S1 (2,500) |
+| Illumisnotti Leak Network | 2,500 | 100% of S1 (2,500) |
+| Neighborhood Defrost | 10,000 | 100% of S2 (10,000) |
+| The Snotty Guard | 10,000 | 100% of S2 (10,000) |
+| Dream Insertion Broadcast | 50,000 | 100% of S3 (50,000) |
+| Snott Family Crest Takeover | 250,000 | 100% of S4 (250,000) |
+| The Grand Snotting | 1,000,000 | 100% of S5 (1,000,000) |
+
+**Proposed rescale** — apply the identical ratio against the corresponding *new* threshold:
+
+| Item | Old cost | Proposed new cost | Basis |
+|---|---:|---:|---|
+| Snott County Redistricting | 500 | **30,000** | 20% of new S1 (146,514) |
+| Illumisnotti Leak Network | 2,500 | **145,000** | 100% of new S1 (146,514) |
+| Neighborhood Defrost | 10,000 | **2,130,000** | 100% of new S2 (2,132,885) |
+| The Snotty Guard | 10,000 | **2,130,000** | 100% of new S2 (2,132,885) |
+| Dream Insertion Broadcast | 50,000 | **5,660,000** | 100% of new S3 (5,658,229) |
+| Snott Family Crest Takeover | 250,000 | **20,760,000** | 100% of new S4 (20,764,149) |
+| The Grand Snotting | 1,000,000 | **49,720,000** | 100% of new S5 (49,723,516) |
+
+New total ≈ 80,575,000 RP — 32% of the new S6 threshold (up from the old total's 132% of *old* S5, so
+this is actually slightly more conservative proportionally, since the new curve's higher stages have
+much more headroom above S5 than the old curve did). Since each item is now priced at a full extra
+stage-threshold's worth of RP (or a fifth of one, for the starter item), and `ExecuteRebirth` zeroes
+`currentPoints` while stage/RebirthCount gates persist, buying one still means dedicating an entire
+additional stage's worth of RP generation within *some* rebirth cycle — not spending it on Restoration
+that cycle. That preserves the "real commitment" property across the Snotting loop the same way the
+original numbers did, just rescaled to the new curve's dollar amounts. Not applied.
+
+**Two adjacent findings, flagged but out of this task's scope, not actioned:**
+- `CODEX_FINDINGS.md` and this sim both only ever exercised the **3 stages actually wired into
+  `SampleScene.unity`'s `WorldRestorationManager.stages` list** (S1/S2/S3). The S4/S5 `.asset` files
+  already exist on disk with real `pointsRequired` values (250,000 / 1,000,000) — they were used above
+  as the "old" reference values on the assumption they're the intended full 6-stage curve — but if
+  they're not actually wired into the scene's array, they're currently inert regardless of what this
+  task does to the Points Shop. Worth confirming scene-wiring status before or alongside applying any
+  of these rescales.
+- `RebirthUIController.pointsSpentUnlockThreshold` (the Rebirth button's own visibility gate) is
+  currently `50,000` — **less than the new S1 threshold (146,514)**. Under the new curve, the Rebirth
+  button would become visible *before* a normal player even reaches Stage 1, which was presumably not
+  the intent (the 2026-06-21 rebalance pass explicitly set 50,000 to land Rebirth well past the old
+  S2/S3 range). Every `gateRebirthCount`-only Points Shop item (Illumisnotti Leak Network, Neighborhood
+  Defrost, The Snotty Guard) is reachable only after at least one Rebirth, so this gate's mistuning
+  directly affects when those three become purchasable in practice, independent of their own cost.
+  Not rescaled here — not asked for, and touching Rebirth pacing is a separate task.
+
+### 2. Apex Brain Greens — diagnosis
+
+**Confirmed, not refuted.** Flat tap income structurally cannot keep pace with compounding idle
+income, for two independent reasons, and this was true from the moment `02d5ef6` shipped — the daily
+cap did not create the problem, it just gave the first controlled with/without comparison that made it
+visible:
+
+1. **Tap income is bounded by a human action-rate ceiling; idle income is not.** Apex's bonus is
+   `+0.02 Brain-Power-per-tap per owned level`, realized at most `tap_rate` times per second (≈1–5 in
+   every model used across this whole task). A building's `baseBrainPowerPerSecond` instead pays out
+   every single second the app is open, tapping or not, with zero ceiling on attention. Any BP-cost
+   idle building will out-produce Apex once owned in enough quantity, and quantity is exactly what
+   compounds.
+2. **Apex's own numbers are weak even before that ceiling matters.** At tap rate 1.5/sec, one Apex
+   level is worth `1.5 × 0.02 = 0.03` BP/sec. StupAid H2O gives a flat `0.5` BP/sec/level for a *higher*
+   base cost (25 vs 15) but a *slower* cost-growth curve (`1.10` vs `1.12`) — matching one StupAid level
+   requires roughly **17 Apex levels'** worth of spend. Apex was underpriced for what it does from the
+   start; the cap didn't introduce this, the with/without-Apex sim in Phase 1 just quantified it for
+   the first time (WITH Apex: Stage 3 in 49,510s active for GRINDER; Apex EXCLUDED: 45,230s — i.e. Apex
+   made that build ~9% *slower*, not faster).
+
+### Options, with numbers, none implemented
+
+**(a) Scale the tap bonus off current idle BPPS instead of a flat per-level amount** (e.g. each tap
+grants `+X% of current idleBpps × level`, instead of `+0.02 × level`):
+- Fixes the structural ceiling problem directly — Apex's payoff would compound alongside the idle
+  economy instead of being capped by tap rate.
+- **Risk, not fully quantified here**: this creates a *second* multiplicative feedback channel on top
+  of the building-compounding one already flagged in section 1 as the real driver of runaway growth.
+  Even a small `X` (e.g. 0.05%/level) at a high level count (Apex reached level ~150–156 in every
+  GRINDER run above) would add roughly `1.5 taps/sec × 150 × 0.0005 ≈ 11%` extra BP/sec on top of
+  whatever idleBpps already is — money that then buys more buildings, raising idleBpps, raising the
+  next tap's absolute bonus again. This is the same shape of problem SME was originally flagged for
+  (an unbounded funder), just relocated to tap. **Needs its own full time-stepped sim before any `X`
+  is chosen** — do not treat this as a drop-in fix.
+- **Stage-2 tap balance (`02d5ef6`) impact**: that commit's whole finding was that flat, rate-bounded
+  tap income is what makes Stage 2 reachable in under an hour by pure tapping, and `g=0.02` was chosen
+  as the best *containable* mitigation given tap had to stay flat. If tap bonus instead scales with
+  idle BPPS, tap is no longer flat or bounded, and the entire `02d5ef6` analysis (and this task's own
+  Phase 1 conclusion that pure-tapping is now safely self-limiting) would need to be rebuilt from
+  scratch, not re-tuned.
+- **Shop description / lore**: holds narratively as-is ("every tap hits harder") — the flavor text
+  doesn't commit to a specific formula, only "hits harder," which remains true either way.
+
+**(b) Give Apex a second, non-tap benefit (hybrid idle+tap building)** — simulated concretely:
+adding `baseBrainPowerPerSecond` alongside the existing `tapBrainPowerPerLevel: 0.02`, tap bonus
+unchanged:
+
+| `baseBrainPowerPerSecond` | GRINDER Stage 3 | vs. current (49,510s) | vs. Apex-excluded (45,230s) |
+|---:|---:|---|---|
+| 0 (current) | 49,510s | — | +9.4% slower |
+| 0.3 | 47,570s | 3.9% faster | +5.2% slower |
+| 0.5 | 46,510s | 6.1% faster | +2.8% slower |
+| 0.7 | 45,930s | 7.2% faster | +1.5% slower |
+
+`0.5`/level (matching StupAid H2O's own per-level rate, justified by Apex's cheaper `1.12` vs `1.10`
+cost multiplier being close enough to a wash) brings Apex to within ~3% of the Apex-excluded baseline
+while keeping its unique tap-scaling identity as a bonus on top — no longer *worse* than skipping it.
+- **Stage-2 tap balance impact**: minimal and well-contained. This is the same category of change as
+  any of the other 8 BP-cost idle buildings (a small `baseBrainPowerPerSecond` addition), not a change
+  to tap's own flatness — `02d5ef6`'s Stage-2 tap-funding analysis is untouched since tap income itself
+  doesn't change. It would shift the runaway-BP-ladder timing found in section 1 by a small amount
+  (one more idle producer in the mix) but doesn't reopen the specific vulnerability that analysis was
+  about.
+- **Shop description / lore**: needs a small addition, not a rewrite — one line noting steady baseline
+  output alongside the existing "hits harder" tap framing, in both the shop `description` field and the
+  `PROJECT_BIBLE.md` lore entry.
+
+**(c) Retire the tap-scaler mechanic and repurpose the building**: set `tapBrainPowerPerLevel: 0` and
+give it a standalone `baseBrainPowerPerSecond` (comparable range to option (b)'s number, ~0.3–0.5,
+since without the tap bonus it needs to fully carry its own weight as a plain idle building at its
+cost/mult).
+- **Stage-2 tap balance impact**: the largest of the three. This fully undoes `02d5ef6`'s deliverable —
+  Apex Brain Greens was that commit's *only* tap-scaling building by design ("becomes the ONLY building
+  that scales Brain-Power-per-tap"); removing it means **no building in the game scales tap income at
+  all** anymore, tap reverts to flat-forever exactly as it was pre-`02d5ef6`. `UpgradeManager.
+  GetTotalTapBrainPowerBonus()` and `UpgradeSlotUI`'s tap-bonus display lines (added in the same
+  commit) become permanently dead code (always reads 0) unless separately removed.
+- **Shop description / lore**: needs a full rewrite. The current description ("Every tap hits harder.
+  The whole feed swears by it.") and the `PROJECT_BIBLE.md` lore entry are both written specifically
+  around the tap-power identity; repurposing the building without rewriting them would leave flavor
+  text that describes a mechanic the building no longer has.
+
 ### Status
 
-**Phase 1 complete. STOP — awaiting Aceyfer's approval and choice among Options A1/A2/B/C before any
-Phase 2 implementation work begins.**
+**STOP — awaiting Aceyfer's choice of Apex direction (a/b/c) and approval of the Points Shop rescale
+numbers above before Phase 2 implementation begins.**
