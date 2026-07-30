@@ -79,7 +79,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 *BP UPGRADES tab (costType BrainPower):*
 | Building | Unlock (cum. BP) | baseCost | costMult | Income |
 |---|---|---|---|---|
-| Jumper Cables | 0 | 15 | 1.12 | 1 BPPS |
+| Apex Brain Greens | 0 | 15 | 1.12 | 0.5 BPPS + 0.02 BP/tap/level |
 | The Literal Library | 0 | 15 | 1.25 | 0.1 BPPS |
 | Defrost Drip | 0 | 25 | 1.10 | 0.5 BPPS |
 | Cranial Microwave | 0 | 150 | 1.11 | 3 BPPS |
@@ -208,3 +208,6 @@ Dreams keep their own clock. A minute of REM can hold a year of lived experience
 
 ### Pineal Overclock (formerly IQ Overclock Chip)
 Where the Tinfoil Headband defends the third eye, the Pineal Overclock awakens it. The gland was never removed -- it was calcified on purpose, by fluoridated everything and a curriculum that taught people it was a myth. There is no implant and no chip; the "overclock" is purely the decalcification and activation of hardware every human is born with. The IQ spike, the intuition, the faint smoke behind the brow -- all of it was latent, dormant, waiting. The controllers' finest trick was convincing a species it needed their technology to reach abilities it already had.
+
+### Apex Brain Greens (formerly Jumper Cables)
+Pond-colored, gritty, and mixed in a repurposed protein shaker that still smells faintly of the previous supplement it replaced. Nobody involved in its formulation would call it regulated, tested, or advisable, and the label lists forty-seven ingredients because that's where the printer ran out of room, not because that's the true count. What it does, reliably, whether you're standing still or mid-tap: it keeps a low, steady hum of clarity running in the background, and it makes every deliberate push -- every tap, every act of will against the fog -- land harder than it should. The resistance doesn't ask how it works. The resistance just keeps drinking it.

@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Apex Brain Greens
   description: A scoop of pond-colored powder, 47 ingredients nobody regulated.
-    Every tap hits harder. The whole feed swears by it.
+    Steady drip while it's in your system, and every tap hits harder on top.
+    The whole feed swears by it.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 15
   costMultiplier: 1.12
-  baseBrainPowerPerSecond: 0
+  baseBrainPowerPerSecond: 0.5
   tapBrainPowerPerLevel: 0.02
