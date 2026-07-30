@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: illumisnotti_leak_network
   displayName: Expose the Think Tanks
   description: You're intercepting their secrets. Mostly yacht maintenance tips.
-  cost: 145000
+  cost: 20000
   gateRebirthCount: 1
   gateWorldStageIndex: -1
   effectType: 0
