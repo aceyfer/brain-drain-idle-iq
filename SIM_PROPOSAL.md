@@ -427,7 +427,92 @@ cost/mult).
   around the tap-power identity; repurposing the building without rewriting them would leave flavor
   text that describes a mechanic the building no longer has.
 
+### Status (superseded below — decisions made, execution underway)
+
+~~STOP — awaiting Aceyfer's choice of Apex direction (a/b/c) and approval of the Points Shop rescale
+numbers above before Phase 2 implementation begins.~~ Resolved: Apex option (b), Points Shop rescale
+approved (then corrected — see below), Stage 6 → terminal stage at 250,000,000, Rebirth gate → new
+stage-3 threshold.
+
+---
+
+## 2026-07-30 — Indexing-error correction: five real stages, not six
+
+**Every "S1–S6" framing above from 2026-07-28 was wrong about how many real stages exist.** The six
+`WorldRestorationStage` assets are `stageIndex` 0–5, and `stageIndex 0` ("Toxic Wasteland") is a fixed
+0-point baseline — the pre-progress starting state, not a milestone a player reaches. That leaves only
+**five** real, non-zero milestones (`stageIndex 1–5`). Codex's own diagnosis had this right all along
+(`stageIndex 1 = "Stage 1" = 2,500`, direct unshifted index-to-number matching) — my own section-1 table
+shifted everything by one and additionally claimed `stageIndex 4`/`stageIndex 5` were "current: none,"
+which was flatly wrong; they held real values (250,000 / 1,000,000) the whole time, just not wired into
+`SampleScene.unity`'s `WorldRestorationManager.stages` array (see the still-open scene-wiring caveat
+from the earlier addendum). This surfaced when Commit 3 of the rebalance execution hit a structural
+wall: there was no `stageIndex 6` asset to hold a sixth non-zero target, and creating one would have
+meant new asset+meta+scene-wiring+missing backdrop art that was never authorized. Corrected in place
+(Aceyfer's call): **`stageIndex 5` becomes the terminal gate at 250,000,000** (not an intermediate
+"Stage 5" at 49,723,516 as originally proposed), and `stageIndex 1–4` were re-solved as a four-step
+curve underneath it.
+
+### Corrected five-value curve
+
+| stageIndex | pointsRequired | Target | CASUAL (30min/day) | ENGAGED (2hr/day) | GRINDER (7hr/day) |
+|---:|---:|---|---|---|---|
+| 1 | 20,000 | same-day | day 1 (27.5 min) | day 1 (27.5 min) | day 1 (27.5 min) |
+| 2 | 2,132,885 | several days of 30-min sessions | day 4 (1.94 hr) | day 2 (3.77 hr) | day 2 (7.16 hr) |
+| 3 | 5,658,229 | ~1 week | day 7 (3.46 hr) | day 4 (6.55 hr) | day 2 (13.75 hr) |
+| 4 | 20,764,149 | ~2-3 weeks | day 18 (8.78 hr) | day 10 (18.22 hr) | day 6 (1.47 days) |
+| 5 | 250,000,000 | not reachable in 30 days, any profile | NEVER (<60d) | NEVER (<60d) | **day 41** |
+
+Only `stageIndex 1` actually needed a new number (146,514 landed day 2 for CASUAL, not same-day — a
+single 1,800s session wasn't enough; 20,000 clears within one session even at the slowest tested tap
+rate, 1.0/sec, with 50s to spare). `stageIndex 2–4` keep the values already verified against the
+approved 45min/15% cap with the IQ multiplier modeled, since their identity never actually shifted —
+only the phantom extra "S1" slot did. Acceptance criterion holds: GRINDER's terminal stage lands day
+41, an 11-day buffer past day 30.
+
+### Points Shop — 3 of 7 rescaled costs corrected
+
+Only the items anchored to a stage that actually moved (stage 1 or stage 5) need re-fixing; the four
+anchored to stages 2–4 (which didn't move) are already correct as committed in `bbf0237`:
+
+| Item | Anchor | Rescaled (`bbf0237`) | Corrected |
+|---|---|---:|---:|
+| Snott County Redistricting | 20% of stage 1 | 30,000 | **4,000** |
+| Illumisnotti Leak Network | 100% of stage 1 | 145,000 | **20,000** |
+| The Grand Snotting | ~~100%~~ **20%** of stage 5 | 49,720,000 | **50,000,000** |
+
+The Grand Snotting is a special case, not just "stage 5 moved" — confirmed by reading
+`PointsShopManager.cs` directly: `TryPurchaseItem` (line 124) spends via `CurrencyManager.SpendPoints`
+and never touches `WorldRestorationManager.CumulativePointsSpentOnRestoration`; `IsWorldStageMet`
+(line 112) gates on that same cumulative-restoration-spend counter. The two paths draw from the same
+RP wallet but never cross-credit each other. Since stage 5 is now the **terminal** gate (250,000,000),
+pricing The Grand Snotting at another 100% of that (a second 250,000,000) would have meant 500,000,000
+total RP ever generated to reach it — roughly doubling the real endgame requirement, a mistake the
+"100% of anchor" ratio only got away with while stage 5 sat mid-ladder instead of at the top. Priced at
+20% instead (50,000,000), matching the ratio Snott County Redistricting already uses for the same
+"discounted starter-tier item" pattern — consistent with the existing design language rather than an
+arbitrary number.
+
+### Rebirth gate
+
+Unchanged conclusion from the original report: new gate = new `stageIndex 3` value = **5,658,229**.
+
+### Flagged, not fixed
+
+`WorldRestorationStage_0_ToxicWasteland.asset` has `stageName: Cryo Chamber`, mismatched with its
+filename/concept. Confirmed non-issue by Aceyfer — custom restoration artwork is planned, and stage
+naming will be revisited then. No task opened for it.
+
+### Known limitation — this sim models zero Points Shop spending
+
+Every day-count above (and in the original 2026-07-28 sections) assumes **100% of generated RP goes to
+Restoration**, none diverted to Points Shop purchases. A real player who buys any Points Shop item
+delays their own Restoration progress by exactly that much RP. This makes every reported day count
+optimistic — real times will run longer than shown here. That's the conservative direction for the
+30-day Stage-6 acceptance criterion (real players take *longer* to reach it, not shorter), but the
+day counts themselves should be read as a lower bound, not a precise prediction.
+
 ### Status
 
-**STOP — awaiting Aceyfer's choice of Apex direction (a/b/c) and approval of the Points Shop rescale
-numbers above before Phase 2 implementation begins.**
+Five-stage curve, Points Shop correction, and Rebirth gate all applied and committed (see commit
+history). Daily active-engagement cap (Phase 2) implementation follows next.
