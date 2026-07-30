@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: the_snotty_guard
   displayName: Defund the Doomscroll
   description: Pink camo. Terrifying and fabulous.
-  cost: 10000
+  cost: 2130000
   gateRebirthCount: 2
   gateWorldStageIndex: -1
   effectType: 1

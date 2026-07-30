@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: the_grand_snotting
   displayName: The Final Snotting
   description: You've become what you mocked. Congratulations, Illumisnotty.
-  cost: 1000000
+  cost: 49720000
   gateRebirthCount: 7
   gateWorldStageIndex: 5
   effectType: 3

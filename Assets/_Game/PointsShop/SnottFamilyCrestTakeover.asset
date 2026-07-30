@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: snott_family_crest_takeover
   displayName: Dissolve the Shadow Council
   description: The national flag is now your logo. Lord Snott wept.
-  cost: 250000
+  cost: 20760000
   gateRebirthCount: 5
   gateWorldStageIndex: 4
   effectType: 0

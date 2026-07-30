@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: dream_insertion_broadcast
   displayName: Dismantle the Media Cartel
   description: You're literally in their heads. Smells like old money.
-  cost: 50000
+  cost: 5660000
   gateRebirthCount: 3
   gateWorldStageIndex: 3
   effectType: 2

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: neighborhood_defrost
   displayName: Neighborhood Defrost
   description: Q1 initiative: un-freeze civilization. Synergy.
-  cost: 10000
+  cost: 2130000
   gateRebirthCount: 0
   gateWorldStageIndex: -1
   effectType: 0

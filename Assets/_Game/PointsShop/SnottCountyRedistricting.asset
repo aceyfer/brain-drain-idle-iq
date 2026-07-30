@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: snott_county_redistricting
   displayName: Disconnect the Algorithm
   description: You drew the borders with a crayon. Shockingly effective.
-  cost: 500
+  cost: 30000
   gateRebirthCount: 0
   gateWorldStageIndex: 1
   effectType: 0
