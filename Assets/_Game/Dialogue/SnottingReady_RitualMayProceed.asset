@@ -18,5 +18,5 @@ MonoBehaviour:
   maxRebirthCount: 0
   minRestorationPercent: 0
   maxRestorationPercent: 100
-  dialogueLine: Fifty thousand restoration points spent. The ritual may now proceed. The Illumisnotty are not invited.
+  dialogueLine: Restoration spend threshold cleared. The ritual may now proceed. The Illumisnotty are not invited.
   displayDurationSeconds: 4

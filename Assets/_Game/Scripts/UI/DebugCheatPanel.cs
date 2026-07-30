@@ -244,7 +244,7 @@ namespace BrainDrain.UI
             rowElement.minHeight = 44f;
             rowElement.preferredHeight = 44f;
 
-            double snottingThreshold = FindAnyObjectByType<RebirthUIController>()?.SnottingUnlockThreshold ?? 50000d;
+            double snottingThreshold = FindAnyObjectByType<RebirthUIController>()?.SnottingUnlockThreshold ?? 5658229d;
 
             for (int i = 0; i < stages.Count; i++)
             {

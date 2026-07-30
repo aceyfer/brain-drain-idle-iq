@@ -523,7 +523,7 @@ namespace BrainDrain.UI
                 : "DYSTOPIA";
 
             bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
-            double threshold = cachedRebirthUI != null ? cachedRebirthUI.SnottingUnlockThreshold : 50000d;
+            double threshold = cachedRebirthUI != null ? cachedRebirthUI.SnottingUnlockThreshold : 5658229d;
 
             if (snottingUnlocked)
             {

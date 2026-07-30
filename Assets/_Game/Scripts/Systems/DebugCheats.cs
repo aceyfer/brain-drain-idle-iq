@@ -187,15 +187,16 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
-        /// Sets cumulative restoration points to exactly 50,000 (the Snotting unlock threshold),
-        /// then fires OnRestorationProgressChanged so RebirthUIController can update the button
-        /// state. Call RefreshTriggerButton() after this if you need an immediate synchronous
-        /// force-refresh on top of the event.
+        /// Sets cumulative restoration points to exactly 5,658,229 (the Snotting unlock
+        /// threshold, matching stageIndex 3's pointsRequired), then fires
+        /// OnRestorationProgressChanged so RebirthUIController can update the button state. Call
+        /// RefreshTriggerButton() after this if you need an immediate synchronous force-refresh
+        /// on top of the event.
         /// </summary>
         public static void UnlockSnotting()
         {
-            WorldRestorationManager.Instance?.LoadState(50000d);
-            Debug.Log("[DebugCheats] UnlockSnotting: set CumulativePointsSpentOnRestoration = 50000.");
+            WorldRestorationManager.Instance?.LoadState(5658229d);
+            Debug.Log("[DebugCheats] UnlockSnotting: set CumulativePointsSpentOnRestoration = 5658229.");
         }
 
         // ── Checkpoints ────────────────────────────────────────────────────────────

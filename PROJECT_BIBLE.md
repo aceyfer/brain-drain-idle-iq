@@ -107,8 +107,8 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 **Key tuned values (final):**
 - PlayerIQ starts 100, climbs forever; offline-only decay toward floor 60 over 8h; idle income scaled by IQ/100 below 100 (floor 0.25x), and by the Overcharged curve above 100 (up to 1.25x at IQ 200, decaying back at 0.1/sec — see above). *(Observed working 2026-07-03: a decayed save showed IQ 68 — intended behavior, not a bug.)*
 - Snotting (Rebirth): per-Snotting permanent +5% BP mult, +10% Cash mult, +5% RP conversion, +5% tap mult; full current-run wipe
-- Snotting button visibility gate: **50,000 RP spent on Restoration**
-- World Restoration stage thresholds (RP spent): 0 / 2,500 / 10,000 / 50,000 / 250,000 / 1,000,000
+- Snotting button visibility gate: **5,658,229 RP spent on Restoration** (= stageIndex 3's `pointsRequired`; updated 2026-07-30, stage-progression rebalance)
+- World Restoration stage thresholds (RP spent): stageIndex 0 = 0 (fixed baseline, not a real milestone) / 1 = 20,000 / 2 = 2,132,885 / 3 = 5,658,229 / 4 = 20,764,149 / 5 = 250,000,000 (terminal). Five real milestones, not six -- see `SIM_PROPOSAL.md`'s 2026-07-30 correction entry for how the six-stage framing was wrong.
 - Dialogue tone tiers gate on **RestorationPercent** (0–10 / 11–30 / 31–55 / 56–80 / 81–100), not RebirthCount, not PlayerIQ
 
 ## 7. Settled Decisions (do not relitigate; do not "fix")

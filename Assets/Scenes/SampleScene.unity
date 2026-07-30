@@ -38172,7 +38172,7 @@ MonoBehaviour:
   confirmButton: {fileID: 1760922460}
   cancelButton: {fileID: 1743834852}
   rebirthTriggerButton: {fileID: 487183357}
-  pointsSpentUnlockThreshold: 50000
+  pointsSpentUnlockThreshold: 5658229
 --- !u!225 &1574612720
 CanvasGroup:
   m_ObjectHideFlags: 0

@@ -22,7 +22,7 @@ namespace BrainDrain.UI
         [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active; interactable gates on pointsSpentUnlockThreshold.")]
         [SerializeField] private GameObject rebirthTriggerButton;
         [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button becomes interactable.")]
-        [SerializeField] private double pointsSpentUnlockThreshold = 50000d;
+        [SerializeField] private double pointsSpentUnlockThreshold = 5658229d;
 
         /// <summary>Exposes the configured threshold so HUDController can display progress toward it without duplicating the value.</summary>
         public double SnottingUnlockThreshold => pointsSpentUnlockThreshold;

@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.WorldRestorationStage
   stageIndex: 2
   stageName: Patchwork Recovery Zone
-  pointsRequired: 10000
+  pointsRequired: 2132885
