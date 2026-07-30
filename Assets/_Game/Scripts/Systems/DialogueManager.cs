@@ -250,6 +250,12 @@ namespace BrainDrain.Systems
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
                 WorldRestorationManager.Instance.OnRestorationStageChanged += HandleRestorationStageChanged;
             }
+
+            if (DailyEngagementCapManager.Instance != null)
+            {
+                DailyEngagementCapManager.Instance.OnThrottleOnset -= HandleDailyCapThrottleOnset;
+                DailyEngagementCapManager.Instance.OnThrottleOnset += HandleDailyCapThrottleOnset;
+            }
         }
 
         private void UnsubscribeFromEvents()
@@ -295,6 +301,11 @@ namespace BrainDrain.Systems
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
+            }
+
+            if (DailyEngagementCapManager.Instance != null)
+            {
+                DailyEngagementCapManager.Instance.OnThrottleOnset -= HandleDailyCapThrottleOnset;
             }
         }
 
@@ -366,6 +377,14 @@ namespace BrainDrain.Systems
             }
 
             TryFireLine(NarratorTriggerType.RestorationStageChange, null);
+        }
+
+        /// <summary>OnThrottleOnset fires at most once per local day (re-armed only at the next
+        /// day's rollover), so this is a one-shot trigger like Rebirth/RestorationStageChange --
+        /// not added to RepeatableTriggers since it structurally can't flood.</summary>
+        private void HandleDailyCapThrottleOnset()
+        {
+            TryFireLine(NarratorTriggerType.DailyCapThrottleOnset, null);
         }
 
         /// <summary>Counts taps since the last building purchase; fires every TapsWithoutPurchaseThreshold taps as long as the player keeps tapping without buying anything.</summary>

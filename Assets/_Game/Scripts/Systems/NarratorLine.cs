@@ -13,10 +13,11 @@ namespace BrainDrain.Systems
         TapWithoutPurchase,
         CashConverted,
         OfflineDecayReturn,
-        FirstCashEarned,        // 8
-        FirstRestoreSpend,      // 9
-        RestorationStageChange, // 10
-        SnottingReady           // 11
+        FirstCashEarned,          // 8
+        FirstRestoreSpend,        // 9
+        RestorationStageChange,   // 10
+        SnottingReady,            // 11
+        DailyCapThrottleOnset     // 12
     }
 
     /// <summary>
