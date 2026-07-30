@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Events;
+using BrainDrain.Systems;
 
 namespace BrainDrain.Core
 {
@@ -576,18 +577,21 @@ namespace BrainDrain.Core
         private void HandleSecondTick()
         {
             double productionMultiplier = GetIQProductionMultiplier();
+            double dailyCapMultiplier = DailyEngagementCapManager.Instance != null
+                ? DailyEngagementCapManager.Instance.ProductionThrottleMultiplier
+                : 1d;
 
             if (idleBpps > 0d)
             {
-                // offlineBPPSMultiplier stacks with the IQ multiplier rather than replacing it
-                // (effectiveMultiplier = iqMultiplier * offlineBPPSMultiplier), per spec -- BPPS
-                // payout only, not Cash, since this feature is explicitly Brain-Power-scoped.
-                AddBrainPower(idleBpps * productionMultiplier * offlineBPPSMultiplier);
+                // offlineBPPSMultiplier and dailyCapMultiplier both stack with the IQ multiplier
+                // rather than replacing it -- BPPS payout only, not Cash, since offlineBPPSMultiplier
+                // is explicitly Brain-Power-scoped (dailyCapMultiplier applies to both).
+                AddBrainPower(idleBpps * productionMultiplier * offlineBPPSMultiplier * dailyCapMultiplier);
             }
 
             if (cashPerSecond > 0d)
             {
-                AddCash(cashPerSecond * productionMultiplier);
+                AddCash(cashPerSecond * productionMultiplier * dailyCapMultiplier);
             }
 
             if (autoConvertCash)

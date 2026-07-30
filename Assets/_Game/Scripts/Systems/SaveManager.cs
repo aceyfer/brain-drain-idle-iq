@@ -126,6 +126,13 @@ namespace BrainDrain.Systems
         // restarting it; 0f zero-fills correctly for saves predating this field.
         public bool ftueNameRevealSeen;
         public float ftueNameRevealElapsedSeconds;
+
+        // -- Daily active-engagement cap (2026-07-30) -- countedSeconds zero-fills correctly for
+        // saves predating this feature (0 = "haven't used any of today's allowance"); dayKey
+        // zero-fills to null/empty, which DailyEngagementCapManager.LoadState treats the same as
+        // "different day" and resets to a fresh allowance for today. No version bump needed.
+        public float dailyCapCountedSeconds;
+        public string dailyCapDayKey;
     }
 
     /// <summary>
@@ -470,6 +477,13 @@ namespace BrainDrain.Systems
                 }
             }
 
+            if (DailyEngagementCapManager.Instance != null)
+            {
+                (float countedSeconds, string dayKey) capState = DailyEngagementCapManager.Instance.GetSaveState();
+                data.dailyCapCountedSeconds = capState.countedSeconds;
+                data.dailyCapDayKey = capState.dayKey;
+            }
+
             data.lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (LoadedData.firstLaunchUnixSeconds != 0)
@@ -622,6 +636,7 @@ namespace BrainDrain.Systems
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
+            DailyEngagementCapManager.Instance?.LoadState(data.dailyCapCountedSeconds, data.dailyCapDayKey);
         }
 
         /// <summary>
@@ -713,7 +728,9 @@ namespace BrainDrain.Systems
                 ftueRestoreBeatSeen = false,
                 ftueSnottingIntelSeen = false,
                 ftueNameRevealSeen = false,
-                ftueNameRevealElapsedSeconds = 0f
+                ftueNameRevealElapsedSeconds = 0f,
+                dailyCapCountedSeconds = 0f,
+                dailyCapDayKey = null
             };
         }
     }
