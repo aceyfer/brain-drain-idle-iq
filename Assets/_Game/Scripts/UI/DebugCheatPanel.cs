@@ -50,6 +50,7 @@ namespace BrainDrain.UI
         private readonly List<float> recentTapTimes = new();
         private GameObject panelObject;
         private bool builtUI;
+        private TextMeshProUGUI dailyCapReadoutText;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -141,6 +142,29 @@ namespace BrainDrain.UI
         /// </summary>
         public void ShowPanel() => SetPanelVisible(true);
 
+        private void Update()
+        {
+            if (panelObject != null && panelObject.activeSelf && dailyCapReadoutText != null)
+            {
+                RefreshDailyCapReadout();
+            }
+        }
+
+        private void RefreshDailyCapReadout()
+        {
+            DailyEngagementCapManager cap = DailyEngagementCapManager.Instance;
+            if (cap == null)
+            {
+                dailyCapReadoutText.text = "Daily cap: manager not found.";
+                return;
+            }
+
+            dailyCapReadoutText.text =
+                $"Counted: {cap.CountedSecondsToday:F0}s   Day: {cap.CurrentDayKey}\n" +
+                $"Remaining full-rate: {cap.SecondsRemainingAtFullRate:F0}s\n" +
+                $"Throttled: {(cap.IsThrottled ? "YES" : "no")}   Multiplier: {cap.ProductionThrottleMultiplier:F2}x";
+        }
+
         // ===================== Panel construction =====================
 
         private void BuildPanel(RectTransform canvasRect)
@@ -216,6 +240,12 @@ namespace BrainDrain.UI
 
             CreateButton(contentObject.transform, "LOG CLICK BLOCKERS", LogClickBlockers);
             CreateButton(contentObject.transform, "CLEAR SAVE (FRESH START)", DebugCheats.ClearSave);
+
+            CreateLabel(contentObject.transform, "DAILY ENGAGEMENT CAP", 13f);
+            dailyCapReadoutText = CreateReadoutText(contentObject.transform);
+            CreateButton(contentObject.transform, "BURN CAP ALLOWANCE", DebugCheats.BurnDailyCapAllowance);
+            CreateButton(contentObject.transform, "RESET CAP DAY", DebugCheats.ResetDailyCapDay);
+
             CreateButton(contentObject.transform, "CLOSE", () => SetPanelVisible(false));
         }
 
@@ -329,6 +359,26 @@ namespace BrainDrain.UI
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = fontSize;
             label.raycastTarget = false;
+        }
+
+        private static TextMeshProUGUI CreateReadoutText(Transform parent)
+        {
+            GameObject labelObject = new GameObject("Readout_DailyCap", typeof(RectTransform));
+            labelObject.transform.SetParent(parent, false);
+
+            LayoutElement layout = labelObject.AddComponent<LayoutElement>();
+            layout.minHeight = 56f;
+            layout.preferredHeight = 56f;
+
+            TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
+            label.text = string.Empty;
+            label.color = Color.white;
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = 13f;
+            label.enableWordWrapping = true;
+            label.raycastTarget = false;
+
+            return label;
         }
 
         private static Button CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)

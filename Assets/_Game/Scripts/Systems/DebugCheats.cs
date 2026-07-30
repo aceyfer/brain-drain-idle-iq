@@ -199,6 +199,18 @@ namespace BrainDrain.Systems
             Debug.Log("[DebugCheats] UnlockSnotting: set CumulativePointsSpentOnRestoration = 5658229.");
         }
 
+        /// <summary>Jumps the daily engagement cap's counted seconds to just under the full-rate window, so throttle onset (including OnThrottleOnset) can be tested within seconds instead of waiting 45 real minutes.</summary>
+        public static void BurnDailyCapAllowance()
+        {
+            DailyEngagementCapManager.Instance?.DebugBurnFullRateAllowance();
+        }
+
+        /// <summary>Forces the daily engagement cap to roll over to a fresh day on the next tick, so recovery from throttle can be tested without waiting for real midnight.</summary>
+        public static void ResetDailyCapDay()
+        {
+            DailyEngagementCapManager.Instance?.DebugForceDayRollover();
+        }
+
         // ── Checkpoints ────────────────────────────────────────────────────────────
         // Each checkpoint sets an exact, reproducible game state so bugs at a specific
         // progression stage can be reproduced in seconds rather than hours of play.
