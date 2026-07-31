@@ -51,7 +51,10 @@ namespace BrainDrain.Core
             label.SetText(SharedBuilder);
         }
 
-        public static void SetBpps(TextMeshProUGUI label, double idleBpps)
+        /// <summary>Muted grey used for the "DRY" daily-cap-throttled tag -- deliberately distinct from OVERCHARGED's orange, since this signals a reduction, not a boost.</summary>
+        private const string ThrottledTagColorHex = "#888888";
+
+        public static void SetBpps(TextMeshProUGUI label, double idleBpps, bool throttled)
         {
             if (label == null)
             {
@@ -61,10 +64,14 @@ namespace BrainDrain.Core
             SharedBuilder.Clear();
             NumberFormatter.FormatInto(SharedBuilder, idleBpps);
             SharedBuilder.Append(" BPPS");
+            if (throttled)
+            {
+                SharedBuilder.Append(" <color=").Append(ThrottledTagColorHex).Append(">DRY</color>");
+            }
             label.SetText(SharedBuilder);
         }
 
-        public static void SetCash(TextMeshProUGUI label, double currentCash, double cashPerSecond)
+        public static void SetCash(TextMeshProUGUI label, double currentCash, double cashPerSecond, bool throttled)
         {
             if (label == null)
             {
@@ -77,6 +84,10 @@ namespace BrainDrain.Core
             SharedBuilder.Append(" ($");
             NumberFormatter.AppendFormatted(SharedBuilder, cashPerSecond);
             SharedBuilder.Append("/s)");
+            if (throttled)
+            {
+                SharedBuilder.Append(" <color=").Append(ThrottledTagColorHex).Append(">DRY</color>");
+            }
             label.SetText(SharedBuilder);
         }
 

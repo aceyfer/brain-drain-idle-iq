@@ -318,7 +318,8 @@ namespace BrainDrain.UI
                 CurrencyManager currency = CurrencyManager.Instance;
                 if (currency != null)
                 {
-                    HUDNumericFormatter.SetBpps(bppsText, currency.IdleBPPS);
+                    bool throttled = DailyEngagementCapManager.Instance != null && DailyEngagementCapManager.Instance.IsThrottled;
+                    HUDNumericFormatter.SetBpps(bppsText, currency.IdleBPPS, throttled);
                 }
             }
 
@@ -327,7 +328,8 @@ namespace BrainDrain.UI
                 dirtyCash = false;
                 CurrencyManager currency = CurrencyManager.Instance;
                 double cps = currency != null ? currency.CashPerSecond : 0d;
-                HUDNumericFormatter.SetCash(cashText, pendingCash, cps);
+                bool throttled = DailyEngagementCapManager.Instance != null && DailyEngagementCapManager.Instance.IsThrottled;
+                HUDNumericFormatter.SetCash(cashText, pendingCash, cps, throttled);
             }
 
             if (dirtyPoints)

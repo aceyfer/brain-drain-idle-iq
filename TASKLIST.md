@@ -41,3 +41,6 @@
 - Shop-3/Points family (PointsShopPanel/CashShopPanel/ConvertPanel) reconciliation
 - UIBlockDebugger legacy-Input rewrite (quarantined)
 - §25 concept: COGS counterfeits the resistance (endgame content, post-first-playable) — not scoped (details §25)
+- DailyCapThrottleOnset's 6 seeded lines are all full-range (0-100 RestorationPercent), same clinical/in-control COGS register — needs a proper tier pass with late-arc variants where COGS is rattled that the population's daily surplus is shrinking as the world heals, matching the existing degrading-tone-arc convention every other trigger's line pool already has
+- Literates Pocket intel card: a Literate confidently blaming the daily cap slowdown on something absurd and unrelated, as ironic contrast to COGS's clinical accuracy — idea only, not written or wired
+- `NumberFormatter.Format` has no suffix past "Qi" (~10^21) — values beyond that produce an unbounded digit string with no further suffix rollover. Pre-existing, unrelated to the stage-progression rebalance, not urgent given the 250,000,000 terminal threshold

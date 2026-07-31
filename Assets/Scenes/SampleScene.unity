@@ -29108,6 +29108,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b050925f8d8efdd409b58b7861eb1c17, type: 2}
   - {fileID: 11400000, guid: 8dc8b3ca9d0c1ff4695444cb42480130, type: 2}
   - {fileID: 11400000, guid: e669d2aafc7d9c94a86484be32dbea94, type: 2}
+  - {fileID: 11400000, guid: f8732d412d734e5c98a6dddb36d6bfd6, type: 2}
+  - {fileID: 11400000, guid: c4a431df92ef470ca4e74556db3ef310, type: 2}
+  - {fileID: 11400000, guid: 2da8387bb6b440a294a7ec148fa9eb57, type: 2}
+  - {fileID: 11400000, guid: 55f1d3cc8d504c2c934e7b68e50bc911, type: 2}
+  - {fileID: 11400000, guid: 18279e0b2c3a40c4bfac2355797fa35c, type: 2}
+  - {fileID: 11400000, guid: 4ee8facfe9414cf7a158098a0d1bfef3, type: 2}
   OnDialogueLine:
     m_PersistentCalls:
       m_Calls: []
