@@ -12,10 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff254d3afae4a28ccf1d94d930f911e8, type: 3}
   m_Name: DoomscrollEngineViralLoop
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.BrainRotEventData
-  eventTitle: Doomscroll Engine Goes Viral On Itself
-  eventDescription: Your Doomscroll Engine somehow found footage of itself
-    doomscrolling. The resulting feedback loop pays out instantly, then
-    mercifully breaks.
+  eventTitle: The Collective Skims Itself
+  eventDescription: Your Loose Change Collective found a wallet it forgot was its
+    own. The resulting skim-of-a-skim pays out instantly, then mercifully breaks.
   choiceButtonText: Absorb The Chaos
   brainPowerRewardOrPenalty: 12000
   playerIQImpact: -8

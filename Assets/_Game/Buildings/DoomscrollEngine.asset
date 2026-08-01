@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: DoomscrollEngine
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Doomscroll Engine
-  description: Lord Snott III invented this. You perfected it.
+  buildingName: Loose Change Collective
+  description: Nobody misses what nobody notices. Multiply that by a hundred million wallets.
   unlockCumulativeBrainPower: 0
   costType: 1
   baseCost: 4

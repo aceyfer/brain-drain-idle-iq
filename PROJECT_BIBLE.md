@@ -92,15 +92,17 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 *CASH INVESTMENTS tab (costType Cash):*
 | Building | Unlock (cum. BP) | baseCost (Cash) | costMult | Income |
 |---|---|---|---|---|
-| Doomscroll Engine | 0 | 4 | 1.21 | 0.3 BPPS |
-| Lemonade Grift Stand | 0 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
+| Loose Change Collective | 0 | 4 | 1.21 | 0.3 BPPS |
+| Charity Shell | 0 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
 | Doomscroll Billboard | 0 | 250 | 1.14 | 1 BPPS (d) + 5 CPS |
-| HOA Protection Racket | 0 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
+| The Laundromat | 0 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
 | Podcaster Soundboard | 25,000 | 30 | 1.21 | 5 BPPS + 0 CPS (d) |
 | Crypto-Bro Compound | 110,000 | 55 | 1.32 | 60 BPPS + 10 CPS |
-| Reality TV Syndicate | 185,000 | 90 | 1.21 | 320 BPPS + 40 CPS |
+| The Great Reversal | 185,000 | 90 | 1.21 | 320 BPPS + 40 CPS |
 
-**Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Lemonade/Billboard/HOA produce 1 BPPS purely via the missing-field default, possibly unintended. (c) 11 of 16 buildings share unlock=0 — shop display order for those is now cost-then-name (`780eb8a`), but the unlock *gating* curve itself is flat early.
+**Cash Investments tab framing (added 2026-08-01):** the Cash Investments tab is a laundering operation. Money is taken off the idiocracy dirty and comes back out clean as Restoration funding. Robin Hood, not villainy — the player is stealing back what was already stolen. This resolves the previously-unexplained question of why Cash converts to Restoration Points at all: it isn't income, it's stolen money being cleaned and returned. The tier arc runs small-time con at the cheap end (Loose Change Collective, Charity Shell) to full-scale heist at the expensive end (The Great Reversal). This is a deliberate contrast with the BP Upgrades tab, which is personal self-improvement — supplements, biohacking, reclaiming the player's own mind. Cash tab is the world outside the player; BP tab is inside the player. Keep the two registers from bleeding into each other when writing future copy for either.
+
+**Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Charity Shell/Doomscroll Billboard/The Laundromat (formerly Lemonade Grift Stand/Doomscroll Billboard/HOA Protection Racket) produce 1 BPPS purely via the missing-field default, possibly unintended. (c) 11 of 16 buildings share unlock=0 — shop display order for those is now cost-then-name (`780eb8a`), but the unlock *gating* curve itself is flat early.
 
 **Overcharged IQ (landed `7a8eacf`, 2026-06-30 — undocumented until the 2026-07-23 §26 audit; pacing CONFIRMED INTENTIONAL by Aceyfer on closure):** above IQ 100, `CurrencyManager.GetIQProductionMultiplier()` keeps rising instead of clamping at 1.0 — linearly up to **1.25x at IQ 200**, capped there. Counterbalanced by `PlayerIQManager.DecayOvercharge()`, a genuine live decay loop (subscribed to `GameManager.OnSecondTick`, unlike every other IQ change in this system) that drains any IQ above 100 back toward 100 at **0.1/sec** while the app is open — the only exception to "PlayerIQ never decays while running" elsewhere in this doc. HUD shows an "OVERCHARGED" label whenever IQ > 100 (`HUDController.cs`); its apparent "lights up at exactly 100" (reported 2026-07-23) is a `:F0` display-rounding artifact of IQ hovering in the 100.0–100.99 decay band, not a comparison bug — the code's threshold is already the correct strict `>`.
 

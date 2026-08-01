@@ -12,10 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: RealityTVSyndicate
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Reality TV Syndicate
-  description: Twelve strangers, one mansion, zero impulse control. Syndicated
-    into 4,000 time zones, dragging the planet's median IQ down with every rose
-    ceremony.
+  buildingName: The Great Reversal
+  description: Every dollar the Illumisnotti ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction.
   unlockCumulativeBrainPower: 185000
   costType: 1
   baseCost: 90

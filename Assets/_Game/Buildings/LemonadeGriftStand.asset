@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: LemonadeGriftStand
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
-  buildingName: Lemonade Grift Stand
-  description: It's 90% sludge. The HOA invests anyway.
+  buildingName: Charity Shell
+  description: Registered as a nonprofit for the restoration of something vague. Which -- technically, eventually -- it is.
   unlockCumulativeBrainPower: 0
   costType: 1
   baseCost: 50
