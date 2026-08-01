@@ -34,12 +34,22 @@ namespace BrainDrain.Systems
         private const float DefaultDisplayDurationSeconds = 3f;
 
         /// <summary>
-        /// Hard floor on how long any line stays on screen, regardless of its requested Duration.
-        /// A short requested duration on a dense line (e.g. the opening COGS extraction burst) was
-        /// closing before it could be read. Applied in Display() to every line -- direct, pooled,
-        /// and priority alike. Tune here if lines still feel rushed / too slow.
+        /// Absolute floor on how long any line stays on screen, regardless of its requested
+        /// Duration -- applies below TargetCharsPerSecond's length-aware floor too, so a very
+        /// short line still holds this long. Applied in Display() to every line -- direct,
+        /// pooled, and priority alike.
         /// </summary>
         private const float MinLineDisplaySeconds = 4.5f;
+
+        /// <summary>
+        /// Comfortable reading pace used to scale the display floor with line length (2026-08-01),
+        /// replacing the old flat-4.5s-regardless-of-length floor that left long lines (e.g. the
+        /// 235-char Illumisnotti Tier4 breakdown lines) running at 50+ chars/sec -- unreadable.
+        /// Deliberately not the same rate as ChatterBubble.cs's pedestrian-chatter pipeline (that
+        /// system is tuned for brief ambient barks, not dense narrative COGS lines) -- the two
+        /// pipelines stay independently tuned.
+        /// </summary>
+        private const float TargetCharsPerSecond = 26f;
         private const int TapsWithoutPurchaseThreshold = 25;
         private const double SnottingReadyThreshold = 50_000d;
 
@@ -546,7 +556,10 @@ namespace BrainDrain.Systems
         {
             lastPlayedLine = entry.SourceLine;
             isDisplaying = true;
-            CurrentDisplayDurationSeconds = Mathf.Max(entry.Duration, MinLineDisplaySeconds);
+
+            float lengthAwareSeconds = entry.Text.Length / TargetCharsPerSecond;
+            float computedFloor = Mathf.Max(MinLineDisplaySeconds, lengthAwareSeconds);
+            CurrentDisplayDurationSeconds = Mathf.Max(entry.Duration, computedFloor);
 
             history.Add(new DialogueLogEntry(entry.Text, Time.unscaledTime, entry.SourceLine));
             while (history.Count > MaxHistoryEntries)

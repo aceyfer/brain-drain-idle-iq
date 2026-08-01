@@ -36,6 +36,18 @@ namespace BrainDrain.Systems
         private const float EventPopupRetryDelaySeconds = 1f;
         private const float AmbientDisplayDurationSeconds = 6f;
 
+        /// <summary>
+        /// Beat4Ambient-specific override (2026-08-01): DialogueManager's display floor is now
+        /// length-aware (TargetCharsPerSecond), and Beat4Ambient's 187 chars computes a 7.19s
+        /// floor -- above the shared AmbientDisplayDurationSeconds (6f) both ambient beats used
+        /// to share. FTUE is the first thing every new player sees and its pacing was authored
+        /// deliberately, so it shouldn't silently drift because of a system-wide tuning change
+        /// elsewhere. Pinned above the computed floor so this authored value binds instead.
+        /// Beat6Ambient's 129 chars computes a 4.96s floor, still under its own 6f override, so
+        /// it needs no separate constant.
+        /// </summary>
+        private const float Beat4AmbientDisplayDurationSeconds = 7.2f;
+
         /// <summary>Beat 9 "THE NAME" fires once this many seconds of cumulative first-play session time have elapsed (see the Update() timer below).</summary>
         private const float NameRevealThresholdSeconds = 180f;
 
@@ -334,7 +346,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            DialogueManager.Instance?.EnqueueDirectLine(Beat4Ambient, AmbientDisplayDurationSeconds);
+            DialogueManager.Instance?.EnqueueDirectLine(Beat4Ambient, Beat4AmbientDisplayDurationSeconds);
             StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardCatalog.ArmadilloSauceId, HandleCashBeatConfirmed));
         }
 
