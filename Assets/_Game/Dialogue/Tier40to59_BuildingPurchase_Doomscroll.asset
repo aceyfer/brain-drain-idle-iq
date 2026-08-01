@@ -18,6 +18,6 @@ MonoBehaviour:
   maxRebirthCount: 5
   minRestorationPercent: 31
   maxRestorationPercent: 55
-  dialogueLine: Doomscroll engagement is DOWN. Down! On MY watch! I refuse
-    to acknowledge this is a trend.
+  dialogueLine: Loose change. Collected. You're skimming a hundred million wallets
+    and calling it a hobby.
   displayDurationSeconds: 3
