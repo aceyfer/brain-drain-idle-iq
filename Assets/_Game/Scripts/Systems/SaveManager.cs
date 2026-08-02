@@ -66,6 +66,13 @@ namespace BrainDrain.Systems
         public bool holographicTrashCanFlexOwned;
         public float offlineExtensionHoursGranted;
 
+        /// <summary>
+        /// Unix seconds (UTC) the current Brain Freeze expires at, 0 if none active. Zero-fills
+        /// correctly for saves predating this field (0 = "no active freeze", already the correct
+        /// default) -- no migration guard needed, no version bump.
+        /// </summary>
+        public long brainFreezeExpiryUnixSeconds;
+
         // -- Profanity Dialogue Pack persisted state --
         public bool profanityUnlocked;
         public bool profanityEnabled;
@@ -461,6 +468,15 @@ namespace BrainDrain.Systems
                 data.offlineExtensionHoursGranted = GodTierStoreManager.Instance.OfflineExtensionHoursGranted;
             }
 
+            // Brain Freeze lives on PlayerIQManager directly, not GodTierStoreManager -- unlike
+            // offlineExtensionHoursGranted's simple order-independent sum, its stacking math is
+            // stateful and time-dependent, so PlayerIQManager is kept the sole source of truth
+            // rather than duplicating bookkeeping that could drift.
+            if (PlayerIQManager.Instance != null)
+            {
+                data.brainFreezeExpiryUnixSeconds = PlayerIQManager.Instance.BrainFreezeExpiryUnixSeconds;
+            }
+
             PlayerIQManager playerIQManager = PlayerIQManager.Instance;
             if (playerIQManager != null)
             {
@@ -602,6 +618,11 @@ namespace BrainDrain.Systems
                 data.holographicTrashCanFlexOwned,
                 data.offlineExtensionHoursGranted);
 
+            // Brain Freeze expiry must be restored BEFORE LoadStateWithOfflineDecay, same ordering
+            // reasoning as the Corporate Cloak above -- this load's offline-decay calculation
+            // needs to already know whether a freeze covers the gap.
+            PlayerIQManager.Instance?.SetBrainFreezeExpiry(data.brainFreezeExpiryUnixSeconds);
+
             DateTime lastActiveUtc = DateTimeOffset.FromUnixTimeSeconds(data.lastActiveUnixSeconds).UtcDateTime;
             PlayerIQManager.Instance?.LoadStateWithOfflineDecay(data.playerIQ, lastActiveUtc);
             RebirthManager.Instance?.LoadState(data.rebirthCount);
@@ -711,6 +732,7 @@ namespace BrainDrain.Systems
                 illumisnottiMembershipCardOwned = false,
                 holographicTrashCanFlexOwned = false,
                 offlineExtensionHoursGranted = 0f,
+                brainFreezeExpiryUnixSeconds = 0L,
                 profanityUnlocked = false,
                 profanityEnabled = false,
                 shopCashMultiplier = 1d,

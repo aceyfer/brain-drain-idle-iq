@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27cd703eb9d99d5d3fcc4697782f190c, type: 3}
-  m_Name: BadWordsPack
+  m_Name: BrainFreeze
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
-  itemId: bad_words_pack
-  displayName: Bad Words Pack
-  description: Unlocks the Tier 3 unfiltered swear-word narrator lines. Toggle them
-    on/off anytime once owned.
-  realMoneyPriceDisplay: $3.99
-  effectType: 5
+  itemId: brain_freeze
+  displayName: Brain Freeze
+  description: Your IQ stops decaying for 24 hours from purchase. No drift, no drop,
+    no tapping it back up.
+  realMoneyPriceDisplay: $1.50
+  effectType: 6
   offlineExtensionHours: 0
+  freezeDurationHours: 24

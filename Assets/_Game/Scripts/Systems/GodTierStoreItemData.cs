@@ -10,7 +10,8 @@ namespace BrainDrain.Systems
         OfflineProgressionExtension,
         MembershipCardCosmetic,
         TrashCanFlexCosmetic,
-        UnlockProfanityPack // APPEND-ONLY enum: assets store effectType as a raw int; inserting above this line remaps every existing .asset
+        UnlockProfanityPack,
+        BrainFreezeIQImmunity // APPEND-ONLY enum: assets store effectType as a raw int; always add new values at the end, never insert above this comment
     }
 
     /// <summary>
@@ -35,5 +36,7 @@ namespace BrainDrain.Systems
         public GodTierStoreEffectType effectType;
         [Tooltip("Used only by OfflineProgressionExtension -- added to PlayerIQManager's offline-decay-max-hours window.")]
         public float offlineExtensionHours;
+        [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is fully immune to decay, starting from purchase. Stacks additively onto any currently-active freeze rather than overwriting it.")]
+        public float freezeDurationHours;
     }
 }

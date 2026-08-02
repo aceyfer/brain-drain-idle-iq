@@ -44,6 +44,29 @@ namespace BrainDrain.Core
         /// </summary>
         private float bonusOfflineDecayMaxHours;
 
+        /// <summary>
+        /// Added 2026-08-02 for the God Tier Store's Brain Freeze product line -- Unix seconds
+        /// (UTC) at which the current freeze expires. 0 (default) means no active freeze. Unlike
+        /// bonusOfflineDecayMaxHours, this is NOT a permanent bonus: while
+        /// DateTimeOffset.UtcNow.ToUnixTimeSeconds() is less than this value, PlayerIQ is fully
+        /// immune to decay from any source (offline decay on load, Overcharge decay while
+        /// running) -- not a slower decay curve like the Corporate Cloak, an outright pause.
+        /// Runs on real wall-clock time deliberately (not Time.time, which resets on app
+        /// restart), so the timer keeps counting down while the app is closed.
+        /// </summary>
+        private long brainFreezeExpiryUnixSeconds;
+
+        /// <summary>Unix seconds (UTC) the current Brain Freeze expires at, or 0 if none is active. For SaveManager persistence.</summary>
+        public long BrainFreezeExpiryUnixSeconds => brainFreezeExpiryUnixSeconds;
+
+        /// <summary>True while a Brain Freeze is currently active (real wall-clock time has not yet reached the expiry).</summary>
+        public bool IsBrainFreezeActive => DateTimeOffset.UtcNow.ToUnixTimeSeconds() < brainFreezeExpiryUnixSeconds;
+
+        /// <summary>Seconds remaining on the current freeze, 0 if none active. For a future UI pass -- not consumed anywhere yet.</summary>
+        public float BrainFreezeSecondsRemaining => IsBrainFreezeActive
+            ? brainFreezeExpiryUnixSeconds - DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            : 0f;
+
         private void Start()
         {
             if (GameManager.Instance != null)
@@ -62,6 +85,9 @@ namespace BrainDrain.Core
         private void DecayOvercharge()
         {
             if (playerIQ <= StartingPlayerIQ)
+                return;
+
+            if (IsBrainFreezeActive)
                 return;
 
             float previous = playerIQ;
@@ -201,9 +227,40 @@ namespace BrainDrain.Core
             }
         }
 
+        /// <summary>
+        /// Activates (or stacks onto) a Brain Freeze. Stacking is additive/queued: if a freeze
+        /// is already active, the new duration extends from the CURRENT expiry, not from now --
+        /// buy 24h, use 10h, buy 48h more, and 62h remain from that moment (24 + 48 - 10), not a
+        /// fresh independent 48h timer. Used by GodTierStoreManager when a Brain Freeze product
+        /// is stub-purchased.
+        /// </summary>
+        public void ApplyBrainFreeze(float durationHours)
+        {
+            if (durationHours <= 0f)
+            {
+                return;
+            }
+
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            long durationSeconds = (long)(durationHours * 3600d);
+            long baseline = Math.Max(now, brainFreezeExpiryUnixSeconds);
+            brainFreezeExpiryUnixSeconds = baseline + durationSeconds;
+        }
+
+        /// <summary>Restores the Brain Freeze expiry directly from a save file -- no stacking math, unlike ApplyBrainFreeze. Must run before LoadStateWithOfflineDecay so that load's decay calculation sees the correct freeze state.</summary>
+        public void SetBrainFreezeExpiry(long expiryUnixSeconds)
+        {
+            brainFreezeExpiryUnixSeconds = expiryUnixSeconds;
+        }
+
         private float ApplyOfflineDecay(float iq, DateTime lastActiveUtc)
         {
             if (iq <= OfflineDecayFloor)
+            {
+                return iq;
+            }
+
+            if (IsBrainFreezeActive)
             {
                 return iq;
             }

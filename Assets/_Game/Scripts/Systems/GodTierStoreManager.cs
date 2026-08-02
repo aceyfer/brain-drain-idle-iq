@@ -138,6 +138,10 @@ namespace BrainDrain.Systems
                         RandomChatterManager.Instance.ToggleProfanity(true);
                     }
                     break;
+
+                case GodTierStoreEffectType.BrainFreezeIQImmunity:
+                    PlayerIQManager.Instance?.ApplyBrainFreeze(item.freezeDurationHours);
+                    break;
             }
         }
 
