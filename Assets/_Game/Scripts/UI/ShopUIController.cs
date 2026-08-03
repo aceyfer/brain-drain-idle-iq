@@ -625,6 +625,17 @@ namespace BrainDrain.UI
             TMPro.TextMeshProUGUI priceLabel = source.CostText;
             Button buy = source.BuyButton;
             Image backgroundImage = source.Background;
+
+            // GodTierStoreSlotUI has no use for the building-row CountText -- left alone, it
+            // keeps showing UpgradeSlotPrefab's authored placeholder ("OWNED: 0") forever, since
+            // nothing ever refreshes it once source is destroyed below. That produced the exact
+            // "OWNED" on the price label but "OWNED: 0" on the row contradiction reported in the
+            // Editor: two unrelated text objects on the same clone, only one of them wired up.
+            if (source.CountText != null)
+            {
+                Destroy(source.CountText.gameObject);
+            }
+
             Destroy(source);
 
             GodTierStoreSlotUI slot = instance.AddComponent<GodTierStoreSlotUI>();
