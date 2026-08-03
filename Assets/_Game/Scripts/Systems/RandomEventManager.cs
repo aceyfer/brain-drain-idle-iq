@@ -103,7 +103,7 @@ namespace BrainDrain.Systems
             OnRandomEventTriggered?.Invoke(CurrentEvent);
         }
 
-        /// <summary>Applies an event's Brain Power, Cash, PlayerIQ, and (for Illumisnotti interference events) timed effects to the active core singletons.</summary>
+        /// <summary>Applies an event's Brain Power, Cash, PlayerIQ, and (for Illumisnotty interference events) timed effects to the active core singletons.</summary>
         public void ApplyEventEffects(BrainRotEventData eventData)
         {
             if (eventData == null)
@@ -123,7 +123,7 @@ namespace BrainDrain.Systems
                     currencyManager.RemoveBrainPower(-eventData.brainPowerRewardOrPenalty);
                 }
 
-                // cashRewardOrPenalty added 2026-06-21 for Illumisnotti events (e.g. Illumisnotti
+                // cashRewardOrPenalty added 2026-06-21 for Illumisnotty events (e.g. Illumisnotty
                 // Leak) -- 0 for the original 8 events, which never touched Cash.
                 if (eventData.cashRewardOrPenalty > 0d)
                 {
@@ -143,7 +143,7 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
-        /// Added 2026-06-21 for the Illumisnotti interference events. InstantOnly (the original
+        /// Added 2026-06-21 for the Illumisnotty interference events. InstantOnly (the original
         /// 8 events' implicit type) is a deliberate no-op here -- their effects are fully covered
         /// by the brainPowerRewardOrPenalty/playerIQImpact handling above.
         /// </summary>

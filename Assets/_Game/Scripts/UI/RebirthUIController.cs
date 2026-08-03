@@ -213,7 +213,7 @@ namespace BrainDrain.UI
             int cashPct = (int)(RebirthManager.Instance.PendingCashMultiplierIncrease * 100);
             int tapPct  = (int)(RebirthManager.Instance.PendingTapMultiplierIncrease  * 100);
             int nextTier = RebirthManager.Instance.RebirthCount + 1;
-            string illumisnottiTitle = RebirthManager.GetIllumisnottiTitle(nextTier).ToUpper();
+            string illumisnottyTitle = RebirthManager.GetIllumisnottyTitle(nextTier).ToUpper();
 
             multiplierText.text =
                 "<b>THE SNOTTING</b>\n\n" +
@@ -228,9 +228,9 @@ namespace BrainDrain.UI
                 $"+{tapPct}% Tap Power\n" +
                 "Better Cash → Points rate";
 
-            if (!string.IsNullOrEmpty(illumisnottiTitle))
+            if (!string.IsNullOrEmpty(illumisnottyTitle))
             {
-                multiplierText.text += $"\n\nBecoming: {illumisnottiTitle}";
+                multiplierText.text += $"\n\nBecoming: {illumisnottyTitle}";
             }
 
             multiplierText.enableAutoSizing = true;

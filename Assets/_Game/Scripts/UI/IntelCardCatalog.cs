@@ -76,7 +76,7 @@ namespace BrainDrain.UI
             [TedsCeilingFansId] = new LiteratesCard(
                 TedsCeilingFansId,
                 "TED'S CEILING FANS & OTHER CEILING ITEMS — \"Look Up More\"",
-                "You've tapped long enough. You've earned the word. The ones collecting — the ones that thing works for — are called the ILLUMISNOTTI. Old money. Older grudges. They drained the world stupid on purpose, and your little machine is a straw in everyone's skull. Now you know why the sky matters. Keep leaking light. Make the name useless.\n" +
+                "You've tapped long enough. You've earned the word. The ones collecting — the ones that thing works for — are called the ILLUMISNOTTY. Old money. Older grudges. They drained the world stupid on purpose, and your little machine is a straw in everyone's skull. Now you know why the sky matters. Keep leaking light. Make the name useless.\n" +
                 "— The Literates\n" +
                 "p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.",
                 "I KNOW THE NAME"),

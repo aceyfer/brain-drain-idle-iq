@@ -130,7 +130,7 @@ namespace BrainDrain.Core
             label.SetText(SharedBuilder);
         }
 
-        public static void SetIllumisnottiTitle(TextMeshProUGUI label, string title)
+        public static void SetIllumisnottyTitle(TextMeshProUGUI label, string title)
         {
             if (label == null)
             {

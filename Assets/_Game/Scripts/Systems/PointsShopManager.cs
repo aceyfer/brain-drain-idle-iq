@@ -6,7 +6,7 @@ using BrainDrain.Core;
 namespace BrainDrain.Systems
 {
     /// <summary>
-    /// Owns the 6 Shop 3 (Points Power Shop) Illumisnotti-dismantling items. The final item,
+    /// Owns the 6 Shop 3 (Points Power Shop) Illumisnotty-dismantling items. The final item,
     /// The Grand Snotting (GrandSnottingCapstone), is a one-time capstone: applies a literal
     /// 10x multiplicative jump (not an additive percent like the other 5) to Brain
     /// Power/Cash/tap, and permanently sets SecretEndingUnlocked -- no actual ending

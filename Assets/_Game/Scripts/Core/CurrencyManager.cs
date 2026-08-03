@@ -38,7 +38,7 @@ namespace BrainDrain.Core
         private bool autoConvertCash;
         private float secondsSinceLastAutoConvert;
 
-        // -- Illumisnotti rewrite (2026-06-21): Shop 2/Shop 3 permanent multiplier layers --
+        // -- Illumisnotty rewrite (2026-06-21): Shop 2/Shop 3 permanent multiplier layers --
         // Separate from _rebirthMultiplier/cashMultiplier/pointsConversionRate so a player who
         // owns zero shop items behaves identically to before this pass (all start at the
         // neutral 1.0/0.0 value). Composed multiplicatively alongside the existing multipliers,
@@ -48,7 +48,7 @@ namespace BrainDrain.Core
         private double shopCashToPointsMultiplier = 1d;
         private double shopAllPointGainsMultiplier = 1d;
 
-        // -- Illumisnotti rewrite: timed Illumisnotti-event modifiers --
+        // -- Illumisnotty rewrite: timed Illumisnotty-event modifiers --
         // Lazily expire on next read rather than via a dedicated tick subscription -- simpler,
         // and AddBrainPower/AddCash are called constantly (every tap and every second tick) so
         // staleness is never more than a frame or two.
@@ -246,7 +246,7 @@ namespace BrainDrain.Core
             }
         }
 
-        // -- Illumisnotti rewrite (2026-06-21): Shop 2/Shop 3 permanent multiplier grants --
+        // -- Illumisnotty rewrite (2026-06-21): Shop 2/Shop 3 permanent multiplier grants --
         // All additive-stacking, mirroring ExecuteRebirth's existing "+= bonus" pattern.
 
         /// <summary>Permanently increases the Cash-per-second multiplier (Hot Chick tiers, Shivering Designer Micro-Dog).</summary>
@@ -264,7 +264,7 @@ namespace BrainDrain.Core
         /// <summary>Permanently increases the multiplier on all Points gained via conversion (Dream Insertion Broadcast).</summary>
         public void AddShopAllPointGainsBonus(double percent) => shopAllPointGainsMultiplier += percent;
 
-        /// <summary>Permanently increases pointsConversionRate directly -- the same mechanism ExecuteRebirth uses internally, exposed publicly for Points Shop items (Snott County Redistricting, Illumisnotti Leak Network, Snott Family Crest Takeover).</summary>
+        /// <summary>Permanently increases pointsConversionRate directly -- the same mechanism ExecuteRebirth uses internally, exposed publicly for Points Shop items (Snott County Redistricting, Illumisnotty Leak Network, Snott Family Crest Takeover).</summary>
         public void AddPointsConversionRateBonus(double bonus) => pointsConversionRate += bonus;
 
         /// <summary>Restores the four shop multiplier layers from a save file. Kept separate from LoadState (whose 8-param signature predates this system) rather than extending it.</summary>
@@ -287,7 +287,7 @@ namespace BrainDrain.Core
             offlineBPPSMultiplier = multiplier;
         }
 
-        // -- Illumisnotti rewrite: timed Illumisnotti random-event modifiers --
+        // -- Illumisnotty rewrite: timed Illumisnotty random-event modifiers --
 
         /// <summary>Applies a temporary percent modifier to Brain Power production (both tap and idle, since both flow through AddBrainPower) for the given duration. Used by "BP drops" style events (e.g. Propaganda Broadcast). A new call replaces any still-active one rather than stacking.</summary>
         public void ApplyTemporaryBrainPowerModifier(double percent, float durationSeconds)
@@ -327,7 +327,7 @@ namespace BrainDrain.Core
 
         /// <summary>
         /// Reversibly subtracts from idle Brain-Power-per-second income (floored at 0) --
-        /// used by the "lock one random building" Illumisnotti events to temporarily suppress
+        /// used by the "lock one random building" Illumisnotty events to temporarily suppress
         /// exactly that building's contribution. Pair with RestoreIdleBPPS once the lock expires.
         /// Distinct from AddIdleBPPS, which is the permanent purchase-time grant.
         /// </summary>

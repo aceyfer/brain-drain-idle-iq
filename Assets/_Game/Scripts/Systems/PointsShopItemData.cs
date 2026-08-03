@@ -12,7 +12,7 @@ namespace BrainDrain.Systems
     }
 
     /// <summary>
-    /// Authoring data for one Shop 3 (Points Power Shop) Illumisnotti-dismantling item. The
+    /// Authoring data for one Shop 3 (Points Power Shop) Illumisnotty-dismantling item. The
     /// final item, The Grand Snotting (GrandSnottingCapstone), is a one-time capstone purchase:
     /// PointsShopManager applies it as a literal 10x multiplicative jump (not an additive
     /// percent like the other 5) across Brain Power/Cash/tap, and sets the permanent

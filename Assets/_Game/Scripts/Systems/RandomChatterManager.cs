@@ -5,7 +5,7 @@ namespace BrainDrain.Systems
 {
     /// <summary>
     /// Self-bootstrapping singleton holding three tiers of ambient one-liner "chatter" text:
-    /// Tier 1 (food / brain rot), Tier 2 (Illumisnotti paranoia), and a Tier 3 profanity pack
+    /// Tier 1 (food / brain rot), Tier 2 (Illumisnotty paranoia), and a Tier 3 profanity pack
     /// that's excluded from GetRandomLine's pool until UnlockProfanity() is called. The
     /// profanity unlock persists via PlayerPrefs (not the main SaveManager/PlayerData JSON
     /// save), independent of any other system.
@@ -83,7 +83,7 @@ namespace BrainDrain.Systems
             "They put something in the armadillo sauce and I want more of it",
         };
 
-        [Header("Tier 2 -- Illumisnotti Paranoia")]
+        [Header("Tier 2 -- Illumisnotty Paranoia")]
         [SerializeField]
         private List<string> tierTwoLines = new List<string>
         {
@@ -191,7 +191,7 @@ namespace BrainDrain.Systems
 
         /// <summary>
         /// Returns ambient chatter keyed to the player's current Idiocracy Game Rank index.
-        /// Low ranks skew Tier 1 (food rot), mid ranks mix Tier 2 (Illumisnotti), high ranks
+        /// Low ranks skew Tier 1 (food rot), mid ranks mix Tier 2 (Illumisnotty), high ranks
         /// blend all tiers with optional Tier 3 when unlocked and enabled.
         /// </summary>
         public string GetLineForRank(int rankIndex)

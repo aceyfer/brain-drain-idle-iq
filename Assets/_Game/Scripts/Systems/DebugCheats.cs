@@ -117,7 +117,7 @@ namespace BrainDrain.Systems
                       && rebirthMultOk && cashMultOk && pointsRateOk && tapMultOk && shopOk
                       && buttonLocked && psOk && countAfter == countBefore + 1;
 
-            string title = RebirthManager.GetIllumisnottiTitle(countAfter);
+            string title = RebirthManager.GetIllumisnottyTitle(countAfter);
             string tapStr = pth != null ? pth.TapMultiplier.ToString("F3") : "N/A";
 
             var sb = new System.Text.StringBuilder();
@@ -314,7 +314,7 @@ namespace BrainDrain.Systems
             wrm.ResetProgress();
             PlayerIQManager.Instance?.ResetForRebirth();
 
-            string title = RebirthManager.GetIllumisnottiTitle(n);
+            string title = RebirthManager.GetIllumisnottyTitle(n);
             Debug.Log(
                 $"[Checkpoint:AfterSnotting{n}] State set.\n" +
                 $"  RebirthCount={n}  Title=\"{title}\"\n" +

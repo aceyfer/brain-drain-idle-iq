@@ -125,7 +125,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 8. The parked alternate Hot Chick / Illumisnotty-progression spec stays PARKED — the built `CompanionManager`/`PointsShopManager` systems stand. Do not build the parked spec.
 9. Save-migration guard: JsonUtility zero-fills missing fields — a loaded `0` in a newer field means "old save," restore the default (see `tapMultiplier`).
 10. Load order: `GodTierStoreManager.LoadState` runs before `PlayerIQManager.LoadStateWithOfflineDecay` (Corporate Cloak hours must land first). Don't reorder.
-11. **Title ladder (decided 2026-07-03): the SNOTTY ROOKIE ladder is the one and only Illumisnotty title ladder**, served by `RebirthManager.GetIllumisnottiTitle` to both the HUD and the Illumisnotty badge:
+11. **Title ladder (decided 2026-07-03): the SNOTTY ROOKIE ladder is the one and only Illumisnotty title ladder**, served by `RebirthManager.GetIllumisnottyTitle` to both the HUD and the Illumisnotty badge:
     0–1 SNOTTY ROOKIE · 2–3 UNDER-SNOT ELITE · 4–5 BUNKER BUREAUCRAT · 6–10 ILLUMISNOTTY INTERN · 11+ BUNKER SUPREME.
     Title is visible from Snotting 0 (no blank state). Player-facing spelling is "Illumisnotty".
 12. Ped1 stage 1 intentionally reuses the Stage 2 sprite until new art is produced (first-playable workaround).

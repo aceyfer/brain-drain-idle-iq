@@ -51,7 +51,7 @@ namespace BrainDrain.Systems
 
         public bool CogsVoicepackDisdainOwned { get; private set; }
         public bool Y2KGlitchSlumThemeOwned { get; private set; }
-        public bool IllumisnottiMembershipCardOwned { get; private set; }
+        public bool IllumisnottyMembershipCardOwned { get; private set; }
         public bool HolographicTrashCanFlexOwned { get; private set; }
         public float OfflineExtensionHoursGranted => offlineExtensionHoursGranted;
 
@@ -122,7 +122,7 @@ namespace BrainDrain.Systems
                     break;
 
                 case GodTierStoreEffectType.MembershipCardCosmetic:
-                    IllumisnottiMembershipCardOwned = true;
+                    IllumisnottyMembershipCardOwned = true;
                     break;
 
                 case GodTierStoreEffectType.TrashCanFlexCosmetic:
@@ -168,7 +168,7 @@ namespace BrainDrain.Systems
 
             CogsVoicepackDisdainOwned = restoredVoicepack;
             Y2KGlitchSlumThemeOwned = restoredTheme;
-            IllumisnottiMembershipCardOwned = restoredMembershipCard;
+            IllumisnottyMembershipCardOwned = restoredMembershipCard;
             HolographicTrashCanFlexOwned = restoredTrashCanFlex;
 
             offlineExtensionHoursGranted = restoredOfflineExtensionHours;

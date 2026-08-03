@@ -44,7 +44,7 @@ namespace BrainDrain.Systems
         /// <summary>
         /// Comfortable reading pace used to scale the display floor with line length (2026-08-01),
         /// replacing the old flat-4.5s-regardless-of-length floor that left long lines (e.g. the
-        /// 235-char Illumisnotti Tier4 breakdown lines) running at 50+ chars/sec -- unreadable.
+        /// 235-char Illumisnotty Tier4 breakdown lines) running at 50+ chars/sec -- unreadable.
         /// Deliberately not the same rate as ChatterBubble.cs's pedestrian-chatter pipeline (that
         /// system is tuned for brief ambient barks, not dense narrative COGS lines) -- the two
         /// pipelines stay independently tuned.

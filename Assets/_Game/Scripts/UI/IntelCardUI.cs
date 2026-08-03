@@ -8,7 +8,7 @@ namespace BrainDrain.UI
     /// <summary>Which of the two §23 FTUE narrator channels a modal is dressed as.</summary>
     public enum IntelCardSkin
     {
-        /// <summary>Illumisnotti propaganda terminal: near-black background, terminal green text. Capped at exactly 2 uses total (FTUEManager owns the cap).</summary>
+        /// <summary>Illumisnotty propaganda terminal: near-black background, terminal green text. Capped at exactly 2 uses total (FTUEManager owns the cap).</summary>
         COGSTerminal,
 
         /// <summary>THE LITERATES resistance dead-drop card: aged-paper background, dark text, italic body. The default channel for every other FTUE beat.</summary>

@@ -54,7 +54,7 @@ namespace BrainDrain.Systems
 
         public string equippedOutfitId;
 
-        // -- Illumisnotti rewrite (2026-06-21): Shop 2/Shop 3/God Tier Store persisted state --
+        // -- Illumisnotty rewrite (2026-06-21): Shop 2/Shop 3/God Tier Store persisted state --
         public List<string> cashShopOwnedItemIds;
         public int companionTier;
         public List<string> pointsShopOwnedItemIds;
@@ -62,7 +62,7 @@ namespace BrainDrain.Systems
         public List<string> godTierStoreOwnedItemIds;
         public bool cogsVoicepackDisdainOwned;
         public bool y2kGlitchSlumThemeOwned;
-        public bool illumisnottiMembershipCardOwned;
+        public bool illumisnottyMembershipCardOwned;
         public bool holographicTrashCanFlexOwned;
         public float offlineExtensionHoursGranted;
 
@@ -463,7 +463,7 @@ namespace BrainDrain.Systems
 
                 data.cogsVoicepackDisdainOwned = GodTierStoreManager.Instance.CogsVoicepackDisdainOwned;
                 data.y2kGlitchSlumThemeOwned = GodTierStoreManager.Instance.Y2KGlitchSlumThemeOwned;
-                data.illumisnottiMembershipCardOwned = GodTierStoreManager.Instance.IllumisnottiMembershipCardOwned;
+                data.illumisnottyMembershipCardOwned = GodTierStoreManager.Instance.IllumisnottyMembershipCardOwned;
                 data.holographicTrashCanFlexOwned = GodTierStoreManager.Instance.HolographicTrashCanFlexOwned;
                 data.offlineExtensionHoursGranted = GodTierStoreManager.Instance.OfflineExtensionHoursGranted;
             }
@@ -614,7 +614,7 @@ namespace BrainDrain.Systems
                 data.godTierStoreOwnedItemIds,
                 data.cogsVoicepackDisdainOwned,
                 data.y2kGlitchSlumThemeOwned,
-                data.illumisnottiMembershipCardOwned,
+                data.illumisnottyMembershipCardOwned,
                 data.holographicTrashCanFlexOwned,
                 data.offlineExtensionHoursGranted);
 
@@ -729,7 +729,7 @@ namespace BrainDrain.Systems
                 godTierStoreOwnedItemIds = new List<string>(),
                 cogsVoicepackDisdainOwned = false,
                 y2kGlitchSlumThemeOwned = false,
-                illumisnottiMembershipCardOwned = false,
+                illumisnottyMembershipCardOwned = false,
                 holographicTrashCanFlexOwned = false,
                 offlineExtensionHoursGranted = 0f,
                 brainFreezeExpiryUnixSeconds = 0L,

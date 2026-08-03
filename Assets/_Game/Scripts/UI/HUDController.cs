@@ -20,8 +20,9 @@ namespace BrainDrain.UI
         [FormerlySerializedAs("worldRestorationText")]
         [SerializeField] private TextMeshProUGUI playerIQText;
         [SerializeField] private TextMeshProUGUI rankText;
-        [Tooltip("Illumisnotti title earned at the current Snotting (Rebirth) tier -- displayed under the IQ readout. Blank until the first Snotting. Added 2026-06-21.")]
-        [SerializeField] private TextMeshProUGUI illumisnottiTitleText;
+        [Tooltip("Illumisnotty title earned at the current Snotting (Rebirth) tier -- displayed under the IQ readout. Blank until the first Snotting. Added 2026-06-21.")]
+        [FormerlySerializedAs("illumisnottiTitleText")]
+        [SerializeField] private TextMeshProUGUI illumisnottyTitleText;
         [FormerlySerializedAs("brainsCounterText")]
         [SerializeField] private TextMeshProUGUI brainPowerCounterText;
         [SerializeField] private TextMeshProUGUI cumulativeBrainPowerCounterText;
@@ -84,10 +85,10 @@ namespace BrainDrain.UI
             set => rankText = value;
         }
 
-        public TextMeshProUGUI IllumisnottiTitleText
+        public TextMeshProUGUI IllumisnottyTitleText
         {
-            get => illumisnottiTitleText;
-            set => illumisnottiTitleText = value;
+            get => illumisnottyTitleText;
+            set => illumisnottyTitleText = value;
         }
 
         public TextMeshProUGUI BrainPowerCounterText
@@ -222,8 +223,8 @@ namespace BrainDrain.UI
             {
                 UpdateRebirthCountText(RebirthManager.Instance.RebirthCount);
                 RebirthManager.Instance.OnRebirthCountChanged += UpdateRebirthCountText;
-                UpdateIllumisnottiTitleText(RebirthManager.Instance.RebirthCount);
-                RebirthManager.Instance.OnRebirthCountChanged += UpdateIllumisnottiTitleText;
+                UpdateIllumisnottyTitleText(RebirthManager.Instance.RebirthCount);
+                RebirthManager.Instance.OnRebirthCountChanged += UpdateIllumisnottyTitleText;
                 RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForPoints;
                 UpdatePointsLockState(RebirthManager.Instance.RebirthCount);
             }
@@ -366,7 +367,7 @@ namespace BrainDrain.UI
             if (RebirthManager.Instance != null)
             {
                 RebirthManager.Instance.OnRebirthCountChanged -= UpdateRebirthCountText;
-                RebirthManager.Instance.OnRebirthCountChanged -= UpdateIllumisnottiTitleText;
+                RebirthManager.Instance.OnRebirthCountChanged -= UpdateIllumisnottyTitleText;
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForPoints;
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
             }
@@ -435,7 +436,7 @@ namespace BrainDrain.UI
             return rank switch
             {
                 0 => "Cryo Nobody",
-                1 => "Illumisnotti Intern",
+                1 => "Illumisnotty Intern",
                 2 => "Metrics-Compliant Drone",
                 3 => "Synergy Synthesizer",
                 4 => "Holistic Disruptor",
@@ -454,10 +455,10 @@ namespace BrainDrain.UI
             HUDNumericFormatter.SetRebirthCount(rebirthCountText, rebirthCount);
         }
 
-        /// <summary>Updates the Illumisnotti title shown under the IQ readout. Blank (no text) until the first Snotting.</summary>
-        private void UpdateIllumisnottiTitleText(int rebirthCount)
+        /// <summary>Updates the Illumisnotty title shown under the IQ readout. Blank (no text) until the first Snotting.</summary>
+        private void UpdateIllumisnottyTitleText(int rebirthCount)
         {
-            HUDNumericFormatter.SetIllumisnottiTitle(illumisnottiTitleText, RebirthManager.GetIllumisnottiTitle(rebirthCount));
+            HUDNumericFormatter.SetIllumisnottyTitle(illumisnottyTitleText, RebirthManager.GetIllumisnottyTitle(rebirthCount));
         }
 
         /// <summary>

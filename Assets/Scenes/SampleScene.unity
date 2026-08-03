@@ -1952,7 +1952,7 @@ GameObject:
   - component: {fileID: 82639964}
   - component: {fileID: 82639963}
   m_Layer: 0
-  m_Name: IllumisnottiGripText
+  m_Name: IllumisnottyGripText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -35176,7 +35176,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd3c15fe4c8cb0c41a73a1e8ea8a75ef, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.IllumisnottiManagerUI
+  m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.IllumisnottyManagerUI
   roundedRectSprite: {fileID: 21300000, guid: b5f78f3720ea80b4da08e54f2268135e, type: 3}
   vignetteSprite: {fileID: 21300000, guid: 3563b726aeddf7d47a8e3fe2d842d3ac, type: 3}
   fontAsset: {fileID: 11400000, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}
@@ -48631,7 +48631,7 @@ GameObject:
   - component: {fileID: 2051647703}
   - component: {fileID: 2051647702}
   m_Layer: 0
-  m_Name: IllumisnottiTitleText
+  m_Name: IllumisnottyTitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

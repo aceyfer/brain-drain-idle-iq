@@ -32,7 +32,7 @@ namespace BrainDrain.Core
 
         private readonly Dictionary<string, int> buildingLevels = new(16);
 
-        // -- Illumisnotti rewrite (2026-06-21): "lock one random building" timed events --
+        // -- Illumisnotty rewrite (2026-06-21): "lock one random building" timed events --
         private readonly List<(double bpps, double cps, float restoreAtTime)> activeBuildingLocks = new();
         private bool lockTickSubscribed;
 
@@ -174,7 +174,7 @@ namespace BrainDrain.Core
         /// BPPS/CPS contribution for durationSeconds via CurrencyManager.SuppressIdleBPPS/
         /// SuppressCashPerSecond, then automatically restores it on a later
         /// GameManager.OnSecondTick. Used by the "Ministry Inspection"/"Brawndo Spill"
-        /// Illumisnotti events. No-ops if the player owns no buildings yet.
+        /// Illumisnotty events. No-ops if the player owns no buildings yet.
         /// </summary>
         public void LockRandomBuildingFor(float durationSeconds)
         {

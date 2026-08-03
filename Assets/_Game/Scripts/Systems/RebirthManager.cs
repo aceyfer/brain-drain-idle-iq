@@ -101,7 +101,7 @@ namespace BrainDrain.Systems
             WorldRestorationManager.Instance?.ResetProgress();
             BrainDrain.Core.PlayerIQManager.Instance?.ResetForRebirth();
 
-            Debug.Log($"The Snotting #{RebirthCount} complete! You are now {GetIllumisnottiTitle(RebirthCount)}. Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate, and +{FlatTapMultiplierBonusPerRebirth:P0} to the tap multiplier.");
+            Debug.Log($"The Snotting #{RebirthCount} complete! You are now {GetIllumisnottyTitle(RebirthCount)}. Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate, and +{FlatTapMultiplierBonusPerRebirth:P0} to the tap multiplier.");
 
             GameManager.Instance?.RequestSave();
         }
@@ -114,15 +114,15 @@ namespace BrainDrain.Systems
         }
 
         // OBSOLETE — HUD rankText now uses HUDController.GetStageRankTitle (stage-derived).
-        // Remaining callers (illumisnottiTitleText, RebirthUIController, IllumisnottiManagerUI, DebugCheats) not yet migrated.
+        // Remaining callers (illumisnottyTitleText, RebirthUIController, IllumisnottyManagerUI, DebugCheats) not yet migrated.
         /// <summary>
-        /// The Illumisnotti title earned at a given Snotting (Rebirth) tier, displayed from game
-        /// start under the HUD's IQ readout and in the Illumisnotti panel. "Rebirth" is reflavored
+        /// The Illumisnotty title earned at a given Snotting (Rebirth) tier, displayed from game
+        /// start under the HUD's IQ readout and in the Illumisnotty panel. "Rebirth" is reflavored
         /// as "The Snotting" in player-facing text; RebirthCount/RebirthManager/TriggerRebirth
         /// themselves are deliberately NOT renamed in code, to avoid an invasive rename across
         /// every system that already references them.
         /// </summary>
-        public static string GetIllumisnottiTitle(int rebirthCount)
+        public static string GetIllumisnottyTitle(int rebirthCount)
         {
             if (rebirthCount >= 11) return "BUNKER SUPREME";
             if (rebirthCount >= 6) return "ILLUMISNOTTY INTERN";

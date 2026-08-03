@@ -17,7 +17,7 @@ namespace BrainDrain.Core
         [SerializeField] private double baseTapBrainPower = 1d;
         [SerializeField] private double tapMultiplier = 1d;
 
-        // -- Illumisnotti rewrite (2026-06-21): timed Illumisnotti random-event modifiers --
+        // -- Illumisnotty rewrite (2026-06-21): timed Illumisnotty random-event modifiers --
         private float tapFrozenUntilTime;
         private double temporaryTapPercent;
         private float temporaryTapExpiryTime;
@@ -124,7 +124,7 @@ namespace BrainDrain.Core
             tapMultiplier += amount;
         }
 
-        // -- Illumisnotti rewrite (2026-06-21): timed Illumisnotti random-event modifiers --
+        // -- Illumisnotty rewrite (2026-06-21): timed Illumisnotty random-event modifiers --
 
         /// <summary>Ignores taps entirely until the duration elapses. Used by Snott Tax Audit. Extends rather than shortens an already-active freeze.</summary>
         public void FreezeTapsFor(float durationSeconds)

@@ -11,7 +11,7 @@ namespace BrainDrain.Systems
     /// first encounter -- main COGS (a cold, warmthless controller, capped at exactly 2 modals
     /// total: the boot briefing and SnottingReady) and THE LITERATES resistance cards (every
     /// other beat, delivered as fake-business-front dead-drops via IntelCardUI's LiteratesCard
-    /// skin). REVISED 2026-07-23: the Illumisnotti's name is withheld from every beat except
+    /// skin). REVISED 2026-07-23: the Illumisnotty's name is withheld from every beat except
     /// Beat 9 ("THE NAME") -- COGS never says it (including its own terminal banner text), and
     /// no Literates card names it before Beat 9 fires. Self-bootstrapping singleton
     /// (RandomChatterManager's pattern -- Instance, isShuttingDown, parented under _Systems)
@@ -51,7 +51,7 @@ namespace BrainDrain.Systems
         /// <summary>Beat 9 "THE NAME" fires once this many seconds of cumulative first-play session time have elapsed (see the Update() timer below).</summary>
         private const float NameRevealThresholdSeconds = 180f;
 
-        /// <summary>Fixed COGS-terminal banner text for both COGS modals (Beats 1 and 8). Deliberately contains no reference to the Illumisnotti -- COGS hides its employer's name entirely until Beat 9 (see class doc comment).</summary>
+        /// <summary>Fixed COGS-terminal banner text for both COGS modals (Beats 1 and 8). Deliberately contains no reference to the Illumisnotty -- COGS hides its employer's name entirely until Beat 9 (see class doc comment).</summary>
         private const string CogsHeader = "MANDATORY BROADCAST";
 
         // ---- Beat 1: COGS BOOT (first-ever play, modal, COGS terminal skin) -- REVISED 2026-07-23 ----
