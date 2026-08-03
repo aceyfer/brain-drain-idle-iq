@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RealityTVSyndicate
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: The Great Reversal
-  description: Every dollar the Illumisnotti ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction.
+  description: Every dollar the Illumisnotty ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction.
   unlockCumulativeBrainPower: 185000
   costType: 1
   baseCost: 90

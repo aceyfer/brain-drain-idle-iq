@@ -122,10 +122,10 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 5. The Illumisnotty are never revealed on-screen. (Their *ranks* ARE the player's Snotting titles — see 11.)
 6. DOTween is in the project (`Assets/Plugins/Demigiant/DOTween`) for button punch / floating text / slides; simple loops stay coroutines.
 7. `OnCashChanged`/`OnPointsChanged` are UnityEvents (AddListener), everything else is C# `event Action<T>` — both deliberate; don't "standardize."
-8. The parked alternate Hot Chick / Illumisnotti-progression spec stays PARKED — the built `CompanionManager`/`PointsShopManager` systems stand. Do not build the parked spec.
+8. The parked alternate Hot Chick / Illumisnotty-progression spec stays PARKED — the built `CompanionManager`/`PointsShopManager` systems stand. Do not build the parked spec.
 9. Save-migration guard: JsonUtility zero-fills missing fields — a loaded `0` in a newer field means "old save," restore the default (see `tapMultiplier`).
 10. Load order: `GodTierStoreManager.LoadState` runs before `PlayerIQManager.LoadStateWithOfflineDecay` (Corporate Cloak hours must land first). Don't reorder.
-11. **Title ladder (decided 2026-07-03): the SNOTTY ROOKIE ladder is the one and only Illumisnotti title ladder**, served by `RebirthManager.GetIllumisnottiTitle` to both the HUD and the Illumisnotti badge:
+11. **Title ladder (decided 2026-07-03): the SNOTTY ROOKIE ladder is the one and only Illumisnotty title ladder**, served by `RebirthManager.GetIllumisnottiTitle` to both the HUD and the Illumisnotty badge:
     0–1 SNOTTY ROOKIE · 2–3 UNDER-SNOT ELITE · 4–5 BUNKER BUREAUCRAT · 6–10 ILLUMISNOTTY INTERN · 11+ BUNKER SUPREME.
     Title is visible from Snotting 0 (no blank state). Player-facing spelling is "Illumisnotty".
 12. Ped1 stage 1 intentionally reuses the Stage 2 sprite until new art is produced (first-playable workaround).
@@ -178,7 +178,7 @@ Scar tissue: never SetActive(false) an object hosting a self-bootstrapping singl
 ## 11. Doc Map
 
 - **PROJECT_BIBLE.md** (this file) — the front door; state, rules, boundaries. Wins all conflicts.
-- **CLAUDE.md** — deep architecture reference: every manager, event pattern, gotcha, and the full rebalance/Illumisnotti write-ups. Accurate as of 2026-06-22; trust it for *how things work*, trust the Bible for *what's true now*.
+- **CLAUDE.md** — deep architecture reference: every manager, event pattern, gotcha, and the full rebalance/Illumisnotty write-ups. Accurate as of 2026-06-22; trust it for *how things work*, trust the Bible for *what's true now*.
 - **Assets/Docs/** — the single home for session handoffs going forward. New sessions append here, never to root.
 - **Assets/Plans/*.md** — 34+ historical point-in-time plans. Design archaeology only; code has evolved past them. Never treat as current truth.
 - **Assets/Docs/archive/** — retired docs (root `SESSION_HANDOFF.md`, `OVERNIGHT_REPORT.md`; archived on branch, commit `03d5939`), superseded by their own addenda; useful content harvested into §7–§8. Kept for archaeology, never for guidance.
