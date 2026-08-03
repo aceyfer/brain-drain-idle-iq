@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CompanionTier1
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 1
-  quote: She showed up to the Snott Gala uninvited. Perfect.
+  displayName: Eye Candy
+  quote: Two of them, no assignment. Productivity within visual range drops twelve percent and nobody files a complaint.
   cost: 25000
   gateType: 0
   gateRealHours: 24

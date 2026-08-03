@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CompanionTier5
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 5
-  quote: She bought Lord Snott's childhood estate. For a dog.
+  displayName: Regulatory Capture
+  quote: The hearing was supposed to be about you. It is now about their charity, which does not exist.
   cost: 250000000
   gateType: 1
   gateRealHours: 0

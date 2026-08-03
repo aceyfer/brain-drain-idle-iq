@@ -214,3 +214,13 @@ Where the Tinfoil Headband defends the third eye, the Pineal Overclock awakens i
 
 ### Apex Brain Greens (formerly Jumper Cables)
 Pond-colored, gritty, and mixed in a repurposed protein shaker that still smells faintly of the previous supplement it replaced. Nobody involved in its formulation would call it regulated, tested, or advisable, and the label lists forty-seven ingredients because that's where the printer ran out of room, not because that's the true count. What it does, reliably, whether you're standing still or mid-tap: it keeps a low, steady hum of clarity running in the background, and it makes every deliberate push -- every tap, every act of will against the fog -- land harder than it should. The resistance doesn't ask how it works. The resistance just keeps drinking it.
+
+## Hot Chicks — Companion Tier Lore (2026-08-03)
+
+Plural, on purpose. Not a companion, a procurement line. The Illumisnotty invented this play generations ago: put beautiful women in front of powerful men, let the men do the rest, and collect the fallout as leverage once the money and the attention have nowhere else to go. It works because nobody upstairs ever has to ask for anything twice. The resistance isn't above using a working weapon just because the enemy built it first -- it just points the barrel the other way.
+
+Each of the six tiers is a purchase, not a person, and the arc tracks what the asset is deployed *for*, not who she is: **Eye Candy** buys pure proximity, decoration that quietly tanks a room's productivity. **Engagement Bait** buys reach -- the same asset now working every feed at once. **Guest Correspondents** buys the news cycle itself, credentials optional. **Legal Distraction** buys a courtroom's attention span. **Regulatory Capture** buys the hearing that was supposed to be about you. And **Illumisnotty Board Seats** is the payoff and the joke in one: spend enough on leverage and the leverage stops reporting to you -- it inherits the boardroom, and you're the one standing next to it at the gala, plus-one to your own investment.
+
+None of the six get individual names, and that's not an oversight -- it's the point being made. They were never people to the player. They were line items. `CompanionTierData` carries a `displayName` per tier for exactly this reason: a role label for the shop row, never a name for a face.
+
+Art note for a later pass: `HotChickSpawner` puts up to six of these on-screen at once. When real art exists, the six should read as visually distinct women -- different skin tones, different hair -- so the "squad," not a repeated sprite, is what actually lands on screen.

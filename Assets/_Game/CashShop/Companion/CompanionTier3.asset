@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CompanionTier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 3
-  quote: Her PR team just fired YOUR PR team.
+  displayName: Guest Correspondents
+  quote: Booked on four podcasts and a morning show, zero credentials between them. Whatever they say is the take by lunch.
   cost: 2500000
   gateType: 1
   gateRealHours: 0

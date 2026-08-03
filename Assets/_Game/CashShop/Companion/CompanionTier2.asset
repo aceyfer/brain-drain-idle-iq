@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CompanionTier2
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 2
-  quote: She's trending. The Illumisnotty are furious.
+  displayName: Engagement Bait
+  quote: Deployed across every feed simultaneously. People share it before they've read it.
   cost: 250000
   gateType: 1
   gateRealHours: 0

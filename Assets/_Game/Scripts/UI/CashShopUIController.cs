@@ -246,7 +246,7 @@ namespace BrainDrain.UI
             if (next == null)
             {
                 // All 6 tiers owned.
-                if (companionQuoteText != null) companionQuoteText.text = "SHE IS THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
+                if (companionQuoteText != null) companionQuoteText.text = "THEY ARE THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
                 if (companionCostText != null) companionCostText.text = "MAXED";
                 if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
                 ApplyCompanionAccent(CompanionMaxedColor);
@@ -256,7 +256,7 @@ namespace BrainDrain.UI
 
             bool gateMet = companionManager.IsNextTierGateMet();
             if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
-            if (companionQuoteText != null) companionQuoteText.text = $"{next.quote}\n<color=#00F0FF><font-weight=bold>Effect: +{next.cashPerSecondPercent * 100f:F0}% Cash/sec</font-weight></color>";
+            if (companionQuoteText != null) companionQuoteText.text = $"{next.displayName}\n{next.quote}\n<color=#00F0FF><font-weight=bold>Effect: +{next.cashPerSecondPercent * 100f:F0}% Cash/sec</font-weight></color>";
 
             if (!gateMet)
             {

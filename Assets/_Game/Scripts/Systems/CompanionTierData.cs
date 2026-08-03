@@ -23,6 +23,8 @@ namespace BrainDrain.Systems
         [Header("Identity")]
         [Tooltip("1-6, sequential. CompanionManager requires owning tier N-1 before N is purchasable.")]
         public int tierIndex;
+        [Tooltip("Short label for this tier, e.g. for the Cash Shop row. Not a person's name -- these are never individually named.")]
+        public string displayName;
         [TextArea(2, 4)]
         public string quote;
 

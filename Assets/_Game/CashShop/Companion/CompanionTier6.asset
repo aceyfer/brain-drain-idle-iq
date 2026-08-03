@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CompanionTier6
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.CompanionTierData
   tierIndex: 6
-  quote: She IS the Illumisnotty now. You're just her plus-one.
+  displayName: Illumisnotty Board Seats
+  quote: They ARE the Illumisnotty now. You're just the plus-one.
   cost: 50000000000
   gateType: 2
   gateRealHours: 0
