@@ -29,6 +29,12 @@ namespace BrainDrain.Core
         /// <summary>Offline time beyond this is not decayed any further -- decay reaches the floor at exactly this duration.</summary>
         private const float OfflineDecayMaxHours = 8f;
 
+        /// <summary>Brain Freeze jumps PlayerIQ to at least this value on purchase (never demotes an already-higher IQ). Matches the Overcharge curve's own cap at IQ 200 (see CurrencyManager.GetIQProductionMultiplier).</summary>
+        private const float BrainFreezeStartIQ = 200f;
+
+        /// <summary>While a Brain Freeze is active, PlayerIQ decays (both live Overcharge decay and offline decay) but never below this value. Deliberate Illuminati/masonic numerology matching the Illumisnotty lore -- do not round.</summary>
+        private const float BrainFreezeFloor = 113f;
+
         /// <summary>Flat IQ restored per tap while recovering from offline decay (PlayerIQ below the 100 baseline). No effect once back at 100 -- IQ growth above that only comes from infrastructure spend/building purchases/events, unchanged.</summary>
         private const float IQRestorePerTap = 1f;
 
@@ -46,20 +52,20 @@ namespace BrainDrain.Core
 
         /// <summary>
         /// Added 2026-08-02 for the God Tier Store's Brain Freeze product line -- Unix seconds
-        /// (UTC) at which the current freeze expires. 0 (default) means no active freeze. Unlike
-        /// bonusOfflineDecayMaxHours, this is NOT a permanent bonus: while
-        /// DateTimeOffset.UtcNow.ToUnixTimeSeconds() is less than this value, PlayerIQ is fully
-        /// immune to decay from any source (offline decay on load, Overcharge decay while
-        /// running) -- not a slower decay curve like the Corporate Cloak, an outright pause.
-        /// Runs on real wall-clock time deliberately (not Time.time, which resets on app
-        /// restart), so the timer keeps counting down while the app is closed.
+        /// (UTC) at which the current freeze expires. 0 (default) means no active freeze.
+        /// Redesigned 2026-08-03: purchase jumps PlayerIQ to at least BrainFreezeStartIQ (200);
+        /// while active, PlayerIQ still decays (both live Overcharge decay and offline decay) but
+        /// never below BrainFreezeFloor (113) -- a high floor the player buys, not a full pause.
+        /// Tapping still raises IQ back toward 200 at any time while active (see
+        /// RestoreIQFromTap). Runs on real wall-clock time deliberately (not Time.time, which
+        /// resets on app restart), so the timer keeps counting down while the app is closed.
         /// </summary>
         private long brainFreezeExpiryUnixSeconds;
 
         /// <summary>Unix seconds (UTC) the current Brain Freeze expires at, or 0 if none is active. For SaveManager persistence.</summary>
         public long BrainFreezeExpiryUnixSeconds => brainFreezeExpiryUnixSeconds;
 
-        /// <summary>True while a Brain Freeze is currently active (real wall-clock time has not yet reached the expiry).</summary>
+        /// <summary>True while a Brain Freeze is currently active (real wall-clock time has not yet reached the expiry). While true, PlayerIQ decays only down to BrainFreezeFloor (113), not fully immune -- see DecayOvercharge/ApplyOfflineDecay.</summary>
         public bool IsBrainFreezeActive => DateTimeOffset.UtcNow.ToUnixTimeSeconds() < brainFreezeExpiryUnixSeconds;
 
         /// <summary>Seconds remaining on the current freeze, 0 if none active. For a future UI pass -- not consumed anywhere yet.</summary>
@@ -82,16 +88,23 @@ namespace BrainDrain.Core
                 GameManager.Instance.OnSecondTick -= DecayOvercharge;
         }
 
+        /// <summary>
+        /// Drains PlayerIQ back toward StartingPlayerIQ (100) at OverchargeDecayPerSecond while
+        /// above it. While a Brain Freeze is active, the floor is BrainFreezeFloor (113) instead
+        /// -- decay still runs, it just can't go below the purchased floor. The floor swap is
+        /// re-evaluated every tick via the live IsBrainFreezeActive check, so the transition back
+        /// to 100 the instant a freeze expires needs no special-case code: decay just continues
+        /// from wherever IQ currently sits.
+        /// </summary>
         private void DecayOvercharge()
         {
-            if (playerIQ <= StartingPlayerIQ)
-                return;
+            float floor = IsBrainFreezeActive ? BrainFreezeFloor : StartingPlayerIQ;
 
-            if (IsBrainFreezeActive)
+            if (playerIQ <= floor)
                 return;
 
             float previous = playerIQ;
-            playerIQ = Mathf.Max(StartingPlayerIQ, playerIQ - OverchargeDecayPerSecond);
+            playerIQ = Mathf.Max(floor, playerIQ - OverchargeDecayPerSecond);
 
             if (!Mathf.Approximately(previous, playerIQ))
                 OnPlayerIQChanged?.Invoke(playerIQ);
@@ -172,20 +185,25 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
-        /// Adds a small flat IQ restore per tap while IQ is below the 100 baseline (both on a
-        /// fresh save starting at IQ 1 and after offline decay). Clamped so taps never push
-        /// IQ above StartingPlayerIQ (100). Above 100, IQ only grows from infrastructure
-        /// spending and building purchases -- tapping stops affecting it entirely.
+        /// Adds a small flat IQ restore per tap while IQ is below the current ceiling (both on a
+        /// fresh save starting at IQ 1 and after offline decay). Normally the ceiling is
+        /// StartingPlayerIQ (100) -- above that, IQ only grows from infrastructure spending and
+        /// building purchases, tapping stops affecting it. While a Brain Freeze is active, the
+        /// ceiling is BrainFreezeStartIQ (200) instead -- this is the entire point of the
+        /// redesigned Brain Freeze: come back, tap up from the 113 floor to 200, as often as you
+        /// like, for the freeze's duration.
         /// </summary>
         public void RestoreIQFromTap()
         {
-            if (playerIQ >= StartingPlayerIQ)
+            float ceiling = IsBrainFreezeActive ? BrainFreezeStartIQ : StartingPlayerIQ;
+
+            if (playerIQ >= ceiling)
             {
                 return;
             }
 
             float previousIQ = playerIQ;
-            playerIQ = Mathf.Min(StartingPlayerIQ, playerIQ + IQRestorePerTap);
+            playerIQ = Mathf.Min(ceiling, playerIQ + IQRestorePerTap);
 
             if (!Mathf.Approximately(previousIQ, playerIQ))
             {
@@ -209,12 +227,17 @@ namespace BrainDrain.Core
 
         /// <summary>
         /// Resets IQ to the fresh-run baseline (MinPlayerIQ = 1) on Snotting (Rebirth).
-        /// Also clears lastMilestoneIndex so milestones fire correctly in the new run.
+        /// Also clears lastMilestoneIndex so milestones fire correctly in the new run, and clears
+        /// any active Brain Freeze (decided 2026-08-03): letting the freeze's floor/timer survive
+        /// a Rebirth would let a paying player time a voluntary prestige reset for an instant free
+        /// IQ refill, which is exactly the pay-to-win this mechanic is designed to avoid. The
+        /// purchase being cut short by the player's own choice to Rebirth is intentional.
         /// </summary>
         public void ResetForRebirth()
         {
             playerIQ = MinPlayerIQ;
             lastMilestoneIndex = 0;
+            brainFreezeExpiryUnixSeconds = 0;
             OnPlayerIQChanged?.Invoke(playerIQ);
         }
 
@@ -231,8 +254,11 @@ namespace BrainDrain.Core
         /// Activates (or stacks onto) a Brain Freeze. Stacking is additive/queued: if a freeze
         /// is already active, the new duration extends from the CURRENT expiry, not from now --
         /// buy 24h, use 10h, buy 48h more, and 62h remain from that moment (24 + 48 - 10), not a
-        /// fresh independent 48h timer. Used by GodTierStoreManager when a Brain Freeze product
-        /// is stub-purchased.
+        /// fresh independent 48h timer. Every purchase -- first or stacking -- also jumps
+        /// PlayerIQ to at least BrainFreezeStartIQ (200); Mathf.Max rather than a flat set so an
+        /// already-higher IQ (from ordinary building/infrastructure growth, which has no ceiling)
+        /// is never demoted by buying this. Used by GodTierStoreManager when a Brain Freeze
+        /// product is stub-purchased.
         /// </summary>
         public void ApplyBrainFreeze(float durationHours)
         {
@@ -245,6 +271,15 @@ namespace BrainDrain.Core
             long durationSeconds = (long)(durationHours * 3600d);
             long baseline = Math.Max(now, brainFreezeExpiryUnixSeconds);
             brainFreezeExpiryUnixSeconds = baseline + durationSeconds;
+
+            float previousIQ = playerIQ;
+            playerIQ = Mathf.Max(playerIQ, BrainFreezeStartIQ);
+
+            if (!Mathf.Approximately(previousIQ, playerIQ))
+            {
+                OnPlayerIQChanged?.Invoke(playerIQ);
+                CheckMilestone();
+            }
         }
 
         /// <summary>Restores the Brain Freeze expiry directly from a save file -- no stacking math, unlike ApplyBrainFreeze. Must run before LoadStateWithOfflineDecay so that load's decay calculation sees the correct freeze state.</summary>
@@ -253,14 +288,19 @@ namespace BrainDrain.Core
             brainFreezeExpiryUnixSeconds = expiryUnixSeconds;
         }
 
+        /// <summary>
+        /// Simplification, deliberately approved over a precise two-phase calculation (2026-08-03):
+        /// if a Brain Freeze was still active at the moment the app closed (lastActiveUtc precedes
+        /// brainFreezeExpiryUnixSeconds), the ENTIRE offline gap decays toward BrainFreezeFloor
+        /// (113) instead of OfflineDecayFloor (1) -- even if the freeze's real expiry actually fell
+        /// somewhere inside that gap. Precisely splitting the gap at the freeze's expiry moment
+        /// would need a two-phase lerp; erring generous on a real-money QoL purchase was judged not
+        /// worth that complexity. brainFreezeExpiryUnixSeconds must already be restored (via
+        /// SetBrainFreezeExpiry, called before this) for the comparison below to be correct.
+        /// </summary>
         private float ApplyOfflineDecay(float iq, DateTime lastActiveUtc)
         {
             if (iq <= OfflineDecayFloor)
-            {
-                return iq;
-            }
-
-            if (IsBrainFreezeActive)
             {
                 return iq;
             }
@@ -271,9 +311,18 @@ namespace BrainDrain.Core
                 return iq;
             }
 
+            long lastActiveUnixSeconds = new DateTimeOffset(lastActiveUtc).ToUnixTimeSeconds();
+            bool freezeActiveAtClose = lastActiveUnixSeconds < brainFreezeExpiryUnixSeconds;
+            float floor = freezeActiveAtClose ? BrainFreezeFloor : OfflineDecayFloor;
+
+            if (iq <= floor)
+            {
+                return iq;
+            }
+
             float effectiveMaxHours = OfflineDecayMaxHours + bonusOfflineDecayMaxHours;
             float t = (float)Math.Min(1d, offlineHours / effectiveMaxHours);
-            return Mathf.Lerp(iq, OfflineDecayFloor, t);
+            return Mathf.Lerp(iq, floor, t);
         }
 
         private void CheckMilestone()

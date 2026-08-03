@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: brain_freeze_48
   displayName: 'Brain Freeze: 48'
-  description: Two full days of frozen IQ. Same cold storage, better rate.
+  description: Same 113 floor, same 200 start. Two days before you have to think
+    about it again.
   realMoneyPriceDisplay: $2.50
   effectType: 6
   offlineExtensionHours: 0

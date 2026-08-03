@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: deep_freeze
   displayName: Deep Freeze
-  description: Seven days without a single point of decay. The cheapest way to
-    stay smart.
+  description: A full week where your IQ never drops below 113. The cheapest way
+    to never show up stupid.
   realMoneyPriceDisplay: $5.99
   effectType: 6
   offlineExtensionHours: 0

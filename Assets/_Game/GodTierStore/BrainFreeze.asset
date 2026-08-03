@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: brain_freeze
   displayName: Brain Freeze
-  description: Your IQ stops decaying for 24 hours from purchase. No drift, no drop,
-    no tapping it back up.
+  description: Your IQ can't drop below 113 for 24 hours. Starts you at 200 -- tap
+    anytime to get back there.
   realMoneyPriceDisplay: $1.50
   effectType: 6
   offlineExtensionHours: 0

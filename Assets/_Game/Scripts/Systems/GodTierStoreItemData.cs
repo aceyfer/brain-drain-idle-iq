@@ -36,7 +36,7 @@ namespace BrainDrain.Systems
         public GodTierStoreEffectType effectType;
         [Tooltip("Used only by OfflineProgressionExtension -- added to PlayerIQManager's offline-decay-max-hours window.")]
         public float offlineExtensionHours;
-        [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is fully immune to decay, starting from purchase. Stacks additively onto any currently-active freeze rather than overwriting it.")]
+        [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is protected at a floor of 113 (after an immediate jump to at least 200 on purchase). Stacks additively onto any currently-active freeze's duration and re-triggers the 200 jump.")]
         public float freezeDurationHours;
     }
 }
