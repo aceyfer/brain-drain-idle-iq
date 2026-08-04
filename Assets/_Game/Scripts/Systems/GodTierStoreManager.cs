@@ -86,19 +86,48 @@ namespace BrainDrain.Systems
 
         public bool IsItemOwned(GodTierStoreItemData item) => item != null && ownedItemIds.Contains(item.itemId);
 
+        /// <summary>Looks up whether a given itemId belongs to a consumable item in the configured list. Used only by LoadState's save migration.</summary>
+        private bool IsConsumableItemId(string itemId)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                GodTierStoreItemData item = items[i];
+                if (item != null && item.itemId == itemId)
+                {
+                    return item.isConsumable;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// PLACEHOLDER -- does not charge real money. Grants the item immediately. Call this
         /// from a real IAP plugin's purchase-success callback once one is integrated; until
         /// then, calling it directly (e.g. from a "Buy" button) gives the item away for free.
+        /// Non-consumables are tracked in ownedItemIds and can only ever be bought once (the
+        /// original behavior). Consumables (e.g. the Brain Freeze family) are NEVER added to
+        /// ownedItemIds -- ownership and active-duration are separate concepts for them, so they
+        /// stay purchasable indefinitely; ApplyItemEffect's own target handles stacking the new
+        /// duration onto whatever's already active.
         /// </summary>
         public bool StubPurchase(GodTierStoreItemData item)
         {
-            if (item == null || IsItemOwned(item))
+            if (item == null)
             {
                 return false;
             }
 
-            ownedItemIds.Add(item.itemId);
+            if (!item.isConsumable)
+            {
+                if (IsItemOwned(item))
+                {
+                    return false;
+                }
+
+                ownedItemIds.Add(item.itemId);
+            }
+
             ApplyItemEffect(item);
             OnItemsChanged?.Invoke();
             return true;
@@ -159,10 +188,23 @@ namespace BrainDrain.Systems
             {
                 foreach (string itemId in restoredOwnedItemIds)
                 {
-                    if (!string.IsNullOrWhiteSpace(itemId))
+                    if (string.IsNullOrWhiteSpace(itemId))
                     {
-                        ownedItemIds.Add(itemId);
+                        continue;
                     }
+
+                    // Migration (2026-08-05): consumables used to be tracked as permanent
+                    // ownership before the redesign -- purge one found in an older save so the
+                    // item becomes purchasable again, instead of being stuck "owned" forever
+                    // with no way to ever re-trigger its effect. The item's actual
+                    // active-duration state (e.g. Brain Freeze's expiry) is persisted
+                    // separately and is unaffected by this purge.
+                    if (IsConsumableItemId(itemId))
+                    {
+                        continue;
+                    }
+
+                    ownedItemIds.Add(itemId);
                 }
             }
 

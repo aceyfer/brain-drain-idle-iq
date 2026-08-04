@@ -19,5 +19,6 @@ MonoBehaviour:
     to never show up stupid.
   realMoneyPriceDisplay: $5.99
   effectType: 6
+  isConsumable: 1
   offlineExtensionHours: 0
   freezeDurationHours: 168

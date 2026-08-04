@@ -96,7 +96,12 @@ namespace BrainDrain.UI
             if (nameText != null) nameText.text = boundData.displayName;
             if (descriptionText != null) descriptionText.text = boundData.description;
 
-            bool owned = boundManager.IsItemOwned(boundData);
+            // Consumables (e.g. the Brain Freeze family) are never added to ownedItemIds by
+            // StubPurchase, so boundManager.IsItemOwned would already always read false for
+            // them -- this check is made explicit rather than relying on that invariant, so a
+            // consumable's row always shows its price and stays interactable by this file's own
+            // logic, not by trusting a distant guarantee elsewhere.
+            bool owned = !boundData.isConsumable && boundManager.IsItemOwned(boundData);
             bool profanityToggle = owned
                 && boundData.effectType == GodTierStoreEffectType.UnlockProfanityPack;
 

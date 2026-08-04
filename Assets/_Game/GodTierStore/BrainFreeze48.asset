@@ -19,5 +19,6 @@ MonoBehaviour:
     about it again.
   realMoneyPriceDisplay: $2.50
   effectType: 6
+  isConsumable: 1
   offlineExtensionHours: 0
   freezeDurationHours: 48

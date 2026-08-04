@@ -37,6 +37,8 @@ namespace BrainDrain.Systems
 
         [Header("Effect")]
         public GodTierStoreEffectType effectType;
+        [Tooltip("If true, this is a timed consumable -- GodTierStoreManager.StubPurchase never adds it to ownedItemIds, so it can be bought again and again (its own effect target, e.g. PlayerIQManager.ApplyBrainFreeze, is what stacks the new duration onto whatever's already active). If false (default), it's a permanent one-time unlock tracked via ownedItemIds/IsItemOwned as usual.")]
+        public bool isConsumable;
         [Tooltip("Used only by OfflineProgressionExtension -- added to PlayerIQManager's offline-decay-max-hours window.")]
         public float offlineExtensionHours;
         [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is protected at a floor of 113 (after an immediate jump to at least 200 on purchase). Stacks additively onto any currently-active freeze's duration and re-triggers the 200 jump.")]
