@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: DeepFreeze
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: deep_freeze
+  productId: com.eighthkind.braindrain.deepfreeze
   displayName: Deep Freeze
   description: A full week where your IQ never drops below 113. The cheapest way
     to never show up stupid.

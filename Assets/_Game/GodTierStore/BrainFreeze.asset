@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BrainFreeze
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: brain_freeze
+  productId: com.eighthkind.braindrain.brainfreeze
   displayName: Brain Freeze
   description: Your IQ can't drop below 113 for 24 hours. Starts you at 200 -- tap
     anytime to get back there.

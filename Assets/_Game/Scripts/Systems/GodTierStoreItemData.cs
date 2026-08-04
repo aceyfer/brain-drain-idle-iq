@@ -16,9 +16,10 @@ namespace BrainDrain.Systems
 
     /// <summary>
     /// Authoring data for one God Tier Store item -- real-money-only, cosmetics/QoL, never
-    /// power. NO real payment processing exists in this project (no Unity IAP package, no store
-    /// product IDs) -- GodTierStoreManager.StubPurchase grants the item immediately and is
-    /// clearly marked as a placeholder for real IAP integration, not a working purchase flow.
+    /// power. NO real payment processing exists in this project (no Unity IAP package installed,
+    /// no purchase flow wired) -- GodTierStoreManager.StubPurchase grants the item immediately and
+    /// is clearly marked as a placeholder for real IAP integration. Some items now carry a real
+    /// store productId (schema only, added ahead of actual IAP wiring) -- see productId below.
     /// realMoneyPriceDisplay is a display-only string; nothing actually charges it yet.
     /// </summary>
     [CreateAssetMenu(fileName = "GodTierStoreItemData", menuName = "BrainDrain/God Tier Store Item")]
@@ -26,6 +27,8 @@ namespace BrainDrain.Systems
     {
         [Header("Identity")]
         public string itemId;
+        [Tooltip("Real App Store Connect / Play Console product SKU, e.g. \"com.eighthkind.braindrain.brainfreeze\". Must match the store listing exactly once a product is live there -- do not change after that point. Empty for items with no store SKU registered yet.")]
+        public string productId;
         public string displayName;
         [TextArea(2, 4)]
         public string description;

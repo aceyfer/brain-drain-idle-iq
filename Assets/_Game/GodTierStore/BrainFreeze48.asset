@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BrainFreeze48
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: brain_freeze_48
+  productId: com.eighthkind.braindrain.brainfreeze48
   displayName: 'Brain Freeze: 48'
   description: Same 113 floor, same 200 start. Two days before you have to think
     about it again.

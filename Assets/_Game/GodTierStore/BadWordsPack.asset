@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BadWordsPack
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
   itemId: bad_words_pack
+  productId: com.eighthkind.braindrain.badwordspack
   displayName: Bad Words Pack
   description: Unlocks the Tier 3 unfiltered swear-word narrator lines. Toggle them
     on/off anytime once owned.
