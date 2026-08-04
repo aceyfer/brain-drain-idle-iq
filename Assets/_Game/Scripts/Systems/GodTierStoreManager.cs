@@ -86,19 +86,37 @@ namespace BrainDrain.Systems
 
         public bool IsItemOwned(GodTierStoreItemData item) => item != null && ownedItemIds.Contains(item.itemId);
 
-        /// <summary>Looks up whether a given itemId belongs to a consumable item in the configured list. Used only by LoadState's save migration.</summary>
-        private bool IsConsumableItemId(string itemId)
+        /// <summary>
+        /// Three-state result for ResolveConsumableStatus. Unknown is deliberately distinct from
+        /// NotConsumable -- an unresolved itemId (no matching entry in items, or a null entry)
+        /// must never be conflated with a positive confirmation that the item isn't consumable.
+        /// </summary>
+        private enum ConsumableStatus
+        {
+            Unknown,
+            Consumable,
+            NotConsumable
+        }
+
+        /// <summary>
+        /// Resolves whether a given itemId belongs to a consumable item in the configured list.
+        /// Returns Unknown if no matching entry is found (or the matching entry is null) -- the
+        /// caller must treat Unknown the same as NotConsumable (i.e. never strip), since an
+        /// unresolvable lookup is not a positive confirmation of anything. Used only by
+        /// LoadState's save migration.
+        /// </summary>
+        private ConsumableStatus ResolveConsumableStatus(string itemId)
         {
             for (int i = 0; i < items.Count; i++)
             {
                 GodTierStoreItemData item = items[i];
                 if (item != null && item.itemId == itemId)
                 {
-                    return item.isConsumable;
+                    return item.isConsumable ? ConsumableStatus.Consumable : ConsumableStatus.NotConsumable;
                 }
             }
 
-            return false;
+            return ConsumableStatus.Unknown;
         }
 
         /// <summary>
@@ -193,13 +211,14 @@ namespace BrainDrain.Systems
                         continue;
                     }
 
-                    // Migration (2026-08-05): consumables used to be tracked as permanent
-                    // ownership before the redesign -- purge one found in an older save so the
-                    // item becomes purchasable again, instead of being stuck "owned" forever
-                    // with no way to ever re-trigger its effect. The item's actual
-                    // active-duration state (e.g. Brain Freeze's expiry) is persisted
-                    // separately and is unaffected by this purge.
-                    if (IsConsumableItemId(itemId))
+                    // Migration (2026-08-05, hardened 2026-08-06): an itemId is only ever
+                    // stripped when POSITIVELY CONFIRMED consumable. Anything unresolved
+                    // (ConsumableStatus.Unknown, e.g. an itemId not wired into items) is
+                    // preserved, same as a confirmed NotConsumable -- silently deleting a paid
+                    // non-consumable is never acceptable, so an unresolved lookup must never be
+                    // treated as grounds to strip. The item's actual active-duration state (e.g.
+                    // Brain Freeze's expiry) is persisted separately and is unaffected either way.
+                    if (ResolveConsumableStatus(itemId) == ConsumableStatus.Consumable)
                     {
                         continue;
                     }
