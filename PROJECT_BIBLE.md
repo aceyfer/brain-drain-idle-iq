@@ -130,6 +130,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
     Title is visible from Snotting 0 (no blank state). Player-facing spelling is "Illumisnotty".
 12. Ped1 stage 1 intentionally reuses the Stage 2 sprite until new art is produced (first-playable workaround).
 13. **Premium = direct real currency only, via `GodTierStoreManager` exclusively** (decided 2026-07-09/10, `TASKLIST_DETAILS.md` §10/§16). Neuron premium currency was purged repo-wide (`939222f`–`34841b7`); `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` are deleted, not dormant. **No soft-currency path to premium content may ever exist** — the 2,500-Cash `ProfanityPack` was killed outright rather than repriced specifically because it was such a path, independent of whether anything was literally named "neurons." The store is called the **God Shop**; its tab UI is Phase B of §16, not yet built.
+14. **Android is the launch platform; iOS is post-launch** (decided 2026-08-05). The development machine is Windows-only, so iOS is blocked by the absence of Mac hardware and not by the $99 Apple Developer fee — buying that account changes nothing until a Mac exists. Bundle identifier is `com.eighthkind.braindrain` on both Android and iPhone, permanent and never renamed, and it is the parent of the four locked God Shop product IDs. This reorders §12 (Google Play IAP first, StoreKit later) and §15 (Play Store listing first).
 
 ## 8. Known scar tissue (bugs already paid for — read before debugging)
 

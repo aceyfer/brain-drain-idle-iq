@@ -77,7 +77,17 @@ Direct-currency products via Unity IAP (or store-native): define product IDs (e.
 - BG1 fixed in §6.
 
 ## §14 Device build
-iOS target already selected in Editor. Build to a real device early — safe-area (CustomSafeArea), tap targets, auto-size text at 1080x1920, and performance with pedestrians are all things editor Play mode under-tests. Log device issues as new tasks; don't hotfix unlogged.
+**Platform decision (2026-08-05): Android first. iOS is post-launch.** Development machine is Windows-only; iOS builds require Mac hardware regardless of the $99 Apple Developer fee, so iOS is gated on hardware, not on money. The `iPhone:` bundle identifier is written and reserved but dormant.
+
+Player Settings prep is DONE (`c6d6b90`): Android + iOS bundle identifier `com.eighthkind.braindrain`, `defaultScreenOrientation` 0, portrait-only autorotate flags, `androidRenderOutsideSafeArea` left at 1 deliberately so SafeAreaManager gets exercised.
+
+BLOCKED: no Android device owned. Target purchase is a used Pixel 6a/7a (~$90-140) specifically because a punch-hole cutout is required to test the safe-area path; a flat-bezel device cannot validate it. Midrange is the correct perf target, not a flagship.
+
+Split of remaining work:
+- Testable in Unity Device Simulator without hardware: portrait lock, SafeAreaManager vs. cutout geometry, HUD clearance at 19.5:9 and 20:9, text auto-size on God Shop copy / Intel cards / chatter bubbles at 1080x2400, tap targets against the 48dp floor.
+- Requires the phone: touch responsiveness, framerate with pedestrians + Hot Chicks, IL2CPP/ARM64 runtime behavior (Simulator runs Mono in-editor and proves nothing here), app-kill save survival, anything IAP.
+Do not switch the active build platform to Android until the device is in hand — no reason to carry a half-migrated project.
+Log device issues as new tasks; don't hotfix unlogged.
 
 ## §15 Store presence
 Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), AcEclipse Games publisher identity.

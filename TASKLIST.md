@@ -24,7 +24,7 @@
 - [x] 21. World portrait overlap check — CLOSED, verified clear by Aceyfer in Play mode 2026-07-15 (moot anyway: world portrait retired §17/§18); SNOTTING badge sits alone top-right (details §21)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
-- [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $5.00 (details §10)
+- [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $3.99 (details §10)
 
 ## THEN — Path to Market
 - [x] 23. FTUE / comprehension pass (COGS-narrated onboarding) — SHIPPED & live-tested. FTUEManager + code-built IntelCardUI (`258deee`), FTUE seen-flags in save (`83e8de0`), Beat 9 Illumisnotti name-reveal (`52da27b`/`0b37537`); unblocked §11 (details §23)
@@ -33,7 +33,7 @@
 - [x] 26. Economy display/design audit — CLOSED. Jumper Cables/IQ Overclock Chip descriptions fixed, PlayerIQManager subscribe guard added (`f0ba24d`); Overcharged IQ system + Underground Economy's 9BP/7Cash split doc-synced into CLAUDE.md/Bible §6; remaining findings confirmed intentional, no action needed (details §26)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
 - [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)
-- [ ] 14. Device build + test on real phone (iOS target visible in editor) (details §14)
+- [!] 14. Device build + test on real phone — BLOCKED on hardware (no Android device owned; iOS unbuildable on Windows). Android-first decided 2026-08-05. Player Settings prep landed (`c6d6b90`) (details §14)
 - [ ] 15. Store presence: name/ratings/screenshots/description (details §15)
 
 ## PARKED (do not touch until NOW+NEXT clear)
