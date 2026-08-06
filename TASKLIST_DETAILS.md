@@ -72,8 +72,9 @@ Proposal to react to (Aceyfer decides): v1 ships = core click loop, 6-stage Worl
 Direct-currency products via Unity IAP (or store-native): define product IDs (e.g. `bd_badwords_pack`), configure price tiers in store consoles, route purchase → entitlement flag → content unlock. No neurons anywhere (§10). Needs Apple/Google dev accounts + tax/banking setup — start that paperwork early, it has multi-day lead time.
 
 ## §13 Art debt
-- COGS Level 1 portrait (reference-anchoring problem unsolved — pipeline: Leonardo Cinematic Kino → Grok → rembg).
-- Sweep for remaining placeholder art (PlaceholderArtGenerator output still live anywhere?).
+- COGS portraits 1-6 are DONE and final, living in `Assets/_Game/Sprites/Characters/COGs/` (COGs1.png plus COGs2-6.jpg). The old "Level 1 portrait missing / reference-anchoring unsolved" note was stale and is retired.
+- Format note (not a blocker, Aceyfer has accepted it): COGs1 is PNG, COGs2-6 are JPG. JPG carries no alpha channel, so those five cannot have transparent backgrounds without reprocessing. Final art is considered shipped as-is. Revisit only if a transparent COGS portrait is ever required by a UI change.
+- PLACEHOLDER SWEEP — CONFIRMED STILL LIVE. `Assets/_Game/Art/COGS/` holds six PlaceholderArtGenerator stubs (COGS_0_Neutral through COGS_5_Unhinged, ~1.5KB each) and `Assets/_Game/Art/PlayerCharacter/` holds a matching stub set. These are generator output, not art. They are a separate folder tree from the real portraits above. Action: confirm nothing references them, then delete both stub folders. `Assets/_Game/Scripts/Editor/PlaceholderArtGenerator.cs` is Editor-only and self-referencing; decide separately whether to retire the tool or keep it.
 - BG1 fixed in §6.
 
 ## §14 Device build
@@ -90,7 +91,7 @@ Do not switch the active build platform to Android until the device is in hand �
 Log device issues as new tasks; don't hotfix unlogged.
 
 ## §15 Store presence
-Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), AcEclipse Games publisher identity.
+Name check (trademark/collision), age rating questionnaire (satire + "Bad Words Pack" likely bumps rating — check before finalizing), 5–8 screenshots, short + long description, privacy policy URL (required by both stores), Eighth Kind Studios publisher identity (studio was renamed from AcEclipse Games; the store publisher name is painful to change once a listing exists, so get this right the first time).
 
 ## §16 Replace third shop tab with "God Shop" real-currency store — SHIPPED 2026-07-11 (decided 2026-07-09, Phase A complete 2026-07-10, Phase B complete 2026-07-11)
 **Decision:** the RP/World Restoration shop tab is cut. That third tab slot becomes the **God Shop** (direct real-world currency only, per the no-neurons decision in §10, backed solely by `GodTierStoreManager`). World Restoration progression itself stays in the game — it's just no longer presented as a shop tab; how/where it surfaces instead is undecided, not scoped here.
