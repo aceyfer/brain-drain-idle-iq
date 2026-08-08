@@ -384,6 +384,19 @@ Read-only audit of all 16 building `.asset` files against their `description` te
 **Not confirmed dead:** a repo-wide search for `ConfigureConvertPanel(` found zero call sites outside its own declaration; a search for `convertButton.`/`convertUIController.` usage inside `HUDController.cs`'s own method bodies found no matches. The fields are serialized and scene-wired (non-null) but nothing in `HUDController.cs` reads or calls through them.
 **Status:** looks vestigial, is **NOT confirmed dead** — only a live Play Mode check, not a static text search, can settle that. **Neither controller's convert fields get trimmed until that check happens.** Surfaced by the 2026-08-07/08 CLAUDE.md audit (`CLAUDE_MD_FINDINGS.md`); logged here so the warning survives after that untracked file is eventually deleted. Not fixed this pass — documentation only.
 
+## §29 CONCEPT — Dialogue chapter archive as a Rebirth reward — logged 2026-08-08, NOT SCOPED, NOT APPROVED
+Supersedes/refines the plain "session-only dialogue log" idea originally captured 2026-08-06 (that entry's architecture note is folded in below, not lost). Current state, verified: `DialogueManager.cs:160` holds narrator-line history in a plain in-memory `List<DialogueLogEntry>`; nothing writes it to `PlayerData`, so an AFK timeout, a disconnect, or a force-close loses all of it. The §20b dialogue log is a session-only utility today.
+
+**The idea:** performing a Snotting (Rebirth) grants permanent access to the dialogue from the World Restoration stages already cleared. Turns the log from a utility into a Rebirth reward — first Rebirth is the moment collected intel stops being disposable.
+
+**Two open questions, both unresolved, both block scoping:**
+1. **Unlock timing.** Rebirth itself doesn't unlock until `stageIndex 3` (per `PROJECT_BIBLE.md` §6's rebirth-unlock threshold) — meaning the archive would be invisible for a long stretch of a first run, potentially most of a player's early-game time. Whether that's intentional pacing (the archive as a mid-game payoff) or an accidental dead zone (a feature players forget exists before they ever see it) is undecided.
+2. **Survival of the reset.** `RebirthManager.TriggerRebirth()` resets current-run progress (`CurrencyManager.ExecuteRebirth`, `UpgradeManager.ResetBuildings()`, etc.) — whatever tracks which lines have been seen must survive that reset, or the archive is empty at the exact moment it unlocks, which would be a worse experience than not having the feature at all. Nothing in the current reset path preserves per-line seen-state; this needs explicit design, not just a "don't reset this field" afterthought.
+
+**Known architectural constraint (from the original 2026-08-06 capture, still holds):** this cannot reuse THE POCKET's (§24c) zero-save-state trick — the Pocket rode on FTUE seen-flags that already existed as save state for an unrelated reason; dialogue lines have no equivalent already-persisted signal. Cheapest known design is to persist only the *line IDs* the player has seen, grouped per World Restoration stage, and rehydrate the display text from the dialogue `NarratorLine` ScriptableObjects on load — reduces "store every line forever" to a small int array per stage rather than full text. **This is new save state.** It needs a save-migration path (same category as `tapMultiplier`'s load-time migration guard, `SaveManager`) and Aceyfer's explicit written approval before any code is written, per the standing new-save-state rule.
+
+**Status:** concept only. No acceptance criteria, no system design, no code. Not scoped until both open questions above are answered by Aceyfer.
+
 ---
 
 ## DECISION LOG
