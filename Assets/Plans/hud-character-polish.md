@@ -1,6 +1,6 @@
 # Project Overview
 - Game Title: Brain Drain: Idle IQ
-- High-Level Concept: Satirical mobile idle clicker by AcEclipse Games. Polish HUD visibility and character silhouette aspect ratio.
+- High-Level Concept: Satirical mobile idle clicker by Eighth Kind Studios. Polish HUD visibility and character silhouette aspect ratio.
 - Players: Single player
 - Tone / Art Direction: Satirical retro-dystopian cartoon, high-contrast colors, funny caricature visuals.
 - Target Platform: iOS / Mobile

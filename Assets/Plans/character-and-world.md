@@ -1,6 +1,6 @@
 # Project Overview
 - Game Title: Brain Drain: Idle IQ
-- High-Level Concept: A satirical idle clicker by AcEclipse Games — tap to earn Brain Power, climb Idiocracy ranks, buy absurd buildings. This task adds a player character + dystopian city stage to the main game view.
+- High-Level Concept: A satirical idle clicker by Eighth Kind Studios — tap to earn Brain Power, climb Idiocracy ranks, buy absurd buildings. This task adds a player character + dystopian city stage to the main game view.
 - Players: Single player
 - Tone / Art Direction: Neon, high-contrast retro-dystopian cartoon (Oswald/Bangers/Anton fonts; hot pink #FF1493, neon green #39FF14, cyan #00FFFF).
 - Target Platform: iOS / Mobile

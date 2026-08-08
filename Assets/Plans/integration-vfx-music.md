@@ -1,6 +1,6 @@
 # Project Overview
 - Game Title: Brain Drain: Idle IQ
-- High-Level Concept: Satirical mobile idle clicker by AcEclipse Games. Tapping anywhere on the bottom half of the screen harvests brain power. This task adds atmospheric rain, a satisfying touch ripple feedback effect, and looping cyberpunk background music.
+- High-Level Concept: Satirical mobile idle clicker by Eighth Kind Studios. Tapping anywhere on the bottom half of the screen harvests brain power. This task adds atmospheric rain, a satisfying touch ripple feedback effect, and looping cyberpunk background music.
 - Players: Single player
 - Tone / Art Direction: Satirical retro-dystopian cartoon, thick black outlines, neon high-contrast colors, moody cyber atmosphere.
 - Target Platform: iOS / Mobile

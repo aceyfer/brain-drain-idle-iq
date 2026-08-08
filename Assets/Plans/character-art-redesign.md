@@ -1,6 +1,6 @@
 # Project Overview
 - Game Title: Brain Drain: Idle IQ
-- High-Level Concept: Satirical mobile idle clicker by AcEclipse Games. The game parodies a dystopian corporate future (similar to the movie *Idiocracy*), where the player character wakes up from a cryo-sleep chamber in a vault jumpsuit and progresses through increasingly ridiculous cyberpunk and corporate upgrades.
+- High-Level Concept: Satirical mobile idle clicker by Eighth Kind Studios. The game parodies a dystopian corporate future (similar to the movie *Idiocracy*), where the player character wakes up from a cryo-sleep chamber in a vault jumpsuit and progresses through increasingly ridiculous cyberpunk and corporate upgrades.
 - Tone / Art Direction: Satirical retro-dystopian cartoon, thick black outlines, neon high-contrast colors, funny caricature visuals.
 - Target Platform: iOS / Mobile
 - Render Pipeline: UniversalRP (2D)
