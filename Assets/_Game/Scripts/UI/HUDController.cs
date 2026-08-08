@@ -32,10 +32,6 @@ namespace BrainDrain.UI
         [SerializeField] private TextMeshProUGUI pointsText;
         [SerializeField] private TextMeshProUGUI restorationProgressText;
 
-        [Header("Cash/Points Conversion")]
-        [SerializeField] private Button convertButton;
-        [SerializeField] private ConvertUIController convertUIController;
-
         [Header("Points Locking Visibility")]
         [SerializeField] private Button pointsShopButton;
 
@@ -129,12 +125,6 @@ namespace BrainDrain.UI
             set => pointsText = value;
         }
 
-        public Button ConvertButton
-        {
-            get => convertButton;
-            set => convertButton = value;
-        }
-
         public TextMeshProUGUI RestorationProgressText
         {
             get => restorationProgressText;
@@ -151,12 +141,6 @@ namespace BrainDrain.UI
         {
             get => restorationFillImage;
             set => restorationFillImage = value;
-        }
-
-        public void ConfigureConvertPanel(ConvertUIController controller, Button pointsButton)
-        {
-            convertUIController = controller;
-            pointsShopButton = pointsButton;
         }
 
         public void ForceUpdatePointsLockState(int rebirthCount)
