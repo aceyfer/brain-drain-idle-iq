@@ -2258,7 +2258,6 @@ RectTransform:
   m_Children:
   - {fileID: 82105998}
   - {fileID: 179850114}
-  - {fileID: 620001002}
   - {fileID: 511578276}
   - {fileID: 143213160}
   m_Father: {fileID: 12452643}
@@ -6297,7 +6296,6 @@ RectTransform:
   - {fileID: 2051647701}
   - {fileID: 546176821}
   - {fileID: 143132001}
-  - {fileID: 462216767}
   - {fileID: 82639962}
   - {fileID: 895783748}
   - {fileID: 1707339221}
@@ -10808,13 +10806,14 @@ RectTransform:
   - {fileID: 570946204}
   - {fileID: 307218348}
   - {fileID: 754133920}
-  m_Father: {fileID: 231107403}
+  - {fileID: 620001002}
+  m_Father: {fileID: 1357452537}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -192}
-  m_SizeDelta: {x: -48, y: 20}
-  m_Pivot: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 68}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &462216768
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13768,7 +13767,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -13801,7 +13800,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 13.45
+  m_fontSize: 14
   m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -15302,7 +15301,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 620001008}
-  m_Father: {fileID: 93216300}
+  m_Father: {fileID: 462216767}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -15324,9 +15323,9 @@ MonoBehaviour:
   m_IgnoreLayout: 0
   m_MinWidth: 0
   m_MinHeight: -1
-  m_PreferredWidth: -1
+  m_PreferredWidth: 120
   m_PreferredHeight: -1
-  m_FlexibleWidth: 1
+  m_FlexibleWidth: 0
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
 --- !u!114 &620001004
@@ -18833,7 +18832,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
+  m_fontSize: 18
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -23395,7 +23394,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00008953076}
+  m_AnchoredPosition: {x: 0, y: 0.0002181295}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &901832125
@@ -32318,6 +32317,7 @@ RectTransform:
   - {fileID: 231107403}
   - {fileID: 20145559}
   - {fileID: 12452643}
+  - {fileID: 462216767}
   - {fileID: 194340674}
   - {fileID: 1536778580}
   - {fileID: 356844109}
