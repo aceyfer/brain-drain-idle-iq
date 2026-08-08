@@ -42,6 +42,8 @@ namespace BrainDrain.UI
         [Header("World Restoration")]
         [Tooltip("Spends all current Points on World Restoration when clicked.")]
         [SerializeField] private Button restoreButton;
+        [Tooltip("Fill-type Image showing progress toward the next World Restoration stage threshold. Optional -- no effect if unassigned.")]
+        [SerializeField] private Image restorationFillImage;
 
         [Header("High-IQ Celebration")]
         [Tooltip("Optional. CanvasGroup on the root HUD canvas, pulsed during the celebration beat.")]
@@ -143,6 +145,12 @@ namespace BrainDrain.UI
         {
             get => restoreButton;
             set => restoreButton = value;
+        }
+
+        public Image RestorationFillImage
+        {
+            get => restorationFillImage;
+            set => restorationFillImage = value;
         }
 
         public void ConfigureConvertPanel(ConvertUIController controller, Button pointsButton)
@@ -524,6 +532,11 @@ namespace BrainDrain.UI
             string stageName = worldRestoration != null && worldRestoration.CurrentStage != null
                 ? worldRestoration.CurrentStage.stageName
                 : "DYSTOPIA";
+
+            if (restorationFillImage != null)
+            {
+                restorationFillImage.fillAmount = worldRestoration != null ? worldRestoration.StageProgressFraction : 0f;
+            }
 
             bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
             double threshold = cachedRebirthUI != null ? cachedRebirthUI.SnottingUnlockThreshold : 5658229d;

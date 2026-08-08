@@ -78,6 +78,16 @@ namespace BrainDrain.Systems
             }
         }
 
+        /// <summary>
+        /// 0..1 progress from the currently resolved stage's threshold toward the next stage's
+        /// threshold. 1.0 once the final configured stage is reached (or no stages configured).
+        /// Purely derived from CumulativePointsSpentOnRestoration/Stages -- not persisted.
+        /// </summary>
+        public float StageProgressFraction { get; private set; }
+
+        /// <summary>True once cumulative Points spent has reached the final configured stage's threshold, with no further stage to progress toward.</summary>
+        public bool IsFinalStageReached { get; private set; }
+
         /// <summary>Fired whenever restoration progress increases. Passes the new cumulative Points spent.</summary>
         public event Action<double> OnRestorationProgressChanged;
 
@@ -162,6 +172,7 @@ namespace BrainDrain.Systems
             }
 
             CumulativePointsSpentOnRestoration += amount;
+            RecomputeStageProgress();
             OnRestorationProgressChanged?.Invoke(CumulativePointsSpentOnRestoration);
             ApplyStageForCumulativePoints(snapImmediately: false);
 
@@ -172,6 +183,7 @@ namespace BrainDrain.Systems
         public void LoadState(double restoredCumulativePointsSpent)
         {
             CumulativePointsSpentOnRestoration = restoredCumulativePointsSpent;
+            RecomputeStageProgress();
             OnRestorationProgressChanged?.Invoke(CumulativePointsSpentOnRestoration);
             ApplyStageForCumulativePoints(snapImmediately: true);
         }
@@ -183,8 +195,43 @@ namespace BrainDrain.Systems
         public void ResetProgress()
         {
             CumulativePointsSpentOnRestoration = 0d;
+            RecomputeStageProgress();
             OnRestorationProgressChanged?.Invoke(CumulativePointsSpentOnRestoration);
             ApplyStageForCumulativePoints(snapImmediately: true);
+        }
+
+        /// <summary>
+        /// Resolves StageProgressFraction/IsFinalStageReached fresh from CumulativePointsSpentOnRestoration
+        /// and Stages. Deliberately does not read the CurrentStage property -- at the call sites this
+        /// runs from, CurrentStage may not yet reflect a threshold just crossed this call (it's only
+        /// updated afterward, by ApplyStageForCumulativePoints), so this re-resolves independently.
+        /// </summary>
+        private void RecomputeStageProgress()
+        {
+            WorldRestorationStage current = ResolveStage(CumulativePointsSpentOnRestoration);
+            if (current == null)
+            {
+                StageProgressFraction = 0f;
+                IsFinalStageReached = false;
+                return;
+            }
+
+            int currentIndex = stages.IndexOf(current);
+            WorldRestorationStage next = currentIndex >= 0 && currentIndex + 1 < stages.Count
+                ? stages[currentIndex + 1]
+                : null;
+
+            if (next == null)
+            {
+                StageProgressFraction = 1f;
+                IsFinalStageReached = true;
+                return;
+            }
+
+            IsFinalStageReached = false;
+            double span = next.pointsRequired - current.pointsRequired;
+            double progressed = CumulativePointsSpentOnRestoration - current.pointsRequired;
+            StageProgressFraction = span > 0d ? Mathf.Clamp01((float)(progressed / span)) : 1f;
         }
 
         private void ApplyStageForCumulativePoints(bool snapImmediately)
