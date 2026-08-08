@@ -10,11 +10,13 @@ using BrainDrain.UI;
 namespace BrainDrain.EditorTools
 {
     /// <summary>
-    /// Builds a RESTORATION fill bar next to the existing RP number readout: a new
-    /// RestorationBarRow (label + fill bar + the reparented pointsText) sits in the gap
-    /// between TextsRow and restorationProgressText inside CurrencyHeader, and wires
+    /// Builds a full-width RESTORATION fill bar pinned to the bottom of the safe area,
+    /// MapleStory/WoW EXP-bar style: RestorationBarRow (label + fill bar + the reparented
+    /// pointsText + the reparented RestoreButton) sits as a sibling of EconomyBar under
+    /// CustomSafeArea, filling the already-empty band below the bottom nav row. Wires
     /// HUDController.restorationFillImage. Menu: BrainDrain/Fix Restoration Bar Wiring.
-    /// Idempotent -- safe to re-run.
+    /// Idempotent -- safe to re-run (also migrates a row still parented under the old
+    /// CurrencyHeader location from an earlier version of this tool).
     /// </summary>
     public static class RestorationBarWireFix
     {
@@ -33,10 +35,17 @@ namespace BrainDrain.EditorTools
                 return;
             }
 
-            Transform currencyHeader = FindInScene("CurrencyHeader");
-            if (currencyHeader == null)
+            Transform customSafeArea = FindInScene("CustomSafeArea");
+            if (customSafeArea == null)
             {
-                Debug.LogError("[RestorationBarWireFix] CurrencyHeader not found.");
+                Debug.LogError("[RestorationBarWireFix] CustomSafeArea not found.");
+                return;
+            }
+
+            Transform economyBar = customSafeArea.Find("EconomyBar");
+            if (economyBar == null)
+            {
+                Debug.LogError("[RestorationBarWireFix] CustomSafeArea/EconomyBar not found.");
                 return;
             }
 
@@ -47,13 +56,29 @@ namespace BrainDrain.EditorTools
                 return;
             }
 
-            Undo.RegisterFullObjectHierarchyUndo(currencyHeader.gameObject, "Add Restoration Bar");
+            Transform restoreButtonTf = FindInScene("RestoreButton");
+            if (restoreButtonTf == null)
+            {
+                Debug.LogError("[RestorationBarWireFix] RestoreButton not found.");
+                return;
+            }
 
-            Transform row = currencyHeader.Find("RestorationBarRow");
+            Undo.RegisterFullObjectHierarchyUndo(customSafeArea.gameObject, "Add Restoration Bar");
+
+            Transform row = customSafeArea.Find("RestorationBarRow");
             if (row == null)
             {
-                row = CreateRow(currencyHeader);
+                // Migrate a row still under the old CurrencyHeader location, if present.
+                Transform legacyRow = FindInScene("RestorationBarRow");
+                row = legacyRow != null ? legacyRow : CreateRow(customSafeArea);
             }
+
+            if (row.parent != customSafeArea)
+            {
+                row.SetParent(customSafeArea, false);
+            }
+            ApplyRowAnchors(row);
+            row.SetSiblingIndex(economyBar.GetSiblingIndex() + 1);
 
             Image fillImage = BuildLabelAndBar(row);
 
@@ -64,6 +89,13 @@ namespace BrainDrain.EditorTools
             pointsTextTf.SetAsLastSibling();
             StylePointsTextForRow(pointsTextTf);
 
+            if (restoreButtonTf.parent != row)
+            {
+                restoreButtonTf.SetParent(row, false);
+            }
+            restoreButtonTf.SetAsLastSibling();
+            StyleRestoreButtonForRow(restoreButtonTf);
+
             SerializedObject so = new SerializedObject(hud);
             so.FindProperty("restorationFillImage").objectReferenceValue = fillImage;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -71,45 +103,45 @@ namespace BrainDrain.EditorTools
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Debug.Log("[RestorationBarWireFix] Done. Save the scene (Ctrl+S).\n" +
-                      "RestorationBarRow built under CurrencyHeader (RESTORATION label + fill bar + reparented RP number). " +
-                      "The gap it's anchored into (between TextsRow and restorationProgressText) is tight -- " +
-                      "check for overlap and nudge RestorationBarRow's anchoredPosition/height if needed.");
+                      "RestorationBarRow now sits under CustomSafeArea, pinned to the bottom of the safe area, " +
+                      "with RestoreButton reparented in. ButtonsRow should now auto-redistribute to Shop/Convert only. " +
+                      "Check RestoreButton's font/padding at the new 68px row height -- it was sized for the taller ButtonsRow.");
         }
 
-        private static Transform CreateRow(Transform currencyHeader)
+        private static Transform CreateRow(Transform customSafeArea)
         {
             var rowGo = new GameObject("RestorationBarRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             Undo.RegisterCreatedObjectUndo(rowGo, "Create RestorationBarRow");
-            rowGo.transform.SetParent(currencyHeader, false);
-
-            var rt = rowGo.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -192f);
-            rt.sizeDelta = new Vector2(-48f, 20f);
+            rowGo.transform.SetParent(customSafeArea, false);
 
             var hlg = rowGo.GetComponent<HorizontalLayoutGroup>();
             hlg.spacing = 8f;
-            hlg.padding = new RectOffset(8, 8, 0, 0);
+            hlg.padding = new RectOffset(12, 12, 6, 6);
             hlg.childAlignment = TextAnchor.MiddleLeft;
             hlg.childForceExpandWidth = false;
             hlg.childForceExpandHeight = true;
             hlg.childControlWidth = true;
             hlg.childControlHeight = true;
 
-            Transform textsRow = currencyHeader.Find("TextsRow");
-            if (textsRow != null)
-            {
-                rowGo.transform.SetSiblingIndex(textsRow.GetSiblingIndex() + 1);
-            }
-
             return rowGo.transform;
+        }
+
+        /// <summary>Pins the row to the full-width, bottom-most band of CustomSafeArea (the band already left empty below EconomyBar) -- applied on every run so a legacy or manually-nudged row is corrected too.</summary>
+        private static void ApplyRowAnchors(Transform row)
+        {
+            var rt = row.GetComponent<RectTransform>();
+            Undo.RecordObject(rt, "Restoration Bar Row Anchors");
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, 68f);
+            EditorUtility.SetDirty(rt);
         }
 
         private static Image BuildLabelAndBar(Transform row)
         {
-            TextMeshProUGUI referenceFont = FindReferenceFont(row);
+            TextMeshProUGUI referenceFont = FindReferenceFont();
 
             Transform labelTf = row.Find("RestorationLabel");
             if (labelTf == null)
@@ -134,6 +166,7 @@ namespace BrainDrain.EditorTools
             label.enableAutoSizing = true;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+            label.raycastTarget = false;
             EditorUtility.SetDirty(label);
 
             var labelLayout = labelTf.GetComponent<LayoutElement>();
@@ -191,11 +224,9 @@ namespace BrainDrain.EditorTools
             return fill;
         }
 
-        private static TextMeshProUGUI FindReferenceFont(Transform row)
+        private static TextMeshProUGUI FindReferenceFont()
         {
-            Transform currencyHeader = row.parent;
-            Transform textsRow = currencyHeader != null ? currencyHeader.Find("TextsRow") : null;
-            Transform cashText = textsRow != null ? textsRow.Find("CashText") : null;
+            Transform cashText = FindInScene("CashText");
             return cashText != null ? cashText.GetComponent<TextMeshProUGUI>() : null;
         }
 
@@ -208,6 +239,18 @@ namespace BrainDrain.EditorTools
             layout.flexibleWidth = 0f;
             layout.preferredWidth = 130f;
             layout.layoutPriority = 1;
+            EditorUtility.SetDirty(layout);
+        }
+
+        /// <summary>Gives the reparented RestoreButton a fixed width in its new row instead of being force-stretched by the HorizontalLayoutGroup -- does not touch the button's own Button/Image/label components.</summary>
+        private static void StyleRestoreButtonForRow(Transform restoreButtonTf)
+        {
+            var layout = restoreButtonTf.GetComponent<LayoutElement>();
+            if (layout == null) layout = Undo.AddComponent<LayoutElement>(restoreButtonTf.gameObject);
+
+            Undo.RecordObject(layout, "Restoration Row Restore Button Layout");
+            layout.flexibleWidth = 0f;
+            layout.preferredWidth = 120f;
             EditorUtility.SetDirty(layout);
         }
 
