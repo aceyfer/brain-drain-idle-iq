@@ -371,6 +371,19 @@ Read-only audit of all 16 building `.asset` files against their `description` te
 
 **Status:** CLOSED. All findings resolved — 3 code/asset fixes (`f0ba24d`), 2 doc-syncs (`CLAUDE.md`/`PROJECT_BIBLE.md` §6), 3 confirmed-intentional/no-action.
 
+## §27 CashConverted_VeryResponsible narrator line describes the wrong conversion — LOGGED 2026-08-08, NOT FIXED
+**File:** `Assets/_Game/Dialogue/CashConverted_VeryResponsible.asset:19`
+**Text:** `dialogueLine: Converting brain power to cash. Very responsible. Very sad.`
+**Trigger:** gated on `triggerType: 6` (`CashConverted`, cross-referenced against `NarratorTriggerType` in `NarratorLine.cs:14`). `CurrencyManager.OnCashConverted` is invoked exactly once in the codebase, inside `ConvertCashToPoints` (`CurrencyManager.cs:368-383`, invocation at line 381) — i.e. it fires only on Cash→RP conversion. `ConvertHalfBP`/`ConvertAllBP` (`ConvertUIController.cs:207-240`, the actual BP→Cash actions) call `SpendBrainPower`/`AddCash` directly and never touch `OnCashConverted`.
+**Status:** the line's copy ("brain power to cash") describes a conversion its own trigger can never fire on — the trigger wiring itself is correct, only this one line's text is wrong. Pre-existing, surfaced by the 2026-08-07/08 CLAUDE.md audit (`CLAUDE_MD_FINDINGS.md`), unrelated to the RP bar / Convert-panel split design work. **Not fixed this pass — documentation only**, per explicit instruction. Fix is a one-line copy edit whenever this is scoped.
+
+## §28 Duplicate convert wiring: HUDController vs MainUIController — LOGGED 2026-08-08, NOT FIXED
+**Fields:** `HUDController.cs:36-37` declares its own private `Button convertButton` and `ConvertUIController convertUIController`, plus a public `ConfigureConvertPanel(ConvertUIController controller, Button pointsButton)` (`HUDController.cs:148-152`). `MainUIController.cs:17,22` independently declares the same two field types.
+**Scene wiring:** both sets resolve to the *same* underlying GameObjects — `SampleScene.unity:38156-38157` (`HUDController.convertButton`/`convertUIController`) and `SampleScene.unity:38205,38208` (`MainUIController.convertButton`/`convertUIController`) share identical `fileID`s (`179850116` and `370575159` respectively).
+**Confirmed live path:** `MainUIController.Awake()` registers `convertButton.onClick.AddListener(OnConvertClicked)` (`MainUIController.cs:40-44`), and `OnConvertClicked` calls `convertUIController.TogglePanel()` (`MainUIController.cs:163-177`). `Editor/MainUIControllerWireFix.cs:49,57-60` actively maintains this path, assigning both fields by name/type lookup on every run.
+**Not confirmed dead:** a repo-wide search for `ConfigureConvertPanel(` found zero call sites outside its own declaration; a search for `convertButton.`/`convertUIController.` usage inside `HUDController.cs`'s own method bodies found no matches. The fields are serialized and scene-wired (non-null) but nothing in `HUDController.cs` reads or calls through them.
+**Status:** looks vestigial, is **NOT confirmed dead** — only a live Play Mode check, not a static text search, can settle that. **Neither controller's convert fields get trimmed until that check happens.** Surfaced by the 2026-08-07/08 CLAUDE.md audit (`CLAUDE_MD_FINDINGS.md`); logged here so the warning survives after that untracked file is eventually deleted. Not fixed this pass — documentation only.
+
 ---
 
 ## DECISION LOG
