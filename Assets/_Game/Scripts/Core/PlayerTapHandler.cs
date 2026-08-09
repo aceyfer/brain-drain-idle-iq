@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using BrainDrain.Systems;
+using BrainDrain.UI;
 
 namespace BrainDrain.Core
 {
@@ -25,8 +26,11 @@ namespace BrainDrain.Core
         [Header("References")]
         [SerializeField] private CurrencyManager currencyManager;
 
+        /// <summary>Resolved lazily via FindAnyObjectByType, not scene-wired -- only needed to reach the BP counter's RectTransform for the tap-extraction particles' destination.</summary>
+        private HUDController hudController;
+
         [Header("Feedback Animation")]
-        [Tooltip("RectTransform under a Canvas that goo splat particles spawn into. Falls back to the first Canvas found in the scene.")]
+        [Tooltip("RectTransform under a Canvas that tap feedback (extraction particles, ripple, floating reward text) spawns into. Falls back to the first Canvas found in the scene.")]
         [SerializeField] private RectTransform particleContainer;
         [Tooltip("Optional. The visible tap button's own RectTransform/Transform, punch-scaled on every tap. No effect if unset.")]
         [SerializeField] private Transform tapButtonVisual;
@@ -79,6 +83,11 @@ namespace BrainDrain.Core
                 }
             }
 
+            if (hudController == null)
+            {
+                ResolveReferences();
+            }
+
             if (Time.time < tapFrozenUntilTime)
             {
                 return;
@@ -99,7 +108,16 @@ namespace BrainDrain.Core
             if (particleParent != null)
             {
                 Vector2 pointerPosition = GetPointerPosition();
-                AnimationController.PlaySplatParticles(pointerPosition, particleParent);
+
+                RectTransform brainPowerCounterRect = hudController != null && hudController.BrainPowerCounterText != null
+                    ? hudController.BrainPowerCounterText.rectTransform
+                    : null;
+                if (brainPowerCounterRect != null)
+                {
+                    AnimationController.PlayExtractionParticles(pointerPosition, particleParent, brainPowerCounterRect,
+                        () => AnimationController.PlayBrainPowerCounterPunch(hudController.BrainPowerCounterText));
+                }
+
                 AnimationController.PlayTouchRipple(pointerPosition, particleParent);
                 AnimationController.PlayFloatingRewardText($"+{NumberFormatter.Format(brainPowerEarned)} BRAIN POWER", pointerPosition, particleParent);
             }
@@ -155,6 +173,11 @@ namespace BrainDrain.Core
             if (currencyManager == null && GameManager.Instance != null)
             {
                 currencyManager = GameManager.Instance.Currency;
+            }
+
+            if (hudController == null)
+            {
+                hudController = FindAnyObjectByType<HUDController>();
             }
         }
 

@@ -12,9 +12,9 @@ namespace BrainDrain.Systems
     /// Singleton home for all core UI feedback animations (tap squash/stretch, idle breathing,
     /// goo splat particles, affordable-slot pulse, popup spawn shake). Most effects are still
     /// hand-rolled coroutines -- simple one-shots/loops don't need a tweening engine -- but
-    /// PlayButtonPunch, PlayFloatingRewardText, and PlaySlide use DOTween (now present at
-    /// Assets/Plugins/Demigiant/DOTween) for smoother curves on the effects that benefited
-    /// most. Other scripts trigger effects via the static wrapper methods, e.g.
+    /// PlayButtonPunch, PlayFloatingRewardText, PlaySlide, and PlayBrainPowerCounterPunch use
+    /// DOTween (now present at Assets/Plugins/Demigiant/DOTween) for smoother curves on the
+    /// effects that benefited most. Other scripts trigger effects via the static wrapper methods, e.g.
     /// AnimationController.PlayTapAnim(transform).
     /// </summary>
     public sealed class AnimationController : MonoBehaviour
@@ -41,6 +41,17 @@ namespace BrainDrain.Systems
         private readonly Dictionary<TextMeshProUGUI, Coroutine> textFlashCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Color> textFlashBaseColors = new();
         private readonly Dictionary<RectTransform, Tween> slideTweens = new();
+        private readonly Dictionary<TextMeshProUGUI, Color> brainPowerCounterBaseColors = new();
+
+        private const int MaxConcurrentExtractionBursts = 4;
+        private int activeExtractionBursts;
+
+        private sealed class ExtractionBurstState
+        {
+            public int RemainingParticles;
+            public bool ArrivalFired;
+            public Action OnArrival;
+        }
 
         private void Awake()
         {
@@ -422,6 +433,48 @@ namespace BrainDrain.Systems
             }
         }
 
+        // ----- Brain Power counter punch (tap-extraction particle arrival reaction) ---------
+
+        private static readonly Color BrainPowerPunchFlashColor = new Color(0.6f, 0.9f, 1f, 1f);
+
+        /// <summary>
+        /// Subtle DOTween scale punch + brief brightness flash on counterText -- fired once per
+        /// tap, when the tap-extraction particles land. Same cached-base-color anti-drift idea as
+        /// PlayIQFlash (always restarts from the true base color so rapid taps can't drift it),
+        /// via DOTween instead of a coroutine, with a smaller punch since this fires on every tap.
+        /// </summary>
+        public static void PlayBrainPowerCounterPunch(TextMeshProUGUI counterText)
+        {
+            if (counterText == null)
+            {
+                return;
+            }
+
+            EnsureInstance()?.DoBrainPowerCounterPunch(counterText);
+        }
+
+        private void DoBrainPowerCounterPunch(TextMeshProUGUI counterText)
+        {
+            if (!brainPowerCounterBaseColors.TryGetValue(counterText, out Color baseColor))
+            {
+                baseColor = counterText.color;
+                brainPowerCounterBaseColors[counterText] = baseColor;
+            }
+
+            counterText.transform.DOKill();
+            DOTween.Kill(counterText);
+
+            counterText.transform.localScale = Vector3.one;
+            counterText.color = baseColor;
+
+            counterText.transform.DOPunchScale(Vector3.one * 0.12f, 0.18f, 1, 0.5f);
+
+            Sequence flash = DOTween.Sequence();
+            flash.Append(counterText.DOColor(BrainPowerPunchFlashColor, 0.08f));
+            flash.Append(counterText.DOColor(baseColor, 0.14f));
+            flash.SetTarget(counterText);
+        }
+
         // ----- Goo splat particles ---------------------------------------------------------
 
         /// <summary>
@@ -497,6 +550,171 @@ namespace BrainDrain.Systems
             if (particleRect != null)
             {
                 DestroyTrackedVfx(particleRect.gameObject);
+            }
+        }
+
+        // ----- Tap extraction particles (harvest rises from the tap point to the BP counter) --
+
+        private static readonly Color ExtractionBlueColor = new Color(0.25f, 0.75f, 1f, 1f);
+        private static readonly Color ExtractionBlackColor = new Color(0.05f, 0.05f, 0.08f, 1f);
+
+        /// <summary>
+        /// Spawns 6-10 small particles around screenPosition inside parent -- ~70% glowing blue,
+        /// ~30% black wisps. Each hangs briefly with a slight outward drift, then eases in toward
+        /// destination's current position. Black particles fade out at 60% of the way there and
+        /// never arrive; only blue arrives, firing onArrival once, on the first one to land.
+        /// Reuses GetGlowSprite() (tinted per-tone) rather than a new procedural sprite -- same
+        /// soft radial shape works for both a glow and a wisp, just different color/size.
+        /// Capped at MaxConcurrentExtractionBursts concurrent bursts; over the cap, the spawn is
+        /// skipped outright (not queued) so tap-spam can't accumulate GameObjects.
+        /// </summary>
+        public static void PlayExtractionParticles(Vector2 screenPosition, RectTransform parent, RectTransform destination, Action onArrival)
+        {
+            if (parent == null || destination == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (controller.activeExtractionBursts >= MaxConcurrentExtractionBursts)
+            {
+                return;
+            }
+
+            controller.SpawnExtractionParticles(screenPosition, parent, destination, onArrival);
+        }
+
+        private void SpawnExtractionParticles(Vector2 screenPosition, RectTransform parent, RectTransform destination, Action onArrival)
+        {
+            if (isQuitting) return;
+
+            Canvas canvas = parent.GetComponentInParent<Canvas>();
+            Camera screenCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPosition, screenCamera, out Vector2 originLocalPoint);
+
+            // Convert destination's current world position the same way the tap origin was converted,
+            // so both points land correctly in parent's local space regardless of hierarchy depth.
+            Vector2 destinationScreenPoint = RectTransformUtility.WorldToScreenPoint(screenCamera, destination.position);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, destinationScreenPoint, screenCamera, out Vector2 destinationLocalPoint);
+
+            int count = UnityEngine.Random.Range(6, 11);
+            activeExtractionBursts++;
+
+            var burst = new ExtractionBurstState { RemainingParticles = count, ArrivalFired = false, OnArrival = onArrival };
+
+            for (int i = 0; i < count; i++)
+            {
+                bool isBlue = UnityEngine.Random.value < 0.7f;
+
+                Vector2 direction = UnityEngine.Random.insideUnitCircle;
+                if (direction.sqrMagnitude < 0.0001f)
+                {
+                    direction = Vector2.up;
+                }
+                direction.Normalize();
+
+                float radius = UnityEngine.Random.Range(30f, 50f);
+                Vector2 spawnPoint = originLocalPoint + direction * radius;
+                Vector2 driftPoint = spawnPoint + direction * 10f;
+                float startDelay = UnityEngine.Random.Range(0f, 0.08f);
+
+                GameObject particleObject = new GameObject(isBlue ? "ExtractionParticleBlue" : "ExtractionParticleBlack", typeof(RectTransform), typeof(Image));
+                particleObject.transform.SetParent(parent, false);
+                _trackedVfxObjects.Add(particleObject);
+
+                RectTransform particleRect = particleObject.GetComponent<RectTransform>();
+                particleRect.sizeDelta = isBlue ? new Vector2(20f, 20f) : new Vector2(16f, 16f);
+                particleRect.anchoredPosition = spawnPoint;
+
+                Image particleImage = particleObject.GetComponent<Image>();
+                particleImage.sprite = GetGlowSprite();
+                particleImage.color = isBlue ? ExtractionBlueColor : ExtractionBlackColor;
+                particleImage.raycastTarget = false;
+
+                StartCoroutine(ExtractionParticleRoutine(particleRect, particleImage, spawnPoint, driftPoint, destinationLocalPoint, isBlue, startDelay, burst));
+            }
+        }
+
+        private IEnumerator ExtractionParticleRoutine(RectTransform particleRect, Image particleImage, Vector2 spawnPoint, Vector2 driftPoint, Vector2 destinationPoint, bool isBlue, float startDelay, ExtractionBurstState burst)
+        {
+            const float hangDuration = 0.1f;
+            const float travelDuration = 0.45f;
+            const float blackStopFraction = 0.6f;
+
+            if (startDelay > 0f)
+            {
+                yield return new WaitForSeconds(startDelay);
+            }
+
+            float hangElapsed = 0f;
+            while (hangElapsed < hangDuration)
+            {
+                hangElapsed += Time.deltaTime;
+                if (particleRect == null)
+                {
+                    CompleteExtractionParticle(burst);
+                    yield break;
+                }
+
+                float t = EaseOutQuad(Mathf.Clamp01(hangElapsed / hangDuration));
+                particleRect.anchoredPosition = Vector2.LerpUnclamped(spawnPoint, driftPoint, t);
+                yield return null;
+            }
+
+            Vector2 travelEnd = isBlue ? destinationPoint : Vector2.LerpUnclamped(driftPoint, destinationPoint, blackStopFraction);
+
+            float travelElapsed = 0f;
+            while (travelElapsed < travelDuration)
+            {
+                travelElapsed += Time.deltaTime;
+                if (particleRect == null || particleImage == null)
+                {
+                    CompleteExtractionParticle(burst);
+                    yield break;
+                }
+
+                float eased = EaseInQuad(Mathf.Clamp01(travelElapsed / travelDuration));
+                particleRect.anchoredPosition = Vector2.LerpUnclamped(driftPoint, travelEnd, eased);
+
+                if (!isBlue)
+                {
+                    Color color = particleImage.color;
+                    color.a = Mathf.Lerp(1f, 0f, eased);
+                    particleImage.color = color;
+                }
+
+                yield return null;
+            }
+
+            if (particleRect != null)
+            {
+                particleRect.anchoredPosition = travelEnd;
+            }
+
+            if (isBlue && !burst.ArrivalFired)
+            {
+                burst.ArrivalFired = true;
+                burst.OnArrival?.Invoke();
+            }
+
+            CompleteExtractionParticle(burst);
+            if (particleRect != null)
+            {
+                DestroyTrackedVfx(particleRect.gameObject);
+            }
+        }
+
+        private void CompleteExtractionParticle(ExtractionBurstState burst)
+        {
+            burst.RemainingParticles--;
+            if (burst.RemainingParticles <= 0)
+            {
+                activeExtractionBursts = Mathf.Max(0, activeExtractionBursts - 1);
             }
         }
 
@@ -1003,6 +1221,8 @@ namespace BrainDrain.Systems
         }
 
         private static float EaseOutQuad(float t) => 1f - (1f - t) * (1f - t);
+
+        private static float EaseInQuad(float t) => t * t;
 
         private static float EaseInOutQuad(float t) => t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
 
