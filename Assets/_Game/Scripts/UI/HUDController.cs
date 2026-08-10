@@ -40,6 +40,10 @@ namespace BrainDrain.UI
         [SerializeField] private Button restoreButton;
         [Tooltip("Fill-type Image showing progress toward the next World Restoration stage threshold. Optional -- no effect if unassigned.")]
         [SerializeField] private Image restorationFillImage;
+        [Tooltip("Plunger disk Image inside the vessel; its anchoredPosition.x is lerped across the track width by the same fraction that drives restorationFillImage. Optional -- no effect if unassigned.")]
+        [SerializeField] private Image restorationPlungerImage;
+        [Tooltip("Non-uniform X scale applied to the plunger so its ellipse matches the 3/4-angle vessel's tube-opening ellipse. Tune live in the Inspector; reapplied on every InitializeHUD.")]
+        [SerializeField] private float plungerEllipseScaleX = 0.35f;
 
         [Header("High-IQ Celebration")]
         [Tooltip("Optional. CanvasGroup on the root HUD canvas, pulsed during the celebration beat.")]
@@ -233,6 +237,13 @@ namespace BrainDrain.UI
 
             cachedRebirthUI = FindAnyObjectByType<RebirthUIController>();
 
+            if (restorationPlungerImage != null)
+            {
+                Vector3 scale = restorationPlungerImage.rectTransform.localScale;
+                scale.x = plungerEllipseScaleX;
+                restorationPlungerImage.rectTransform.localScale = scale;
+            }
+
             var worldRestoration = WorldRestorationManager.Instance;
             if (worldRestoration != null)
             {
@@ -241,6 +252,8 @@ namespace BrainDrain.UI
                 worldRestoration.OnRestorationProgressChanged += UpdateRestorationProgressText;
                 worldRestoration.OnRestorationStageChanged -= HandleStageChangedForRank;
                 worldRestoration.OnRestorationStageChanged += HandleStageChangedForRank;
+                worldRestoration.OnRestorationStageChanged -= HandleRestorationMilestone;
+                worldRestoration.OnRestorationStageChanged += HandleRestorationMilestone;
             }
 
             // Re-evaluate the restoration text when the player performs their first Snotting,
@@ -373,6 +386,7 @@ namespace BrainDrain.UI
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleStageChangedForRank;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationMilestone;
             }
         }
 
@@ -415,6 +429,53 @@ namespace BrainDrain.UI
         private void HandleStageChangedForRank(WorldRestorationStage _)
         {
             MarkRankDirty();
+        }
+
+        /// <summary>
+        /// Fires the vessel's milestone surge on a real stage crossing (stageIndex 1-5) -- guarded
+        /// off stageIndex 0 so the initial boot/load resolution to the baseline stage doesn't fire
+        /// it. UpdateRestorationProgressText has already run for this same change by the time this
+        /// fires (OnRestorationProgressChanged is invoked before OnRestorationStageChanged in
+        /// WorldRestorationManager), so restorationFillImage/restorationPlungerImage are already at
+        /// the correct settled values for the new segment -- this reads those as the "settle back to"
+        /// targets for the surge rather than recomputing them.
+        /// </summary>
+        private void HandleRestorationMilestone(WorldRestorationStage stage)
+        {
+            if (stage == null || stage.stageIndex < 1 || restorationFillImage == null)
+            {
+                return;
+            }
+
+            float settledFraction = restorationFillImage.fillAmount;
+
+            AnimationController.PlayRestorationMilestoneSurge(
+                restorationFillImage,
+                restorationPlungerImage != null ? restorationPlungerImage.rectTransform : null,
+                ComputePlungerTargetX(1f),
+                restorationFillImage.color,
+                settledFraction,
+                ComputePlungerTargetX(settledFraction));
+        }
+
+        /// <summary>
+        /// Plunger is pivoted on its own left edge (RestorationBarWireFix.BuildVessel), so its
+        /// anchoredPosition.x range isn't [0, trackWidth] -- that would let its right edge run past
+        /// the track at fraction 1. Range is [0, trackWidth - plungerVisualWidth] instead, where
+        /// plungerVisualWidth accounts for plungerEllipseScaleX (applied via localScale.x, not
+        /// sizeDelta) so the squashed disk's actual on-screen width is what's subtracted.
+        /// </summary>
+        private float ComputePlungerTargetX(float fraction)
+        {
+            if (restorationFillImage == null || restorationPlungerImage == null)
+            {
+                return 0f;
+            }
+
+            float trackWidth = restorationFillImage.rectTransform.rect.width;
+            float plungerVisualWidth = restorationPlungerImage.rectTransform.rect.width * restorationPlungerImage.rectTransform.localScale.x;
+            float travelRange = Mathf.Max(0f, trackWidth - plungerVisualWidth);
+            return Mathf.Lerp(0f, travelRange, fraction);
         }
 
         private void MarkRankDirty()
@@ -519,7 +580,19 @@ namespace BrainDrain.UI
 
             if (restorationFillImage != null)
             {
-                restorationFillImage.fillAmount = worldRestoration != null ? worldRestoration.StageProgressFraction : 0f;
+                float fraction = worldRestoration != null ? worldRestoration.StageProgressFraction : 0f;
+                restorationFillImage.fillAmount = fraction;
+
+                // Glow scales with fill level -- plain alpha lerp, same technique as
+                // AnimationController.AffordablePulseRoutine's color.a = Mathf.Lerp(...). No shader.
+                Color fillColor = restorationFillImage.color;
+                fillColor.a = Mathf.Lerp(0.55f, 1f, fraction);
+                restorationFillImage.color = fillColor;
+
+                if (restorationPlungerImage != null)
+                {
+                    AnimationController.PlayPlungerMove(restorationPlungerImage.rectTransform, ComputePlungerTargetX(fraction));
+                }
             }
 
             bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;

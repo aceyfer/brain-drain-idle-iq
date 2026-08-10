@@ -475,6 +475,92 @@ namespace BrainDrain.Systems
             flash.SetTarget(counterText);
         }
 
+        // ----- Restoration vessel: plunger move + milestone surge --------------------------
+
+        private readonly Dictionary<RectTransform, Tween> plungerMoveTweens = new();
+        private readonly Dictionary<Image, Sequence> restorationSurgeSequences = new();
+
+        private static readonly Color RestorationSurgeFlashColor = new Color(0.85f, 0.98f, 1f, 1f);
+
+        /// <summary>Smoothly tweens plunger's anchoredPosition.x to targetX (DOAnchorPosX, OutQuad) -- called on every restoration progress update, alongside restorationFillImage.fillAmount, so the plunger travels rather than snaps.</summary>
+        public static void PlayPlungerMove(RectTransform plunger, float targetX, float duration = 0.3f)
+        {
+            if (plunger == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            if (controller == null)
+            {
+                return;
+            }
+
+            KillExisting(controller.plungerMoveTweens, plunger);
+            controller.plungerMoveTweens[plunger] = plunger.DOAnchorPosX(targetX, duration).SetEase(Ease.OutQuad);
+        }
+
+        /// <summary>
+        /// One-shot milestone celebration: snaps the fill to full and flashes it, holds briefly,
+        /// jolts the plunger in place, then settles fill/color/plunger back to the real values for
+        /// the newly-entered stage segment (passed in by the caller, since this method has no
+        /// knowledge of WorldRestorationManager or track-width math -- it only plays the shapes
+        /// it's given). Overfillplungerx is the plunger's full-track-width X (the "overfill" snap
+        /// target), distinct from settledPlungerX (where it settles back to for the new segment).
+        /// </summary>
+        public static void PlayRestorationMilestoneSurge(Image fillImage, RectTransform plunger, float overfillPlungerX, Color settledColor, float settledFillAmount, float settledPlungerX)
+        {
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            EnsureInstance()?.DoRestorationMilestoneSurge(fillImage, plunger, overfillPlungerX, settledColor, settledFillAmount, settledPlungerX);
+        }
+
+        private void DoRestorationMilestoneSurge(Image fillImage, RectTransform plunger, float overfillPlungerX, Color settledColor, float settledFillAmount, float settledPlungerX)
+        {
+            if (restorationSurgeSequences.TryGetValue(fillImage, out Sequence existingSeq) && existingSeq != null && existingSeq.IsActive())
+            {
+                existingSeq.Kill();
+            }
+
+            if (plunger != null)
+            {
+                KillExisting(plungerMoveTweens, plunger);
+                plunger.DOKill();
+                plunger.anchoredPosition = new Vector2(overfillPlungerX, plunger.anchoredPosition.y);
+            }
+
+            fillImage.fillAmount = 1f;
+            fillImage.color = RestorationSurgeFlashColor;
+
+            const float preJoltPause = 0.05f;
+            const float joltDuration = 0.25f;
+            const float settleDuration = 0.35f;
+
+            Sequence seq = DOTween.Sequence();
+            seq.AppendInterval(preJoltPause);
+            if (plunger != null)
+            {
+                seq.Append(plunger.transform.DOPunchScale(Vector3.one * 0.25f, joltDuration, 4, 0.6f));
+            }
+            else
+            {
+                seq.AppendInterval(joltDuration);
+            }
+
+            seq.Append(fillImage.DOFillAmount(settledFillAmount, settleDuration).SetEase(Ease.InOutQuad));
+            seq.Join(fillImage.DOColor(settledColor, settleDuration));
+            if (plunger != null)
+            {
+                seq.Join(plunger.DOAnchorPosX(settledPlungerX, settleDuration).SetEase(Ease.InOutQuad));
+            }
+            seq.SetTarget(fillImage);
+
+            restorationSurgeSequences[fillImage] = seq;
+        }
+
         // ----- Goo splat particles ---------------------------------------------------------
 
         /// <summary>
