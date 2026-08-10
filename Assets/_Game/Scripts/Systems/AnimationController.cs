@@ -810,7 +810,9 @@ namespace BrainDrain.Systems
         private static Sprite cachedGlowSprite;
 
         /// <summary>
-        /// Spawns a futuristic neon green expanding ring and a soft green glow at the click position.
+        /// Spawns a futuristic expanding ring and a soft glow at the click position, tinted
+        /// extraction-blue (matches AnimationController.ExtractionBlueColor / the RESTORATION
+        /// fill) -- was neon green until the tap-feedback palette shifted to blue.
         /// </summary>
         public static void PlayTouchRipple(Vector2 screenPosition, RectTransform parent)
         {
@@ -840,7 +842,12 @@ namespace BrainDrain.Systems
 
             Image glowImg = glowGo.GetComponent<Image>();
             glowImg.sprite = GetGlowSprite();
-            glowImg.color = new Color(0.224f, 1f, 0.078f, 0.6f); // Neon Green
+            // Was neon green (0.224, 1, 0.078) -- retinted to extraction blue, matching
+            // ExtractionBlueColor / the RESTORATION fill. NOTE: GetGlowSprite() loads
+            // RadialGlowGreen.png, which is baked green pixel data, not a neutral tintable
+            // shape -- multiplying this tint against that sprite will read dark/muddy, not
+            // blue, until the sprite asset itself is replaced. Flagged, not fixed here.
+            glowImg.color = new Color(0.25f, 0.75f, 1f, 0.6f);
             glowImg.raycastTarget = false;
 
             // 2. Create Expanding Ring
@@ -854,7 +861,9 @@ namespace BrainDrain.Systems
 
             Image ringImg = ringGo.GetComponent<Image>();
             ringImg.sprite = GetRingSprite();
-            ringImg.color = new Color(0.224f, 1f, 0.078f, 1f); // Neon Green
+            // Was neon green (0.224, 1, 0.078) -- retinted to extraction blue. GetRingSprite()'s
+            // NeonRing.png is a neutral shape (no baked color), so this one tints cleanly.
+            ringImg.color = new Color(0.25f, 0.75f, 1f, 1f);
             ringImg.raycastTarget = false;
 
             StartCoroutine(TouchRippleRoutine(ringRect, ringImg, glowRect, glowImg));
