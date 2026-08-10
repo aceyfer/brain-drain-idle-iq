@@ -28,9 +28,6 @@ namespace BrainDrain.Systems
     {
         private const string SystemsParentName = "_Systems";
 
-        /// <summary>Matches Bible §6's Snotting-unlock threshold (also independently duplicated in RebirthUIController.pointsSpentUnlockThreshold and DialogueManager.SnottingReadyThreshold -- by-convention parallel constants, not shared state, per this codebase's established pattern for cross-system thresholds.)</summary>
-        private const double SnottingReadyThreshold = 50_000d;
-
         private const float CardFollowUpDelaySeconds = 2f;
         private const float BootCardDelaySeconds = 10f;
         private const float EventPopupRetryDelaySeconds = 1f;
@@ -363,11 +360,28 @@ namespace BrainDrain.Systems
                 DialogueManager.Instance?.EnqueueDirectLine(Beat6Ambient, AmbientDisplayDurationSeconds);
                 StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardCatalog.CheeseDirtId, HandleRestoreBeatConfirmed));
             }
-            else if (!snottingIntelSeen && !snottingIntelRequested && cumulativeSpent >= SnottingReadyThreshold)
+            else if (!snottingIntelSeen && !snottingIntelRequested && IsSnottingReady(cumulativeSpent))
             {
                 snottingIntelRequested = true;
                 EnqueueModal(IntelCardSkin.COGSTerminal, CogsHeader, Beat8Body, Beat8Confirm, HandleSnottingIntelConfirmed);
             }
+        }
+
+        /// <summary>
+        /// Reads the real Rebirth-unlock gate from RebirthManager.Instance.SnottingUnlockThreshold
+        /// at call time instead of holding a second copy of it. This used to be a standalone
+        /// SnottingReadyThreshold constant (50,000), independently duplicated alongside
+        /// RebirthUIController's and DialogueManager's own copies and declared "by convention"
+        /// intentional -- that convention is exactly what let this one drift to the pre-2026-07-30
+        /// figure while the real gate moved on to 5,658,229, firing the Snotting intel card days
+        /// before the mechanic was actually available. Fails closed: if RebirthManager.Instance is
+        /// null, this returns false rather than guessing -- the card doesn't fire until the real
+        /// gate can be checked, never early on a null ref.
+        /// </summary>
+        private static bool IsSnottingReady(double cumulativeSpent)
+        {
+            double? threshold = RebirthManager.Instance?.SnottingUnlockThreshold;
+            return threshold.HasValue && cumulativeSpent >= threshold.Value;
         }
 
         private void HandleRestoreBeatConfirmed()

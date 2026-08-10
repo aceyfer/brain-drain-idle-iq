@@ -187,16 +187,28 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
-        /// Sets cumulative restoration points to exactly 5,658,229 (the Snotting unlock
-        /// threshold, matching stageIndex 3's pointsRequired), then fires
-        /// OnRestorationProgressChanged so RebirthUIController can update the button state. Call
-        /// RefreshTriggerButton() after this if you need an immediate synchronous force-refresh
-        /// on top of the event.
+        /// Sets cumulative restoration points to exactly RebirthManager.Instance.SnottingUnlockThreshold
+        /// (the Snotting unlock gate), then fires OnRestorationProgressChanged so
+        /// RebirthUIController can update the button state. Call RefreshTriggerButton() after
+        /// this if you need an immediate synchronous force-refresh on top of the event. Reads
+        /// the real gate at call time instead of holding its own copy -- this used to hardcode
+        /// 5658229d directly, a sixth independent copy of the same number (see
+        /// RebirthManager.SnottingUnlockThreshold's doc comment for the drift history this
+        /// pattern already caused twice). If RebirthManager isn't resolved, the cheat is skipped
+        /// entirely rather than falling back to a guessed value -- there's no safe value to set
+        /// restoration progress to without knowing the real gate.
         /// </summary>
         public static void UnlockSnotting()
         {
-            WorldRestorationManager.Instance?.LoadState(5658229d);
-            Debug.Log("[DebugCheats] UnlockSnotting: set CumulativePointsSpentOnRestoration = 5658229.");
+            if (RebirthManager.Instance == null)
+            {
+                Debug.LogWarning("[DebugCheats] UnlockSnotting: RebirthManager not found, cheat skipped.");
+                return;
+            }
+
+            double threshold = RebirthManager.Instance.SnottingUnlockThreshold;
+            WorldRestorationManager.Instance?.LoadState(threshold);
+            Debug.Log($"[DebugCheats] UnlockSnotting: set CumulativePointsSpentOnRestoration = {threshold}.");
         }
 
         /// <summary>Jumps the daily engagement cap's counted seconds to just under the full-rate window, so throttle onset (including OnThrottleOnset) can be tested within seconds instead of waiting 45 real minutes.</summary>

@@ -274,7 +274,11 @@ namespace BrainDrain.UI
             rowElement.minHeight = 44f;
             rowElement.preferredHeight = 44f;
 
-            double snottingThreshold = FindAnyObjectByType<RebirthUIController>()?.SnottingUnlockThreshold ?? 5658229d;
+            // Fails closed: if RebirthManager isn't resolved, there's no way to verify which
+            // stage matches the real gate, so use a sentinel no stage's pointsRequired can ever
+            // reach -- the "SNOTTING" label just doesn't appear on any button, rather than
+            // risking a stale-value mislabel.
+            double snottingThreshold = RebirthManager.Instance != null ? RebirthManager.Instance.SnottingUnlockThreshold : double.PositiveInfinity;
 
             for (int i = 0; i < stages.Count; i++)
             {

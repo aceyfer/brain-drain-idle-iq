@@ -11,6 +11,19 @@ namespace BrainDrain.Systems
         private const double FlatPointsConversionRateBonusPerRebirth = 0.05;
         private const double FlatTapMultiplierBonusPerRebirth = 0.05;
 
+        /// <summary>
+        /// Single source of truth for the Snotting-unlock gate. Used to hold three independent
+        /// copies (RebirthUIController.pointsSpentUnlockThreshold, DialogueManager's
+        /// SnottingReadyThreshold constant, FTUEManager's SnottingReadyThreshold constant) kept
+        /// "in sync by convention" -- that convention failed in practice: DialogueManager's and
+        /// FTUEManager's copies both drifted to the pre-2026-07-30 figure (50,000) after
+        /// RebirthUIController's was retuned to 5,658,229, firing "you can Snot now" narrator
+        /// lines days before the button was actually interactable. All three now read
+        /// SnottingUnlockThreshold from here instead. See PROJECT_BIBLE.md §6.
+        /// </summary>
+        [Tooltip("Cumulative RP spent on World Restoration required before the Snotting UI trigger becomes interactable.")]
+        [SerializeField] private double pointsSpentUnlockThreshold = 5658229d;
+
         private static RebirthManager instance;
         private static bool isShuttingDown;
 
@@ -47,6 +60,9 @@ namespace BrainDrain.Systems
 
         /// <summary>How many times the player has rebirthed this session.</summary>
         public int RebirthCount { get; private set; }
+
+        /// <summary>The RP-spent threshold that unlocks the Snotting UI trigger. Single owner of this value -- see the backing field's doc comment.</summary>
+        public double SnottingUnlockThreshold => pointsSpentUnlockThreshold;
 
         /// <summary>Fired when RebirthCount changes. Passes the new count.</summary>
         public event Action<int> OnRebirthCountChanged;

@@ -52,7 +52,6 @@ namespace BrainDrain.UI
         [SerializeField] private Image celebrationFlashOverlay;
 
         private int lastIQMilestoneIndex;
-        private RebirthUIController cachedRebirthUI;
         private float nextTextFlushTime;
 
         private bool dirtyCapacity;
@@ -234,8 +233,6 @@ namespace BrainDrain.UI
                 GameManager.Instance.OnSecondTick -= UpdateBPPSText;
                 GameManager.Instance.OnSecondTick += UpdateBPPSText;
             }
-
-            cachedRebirthUI = FindAnyObjectByType<RebirthUIController>();
 
             if (restorationPlungerImage != null)
             {
@@ -596,7 +593,11 @@ namespace BrainDrain.UI
             }
 
             bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
-            double threshold = cachedRebirthUI != null ? cachedRebirthUI.SnottingUnlockThreshold : 5658229d;
+            // Fails closed: if RebirthManager isn't resolved, there's no way to verify the real
+            // gate, so use a sentinel no cumulativePointsSpent value can ever reach rather than a
+            // stale copy of the last-known threshold -- showing "SNOTTING READY" without being
+            // able to confirm it is exactly the bug this threshold got centralized to prevent.
+            double threshold = RebirthManager.Instance != null ? RebirthManager.Instance.SnottingUnlockThreshold : double.PositiveInfinity;
 
             if (snottingUnlocked)
             {

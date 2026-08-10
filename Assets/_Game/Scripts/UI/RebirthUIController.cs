@@ -19,13 +19,8 @@ namespace BrainDrain.UI
         [SerializeField] private Button cancelButton;
 
         [Header("Visibility Gate")]
-        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active; interactable gates on pointsSpentUnlockThreshold.")]
+        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active; interactable gates on RebirthManager.Instance.SnottingUnlockThreshold.")]
         [SerializeField] private GameObject rebirthTriggerButton;
-        [Tooltip("Cumulative Points spent on World Restoration required before the REBIRTH button becomes interactable.")]
-        [SerializeField] private double pointsSpentUnlockThreshold = 5658229d;
-
-        /// <summary>Exposes the configured threshold so HUDController can display progress toward it without duplicating the value.</summary>
-        public double SnottingUnlockThreshold => pointsSpentUnlockThreshold;
 
         private bool triggerSuppressed;
 
@@ -130,7 +125,10 @@ namespace BrainDrain.UI
             double spent = WorldRestorationManager.Instance != null
                 ? WorldRestorationManager.Instance.CumulativePointsSpentOnRestoration
                 : 0d;
-            bool unlocked = spent >= pointsSpentUnlockThreshold;
+            // Fails closed: if RebirthManager isn't resolved yet, threshold is null and unlocked
+            // stays false -- never reads as unlocked on a missing reference.
+            double? unlockThreshold = RebirthManager.Instance?.SnottingUnlockThreshold;
+            bool unlocked = unlockThreshold.HasValue && spent >= unlockThreshold.Value;
 
             Button btn = rebirthTriggerButton.GetComponent<Button>();
             if (btn != null)
@@ -167,7 +165,7 @@ namespace BrainDrain.UI
                 }
                 else
                 {
-                    txt.text = $"SNOTTING LOCKED\n{NumberFormatter.Format(spent)} / {NumberFormatter.Format(pointsSpentUnlockThreshold)}";
+                    txt.text = $"SNOTTING LOCKED\n{NumberFormatter.Format(spent)} / {NumberFormatter.Format(unlockThreshold.GetValueOrDefault())}";
                     txt.fontSizeMin = 16f;
                     txt.fontSizeMax = 36f;
                     txt.color = new Color(0.75f, 0.75f, 0.75f, 1f);

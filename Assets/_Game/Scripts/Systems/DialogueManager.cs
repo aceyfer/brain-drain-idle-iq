@@ -51,7 +51,6 @@ namespace BrainDrain.Systems
         /// </summary>
         private const float TargetCharsPerSecond = 26f;
         private const int TapsWithoutPurchaseThreshold = 25;
-        private const double SnottingReadyThreshold = 50_000d;
 
         /// <summary>
         /// Pause between one line finishing and the next queued line displaying. Must exceed
@@ -372,11 +371,28 @@ namespace BrainDrain.Systems
                 hasSeenFirstRestore = true;
                 TryFireLine(NarratorTriggerType.FirstRestoreSpend, null);
             }
-            else if (!hasSeenSnottingReady && cumulativeSpent >= SnottingReadyThreshold)
+            else if (!hasSeenSnottingReady && IsSnottingReady(cumulativeSpent))
             {
                 hasSeenSnottingReady = true;
                 TryFireLine(NarratorTriggerType.SnottingReady, null);
             }
+        }
+
+        /// <summary>
+        /// Reads the real Rebirth-unlock gate from RebirthManager.Instance.SnottingUnlockThreshold
+        /// at call time instead of holding a second copy of it. This used to be a standalone
+        /// SnottingReadyThreshold constant (50,000) that quietly drifted out of sync when the real
+        /// gate was retuned to 5,658,229 (2026-07-30) -- the "ritual may now proceed" line fired
+        /// days before the button was actually interactable. Deleted rather than reassigned so
+        /// there's no second value left to drift again next time the gate moves.
+        /// Fails closed: if RebirthManager.Instance is null (not yet resolved, or genuinely
+        /// absent), this returns false rather than guessing at a threshold -- the line simply
+        /// doesn't fire until the real gate can be checked, never fires early on a null ref.
+        /// </summary>
+        private static bool IsSnottingReady(double cumulativeSpent)
+        {
+            double? threshold = RebirthManager.Instance?.SnottingUnlockThreshold;
+            return threshold.HasValue && cumulativeSpent >= threshold.Value;
         }
 
         private void HandleRestorationStageChanged(WorldRestorationStage stage)
