@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Cryo Plunge Tank
   description: Three minutes of screaming cold, then hours of clarity you didn't earn. The recovery-bros were right about exactly one thing.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 40000
   costType: 0
   baseCost: 5000
   costMultiplier: 1.13

@@ -81,28 +81,32 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 |---|---|---|---|---|
 | Apex Brain Greens | 0 | 15 | 1.12 | 0.5 BPPS + 0.02 BP/tap/level |
 | The Literal Library | 0 | 15 | 1.25 | 0.1 BPPS |
-| Defrost Drip | 0 | 25 | 1.10 | 0.5 BPPS |
-| Cranial Microwave | 0 | 150 | 1.11 | 3 BPPS |
-| Synapse Space Heater | 0 | 900 | 1.12 | 12 BPPS |
-| IQ Overclock Chip | 0 | 2,500 | 1.15 | 10 BPPS |
-| Cryo-Sludge Espresso | 0 | 5,000 | 1.13 | 45 BPPS |
+| Defrost Drip | 60 | 25 | 1.10 | 0.5 BPPS |
+| Cranial Microwave | 300 | 150 | 1.11 | 3 BPPS |
+| Synapse Space Heater | 4,000 | 900 | 1.12 | 12 BPPS |
+| IQ Overclock Chip | 12,000 | 2,500 | 1.15 | 10 BPPS |
+| Cryo-Sludge Espresso | 40,000 | 5,000 | 1.13 | 45 BPPS |
 | Underground Economy | 500 | **75** | 1.38 | 5 CPS (0 BPPS explicit) |
 | Brain-Rot Think Tank | 725,000 | 200,000 | 1.21 | 4,500 BPPS + 200 CPS |
 
 *CASH INVESTMENTS tab (costType Cash):*
 | Building | Unlock (cum. BP) | baseCost (Cash) | costMult | Income |
 |---|---|---|---|---|
-| Loose Change Collective | 0 | 4 | 1.21 | 0.3 BPPS |
-| Charity Shell | 0 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
-| Doomscroll Billboard | 0 | 250 | 1.14 | 1 BPPS (d) + 5 CPS |
-| The Laundromat | 0 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
+| Loose Change Collective | 150 | 4 | 1.21 | 0.3 BPPS |
+| Charity Shell | 800 | 50 | 1.12 | 1 BPPS (d) + 1 CPS |
+| Doomscroll Billboard | 2,000 | 250 | 1.14 | 1 BPPS (d) + 5 CPS |
+| The Laundromat | 18,000 | 1,200 | 1.16 | 1 BPPS (d) + 20 CPS |
 | Podcaster Soundboard | 25,000 | 30 | 1.21 | 5 BPPS + 0 CPS (d) |
 | Crypto-Bro Compound | 110,000 | 55 | 1.32 | 60 BPPS + 10 CPS |
 | The Great Reversal | 185,000 | 90 | 1.21 | 320 BPPS + 40 CPS |
 
+**Full 16-building unlock ladder, sorted ascending (2026-08-11, authority for `unlockCumulativeBrainPower` — the two tables above are the same data, split by tab):** Apex Brain Greens 0 / The Literal Library 0 / Defrost Drip 60 / Loose Change Collective 150 / Cranial Microwave 300 / Underground Economy 500 / Charity Shell 800 / Doomscroll Billboard 2,000 / Synapse Space Heater 4,000 / IQ Overclock Chip 12,000 / The Laundromat 18,000 / Podcaster Soundboard 25,000 / Cryo-Sludge Espresso 40,000 / Crypto-Bro Compound 110,000 / The Great Reversal 185,000 / Brain-Rot Think Tank 725,000. Monotonic except the two 0-value entries, which is intentional (both stay unconditionally visible) — `ShopUIController.cs`'s sort tie-break (baseCost, then ordinal name) resolves that pair deterministically.
+
 **Cash Investments tab framing (added 2026-08-01):** the Cash Investments tab is a laundering operation. Money is taken off the idiocracy dirty and comes back out clean as Restoration funding. Robin Hood, not villainy — the player is stealing back what was already stolen. This resolves the previously-unexplained question of why Cash converts to Restoration Points at all: it isn't income, it's stolen money being cleaned and returned. The tier arc runs small-time con at the cheap end (Loose Change Collective, Charity Shell) to full-scale heist at the expensive end (The Great Reversal). This is a deliberate contrast with the BP Upgrades tab, which is personal self-improvement — supplements, biohacking, reclaiming the player's own mind. Cash tab is the world outside the player; BP tab is inside the player. Keep the two registers from bleeding into each other when writing future copy for either.
 
-**Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Charity Shell/Doomscroll Billboard/The Laundromat (formerly Lemonade Grift Stand/Doomscroll Billboard/HOA Protection Racket) produce 1 BPPS purely via the missing-field default, possibly unintended. (c) 11 of 16 buildings share unlock=0 — shop display order for those is now cost-then-name (`780eb8a`), but the unlock *gating* curve itself is flat early.
+**Flagged, not fixed (balance is Aceyfer's call, recorded 2026-07-15 doc sync):** (a) IQ Overclock Chip (2,500 BP → 10 BPPS) yields *less* than the cheaper Synapse Space Heater (900 BP → 12 BPPS) — cost/value inversion. (b) Charity Shell/Doomscroll Billboard/The Laundromat (formerly Lemonade Grift Stand/Doomscroll Billboard/HOA Protection Racket) produce 1 BPPS purely via the missing-field default, possibly unintended.
+
+**Unlock ladder retuned 2026-08-11:** the previous flat-at-0 unlock curve (11 of 16 buildings shared `unlockCumulativeBrainPower = 0`) is gone — only Apex Brain Greens and The Literal Library still share `0`, by design. See the full ladder above.
 
 **Overcharged IQ (landed `7a8eacf`, 2026-06-30 — undocumented until the 2026-07-23 §26 audit; pacing CONFIRMED INTENTIONAL by Aceyfer on closure):** above IQ 100, `CurrencyManager.GetIQProductionMultiplier()` keeps rising instead of clamping at 1.0 — linearly up to **1.25x at IQ 200**, capped there. Counterbalanced by `PlayerIQManager.DecayOvercharge()`, a genuine live decay loop (subscribed to `GameManager.OnSecondTick`, unlike every other IQ change in this system) that drains any IQ above 100 back toward 100 at **0.1/sec** while the app is open — the only exception to "PlayerIQ never decays while running" elsewhere in this doc. HUD shows an "OVERCHARGED" label whenever IQ > 100 (`HUDController.cs`); its apparent "lights up at exactly 100" (reported 2026-07-23) is a `:F0` display-rounding artifact of IQ hovering in the 100.0–100.99 decay band, not a comparison bug — the code's threshold is already the correct strict `>`.
 

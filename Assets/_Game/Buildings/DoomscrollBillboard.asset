@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Doomscroll Billboard
   description: It scrolls the truth instead of the feed. The more it spreads, the madder the controllers get.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 2000
   costType: 1
   baseCost: 250
   costMultiplier: 1.14

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Pineal Overclock
   description: Decalcify and overclock the third eye you were born with. No implant, no chip — just the gland they hoped you'd forget. Real IQ bump; mild forehead smoke is normal.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 12000
   costType: 0
   baseCost: 2500
   costMultiplier: 1.15

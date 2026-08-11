@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: The Laundromat
   description: Dirty money in, clean water out. Nobody upstairs has audited it because nobody upstairs can read the ledger.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 18000
   costType: 1
   baseCost: 1200
   costMultiplier: 1.16

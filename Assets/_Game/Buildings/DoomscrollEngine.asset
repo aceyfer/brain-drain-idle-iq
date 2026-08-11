@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Loose Change Collective
   description: Nobody misses what nobody notices. Multiply that by a hundred million wallets.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 150
   costType: 1
   baseCost: 4
   costMultiplier: 1.21

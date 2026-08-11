@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Hyperbolic Brain Chamber
   description: An hour inside is a year of thinking outside. Your mind trains in dilated dream-time and comes back sharper — assuming it comes back.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 4000
   costType: 0
   baseCost: 900
   costMultiplier: 1.12

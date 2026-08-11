@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: StupAid H2O
   description: Everything your brain actually craves, in a bottle. Home-grown crops got banned so long ago even the elites forgot food was ever free.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 60
   costType: 0
   baseCost: 25
   costMultiplier: 1.10

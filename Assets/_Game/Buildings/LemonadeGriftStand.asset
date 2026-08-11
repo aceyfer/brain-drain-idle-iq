@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Charity Shell
   description: Registered as a nonprofit for the restoration of something vague. Which -- technically, eventually -- it is.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 800
   costType: 1
   baseCost: 50
   costMultiplier: 1.12

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingName: Tinfoil Headband
   description: Looks like sportswear. Lined with tinfoil that jams the signals trying to hack your third eye. Block the leeches and the bandwidth is yours again.
-  unlockCumulativeBrainPower: 0
+  unlockCumulativeBrainPower: 300
   costType: 0
   baseCost: 150
   costMultiplier: 1.11
