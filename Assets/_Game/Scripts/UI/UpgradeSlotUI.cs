@@ -75,12 +75,14 @@ namespace BrainDrain.UI
             // unlock gate (unlockCumulativeBrainPower), not baseCost -- baseCost is the price,
             // not the progression gate, and using it let far-tier buildings (e.g. Brain-Rot
             // Think Tank, gated at 725,000 unlockCumulativeBrainPower) reveal as soon as
-            // cumulative currency passed their much lower baseCost instead. Cumulative BP / cash
-            // are monotonic, so this never un-reveals on spend.
+            // cumulative currency passed their much lower baseCost instead. Always compared
+            // against CumulativeBrainPower regardless of the item's own costType -- the unlock
+            // gate is BP-denominated for every building, Cash-priced or not (PROJECT_BIBLE.md
+            // §6 lists "Unlock (cum. BP)" as the gate column for both tabs), matching
+            // pastPurchaseGate below and ShopQuery.cs's equivalent check. Cumulative BP is
+            // monotonic, so this never un-reveals on spend.
             bool isCash = UpgradeManager.IsCashCost(boundData);
-            bool everAfforded = currency != null && (isCash
-                ? currency.CumulativeCash >= boundData.unlockCumulativeBrainPower
-                : currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower);
+            bool everAfforded = currency != null && currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower;
             bool unlocked = level > 0 || everAfforded;
 
             // Purchase still gated by the BP progression gate (economy unchanged).
@@ -160,11 +162,12 @@ namespace BrainDrain.UI
                 if (costText != null)
                 {
                     // Same number as the "REACH X BP" text below once revealed -- both locked
-                    // sub-states now show unlockCumulativeBrainPower, the real gate, instead of
-                    // this one showing baseCost and the other showing unlockCumulativeBrainPower.
-                    costText.text = isCash
-                        ? $"${NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} REQUIRED"
-                        : $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
+                    // sub-states show unlockCumulativeBrainPower, the real gate. Never $-prefixed
+                    // here even for Cash-priced buildings: unlockCumulativeBrainPower is always a
+                    // BP figure, and a "$" in front of a BP number is misleading regardless of
+                    // the item's own costType. $ formatting is reserved for an actual Cash price
+                    // on an unlocked, purchasable row (see below).
+                    costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
                     costText.fontSize = 28f;
                 }
                 ApplyAccent(LockedColor);
