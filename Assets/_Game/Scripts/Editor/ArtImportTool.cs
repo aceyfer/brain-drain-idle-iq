@@ -45,6 +45,12 @@ namespace EighthKind.EditorTools
         private bool _enableDownscale = false;
         private int _maxDimension = 1024;
 
+        // Unlike the four modes above, this operates in-place on an existing tracked Unity
+        // asset (preserving its GUID/.meta and import settings) rather than processing an
+        // external source into a newly-imported asset -- deliberately kept out of ProcessImage
+        // and the Import Selected Image button's pipeline. See FlattenSelectedAssetInPlace().
+        private bool _enableFlattenRGB = false;
+
         private string _statusMessage = "";
 
         [MenuItem("Tools/Eighth Kind/Art Import")]
@@ -360,6 +366,32 @@ namespace EighthKind.EditorTools
             {
                 UpdatePreview();
             }
+
+            // 5. FLATTEN RGB (IN-PLACE) -- deliberately outside the change-check block above:
+            // it doesn't participate in ProcessImage/the Before-After preview, since it's an
+            // in-place edit of an existing asset, not a "process source into a new asset" step.
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            _enableFlattenRGB = EditorGUILayout.ToggleLeft("5. Flatten RGB (keep alpha)", _enableFlattenRGB, EditorStyles.boldLabel);
+            if (_enableFlattenRGB)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.HelpBox(
+                    "Sets every pixel's RGB to white; alpha is left byte-identical. Operates " +
+                    "in-place on the selected file if it's already an imported Unity asset under " +
+                    "Assets/ -- overwrites the same PNG, keeps the same GUID/.meta, and restores " +
+                    "the asset's exact prior import settings afterward (only isReadable is " +
+                    "temporarily toggled to allow the pixel read on non-readable textures). Does " +
+                    "not use the Output Folder or the Import Selected Image button below.",
+                    MessageType.Info);
+                GUI.enabled = (_selectedFileIndex >= 0 && _selectedFileIndex < _imageFiles.Count);
+                if (GUILayout.Button("Flatten RGB In-Place", GUILayout.Height(30)))
+                {
+                    FlattenSelectedAssetInPlace();
+                }
+                GUI.enabled = true;
+                EditorGUI.indentLevel--;
+            }
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(10);
 
@@ -707,6 +739,100 @@ namespace EighthKind.EditorTools
 
             _statusMessage = "Successfully imported: " + destinationPath;
             Debug.Log("[ArtImportTool] Imported sprite to: " + destinationPath);
+        }
+
+        /// <summary>
+        /// Sets every pixel's RGB to white and leaves alpha byte-identical, then writes the PNG
+        /// back to the same path the selected file already lives at -- an in-place edit of an
+        /// existing tracked Unity asset, not the "process external source into a new/overwritten
+        /// asset with fixed import settings" flow ImportSelectedImage() uses. Deliberately does
+        /// not call ApplyRequiredImportSettings: that would stomp sprite mode/PPU/wrap/etc. on an
+        /// asset that's supposed to keep its exact current settings. The only setting ever
+        /// touched is isReadable, and only long enough to read pixels off a non-readable texture
+        /// -- restored to its original value in a finally block so it's undone even on failure.
+        /// </summary>
+        private void FlattenSelectedAssetInPlace()
+        {
+            if (_selectedFileIndex < 0 || _selectedFileIndex >= _imageFiles.Count)
+            {
+                return;
+            }
+
+            string sourcePath = _imageFiles[_selectedFileIndex];
+            string assetPath = ToAssetDatabasePath(sourcePath);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                _statusMessage = "Flatten RGB In-Place requires the selected file to already be an imported Unity asset under Assets/. Selected file is outside the project: " + sourcePath;
+                Debug.LogWarning("[ArtImportTool] " + _statusMessage);
+                return;
+            }
+
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                _statusMessage = "Flatten RGB In-Place: no TextureImporter found at " + assetPath;
+                Debug.LogWarning("[ArtImportTool] " + _statusMessage);
+                return;
+            }
+
+            bool originalIsReadable = importer.isReadable;
+
+            try
+            {
+                if (!originalIsReadable)
+                {
+                    importer.isReadable = true;
+                    importer.SaveAndReimport();
+                }
+
+                Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+                if (tex == null)
+                {
+                    _statusMessage = "Flatten RGB In-Place: failed to load texture at " + assetPath;
+                    Debug.LogError("[ArtImportTool] " + _statusMessage);
+                    return;
+                }
+
+                Color[] pixels = tex.GetPixels();
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    pixels[i] = new Color(1f, 1f, 1f, pixels[i].a);
+                }
+
+                Texture2D flattened = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, false);
+                flattened.SetPixels(pixels);
+                flattened.Apply();
+                byte[] pngBytes = flattened.EncodeToPNG();
+                DestroyImmediate(flattened);
+
+                File.WriteAllBytes(Path.GetFullPath(assetPath), pngBytes);
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+
+                _statusMessage = "Flattened RGB in place (alpha preserved, dimensions unchanged): " + assetPath;
+                Debug.Log("[ArtImportTool] " + _statusMessage);
+            }
+            finally
+            {
+                // Re-fetch: the importer reference above may be stale after the reimport(s).
+                TextureImporter importerAfter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (importerAfter != null && importerAfter.isReadable != originalIsReadable)
+                {
+                    importerAfter.isReadable = originalIsReadable;
+                    importerAfter.SaveAndReimport();
+                }
+            }
+        }
+
+        /// <summary>Converts an absolute file path to a project-relative "Assets/..." AssetDatabase path, or null if the path isn't inside this project's Assets folder. Same conversion DrawHeaderAndFolders() already does for the Output Folder field.</summary>
+        private static string ToAssetDatabasePath(string absolutePath)
+        {
+            string fullDataPath = Path.GetFullPath(Application.dataPath).Replace('\\', '/');
+            string fullAbsolute = Path.GetFullPath(absolutePath).Replace('\\', '/');
+            if (!fullAbsolute.StartsWith(fullDataPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+            return "Assets" + fullAbsolute.Substring(fullDataPath.Length);
         }
 
         public static void ApplyRequiredImportSettings(string assetPath)
