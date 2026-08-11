@@ -71,12 +71,16 @@ namespace BrainDrain.UI
             double cost = boundManager.GetCurrentCost(boundData);
             int level = boundManager.GetBuildingLevel(boundData);
 
-            // Reveal = first-affordable latch: owned, or lifetime currency ever reached base cost.
-            // Cumulative BP / cash are monotonic, so this never un-reveals on spend.
+            // Reveal = first-affordable latch: owned, or lifetime currency ever reached the real
+            // unlock gate (unlockCumulativeBrainPower), not baseCost -- baseCost is the price,
+            // not the progression gate, and using it let far-tier buildings (e.g. Brain-Rot
+            // Think Tank, gated at 725,000 unlockCumulativeBrainPower) reveal as soon as
+            // cumulative currency passed their much lower baseCost instead. Cumulative BP / cash
+            // are monotonic, so this never un-reveals on spend.
             bool isCash = UpgradeManager.IsCashCost(boundData);
             bool everAfforded = currency != null && (isCash
-                ? currency.CumulativeCash >= boundData.baseCost
-                : currency.CumulativeBrainPower >= boundData.baseCost);
+                ? currency.CumulativeCash >= boundData.unlockCumulativeBrainPower
+                : currency.CumulativeBrainPower >= boundData.unlockCumulativeBrainPower);
             bool unlocked = level > 0 || everAfforded;
 
             // Purchase still gated by the BP progression gate (economy unchanged).
@@ -155,9 +159,12 @@ namespace BrainDrain.UI
                 if (countText != null) countText.text = string.Empty;
                 if (costText != null)
                 {
+                    // Same number as the "REACH X BP" text below once revealed -- both locked
+                    // sub-states now show unlockCumulativeBrainPower, the real gate, instead of
+                    // this one showing baseCost and the other showing unlockCumulativeBrainPower.
                     costText.text = isCash
-                        ? $"${NumberFormatter.Format(boundData.baseCost)} REQUIRED"
-                        : $"{NumberFormatter.Format(boundData.baseCost)} BP REQUIRED";
+                        ? $"${NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} REQUIRED"
+                        : $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
                     costText.fontSize = 28f;
                 }
                 ApplyAccent(LockedColor);
