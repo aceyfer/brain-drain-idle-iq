@@ -843,10 +843,11 @@ namespace BrainDrain.Systems
             Image glowImg = glowGo.GetComponent<Image>();
             glowImg.sprite = GetGlowSprite();
             // Was neon green (0.224, 1, 0.078) -- retinted to extraction blue, matching
-            // ExtractionBlueColor / the RESTORATION fill. NOTE: GetGlowSprite() loads
-            // RadialGlowGreen.png, which is baked green pixel data, not a neutral tintable
-            // shape -- multiplying this tint against that sprite will read dark/muddy, not
-            // blue, until the sprite asset itself is replaced. Flagged, not fixed here.
+            // ExtractionBlueColor / the RESTORATION fill. GetGlowSprite() loads RadialGlow.png,
+            // which is neutral white pixel data (flattened from the old baked-green art) with
+            // only alpha carrying the falloff shape -- this tint is the sprite's sole source of
+            // color now, so it renders as clean blue, not the dark/muddy result the old
+            // baked-green sprite would have produced.
             glowImg.color = new Color(0.25f, 0.75f, 1f, 0.6f);
             glowImg.raycastTarget = false;
 

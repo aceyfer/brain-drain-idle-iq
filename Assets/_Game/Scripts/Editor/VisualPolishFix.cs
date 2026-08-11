@@ -40,7 +40,7 @@ namespace BrainDrain.EditorTools
             Sprite ringSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
                 "Assets/_Game/Sprites/UI/Generated/NeonRing.png");
             Sprite glowSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                "Assets/_Game/Sprites/UI/Generated/RadialGlowGreen.png");
+                "Assets/_Game/Sprites/UI/Generated/RadialGlow.png");
             Material floatingTextMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/_Game/Materials/TMP/Bangers_PinkShadow.mat");
 
