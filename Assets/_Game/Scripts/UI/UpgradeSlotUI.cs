@@ -155,7 +155,7 @@ namespace BrainDrain.UI
             {
                 if (nameText != null)
                 {
-                    nameText.text = "??? CLASSIFIED ???";
+                    nameText.text = ClassificationTier.GetLabel(boundData.unlockCumulativeBrainPower);
                     nameText.fontSize = 32f;
                 }
                 if (countText != null) countText.text = string.Empty;

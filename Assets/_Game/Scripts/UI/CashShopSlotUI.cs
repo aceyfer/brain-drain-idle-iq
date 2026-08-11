@@ -143,6 +143,14 @@ namespace BrainDrain.UI
             bool unlocked = boundManager.IsItemUnlocked(boundData);
             if (!unlocked)
             {
+                if (nameText != null)
+                {
+                    // Overrides the unconditional displayName set at the top of this method --
+                    // that assignment ran before this lock check, so without this, locked Cash
+                    // Shop rows never redacted at all.
+                    nameText.text = ClassificationTier.GetLabel(boundData.gateRebirthCount);
+                    nameText.fontSize = 32f;
+                }
                 if (descriptionText != null)
                 {
                     descriptionText.text = "Access restricted by the Snotty Council.";
