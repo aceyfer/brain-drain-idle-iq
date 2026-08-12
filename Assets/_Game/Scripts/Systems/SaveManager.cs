@@ -489,7 +489,12 @@ namespace BrainDrain.Systems
                 data.buildingLevels = new List<BuildingSaveEntry>();
                 foreach (KeyValuePair<string, int> entry in upgradeManager.BuildingLevels)
                 {
-                    data.buildingLevels.Add(new BuildingSaveEntry { buildingName = entry.Key, level = entry.Value });
+                    data.buildingLevels.Add(new BuildingSaveEntry
+                    {
+                        buildingId = entry.Key,
+                        buildingName = upgradeManager.GetBuildingNameById(entry.Key),
+                        level = entry.Value
+                    });
                 }
             }
 

@@ -4,7 +4,13 @@ using UnityEngine;
 
 namespace BrainDrain.Core
 {
-    /// <summary>Serializable DTO for persisting one building's owned level (see SaveManager).</summary>
+    /// <summary>Serializable DTO for persisting one building's owned level (see SaveManager).
+    /// buildingId is the sole identity/ownership key as of Commit 3 of the buildingId
+    /// migration (Assets/Plans/building-id-migration.md) -- buildingName is display-only,
+    /// resolved fresh on every save via UpgradeManager.GetBuildingNameById purely so the raw
+    /// JSON stays human-readable; nothing at load time reads it. It can go stale relative to
+    /// the live build if inspected out of context (e.g. after a buildingName rename shipped
+    /// since this save was last written) -- do not treat it as authoritative.</summary>
     [Serializable]
     public struct BuildingSaveEntry
     {
@@ -40,7 +46,7 @@ namespace BrainDrain.Core
         /// <summary>Convenient scene-lookup accessor, since GameManager does not hub this reference.</summary>
         public static UpgradeManager Instance => FindAnyObjectByType<UpgradeManager>();
 
-        /// <summary>Read-only view of owned building levels keyed by building name.</summary>
+        /// <summary>Read-only view of owned building levels keyed by buildingId.</summary>
         public IReadOnlyDictionary<string, int> BuildingLevels => buildingLevels;
 
         /// <summary>Read-only view of the configured building templates for UI population.</summary>
@@ -65,12 +71,27 @@ namespace BrainDrain.Core
         /// <summary>Returns the current owned level for a building template.</summary>
         public int GetBuildingLevel(BuildingData building)
         {
-            if (building == null || string.IsNullOrWhiteSpace(building.buildingName))
+            if (building == null || string.IsNullOrWhiteSpace(building.buildingId))
             {
                 return 0;
             }
 
-            return buildingLevels.TryGetValue(building.buildingName, out int level) ? level : 0;
+            return buildingLevels.TryGetValue(building.buildingId, out int level) ? level : 0;
+        }
+
+        /// <summary>Resolves a building's current display name from its stable id, for
+        /// save-file readability only -- returns empty string if no template matches.</summary>
+        public string GetBuildingNameById(string buildingId)
+        {
+            for (int i = 0; i < buildingTemplates.Count; i++)
+            {
+                BuildingData building = buildingTemplates[i];
+                if (building != null && building.buildingId == buildingId)
+                {
+                    return building.buildingName;
+                }
+            }
+            return string.Empty;
         }
 
         /// <summary>Returns true when the building's next purchase is priced in Cash.</summary>
@@ -132,7 +153,7 @@ namespace BrainDrain.Core
         /// </summary>
         public void TryBuyBuilding(BuildingData building)
         {
-            if (building == null || string.IsNullOrWhiteSpace(building.buildingName))
+            if (building == null || string.IsNullOrWhiteSpace(building.buildingId))
             {
                 Debug.LogWarning("[UpgradeManager] TryBuyBuilding ignored: invalid building data.", this);
                 return;
@@ -160,8 +181,8 @@ namespace BrainDrain.Core
                 return;
             }
 
-            buildingLevels.TryGetValue(building.buildingName, out int level);
-            buildingLevels[building.buildingName] = level + 1;
+            buildingLevels.TryGetValue(building.buildingId, out int level);
+            buildingLevels[building.buildingId] = level + 1;
             currencyManager.AddIdleBPPS(building.baseBrainPowerPerSecond);
             currencyManager.AddCashPerSecond(building.baseCashPerSecond);
             playerIQManager?.ModifyPlayerIQ(PlayerIQGainPerPurchase);
@@ -293,12 +314,18 @@ namespace BrainDrain.Core
             {
                 foreach (BuildingSaveEntry entry in savedLevels)
                 {
-                    if (string.IsNullOrWhiteSpace(entry.buildingName) || entry.level <= 0)
+                    if (string.IsNullOrEmpty(entry.buildingId))
+                    {
+                        Debug.LogWarning($"[UpgradeManager] LoadBuildingLevels dropped an entry with no buildingId (buildingName='{entry.buildingName}', level={entry.level}) -- pre-buildingId saves are not supported.", this);
+                        continue;
+                    }
+
+                    if (entry.level <= 0)
                     {
                         continue;
                     }
 
-                    buildingLevels[entry.buildingName] = entry.level;
+                    buildingLevels[entry.buildingId] = entry.level;
                 }
             }
 
@@ -307,7 +334,7 @@ namespace BrainDrain.Core
                 for (int i = 0; i < buildingTemplates.Count; i++)
                 {
                     BuildingData building = buildingTemplates[i];
-                    if (building == null || !buildingLevels.TryGetValue(building.buildingName, out int level) || level <= 0)
+                    if (building == null || !buildingLevels.TryGetValue(building.buildingId, out int level) || level <= 0)
                     {
                         continue;
                     }

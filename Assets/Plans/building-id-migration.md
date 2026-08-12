@@ -132,11 +132,30 @@ without first satisfying it.
 
 ## 3. Save migration
 
-**No progress loss for any save that exists today.** `BuildingSaveEntry` gets `buildingId`
-**added**, not renamed — `buildingName` stays in the struct permanently, matching this
-codebase's existing convention (`tapMultiplier`/shop-multiplier zero-fill guards, the
-Profanity Dialogue Pack fallback at `SaveManager.cs:302-329` — none of these have ever been
-deleted after shipping).
+**DECIDED 2026-08-12 — the fallback described below is dropped. `buildingId` is hard-required.**
+Reasoning: every save written from `51f66f1` (Commit 2) onward already carries the
+`buildingId` key. Once Commit 3 populates it correctly, no save produced by this codebase
+will ever lack an id again — the name-fallback branch would be permanently dead code
+guarding a case that structurally cannot occur once Commit 3 ships. This project is
+pre-launch with no live player saves; the only save in existence is a disposable dev save,
+wiped and re-maxed every test session. Accepted cost: that dev save has `buildingId: ""` on
+every entry (confirmed directly in its JSON after Commit 2 landed) and loses its building
+levels once, on first load after Commit 3 lands. That's fine — there is no progression state
+worth protecting here. If this project reaches a point where real player saves exist and this
+decision needs revisiting, that's a new, explicit decision to make then, not something to
+guess back into from this file.
+
+**Original design (superseded, kept for record only — not implemented):** the paragraphs
+below described a permanent `buildingId`-first/`buildingName`-fallback lookup, written before
+"no live saves to protect" was recognized as the actual project state. None of this shipped.
+
+<details>
+<summary>Superseded fallback design</summary>
+
+`BuildingSaveEntry` would get `buildingId` **added**, not renamed — `buildingName` stays in
+the struct permanently, matching this codebase's existing convention (`tapMultiplier`/shop-
+multiplier zero-fill guards, the Profanity Dialogue Pack fallback at `SaveManager.cs:302-329`
+— none of these have ever been deleted after shipping).
 
 `UpgradeManager.LoadBuildingLevels`, per entry:
 1. If `!string.IsNullOrEmpty(entry.buildingId)` → resolve the template by `buildingId` (linear
@@ -149,20 +168,28 @@ deleted after shipping).
    save file forever — the bug `CODEX_FINDINGS.md` surfaced).
 
 Every one of the 16 current `buildingName` values still exists verbatim on its matching
-template today, so **step 2 succeeds for 100% of real saves that exist right now.**
+template today, so step 2 would have succeeded for 100% of real saves that existed at the
+time this was written.
 
-**One-time or permanent?** Both. Per save file: once loaded (via name-fallback) and saved
-again, it carries a real `buildingId` and takes the fast path thereafter — a one-time silent
-upgrade per save. The **fallback code itself stays in the codebase permanently**, matching
-established convention — there's no way to know whether a given save has ever round-tripped
-through the new code (test devices, restored backups can resurface indefinitely).
+</details>
 
-**Honest remaining risk:** safe for any save loaded at least once before `buildingName` is
-ever renamed again. The scenario that *would* lose a building's level: a save never loaded
-again until *after* some future rename lands (e.g., reinstalled from an old cloud backup
-after a stage-dependent-name update ships) — narrow, real, not a risk today.
+**Actual implemented behavior (Commit 3):** `LoadBuildingLevels` requires `buildingId`
+unconditionally. Per entry: if `string.IsNullOrEmpty(entry.buildingId)`, log a warning naming
+the entry's stale `buildingName` and drop it — no fallback attempt. This is deliberate,
+visible handling (not a silent skip, not a throw that would take down the whole `LoadGame()`
+pipeline for one bad entry) — see §5's Commit 3 write-up for the exact code. `BuildingSaveEntry.buildingName`
+is kept in the struct as a save-file readability aid only (§5), not as a fallback key —
+nothing at load time reads it anymore.
 
 ## 4. Verification steps
+
+**TRIMMED 2026-08-12, matching the no-fallback decision in §3.** The original 15-step list
+below was built around proving old-format saves survive a fallback path. That's no longer a
+goal — there's nothing to fall back to, and no live save worth protecting. Kept in the
+collapsed section for record; the list actually used for Commit 3 is the 7 steps beneath it.
+
+<details>
+<summary>Superseded 15-step list (assumed a fallback that was never built)</summary>
 
 1. Compile check — Console clean.
 2. **Before any code change**, copy the real save file
@@ -185,41 +212,47 @@ after a stage-dependent-name update ships) — narrow, real, not a risk today.
     `buildingId` with no duplicate entry under the old name-key.
 11. Run `DebugCheats.MaxAllBuildings()` (Editor menu) as a stress pass across the full
     16-building roster.
-
-### AMENDMENT 3 — rebirth-cycle verification (added)
-
-Steps 1-11 never exercised a Snotting cycle, but `ResetBuildings()` and
-`ClearActiveBuildingLocks()` operate on the same `buildingLevels` dictionary being re-keyed.
-Confirmed by reading `UpgradeManager.cs:239-277`: `ClearActiveBuildingLocks()` clears
-`activeBuildingLocks` (a `List<(double bpps, double cps, float restoreAtTime)>` — **not**
-keyed by `buildingName`/`buildingId` at all, stores raw suppressed amounts only, so it is
-structurally unaffected by this migration) and unsubscribes the lock-restore tick;
-`ResetBuildings()` calls `buildingLevels.Clear()` (key-type-agnostic — wipes the whole
-dictionary regardless of whether it's keyed by name or id) then `ClearActiveBuildingLocks()`.
-This is the fix from commit `9d1cbdb` ("fix: rebirth — discard active building locks on
-Snotting (was injecting pre-reset production into the new run); stop lock tick when locks
-drain") — its doc comment at `:234-238` explicitly states the reason: a pending
-`RestoreIdleBPPS`/`RestoreCashPerSecond` firing after reset would inject a pre-reset
-building's production onto the zeroed baseline of the new run as phantom income.
-
-Add, after step 11:
-
 12. Perform a full rebirth (Snotting) post-migration. Confirm `buildingLevels` clears
     completely — zero entries survive under either `buildingId` or leftover old-`buildingName`
-    keys (a dictionary-key-format mismatch during the migration edit could theoretically leave
-    stale entries under the wrong key type; `Clear()` should make this impossible, but verify
-    directly by dumping the dictionary before and after).
+    keys.
 13. Confirm `activeBuildingLocks` is empty and the lock-restore tick is unsubscribed after the
-    reset (trigger a building-lock event — e.g. "Ministry Inspection" — immediately before
-    rebirthing, then rebirth, then confirm no phantom BPPS/CPS appears in the new run once the
-    lock's original `restoreAtTime` would have elapsed). This is the exact regression `9d1cbdb`
-    fixed — confirm it still holds post-migration, since `LockRandomBuildingFor` now resolves
-    its `owned` list via `GetBuildingLevel(building)` reading `buildingId` instead of
-    `buildingName`.
+    reset (trigger a building-lock event immediately before rebirthing, then rebirth, then
+    confirm no phantom BPPS/CPS appears once the lock's original `restoreAtTime` would have
+    elapsed) — the `9d1cbdb` regression check.
 14. Re-buy several buildings post-rebirth; confirm levels land correctly under `buildingId`
     keys with no collision against anything left over from the pre-rebirth run.
 15. Save and reload once more after the post-rebirth re-buys; confirm the fresh save round-trips
-    cleanly (fast `buildingId` path, correct counts).
+    cleanly.
+
+</details>
+
+**Actual Commit 3 verification list (7 steps):**
+
+1. Compile clean.
+2. Load the current dev save once. Confirm the warning log fires exactly 3 times (once per
+   entry, all currently `buildingId: ""`) and all three prior building levels are gone — the
+   accepted, expected one-time loss per §3's decision.
+3. Buy a few buildings fresh. Confirm `OWNED: N` and BPPS/CPS totals are correct.
+4. Save, reload once. Confirm the same levels persist — the only path now, so this is the real
+   round-trip proof.
+5. Full rebirth (Snotting): confirm `buildingLevels` clears completely, confirm no phantom
+   BPPS/CPS reappears after a pre-rebirth building lock's `restoreAtTime` would have elapsed
+   (the `9d1cbdb` regression check — see below for why it's unaffected by this migration).
+6. Re-buy after rebirth, confirm correct under `buildingId` keys.
+7. `DebugCheats.MaxAllBuildings()` stress pass across all 16, confirm no exceptions.
+
+**Rebirth/lock interaction, confirmed structurally, not just by re-running the old check:**
+`ResetBuildings()` (`UpgradeManager.cs`) calls `buildingLevels.Clear()` — content-agnostic,
+works identically regardless of what strings key the dictionary. `ClearActiveBuildingLocks()`
+clears `activeBuildingLocks`, a `List<(double bpps, double cps, float restoreAtTime)>` that
+stores only pre-resolved numeric deltas — never keyed by `buildingName`/`buildingId` at all,
+so it's structurally untouched by this migration regardless of key type. `LockRandomBuildingFor`
+builds its `owned` list via `GetBuildingLevel(building)`, which now resolves through
+`buildingId` internally — but `LockRandomBuildingFor`'s own code is unchanged, since it never
+touched the key directly. The `9d1cbdb` fix (discard pending locks before rebirth so a
+delayed restore can't inject phantom income into the reset run) is unaffected by construction,
+not just by re-test — but step 5 above still empirically re-confirms it once rather than
+resting on reasoning alone.
 
 ## 5. Order of operations — smallest safe commits
 
@@ -243,27 +276,51 @@ Add, after step 11:
   `SaveManager.cs` — that was an error in this section, corrected 2026-08-12; the struct is
   declared at `UpgradeManager.cs:8-13`, confirmed by reading the file directly. §2's table
   above always had this right). Additive struct field, still unread/unwritten. Verify: old
-  saves load/save identically, field just round-trips empty. **Landed** as a single-line
-  change (`public string buildingId;`, first field in the struct); staged, not yet committed,
-  pending your Play Mode verification against a real save.
-- **Commit 3**: the actual migration — `LoadBuildingLevels`'s id-first/name-fallback logic,
-  `TryBuyBuilding`/`GetBuildingLevel`/dictionary keys switched to `buildingId`, `SaveGame`
-  writing both fields. The one commit where behavior changes; full verification sequence
-  (steps 1-15 above, including the Amendment 3 rebirth pass) concentrates here, ideally
-  against a copy of the real save file.
+  saves load/save identically, field just round-trips empty. **Landed** (`51f66f1`,
+  2026-08-12) as a single-line change (`public string buildingId;`, first field in the
+  struct). Structural check against the live dev save confirmed `buildingId` present exactly
+  once per `buildingLevels` entry, serialized as `""` (not `null` — see the write-side
+  correction below), all levels/names intact, no other key affected. No pre-change backup was
+  available to diff against; not a blocker in this project's current state, see the open
+  question below.
 
-  **HARD REQUIREMENT — the single most likely way Commit 3 breaks saves:** `JsonUtility` does
-  not run field initializers or zero-fill a missing `string` field to `""` on deserialization
-  — it leaves it at the C# default for a reference type, which is `null`. Every save that
-  exists today, the very first time it's loaded after Commit 2 lands, will deserialize
-  `buildingId` as `null`, not `""`. Commit 3's fallback branch in `LoadBuildingLevels`
-  **must** test `string.IsNullOrEmpty(entry.buildingId)`. A bare `entry.buildingId == ""`
-  comparison would never be true for any save that exists right now — every current save
-  would incorrectly take the id-first path with a `null` id, fail to resolve any template,
-  and silently fail to restore every building's level (the exact failure mode §3 describes
-  as "genuinely orphaned," but triggered for 100% of saves instead of the intended 0%). §3's
-  algorithm description above already uses the correct `string.IsNullOrEmpty` form — this
-  callout exists so Commit 3's actual code can't regress to the naive comparison.
+  **Correction to the `null` claim above:** confirmed against the real save file after
+  Commit 2 landed — `JsonUtility` deserializes a missing string field as `null` on *read* (as
+  stated), but coerces `null` back to `""` on *write* (a separate, known `JsonUtility` quirk —
+  it does not emit JSON `null` for strings). So the observed on-disk value is `"buildingId": ""`,
+  not `"buildingId": null`. Doesn't change the HARD REQUIREMENT below — `string.IsNullOrEmpty`
+  handles both — but the plan's own earlier prediction of the literal on-disk value was wrong
+  and is corrected here rather than left standing.
+
+- **DECIDED 2026-08-12 — see §3 for full reasoning.** The permanent `buildingName`-fallback
+  path was never built. Dropped in favor of hard-requiring `buildingId`, on the grounds that
+  this project is pre-launch with no live player saves worth the permanent legacy branch.
+
+- **Commit 3**: the actual migration, no-fallback design — `LoadBuildingLevels` hard-requires
+  `buildingId` (warn-and-drop any entry missing it, see §3), `TryBuyBuilding`/`GetBuildingLevel`/
+  dictionary keys switched to `buildingId`, `SaveGame` writes `buildingId` as the real key and
+  resolves `buildingName` fresh via the new `UpgradeManager.GetBuildingNameById` helper for
+  save-file readability only. The one commit where behavior changes; verification is §4's
+  trimmed 7-step list, not the superseded 15-step one. **Landed** (staged, not yet committed —
+  see commit hash once it lands) as a single commit: five edited sites in `UpgradeManager.cs`
+  (`BuildingSaveEntry` doc comment, `GetBuildingLevel`, new `GetBuildingNameById`,
+  `TryBuyBuilding` guard + write, `LoadBuildingLevels` load + re-derivation loops) plus one
+  edited site in `SaveManager.cs` (`SaveGame`'s dictionary-to-DTO write). Writer sweep run
+  first, 2026-08-12: `buildingLevels` is a `private readonly Dictionary`, mutated only at the
+  four sites already covered by this edit list (`TryBuyBuilding`, `LoadBuildingLevels`'s two
+  `Clear()` calls, `LoadBuildingLevels`'s populate line) — confirmed via full-repo grep,
+  including all 19 Editor `MenuItem` entry points (zero matches) and `DebugCheats.MaxAllBuildings()`
+  (routes through the real `TryBuyBuilding` pathway by its own prior design, doesn't touch the
+  dictionary directly). Nothing else to migrate.
+
+  **HARD REQUIREMENT — the single most likely way this commit breaks the (disposable) dev save
+  in an unintended way:** `JsonUtility` does not run field initializers or zero-fill a missing
+  `string` field to `""` on deserialization — it leaves it at the C# default for a reference
+  type, `null` — but coerces that `null` back to `""` on the following *write*, a separate
+  `JsonUtility` quirk (confirmed empirically: the dev save's `buildingId` values read `""` on
+  disk after Commit 2, not `null`). `LoadBuildingLevels`'s drop-path **must** test
+  `string.IsNullOrEmpty(entry.buildingId)`, not a bare `== ""` comparison, to correctly catch
+  both forms. Implemented this way — see the code.
 - **Optional Commit 4** (not required for `buildingId` to work): tighten orphan-entry
   handling (drop + warn instead of silently accumulating) — isolated so it can be
   reviewed/reverted independently of the migration itself.
