@@ -8,6 +8,7 @@ namespace BrainDrain.Core
     [Serializable]
     public struct BuildingSaveEntry
     {
+        public string buildingId;
         public string buildingName;
         public int level;
     }
