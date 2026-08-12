@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: PodcasterSoundboard
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: podcaster_soundboard
   buildingName: Podcaster Soundboard
   description: Three guys in a garage explain geopolitics for four hours using
     only vibes. Somehow, people are taking notes.

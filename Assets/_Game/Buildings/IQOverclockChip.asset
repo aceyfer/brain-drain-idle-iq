@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: IQOverclockChip
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: iq_overclock_chip
   buildingName: Pineal Overclock
   description: Decalcify and overclock the third eye you were born with. No implant, no chip — just the gland they hoped you'd forget. Real IQ bump; mild forehead smoke is normal.
   unlockCumulativeBrainPower: 12000

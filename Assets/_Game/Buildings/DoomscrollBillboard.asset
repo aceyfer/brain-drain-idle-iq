@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: DoomscrollBillboard
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: doomscroll_billboard
   buildingName: Doomscroll Billboard
   description: It scrolls the truth instead of the feed. The more it spreads, the madder the controllers get.
   unlockCumulativeBrainPower: 2000

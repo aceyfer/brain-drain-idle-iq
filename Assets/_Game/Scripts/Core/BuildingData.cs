@@ -16,6 +16,8 @@ namespace BrainDrain.Core
     public sealed class BuildingData : ScriptableObject
     {
         [Header("Identity")]
+        [Tooltip("Stable save key, independent of buildingName -- mirrors CashShopItemData.itemId/OutfitData.outfitId's role.")]
+        public string buildingId;
         public string buildingName;
         [TextArea(2, 4)]
         public string description;

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: CryptoBroCompound
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: crypto_bro_compound
   buildingName: Crypto-Bro Compound
   description: A walled compound of vape smoke and group chats screaming "WAGMI."
     Income spikes violently, then mysteriously vanishes into a rug pull.

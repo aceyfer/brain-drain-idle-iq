@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: HOAProtectionRacket
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: hoa_protection_racket
   buildingName: The Laundromat
   description: Dirty money in, clean water out. Nobody upstairs has audited it because nobody upstairs can read the ledger.
   unlockCumulativeBrainPower: 18000

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: JumperCables
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: jumper_cables
   buildingName: Apex Brain Greens
   description: A scoop of pond-colored powder, 47 ingredients nobody regulated.
     Steady drip while it's in your system, and every tap hits harder on top.

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: DefrostDrip
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: defrost_drip
   buildingName: StupAid H2O
   description: Everything your brain actually craves, in a bottle. Home-grown crops got banned so long ago even the elites forgot food was ever free.
   unlockCumulativeBrainPower: 60

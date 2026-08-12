@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c2bea8f63d2184cb87c13fcf9bc1e3, type: 3}
   m_Name: TheLiteralLibrary
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
+  buildingId: the_literal_library
   buildingName: The Literal Library
   description: The Illumisnotty burned most of these. You're rebuilding.
   unlockCumulativeBrainPower: 0
