@@ -52,6 +52,13 @@ namespace BrainDrain.Systems
         /// <summary>The currently resolved stage, or null before the first resolution has run / no stages configured.</summary>
         public WorldRestorationStage CurrentStage { get; private set; }
 
+        /// <summary>CurrentStage's stageIndex, or 0 before the first resolution has run / no
+        /// stages configured. Single owner of "current world stage as a plain int" -- set
+        /// alongside CurrentStage in ApplyStageForCumulativePoints, nowhere else. Added for
+        /// BuildingData.GetDisplayName/GetDescription callers that need the current stage
+        /// without holding a WorldRestorationStage reference.</summary>
+        public int CurrentStageIndex { get; private set; }
+
         /// <summary>Read-only view of configured stages, sorted by pointsRequired ascending. Added for DebugCheats, so its "jump to stage" buttons read real configured thresholds instead of hardcoding values that could drift out of sync.</summary>
         public IReadOnlyList<WorldRestorationStage> Stages => stages;
 
@@ -260,6 +267,7 @@ namespace BrainDrain.Systems
             }
 
             CurrentStage = resolved;
+            CurrentStageIndex = resolved.stageIndex;
             OnRestorationStageChanged?.Invoke(CurrentStage);
         }
 

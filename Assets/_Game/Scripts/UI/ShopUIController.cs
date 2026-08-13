@@ -926,6 +926,13 @@ namespace BrainDrain.UI
                 store.OnItemsChanged -= HandleGodShopItemsChanged;
                 store.OnItemsChanged += HandleGodShopItemsChanged;
             }
+
+            WorldRestorationManager restoration = WorldRestorationManager.Instance;
+            if (restoration != null)
+            {
+                restoration.OnRestorationStageChanged -= HandleRestorationStageChanged;
+                restoration.OnRestorationStageChanged += HandleRestorationStageChanged;
+            }
         }
 
         private void UnsubscribeFromEvents()
@@ -946,6 +953,11 @@ namespace BrainDrain.UI
             if (GodTierStoreManager.Instance != null)
             {
                 GodTierStoreManager.Instance.OnItemsChanged -= HandleGodShopItemsChanged;
+            }
+
+            if (WorldRestorationManager.Instance != null)
+            {
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
             }
 
             // Never leave the rebirth trigger suppressed past this controller's lifetime.
@@ -969,6 +981,7 @@ namespace BrainDrain.UI
         private void HandleCashChanged(double _) => RefreshAllSlots();
         private void HandlePointsChanged(double _) => RefreshAllSlots();
         private void HandleGodShopItemsChanged() => RefreshAllSlots();
+        private void HandleRestorationStageChanged(WorldRestorationStage stage) => RefreshAllSlots();
 
         private void RefreshAllSlots()
         {

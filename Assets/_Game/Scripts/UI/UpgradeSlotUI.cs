@@ -70,6 +70,9 @@ namespace BrainDrain.UI
 
             double cost = boundManager.GetCurrentCost(boundData);
             int level = boundManager.GetBuildingLevel(boundData);
+            int worldStageIndex = WorldRestorationManager.Instance != null
+                ? WorldRestorationManager.Instance.CurrentStageIndex
+                : 0;
 
             // Reveal = first-affordable latch: owned, or lifetime currency ever reached the real
             // unlock gate (unlockCumulativeBrainPower), not baseCost -- baseCost is the price,
@@ -142,7 +145,7 @@ namespace BrainDrain.UI
                         totalLine = $"\n<color=#FFD700>TOTAL ({level}×): {totalParts}</color>";
                     }
 
-                    descriptionText.text = $"{boundData.description}\n<color=#00F0FF><b>Per level: {perLevel}</b></color>{totalLine}";
+                    descriptionText.text = $"{boundData.GetDescription(worldStageIndex)}\n<color=#00F0FF><b>Per level: {perLevel}</b></color>{totalLine}";
                 }
                 else
                 {
@@ -177,7 +180,7 @@ namespace BrainDrain.UI
 
             if (nameText != null)
             {
-                nameText.text = boundData.buildingName;
+                nameText.text = boundData.GetDisplayName(worldStageIndex);
                 nameText.fontSize = 32f;
             }
             if (costText != null)
