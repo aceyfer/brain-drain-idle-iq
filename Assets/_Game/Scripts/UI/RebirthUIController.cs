@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -19,10 +20,35 @@ namespace BrainDrain.UI
         [SerializeField] private Button cancelButton;
 
         [Header("Visibility Gate")]
-        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active; interactable gates on RebirthManager.Instance.SnottingUnlockThreshold.")]
+        [Tooltip("The 'REBIRTH' button GameObject in the HUD that opens this modal. Always active AND always interactable; the unlock gate lives in OpenModal/OnConfirmClicked instead of Button.interactable, so a locked tap can still react (denial shake + narrator line) instead of silently doing nothing.")]
         [SerializeField] private GameObject rebirthTriggerButton;
 
+        [Header("Locked-Tap Denial")]
+        [Tooltip("Narrator lines for a locked-Snotting tap. Defaulted in code so this works without Inspector wiring; retune here later if desired.")]
+        [SerializeField] private string[] snottingDeniedLines =
+        {
+            "The Snotting is not for you yet. Spend more. Restore more. Then we'll talk.",
+            "Locked. I put the requirement on the button. In a large font. For you specifically.",
+            "Still locked. Tapping harder is not a restoration strategy.",
+            "That button has a number on it. The number is not your number yet.",
+            "Denied. The good news is the requirement is written right there. The bad news is you have to read it.",
+        };
+
+        /// <summary>Cooldown on the denial narrator line only -- the shake always plays on every
+        /// tap (every tap feels acknowledged), but rapid tapping must not flood the dialogue
+        /// queue. Same cooldown philosophy as DialogueManager's own RepeatTriggerCooldownSeconds
+        /// (SS20), scoped to this local pool instead of the shared trigger system.</summary>
+        private const float SnottingDenialLineCooldownSeconds = 1.5f;
+
         private bool triggerSuppressed;
+
+        /// <summary>Cached result of the last ApplyTriggerButtonVisibility() unlock computation
+        /// -- single source of truth for "is Snotting unlocked", read by OpenModal and
+        /// OnConfirmClicked rather than each recomputing the condition separately.</summary>
+        private bool isSnottingUnlocked;
+
+        private string lastSnottingDeniedLine;
+        private float lastSnottingDenialLineTime = float.NegativeInfinity;
 
         /// <summary>
         /// Hides the HUD trigger button while overlapping UI (the shop) is open. This
@@ -129,11 +155,16 @@ namespace BrainDrain.UI
             // stays false -- never reads as unlocked on a missing reference.
             double? unlockThreshold = RebirthManager.Instance?.SnottingUnlockThreshold;
             bool unlocked = unlockThreshold.HasValue && spent >= unlockThreshold.Value;
+            isSnottingUnlocked = unlocked;
 
+            // Always interactable now -- a disabled Unity Button never fires onClick, so a
+            // locked tap used to run zero code and give zero feedback. The gate moved into
+            // OpenModal/OnConfirmClicked instead, which read the cached isSnottingUnlocked
+            // above rather than Button.interactable.
             Button btn = rebirthTriggerButton.GetComponent<Button>();
             if (btn != null)
             {
-                btn.interactable = unlocked;
+                btn.interactable = true;
             }
 
             // Drive the background image color directly so locked always looks grey and
@@ -176,6 +207,12 @@ namespace BrainDrain.UI
 
         public void OpenModal()
         {
+            if (!isSnottingUnlocked)
+            {
+                PlaySnottingDenial();
+                return;
+            }
+
             if (rebirthModalPanel == null)
             {
                 Debug.LogWarning("[RebirthUIController] rebirthModalPanel is not assigned — cannot open The Snotting modal.", this);
@@ -190,6 +227,65 @@ namespace BrainDrain.UI
             RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
             CanvasGroup panelCanvasGroup = rebirthModalPanel.GetComponent<CanvasGroup>();
             AnimationController.PlayPopupSpawn(panelRect, panelCanvasGroup);
+        }
+
+        /// <summary>
+        /// Locked-tap feedback. The shake always plays -- every tap should feel acknowledged --
+        /// but the narrator line respects SnottingDenialLineCooldownSeconds so rapid tapping
+        /// can't flood the dialogue queue.
+        /// </summary>
+        private void PlaySnottingDenial()
+        {
+            if (rebirthTriggerButton != null)
+            {
+                RectTransform rt = rebirthTriggerButton.GetComponent<RectTransform>();
+                AnimationController.PlayDenialShake(rt);
+            }
+
+            if (Time.time - lastSnottingDenialLineTime < SnottingDenialLineCooldownSeconds)
+            {
+                return;
+            }
+            lastSnottingDenialLineTime = Time.time;
+
+            string line = PickSnottingDeniedLine();
+            if (!string.IsNullOrEmpty(line) && DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.ShowPriorityLine(line);
+            }
+        }
+
+        /// <summary>
+        /// Random pick from snottingDeniedLines, never repeating the immediately-previous line.
+        /// This is the smallest analogue of DialogueManager.TryFireLine's own anti-repeat
+        /// fallback tier (candidates.Where(line => line != lastPlayedLine)) -- its full 10-entry
+        /// history window is tuned for a ~112-line shared pool and doesn't scale down
+        /// meaningfully to this 5-line local array, so this mirrors the tier that does apply
+        /// rather than inventing a second anti-repeat approach.
+        /// </summary>
+        private string PickSnottingDeniedLine()
+        {
+            if (snottingDeniedLines == null || snottingDeniedLines.Length == 0)
+            {
+                return null;
+            }
+
+            List<string> candidates = new List<string>();
+            foreach (string candidate in snottingDeniedLines)
+            {
+                if (candidate != lastSnottingDeniedLine)
+                {
+                    candidates.Add(candidate);
+                }
+            }
+            if (candidates.Count == 0)
+            {
+                candidates.AddRange(snottingDeniedLines);
+            }
+
+            string chosen = candidates[Random.Range(0, candidates.Count)];
+            lastSnottingDeniedLine = chosen;
+            return chosen;
         }
 
         public void CloseModal()
@@ -238,6 +334,19 @@ namespace BrainDrain.UI
 
         private void OnConfirmClicked()
         {
+            if (!isSnottingUnlocked)
+            {
+                // Should be unreachable -- OpenModal's own gate is what's supposed to keep a
+                // locked state from ever reaching this modal now that the trigger button is
+                // always interactable. RebirthManager.TriggerRebirth() has no precondition
+                // check of its own, so this is the last line of defense; if this ever logs,
+                // something let a locked state through and that's a real bug to chase, not a
+                // silent no-op.
+                Debug.LogWarning("[RebirthUIController] OnConfirmClicked fired while Snotting is locked -- this should be unreachable.", this);
+                CloseModal();
+                return;
+            }
+
             if (RebirthManager.Instance != null)
             {
                 RebirthManager.Instance.TriggerRebirth();

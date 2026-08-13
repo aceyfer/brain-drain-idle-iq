@@ -38,6 +38,7 @@ namespace BrainDrain.Systems
         private readonly Dictionary<Transform, Coroutine> excitedBounceCoroutines = new();
         private readonly Dictionary<Transform, Tween> buttonPunchTweens = new();
         private readonly Dictionary<RectTransform, Coroutine> affordablePulseCoroutines = new();
+        private readonly Dictionary<RectTransform, Coroutine> denialShakeCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Coroutine> textFlashCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Color> textFlashBaseColors = new();
         private readonly Dictionary<RectTransform, Tween> slideTweens = new();
@@ -1153,6 +1154,61 @@ namespace BrainDrain.Systems
             {
                 canvasGroup.alpha = 1f;
             }
+        }
+
+        // ----- Denial shake (locked-button tap feedback) -----------------------------------
+
+        /// <summary>
+        /// Shakes rect.anchoredPosition with decaying random offsets (6 steps over ~0.2s,
+        /// settling exactly back at its original position) -- a refusal cue for an already-
+        /// visible, already-interactable element (e.g. a locked-but-tappable button), not an
+        /// entrance animation. Deliberately a standalone duplicate of PopupSpawnRoutine's shake
+        /// loop above rather than a shared refactor: no alpha fade / CanvasGroup handling here,
+        /// and PlayPopupSpawn's own entrance behavior must not change as a side effect of this
+        /// method existing.
+        /// </summary>
+        public static void PlayDenialShake(RectTransform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            controller.StopAndReplace(controller.denialShakeCoroutines, target, controller.DenialShakeRoutine(target));
+        }
+
+        private IEnumerator DenialShakeRoutine(RectTransform rect)
+        {
+            const int shakeSteps = 6;
+            const float duration = 0.2f;
+            const float stepDuration = duration / shakeSteps;
+            const float maxOffset = 8f;
+
+            Vector2 center = rect.anchoredPosition;
+            Vector2 current = center;
+
+            for (int step = 0; step < shakeSteps; step++)
+            {
+                float decay = 1f - ((float)step / shakeSteps);
+                Vector2 target = center + new Vector2(
+                    UnityEngine.Random.Range(-maxOffset, maxOffset),
+                    UnityEngine.Random.Range(-maxOffset, maxOffset)) * decay;
+
+                Vector2 stepStart = current;
+                float stepElapsed = 0f;
+
+                while (stepElapsed < stepDuration)
+                {
+                    stepElapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(stepElapsed / stepDuration);
+                    current = Vector2.LerpUnclamped(stepStart, target, t);
+                    rect.anchoredPosition = current;
+                    yield return null;
+                }
+            }
+
+            rect.anchoredPosition = center;
         }
 
         // ----- Generic panel slide (e.g. ShopUIController's slide-up-from-bottom panel) -----
