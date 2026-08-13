@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BuildingPurchase_DoomscrollEngine
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName: Loose Change Collective
+  buildingId: doomscroll_engine
   minRebirthCount: 0
   maxRebirthCount: 2147483647
   dialogueLine: The Loose Change Collective is live. A hundred million pockets, a

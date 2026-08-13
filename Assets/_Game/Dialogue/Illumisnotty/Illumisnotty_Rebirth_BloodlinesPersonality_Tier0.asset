@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_Rebirth_BloodlinesPersonality_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 2
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Snotting complete. You get a title now. They get to keep

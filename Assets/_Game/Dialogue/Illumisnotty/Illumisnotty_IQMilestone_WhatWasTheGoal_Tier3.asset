@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_IQMilestone_WhatWasTheGoal_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 4
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: IQ milestone. You're smarter than all of them. That used to be

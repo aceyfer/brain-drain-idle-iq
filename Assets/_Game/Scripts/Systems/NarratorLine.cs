@@ -23,7 +23,7 @@ namespace BrainDrain.Systems
     /// <summary>
     /// Authoring data for one narrator dialogue line. DialogueManager matches lines by
     /// triggerType, current WorldRestorationManager.RestorationPercent falling within
-    /// [minRestorationPercent, maxRestorationPercent], and (for BuildingPurchase) buildingName
+    /// [minRestorationPercent, maxRestorationPercent], and (for BuildingPurchase) buildingId
     /// if set.
     /// </summary>
     [CreateAssetMenu(fileName = "NarratorLine", menuName = "BrainDrain/Narrator Line")]
@@ -31,8 +31,8 @@ namespace BrainDrain.Systems
     {
         [Header("Trigger")]
         public NarratorTriggerType triggerType;
-        [Tooltip("Optional. If set, only matches a BuildingPurchase trigger for this exact building name.")]
-        public string buildingName;
+        [Tooltip("Optional. If set, only matches a BuildingPurchase trigger for this exact buildingId.")]
+        public string buildingId;
 
         /// <summary>
         /// No longer read by DialogueManager's trigger-matching filter (replaced 2026-06-22 by

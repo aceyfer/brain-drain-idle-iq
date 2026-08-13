@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_BuildingPurchase_Inheritance_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: Building purchased, like always, except now it doesn't feel

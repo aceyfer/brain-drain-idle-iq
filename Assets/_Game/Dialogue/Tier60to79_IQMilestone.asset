@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tier60to79_IQMilestone
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 4
-  buildingName:
+  buildingId:
   minRebirthCount: 1
   maxRebirthCount: 2
   minRestorationPercent: 11

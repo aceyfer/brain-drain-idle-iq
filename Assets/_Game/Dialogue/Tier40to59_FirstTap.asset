@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tier40to59_FirstTap
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 0
-  buildingName:
+  buildingId:
   minRebirthCount: 3
   maxRebirthCount: 5
   minRestorationPercent: 31

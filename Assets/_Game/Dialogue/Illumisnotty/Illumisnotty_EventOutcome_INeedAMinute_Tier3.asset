@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_EventOutcome_INeedAMinute_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 3
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: Illumisnotty event, resolved, by you, the way an Illumisnotty

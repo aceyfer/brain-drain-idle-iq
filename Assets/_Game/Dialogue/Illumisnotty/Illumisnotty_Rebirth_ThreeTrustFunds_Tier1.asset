@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_Rebirth_ThreeTrustFunds_Tier1
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 2
-  buildingName:
+  buildingId:
   minRebirthCount: 1
   maxRebirthCount: 2
   dialogueLine: Second Snotting. You're climbing their ladder faster than they

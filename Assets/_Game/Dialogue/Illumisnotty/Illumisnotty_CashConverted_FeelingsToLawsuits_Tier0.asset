@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_CashConverted_FeelingsToLawsuits_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 6
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Cash converted to Points. The Illumisnotty convert their

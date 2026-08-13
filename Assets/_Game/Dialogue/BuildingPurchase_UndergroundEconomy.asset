@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BuildingPurchase_UndergroundEconomy
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName: Snott Market Exchange
+  buildingId: underground_economy
   minRebirthCount: 0
   maxRebirthCount: 2147483647
   dialogueLine: The Snott Market Exchange is trading. Untraceable, untaxed, and technically an act of war.

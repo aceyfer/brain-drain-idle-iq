@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RestorationStageChange_SomethingIsHealing
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 10
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   minRestorationPercent: 0

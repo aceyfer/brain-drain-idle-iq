@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_BuildingPurchase_NoIdeaMostlyTrue_Tier1
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName:
+  buildingId:
   minRebirthCount: 1
   maxRebirthCount: 2
   dialogueLine: New building. I heard a rumor the Snotty Council asked who you

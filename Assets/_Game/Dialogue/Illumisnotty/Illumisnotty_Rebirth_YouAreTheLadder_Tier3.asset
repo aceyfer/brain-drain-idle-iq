@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_Rebirth_YouAreTheLadder_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 2
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: Another Snotting. You're not climbing their ladder anymore.

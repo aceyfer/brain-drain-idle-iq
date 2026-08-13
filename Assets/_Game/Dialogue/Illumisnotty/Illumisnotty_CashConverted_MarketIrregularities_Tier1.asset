@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_CashConverted_MarketIrregularities_Tier1
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 6
-  buildingName:
+  buildingId:
   minRebirthCount: 1
   maxRebirthCount: 2
   dialogueLine: Points secured. The Illumisnotty just held an emergency meeting

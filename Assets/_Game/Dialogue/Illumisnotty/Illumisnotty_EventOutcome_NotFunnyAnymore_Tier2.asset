@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_EventOutcome_NotFunnyAnymore_Tier2
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 3
-  buildingName:
+  buildingId:
   minRebirthCount: 3
   maxRebirthCount: 5
   dialogueLine: Event resolved. I used to find these funny. I'm not finding

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_TapWithoutPurchase_DontStopOnMyAccount_Tier1
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 5
-  buildingName:
+  buildingId:
   minRebirthCount: 1
   maxRebirthCount: 2
   dialogueLine: Still tapping? The Illumisnotty haven't tapped anything

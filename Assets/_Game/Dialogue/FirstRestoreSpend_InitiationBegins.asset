@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FirstRestoreSpend_InitiationBegins
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 9
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   minRestorationPercent: 0

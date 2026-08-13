@@ -331,7 +331,7 @@ namespace BrainDrain.Systems
         private void HandleBuildingPurchased(BuildingData building)
         {
             tapsSinceLastPurchase = 0;
-            TryFireLine(NarratorTriggerType.BuildingPurchase, building != null ? building.buildingName : null);
+            TryFireLine(NarratorTriggerType.BuildingPurchase, building != null ? building.buildingId : null);
         }
 
         private void HandleRebirth(int rebirthCount)
@@ -424,7 +424,7 @@ namespace BrainDrain.Systems
             }
         }
 
-        private void TryFireLine(NarratorTriggerType triggerType, string buildingName)
+        private void TryFireLine(NarratorTriggerType triggerType, string buildingId)
         {
             // Flood gate: repeatable triggers respect a cooldown (SS20). Checked before
             // candidate selection so a suppressed fire costs nothing.
@@ -452,7 +452,7 @@ namespace BrainDrain.Systems
                 && line.triggerType == triggerType
                 && currentRestorationPercent >= line.minRestorationPercent
                 && currentRestorationPercent <= line.maxRestorationPercent
-                && (string.IsNullOrWhiteSpace(line.buildingName) || line.buildingName == buildingName)
+                && (string.IsNullOrWhiteSpace(line.buildingId) || line.buildingId == buildingId)
             ).ToList();
 
             if (candidates.Count == 0)

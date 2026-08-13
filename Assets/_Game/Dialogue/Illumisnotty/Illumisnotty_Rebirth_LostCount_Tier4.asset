@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_Rebirth_LostCount_Tier4
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 2
-  buildingName:
+  buildingId:
   minRebirthCount: 11
   maxRebirthCount: 2147483647
   dialogueLine: Snotting number eleven-plus. I've lost count, which is funny,

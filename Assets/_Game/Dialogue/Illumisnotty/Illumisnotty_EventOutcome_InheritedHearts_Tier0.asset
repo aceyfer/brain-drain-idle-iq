@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_EventOutcome_InheritedHearts_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 3
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Illumisnotty interference, resolved. They tried. Bless their

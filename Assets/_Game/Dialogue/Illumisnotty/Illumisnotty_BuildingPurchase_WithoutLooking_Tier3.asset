@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_BuildingPurchase_WithoutLooking_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: Construction complete. You signed off on that the way Lord

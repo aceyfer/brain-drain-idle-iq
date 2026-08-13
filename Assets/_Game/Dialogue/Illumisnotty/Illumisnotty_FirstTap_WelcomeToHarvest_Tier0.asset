@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_FirstTap_WelcomeToHarvest_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 0
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Welcome to the harvest. Don't worry about the Illumisnotty --

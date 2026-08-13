@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_TapWithoutPurchase_OnlyHumanThingLeft_Tier3
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 5
-  buildingName:
+  buildingId:
   minRebirthCount: 6
   maxRebirthCount: 10
   dialogueLine: Still tapping, even now, even at your level. That's almost

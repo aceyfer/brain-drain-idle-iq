@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_Rebirth_FirstSnotting_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 2
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Your first Snotting. Cute. The actual Illumisnotty have been

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BuildingPurchase_BrainRotThinkTank
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName: Brain-Rot Think Tank
+  buildingId: brain_rot_think_tank
   minRebirthCount: 0
   maxRebirthCount: 2147483647
   dialogueLine: The Brain-Rot Think Tank is staffed. Somewhere, a PhD just stopped

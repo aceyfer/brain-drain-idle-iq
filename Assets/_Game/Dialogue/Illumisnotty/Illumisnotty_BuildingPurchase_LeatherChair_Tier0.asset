@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Illumisnotty_BuildingPurchase_LeatherChair_Tier0
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName:
+  buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
   dialogueLine: Building secured. Lord Snott III is reportedly 'monitoring the

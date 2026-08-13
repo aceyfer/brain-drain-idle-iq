@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tier20to39_BuildingPurchase_RealityTV
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.NarratorLine
   triggerType: 1
-  buildingName: The Great Reversal
+  buildingId: reality_tv_syndicate
   minRebirthCount: 6
   maxRebirthCount: 10
   minRestorationPercent: 56
