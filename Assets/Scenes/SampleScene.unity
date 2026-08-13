@@ -15900,7 +15900,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -20.000244, y: 0}
+  m_AnchoredPosition: {x: -20, y: 0}
   m_SizeDelta: {x: 135.8014, y: 702.4572}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &625420705
@@ -21941,7 +21941,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1202951561}
   m_HandleRect: {fileID: 1202951560}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -38610,7 +38610,13 @@ MonoBehaviour:
   confirmButton: {fileID: 1760922460}
   cancelButton: {fileID: 1743834852}
   rebirthTriggerButton: {fileID: 487183357}
-  pointsSpentUnlockThreshold: 5658229
+  snottingDeniedLines:
+  - The Snotting is not for you yet. Spend more. Restore more. Then we'll talk.
+  - Locked. I put the requirement on the button. In a large font. For you specifically.
+  - Still locked. Tapping harder is not a restoration strategy.
+  - That button has a number on it. The number is not your number yet.
+  - Denied. The good news is the requirement is written right there. The bad news
+    is you have to read it.
 --- !u!225 &1574612720
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -40805,7 +40811,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -46576,6 +46582,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9750ec883612964498d09376acd1c77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.RebirthManager
+  pointsSpentUnlockThreshold: 5658229
 --- !u!4 &1909517138
 Transform:
   m_ObjectHideFlags: 0
