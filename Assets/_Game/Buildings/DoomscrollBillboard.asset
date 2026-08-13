@@ -14,9 +14,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingId: doomscroll_billboard
   buildingName: Doomscroll Billboard
-  description: It scrolls the truth instead of the feed. The more it spreads, the madder the controllers get.
+  description: Forty feet of scroll above the intersection. Traffic stopped complaining about it around the time it stopped stopping.
   unlockCumulativeBrainPower: 2000
   costType: 1
   baseCost: 250
   costMultiplier: 1.14
   baseCashPerSecond: 5
+  evolutions:
+  - stageIndex: 1
+    displayName: 'The Billboard'
+    description: 'People stopped using the brand name for it. Just "the billboard," the way you''d say "the weather."'
+  - stageIndex: 2
+    displayName: 
+    description: 'Forty feet of scroll above the intersection. Twice this month it displayed something for ninety seconds that nobody upstairs approved, and both times the footage went missing.'
+  - stageIndex: 3
+    displayName: 'The Signal'
+    description: 'It runs approved content eleven hours a day and something else for the twelfth. The twelfth hour moves. Knowing which hour is a thing you have to be told.'
+  - stageIndex: 4
+    displayName: 
+    description: 'It stopped running approved content for the other eleven hours. There was no announcement. There was just a morning where the intersection looked up and the scroll said something true, and kept saying it.'
+  - stageIndex: 5
+    displayName: 
+    description: 'Forty feet of scroll above the intersection, showing arrival times and a weather warning. It said something true for so long that true stopped being the notable part.'

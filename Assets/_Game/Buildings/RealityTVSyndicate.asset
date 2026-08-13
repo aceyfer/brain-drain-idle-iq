@@ -13,11 +13,27 @@ MonoBehaviour:
   m_Name: RealityTVSyndicate
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingId: reality_tv_syndicate
-  buildingName: The Great Reversal
-  description: Every dollar the Illumisnotty ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction.
+  buildingName: Reality TV Syndicate
+  description: Nine cameras, one house, no exit. The winner is whoever the audience least wants to think about.
   unlockCumulativeBrainPower: 185000
   costType: 1
   baseCost: 90
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 320
   baseCashPerSecond: 40.0
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Nine cameras, one house, no exit. This season the audience voted to keep the quiet one, and nobody upstairs can explain why.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The quiet one is still in the house. Ratings are up. The producers have started editing against the vote and the vote keeps holding.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Two camera operators walked out mid-season and took the raw footage with them. What aired that week was assembled by someone else entirely.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The house is a broadcast position now. Nine cameras pointed outward, one signal, no exit, and the audience is the network.'
+  - stageIndex: 5
+    displayName: 'The Great Reversal'
+    description: 'Every dollar the Illumisnotty ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction.'

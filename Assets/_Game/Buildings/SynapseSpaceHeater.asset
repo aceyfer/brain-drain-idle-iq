@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 900
   costMultiplier: 1.12
   baseBrainPowerPerSecond: 12
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'An hour inside is a year of thinking. Most people use the year on nothing. A few come out with questions.'
+  - stageIndex: 2
+    displayName: 
+    description: 'A year of thinking per hour. The ones who come out with questions have started recognizing each other, which was not a feature anyone designed.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The ones who recognize each other have started using the hour deliberately — same problem, different heads, compared after. It is the fastest thinking anyone has done in two centuries.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The chambers run continuously now, in shifts, on problems assigned by someone. Strategy is a thing being done at speed.'
+  - stageIndex: 5
+    displayName: 
+    description: 'An hour inside is still a year of thinking. People come out and go do something with it, which was never the bottleneck anyone expected it to be.'

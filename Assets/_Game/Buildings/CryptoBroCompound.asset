@@ -22,3 +22,19 @@ MonoBehaviour:
   costMultiplier: 1.32
   baseBrainPowerPerSecond: 60
   baseCashPerSecond: 10.0
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'A walled compound of vape smoke and group chats screaming "WAGMI." Income still vanishes into rug pulls. Someone inside has started screenshotting the vanishings.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The screenshots got compiled. The compiler was removed from the group chat, which turned out to be the least effective thing anyone could have done with a compiled list.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Half the compound trades against the other half now, and one of those halves is not trading for itself. The wall is still up. It has stopped meaning what it meant.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The rug pulls run in one direction now, and the direction is out. Every violent spike lands somewhere upstairs did not authorize and cannot claw back.'
+  - stageIndex: 5
+    displayName: 'The Commons'
+    description: 'They took the wall down themselves. Nobody made them. Turns out "we''re all gonna make it" was a decent idea welded to a terrible plan.'

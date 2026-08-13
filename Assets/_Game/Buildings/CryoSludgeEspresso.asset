@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 5000
   costMultiplier: 1.13
   baseBrainPowerPerSecond: 45
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Three minutes of screaming cold, then hours of clarity. People have started noticing which hours they spend it on.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The clarity is the product. What people do with it has stopped being predictable, and a few tanks have quietly gone off the billing system.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Tanks off the billing system now outnumber the ones on it. Nobody has reported this, because the reporting was also off the system.'
+  - stageIndex: 4
+    displayName: 
+    description: 'Three minutes of screaming cold, then hours of clarity. It''s in every forward position now, because clarity turned out to be a supply issue like any other.'
+  - stageIndex: 5
+    displayName: 'The Plunge'
+    description: 'Still three minutes of screaming cold. The difference is the clarity on the other side is yours, and you''d have gotten there anyway.'

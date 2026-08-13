@@ -21,3 +21,19 @@ MonoBehaviour:
   baseCost: 30
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 5
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Four hours of vibes. In hour three, one of them asked a question the other two couldn''t answer, and the silence made the clip.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The unanswerable question got asked again, by someone else, on a different show. Neither host has mentioned the other.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Both hosts stopped broadcasting within a week of each other. The clips kept circulating, cut differently, by people who were not either host.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The clips became broadcasts. The broadcasts became a channel. The two hosts who stopped are credited on every one of them and neither has been seen.'
+  - stageIndex: 5
+    displayName: 'The Long Form'
+    description: 'Still four hours, still three of them in a garage. Now they read first, and when they don''t know, they say so out loud, and nobody clips it.'

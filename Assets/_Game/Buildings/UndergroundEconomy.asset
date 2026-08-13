@@ -14,10 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingId: underground_economy
   buildingName: Snott Market Exchange
-  description: The whole exchange got bought out centuries ago and never sold back. This is where the war to reclaim it trades.
+  description: Bought out centuries ago and never sold back. Everything still trades here. None of it belongs to anyone who trades it.
   unlockCumulativeBrainPower: 500
   costType: 0
   baseCost: 75
   costMultiplier: 1.38
   baseBrainPowerPerSecond: 0
   baseCashPerSecond: 5.0
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Bought out centuries ago and never sold back. Lately some trades don''t go through the books, and nobody upstairs has noticed the gap yet.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The unlogged trades have a rhythm now. Same hours, same corner, different faces on purpose.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The unlogged trades stopped being unlogged and started being logged somewhere else. Volume is now large enough that the gap upstairs is a number someone will eventually notice.'
+  - stageIndex: 4
+    displayName: 'The War Exchange'
+    description: 'The gap upstairs finally noticed is no longer a gap. This is where the war is funded, priced, and settled. Both sides trade here. Only one side knows that.'
+  - stageIndex: 5
+    displayName: 'The Exchange'
+    description: 'It trades ordinary things at honest prices between people who own what they sell. Two centuries of correction, and the ambition is now that nobody has any reason to look at it.'

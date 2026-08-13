@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 2500
   costMultiplier: 1.15
   baseBrainPowerPerSecond: 10
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Decalcify the gland they hoped you''d forget. The forgetting was the part that took effort on their end.'
+  - stageIndex: 2
+    displayName: 
+    description: 'Real IQ bump, mild forehead smoke. The forums discussing it moved somewhere without forums.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The place without forums has rules now. What you don''t write down, what you don''t ask, and what happens if you do.'
+  - stageIndex: 4
+    displayName: 'Clear Sight'
+    description: 'No implant, no chip, no forums, no rules about writing things down — because everyone who needed telling has been told. The gland they hoped you''d forget is now the least secret thing about you.'
+  - stageIndex: 5
+    displayName: 'Awake'
+    description: 'No implant, no chip, no gland to decalcify, because nobody spent a lifetime calcifying it. The children have never needed the word.'

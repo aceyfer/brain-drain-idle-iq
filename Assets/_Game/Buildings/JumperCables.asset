@@ -23,3 +23,19 @@ MonoBehaviour:
   costMultiplier: 1.12
   baseBrainPowerPerSecond: 0.5
   tapBrainPowerPerLevel: 0.02
+  evolutions:
+  - stageIndex: 1
+    displayName: 'Apex Greens'
+    description: 'The word "Brain" came off the label this year. No announcement. The formula didn''t change and neither did the price.'
+  - stageIndex: 2
+    displayName: 
+    description: 'Still pond-colored powder. But someone in the comments posted the actual ingredient list, and the comment stayed up for nine hours before it didn''t.'
+  - stageIndex: 3
+    displayName: 'Green Powder'
+    description: 'The branding came off entirely. It''s a sack with a weight written on it, distributed through channels that also move other things.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The sacks move under escort now. Nobody drinks it for the promise on the label, because there isn''t one. They drink it because the people carrying it need to keep going.'
+  - stageIndex: 5
+    displayName: 'Just Vegetables'
+    description: 'Grown in dirt, outside, by people who are not selling anything. Forty-seven ingredients turned out to be seven, and none of them had names worth trademarking.'

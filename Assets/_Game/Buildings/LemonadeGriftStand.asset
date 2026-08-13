@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 50
   costMultiplier: 1.12
   baseCashPerSecond: 1
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Registered as a nonprofit for the restoration of something vague. A small fraction of it has, accidentally, restored something.'
+  - stageIndex: 2
+    displayName: 'The Fund'
+    description: 'Still registered as a nonprofit for the restoration of something vague. The vagueness has become the point, and the paperwork is now deliberate.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The vagueness is load-bearing. It moves real money to real places and the audit trail dead-ends four times on purpose. Someone designed those dead ends.'
+  - stageIndex: 4
+    displayName: 'The Charity Front'
+    description: 'It stopped pretending to be vague. The nonprofit status is a weapon now, and upstairs is trying to revoke it through courts that the Fund''s own lawyers helped design.'
+  - stageIndex: 5
+    displayName: 'The Fund'
+    description: 'The nonprofit is a nonprofit. It restores things. The paperwork says exactly what it does and the audit trail goes exactly where it says. Boring is the achievement.'

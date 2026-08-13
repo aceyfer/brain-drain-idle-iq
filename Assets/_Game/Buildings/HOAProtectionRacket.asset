@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 1200
   costMultiplier: 1.16
   baseCashPerSecond: 20
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Dirty money in, clean water out. Someone has started keeping a second ledger. Badly, and in pencil.'
+  - stageIndex: 2
+    displayName: 'The Second Ledger'
+    description: 'The pencil ledger outgrew the pencil. It''s a real book now, kept somewhere else, and four people know where.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Four people knew where it was. One of them stopped showing up in March. The book moved that week and the other three didn''t discuss it.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The one who stopped showing up in March has a name that gets said out loud now, at the top of the book, on the first page.'
+  - stageIndex: 5
+    displayName: 'The Laundromat'
+    description: 'Clean money in, clean water out, and the book is public. It is the most boring document in the city, and the name on the first page is why anyone fought to make it that dull.'

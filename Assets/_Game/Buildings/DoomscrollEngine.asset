@@ -13,10 +13,26 @@ MonoBehaviour:
   m_Name: DoomscrollEngine
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingId: doomscroll_engine
-  buildingName: Loose Change Collective
-  description: Nobody misses what nobody notices. Multiply that by a hundred million wallets.
+  buildingName: Doomscroll Engine
+  description: Feeds the feed. It never runs out because it makes what it serves, and it serves what it makes.
   unlockCumulativeBrainPower: 150
   costType: 1
   baseCost: 4
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 0.3
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'It still never runs out. But the same six stories keep cycling, and a few people have started counting.'
+  - stageIndex: 2
+    displayName: 
+    description: 'Six stories on a loop. Somebody built a small tool that counts the repeats and posts the number. The tool keeps getting taken down and keeps coming back.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The counting tool has maintainers. Plural. They have never met and have agreed never to.'
+  - stageIndex: 4
+    displayName: 'Loose Change Collective'
+    description: 'The engine got taken. It still runs, still serves a hundred million wallets, and every fraction of every cent now routes somewhere upstairs cannot follow. Nobody misses what nobody notices.'
+  - stageIndex: 5
+    displayName: 
+    description: 'The fractions still route somewhere upstairs can''t follow. There is no upstairs. The routing kept running because the destination is a water system now.'

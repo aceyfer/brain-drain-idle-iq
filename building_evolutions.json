@@ -1,0 +1,245 @@
+{
+  "_readme": "Stage-based building evolution copy for Brain Drain: Idle IQ. stage0 is the BuildingData.buildingName / description baseline. evolutions[] entries map to WorldRestorationStage indices 1-5. displayName null = inherit the last non-empty name from an earlier stage. description null = same, independently. Where stage0.rollback is true, the asset's CURRENT buildingName/description must be REPLACED with the values here.",
+  "buildings": [
+    {
+      "buildingId": "doomscroll_engine",
+      "stage0": {
+        "rollback": true,
+        "displayName": "Doomscroll Engine",
+        "description": "Feeds the feed. It never runs out because it makes what it serves, and it serves what it makes."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "It still never runs out. But the same six stories keep cycling, and a few people have started counting." },
+        { "stageIndex": 2, "displayName": null, "description": "Six stories on a loop. Somebody built a small tool that counts the repeats and posts the number. The tool keeps getting taken down and keeps coming back." },
+        { "stageIndex": 3, "displayName": null, "description": "The counting tool has maintainers. Plural. They have never met and have agreed never to." },
+        { "stageIndex": 4, "displayName": "Loose Change Collective", "description": "The engine got taken. It still runs, still serves a hundred million wallets, and every fraction of every cent now routes somewhere upstairs cannot follow. Nobody misses what nobody notices." },
+        { "stageIndex": 5, "displayName": null, "description": "The fractions still route somewhere upstairs can't follow. There is no upstairs. The routing kept running because the destination is a water system now." }
+      ]
+    },
+    {
+      "buildingId": "jumper_cables",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Apex Brain Greens",
+        "description": "A scoop of pond-colored powder, 47 ingredients nobody regulated. Steady drip while it's in your system, and every tap hits harder on top. The whole feed swears by it."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": "Apex Greens", "description": "The word \"Brain\" came off the label this year. No announcement. The formula didn't change and neither did the price." },
+        { "stageIndex": 2, "displayName": null, "description": "Still pond-colored powder. But someone in the comments posted the actual ingredient list, and the comment stayed up for nine hours before it didn't." },
+        { "stageIndex": 3, "displayName": "Green Powder", "description": "The branding came off entirely. It's a sack with a weight written on it, distributed through channels that also move other things." },
+        { "stageIndex": 4, "displayName": null, "description": "The sacks move under escort now. Nobody drinks it for the promise on the label, because there isn't one. They drink it because the people carrying it need to keep going." },
+        { "stageIndex": 5, "displayName": "Just Vegetables", "description": "Grown in dirt, outside, by people who are not selling anything. Forty-seven ingredients turned out to be seven, and none of them had names worth trademarking." }
+      ]
+    },
+    {
+      "buildingId": "the_literal_library",
+      "stage0": {
+        "rollback": true,
+        "displayName": "The Literal Library",
+        "description": "The Illumisnotty burned most of these. Nobody filed a complaint, because nobody could name what was missing."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Someone has been copying pages by hand and leaving them places. The handwriting is bad and the spelling is worse. It's the first new text in a century." },
+        { "stageIndex": 2, "displayName": "The Reading Room", "description": "The back room meets after closing. No sign-up, no list, no names said out loud. Whoever brings a page reads it to whoever came." },
+        { "stageIndex": 3, "displayName": "The Archive", "description": "Indexed, duplicated, three locations. One is a decoy and the people staffing it don't know that." },
+        { "stageIndex": 4, "displayName": null, "description": "The decoy location was raided in the spring. Everyone inside it was real, and none of them knew anything, and that was the entire point. The other two locations did not pause." },
+        { "stageIndex": 5, "displayName": "The Library", "description": "Three locations became one, in daylight, with the doors open and a sign. It doesn't need the word \"literal\" anymore. Nobody's confused about what a library is." }
+      ]
+    },
+    {
+      "buildingId": "defrost_drip",
+      "stage0": {
+        "rollback": false,
+        "displayName": "StupAid H2O",
+        "description": "Everything your brain actually craves, in a bottle. Home-grown crops got banned so long ago even the elites forgot food was ever free."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": "StupAid", "description": "The H2O got dropped when someone pointed out the bottle didn't legally contain any. Sales were unaffected." },
+        { "stageIndex": 2, "displayName": null, "description": "Everything your brain craves, in a bottle. In three neighborhoods, people have started filling their own bottles from somewhere else and not saying where." },
+        { "stageIndex": 3, "displayName": null, "description": "The bottles get filled from somewhere else in eleven neighborhoods now. The somewhere else has a schedule, a route, and two people whose entire job is the route." },
+        { "stageIndex": 4, "displayName": null, "description": "The route has outgrown the word route. Water moves at scale, openly, under protection, and the bottling plants upstairs have started running below capacity for the first time in two hundred years." },
+        { "stageIndex": 5, "displayName": "The Reservoir", "description": "Free, from the ground, for everyone. The engineering was never the hard part. The hard part was two hundred years of being told it couldn't be done." }
+      ]
+    },
+    {
+      "buildingId": "podcaster_soundboard",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Podcaster Soundboard",
+        "description": "Three guys in a garage explain geopolitics for four hours using only vibes. Somehow, people are taking notes."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Four hours of vibes. In hour three, one of them asked a question the other two couldn't answer, and the silence made the clip." },
+        { "stageIndex": 2, "displayName": null, "description": "The unanswerable question got asked again, by someone else, on a different show. Neither host has mentioned the other." },
+        { "stageIndex": 3, "displayName": null, "description": "Both hosts stopped broadcasting within a week of each other. The clips kept circulating, cut differently, by people who were not either host." },
+        { "stageIndex": 4, "displayName": null, "description": "The clips became broadcasts. The broadcasts became a channel. The two hosts who stopped are credited on every one of them and neither has been seen." },
+        { "stageIndex": 5, "displayName": "The Long Form", "description": "Still four hours, still three of them in a garage. Now they read first, and when they don't know, they say so out loud, and nobody clips it." }
+      ]
+    },
+    {
+      "buildingId": "lemonade_grift_stand",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Charity Shell",
+        "description": "Registered as a nonprofit for the restoration of something vague. Which -- technically, eventually -- it is."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Registered as a nonprofit for the restoration of something vague. A small fraction of it has, accidentally, restored something." },
+        { "stageIndex": 2, "displayName": "The Fund", "description": "Still registered as a nonprofit for the restoration of something vague. The vagueness has become the point, and the paperwork is now deliberate." },
+        { "stageIndex": 3, "displayName": null, "description": "The vagueness is load-bearing. It moves real money to real places and the audit trail dead-ends four times on purpose. Someone designed those dead ends." },
+        { "stageIndex": 4, "displayName": "The Charity Front", "description": "It stopped pretending to be vague. The nonprofit status is a weapon now, and upstairs is trying to revoke it through courts that the Fund's own lawyers helped design." },
+        { "stageIndex": 5, "displayName": "The Fund", "description": "The nonprofit is a nonprofit. It restores things. The paperwork says exactly what it does and the audit trail goes exactly where it says. Boring is the achievement." }
+      ]
+    },
+    {
+      "buildingId": "crypto_bro_compound",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Crypto-Bro Compound",
+        "description": "A walled compound of vape smoke and group chats screaming \"WAGMI.\" Income spikes violently, then mysteriously vanishes into a rug pull."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "A walled compound of vape smoke and group chats screaming \"WAGMI.\" Income still vanishes into rug pulls. Someone inside has started screenshotting the vanishings." },
+        { "stageIndex": 2, "displayName": null, "description": "The screenshots got compiled. The compiler was removed from the group chat, which turned out to be the least effective thing anyone could have done with a compiled list." },
+        { "stageIndex": 3, "displayName": null, "description": "Half the compound trades against the other half now, and one of those halves is not trading for itself. The wall is still up. It has stopped meaning what it meant." },
+        { "stageIndex": 4, "displayName": null, "description": "The rug pulls run in one direction now, and the direction is out. Every violent spike lands somewhere upstairs did not authorize and cannot claw back." },
+        { "stageIndex": 5, "displayName": "The Commons", "description": "They took the wall down themselves. Nobody made them. Turns out \"we're all gonna make it\" was a decent idea welded to a terrible plan." }
+      ]
+    },
+    {
+      "buildingId": "underground_economy",
+      "stage0": {
+        "rollback": true,
+        "displayName": "Snott Market Exchange",
+        "description": "Bought out centuries ago and never sold back. Everything still trades here. None of it belongs to anyone who trades it."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Bought out centuries ago and never sold back. Lately some trades don't go through the books, and nobody upstairs has noticed the gap yet." },
+        { "stageIndex": 2, "displayName": null, "description": "The unlogged trades have a rhythm now. Same hours, same corner, different faces on purpose." },
+        { "stageIndex": 3, "displayName": null, "description": "The unlogged trades stopped being unlogged and started being logged somewhere else. Volume is now large enough that the gap upstairs is a number someone will eventually notice." },
+        { "stageIndex": 4, "displayName": "The War Exchange", "description": "The gap upstairs finally noticed is no longer a gap. This is where the war is funded, priced, and settled. Both sides trade here. Only one side knows that." },
+        { "stageIndex": 5, "displayName": "The Exchange", "description": "It trades ordinary things at honest prices between people who own what they sell. Two centuries of correction, and the ambition is now that nobody has any reason to look at it." }
+      ]
+    },
+    {
+      "buildingId": "reality_tv_syndicate",
+      "stage0": {
+        "rollback": true,
+        "displayName": "Reality TV Syndicate",
+        "description": "Nine cameras, one house, no exit. The winner is whoever the audience least wants to think about."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Nine cameras, one house, no exit. This season the audience voted to keep the quiet one, and nobody upstairs can explain why." },
+        { "stageIndex": 2, "displayName": null, "description": "The quiet one is still in the house. Ratings are up. The producers have started editing against the vote and the vote keeps holding." },
+        { "stageIndex": 3, "displayName": null, "description": "Two camera operators walked out mid-season and took the raw footage with them. What aired that week was assembled by someone else entirely." },
+        { "stageIndex": 4, "displayName": null, "description": "The house is a broadcast position now. Nine cameras pointed outward, one signal, no exit, and the audience is the network." },
+        { "stageIndex": 5, "displayName": "The Great Reversal", "description": "Every dollar the Illumisnotty ever took, routed backwards through their own pipes. They built the plumbing. They just never imagined the flow going this direction." }
+      ]
+    },
+    {
+      "buildingId": "cranial_microwave",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Tinfoil Headband",
+        "description": "Looks like sportswear. Lined with tinfoil that jams the signals trying to hack your third eye. Block the leeches and the bandwidth is yours again."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Sold as sportswear. Bought, increasingly, by people who are not exercising." },
+        { "stageIndex": 2, "displayName": null, "description": "Bought by people who are not exercising, from a shop that has stopped asking. The tinfoil is now sewn in properly instead of tucked." },
+        { "stageIndex": 3, "displayName": "Standard Issue", "description": "Not sportswear. Not improvised. Made properly, in quantity, by someone who does this now instead of something else." },
+        { "stageIndex": 4, "displayName": null, "description": "Made in quantity, worn openly, no longer explained. Wearing one used to mean you suspected something. Now it means you picked a side." },
+        { "stageIndex": 5, "displayName": "Bare Head", "description": "Nothing left to jam. You can walk around with an uncovered skull and the only thing trying to get in is weather. The last shipment was never distributed." }
+      ]
+    },
+    {
+      "buildingId": "doomscroll_billboard",
+      "stage0": {
+        "rollback": true,
+        "displayName": "Doomscroll Billboard",
+        "description": "Forty feet of scroll above the intersection. Traffic stopped complaining about it around the time it stopped stopping."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": "The Billboard", "description": "People stopped using the brand name for it. Just \"the billboard,\" the way you'd say \"the weather.\"" },
+        { "stageIndex": 2, "displayName": null, "description": "Forty feet of scroll above the intersection. Twice this month it displayed something for ninety seconds that nobody upstairs approved, and both times the footage went missing." },
+        { "stageIndex": 3, "displayName": "The Signal", "description": "It runs approved content eleven hours a day and something else for the twelfth. The twelfth hour moves. Knowing which hour is a thing you have to be told." },
+        { "stageIndex": 4, "displayName": null, "description": "It stopped running approved content for the other eleven hours. There was no announcement. There was just a morning where the intersection looked up and the scroll said something true, and kept saying it." },
+        { "stageIndex": 5, "displayName": null, "description": "Forty feet of scroll above the intersection, showing arrival times and a weather warning. It said something true for so long that true stopped being the notable part." }
+      ]
+    },
+    {
+      "buildingId": "synapse_space_heater",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Hyperbolic Brain Chamber",
+        "description": "An hour inside is a year of thinking outside. Your mind trains in dilated dream-time and comes back sharper — assuming it comes back."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "An hour inside is a year of thinking. Most people use the year on nothing. A few come out with questions." },
+        { "stageIndex": 2, "displayName": null, "description": "A year of thinking per hour. The ones who come out with questions have started recognizing each other, which was not a feature anyone designed." },
+        { "stageIndex": 3, "displayName": null, "description": "The ones who recognize each other have started using the hour deliberately — same problem, different heads, compared after. It is the fastest thinking anyone has done in two centuries." },
+        { "stageIndex": 4, "displayName": null, "description": "The chambers run continuously now, in shifts, on problems assigned by someone. Strategy is a thing being done at speed." },
+        { "stageIndex": 5, "displayName": null, "description": "An hour inside is still a year of thinking. People come out and go do something with it, which was never the bottleneck anyone expected it to be." }
+      ]
+    },
+    {
+      "buildingId": "hoa_protection_racket",
+      "stage0": {
+        "rollback": false,
+        "displayName": "The Laundromat",
+        "description": "Dirty money in, clean water out. Nobody upstairs has audited it because nobody upstairs can read the ledger."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Dirty money in, clean water out. Someone has started keeping a second ledger. Badly, and in pencil." },
+        { "stageIndex": 2, "displayName": "The Second Ledger", "description": "The pencil ledger outgrew the pencil. It's a real book now, kept somewhere else, and four people know where." },
+        { "stageIndex": 3, "displayName": null, "description": "Four people knew where it was. One of them stopped showing up in March. The book moved that week and the other three didn't discuss it." },
+        { "stageIndex": 4, "displayName": null, "description": "The one who stopped showing up in March has a name that gets said out loud now, at the top of the book, on the first page." },
+        { "stageIndex": 5, "displayName": "The Laundromat", "description": "Clean money in, clean water out, and the book is public. It is the most boring document in the city, and the name on the first page is why anyone fought to make it that dull." }
+      ]
+    },
+    {
+      "buildingId": "iq_overclock_chip",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Pineal Overclock",
+        "description": "Decalcify and overclock the third eye you were born with. No implant, no chip — just the gland they hoped you'd forget. Real IQ bump; mild forehead smoke is normal."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Decalcify the gland they hoped you'd forget. The forgetting was the part that took effort on their end." },
+        { "stageIndex": 2, "displayName": null, "description": "Real IQ bump, mild forehead smoke. The forums discussing it moved somewhere without forums." },
+        { "stageIndex": 3, "displayName": null, "description": "The place without forums has rules now. What you don't write down, what you don't ask, and what happens if you do." },
+        { "stageIndex": 4, "displayName": "Clear Sight", "description": "No implant, no chip, no forums, no rules about writing things down — because everyone who needed telling has been told. The gland they hoped you'd forget is now the least secret thing about you." },
+        { "stageIndex": 5, "displayName": "Awake", "description": "No implant, no chip, no gland to decalcify, because nobody spent a lifetime calcifying it. The children have never needed the word." }
+      ]
+    },
+    {
+      "buildingId": "cryo_sludge_espresso",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Cryo Plunge Tank",
+        "description": "Three minutes of screaming cold, then hours of clarity you didn't earn. The recovery-bros were right about exactly one thing."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "Three minutes of screaming cold, then hours of clarity. People have started noticing which hours they spend it on." },
+        { "stageIndex": 2, "displayName": null, "description": "The clarity is the product. What people do with it has stopped being predictable, and a few tanks have quietly gone off the billing system." },
+        { "stageIndex": 3, "displayName": null, "description": "Tanks off the billing system now outnumber the ones on it. Nobody has reported this, because the reporting was also off the system." },
+        { "stageIndex": 4, "displayName": null, "description": "Three minutes of screaming cold, then hours of clarity. It's in every forward position now, because clarity turned out to be a supply issue like any other." },
+        { "stageIndex": 5, "displayName": "The Plunge", "description": "Still three minutes of screaming cold. The difference is the clarity on the other side is yours, and you'd have gotten there anyway." }
+      ]
+    },
+    {
+      "buildingId": "brain_rot_think_tank",
+      "stage0": {
+        "rollback": false,
+        "displayName": "Brain-Rot Think Tank",
+        "description": "A glass tower of PhDs paid handsomely to explain why the dumbest possible idea is, actually, very smart. The think tank that ends all thinking."
+      },
+      "evolutions": [
+        { "stageIndex": 1, "displayName": null, "description": "A glass tower of PhDs paid handsomely to explain why the dumbest possible idea is, actually, very smart. One of them has stopped publishing." },
+        { "stageIndex": 2, "displayName": null, "description": "The one who stopped publishing has started reading. Nobody has noticed, because reading was never the measured output." },
+        { "stageIndex": 3, "displayName": null, "description": "Four of them are reading now. The tower still produces its papers on schedule and the papers have started containing things." },
+        { "stageIndex": 4, "displayName": null, "description": "The tower's output is being used against the tower. Every argument for the dumbest possible idea turns out to document exactly how the idea was installed." },
+        { "stageIndex": 5, "displayName": "The Think Tank", "description": "A glass tower of PhDs, paid handsomely, thinking. That's it. That's the whole operation. It took two centuries and the reconstruction of the world to make that sentence unremarkable." }
+      ]
+    }
+  ]
+}

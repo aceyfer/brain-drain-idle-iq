@@ -14,9 +14,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Core.BuildingData
   buildingId: the_literal_library
   buildingName: The Literal Library
-  description: The Illumisnotty burned most of these. You're rebuilding.
+  description: The Illumisnotty burned most of these. Nobody filed a complaint, because nobody could name what was missing.
   unlockCumulativeBrainPower: 0
   costType: 0
   baseCost: 15
   costMultiplier: 1.25
   baseBrainPowerPerSecond: 0.1
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Someone has been copying pages by hand and leaving them places. The handwriting is bad and the spelling is worse. It''s the first new text in a century.'
+  - stageIndex: 2
+    displayName: 'The Reading Room'
+    description: 'The back room meets after closing. No sign-up, no list, no names said out loud. Whoever brings a page reads it to whoever came.'
+  - stageIndex: 3
+    displayName: 'The Archive'
+    description: 'Indexed, duplicated, three locations. One is a decoy and the people staffing it don''t know that.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The decoy location was raided in the spring. Everyone inside it was real, and none of them knew anything, and that was the entire point. The other two locations did not pause.'
+  - stageIndex: 5
+    displayName: 'The Library'
+    description: 'Three locations became one, in daylight, with the doors open and a sign. It doesn''t need the word "literal" anymore. Nobody''s confused about what a library is.'

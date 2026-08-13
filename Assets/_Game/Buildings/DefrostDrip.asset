@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 25
   costMultiplier: 1.10
   baseBrainPowerPerSecond: 0.5
+  evolutions:
+  - stageIndex: 1
+    displayName: 'StupAid'
+    description: 'The H2O got dropped when someone pointed out the bottle didn''t legally contain any. Sales were unaffected.'
+  - stageIndex: 2
+    displayName: 
+    description: 'Everything your brain craves, in a bottle. In three neighborhoods, people have started filling their own bottles from somewhere else and not saying where.'
+  - stageIndex: 3
+    displayName: 
+    description: 'The bottles get filled from somewhere else in eleven neighborhoods now. The somewhere else has a schedule, a route, and two people whose entire job is the route.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The route has outgrown the word route. Water moves at scale, openly, under protection, and the bottling plants upstairs have started running below capacity for the first time in two hundred years.'
+  - stageIndex: 5
+    displayName: 'The Reservoir'
+    description: 'Free, from the ground, for everyone. The engineering was never the hard part. The hard part was two hundred years of being told it couldn''t be done.'

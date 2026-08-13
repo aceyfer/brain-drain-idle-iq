@@ -22,3 +22,19 @@ MonoBehaviour:
   costMultiplier: 1.21
   baseBrainPowerPerSecond: 4500
   baseCashPerSecond: 200.0
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'A glass tower of PhDs paid handsomely to explain why the dumbest possible idea is, actually, very smart. One of them has stopped publishing.'
+  - stageIndex: 2
+    displayName: 
+    description: 'The one who stopped publishing has started reading. Nobody has noticed, because reading was never the measured output.'
+  - stageIndex: 3
+    displayName: 
+    description: 'Four of them are reading now. The tower still produces its papers on schedule and the papers have started containing things.'
+  - stageIndex: 4
+    displayName: 
+    description: 'The tower''s output is being used against the tower. Every argument for the dumbest possible idea turns out to document exactly how the idea was installed.'
+  - stageIndex: 5
+    displayName: 'The Think Tank'
+    description: 'A glass tower of PhDs, paid handsomely, thinking. That''s it. That''s the whole operation. It took two centuries and the reconstruction of the world to make that sentence unremarkable.'

@@ -20,3 +20,19 @@ MonoBehaviour:
   baseCost: 150
   costMultiplier: 1.11
   baseBrainPowerPerSecond: 3
+  evolutions:
+  - stageIndex: 1
+    displayName: 
+    description: 'Sold as sportswear. Bought, increasingly, by people who are not exercising.'
+  - stageIndex: 2
+    displayName: 
+    description: 'Bought by people who are not exercising, from a shop that has stopped asking. The tinfoil is now sewn in properly instead of tucked.'
+  - stageIndex: 3
+    displayName: 'Standard Issue'
+    description: 'Not sportswear. Not improvised. Made properly, in quantity, by someone who does this now instead of something else.'
+  - stageIndex: 4
+    displayName: 
+    description: 'Made in quantity, worn openly, no longer explained. Wearing one used to mean you suspected something. Now it means you picked a side.'
+  - stageIndex: 5
+    displayName: 'Bare Head'
+    description: 'Nothing left to jam. You can walk around with an uncovered skull and the only thing trying to get in is weather. The last shipment was never distributed.'
