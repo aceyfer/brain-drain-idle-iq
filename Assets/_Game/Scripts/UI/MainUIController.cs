@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using BrainDrain.Core;
 using BrainDrain.Systems;
 
@@ -26,6 +27,7 @@ namespace BrainDrain.UI
         [SerializeField] private GameObject shopOverlayShade;
 
         private RebirthUIController cachedRebirthUI;
+        private CurrencyManager cachedCurrency;
 
         private void Awake()
         {
@@ -67,6 +69,19 @@ namespace BrainDrain.UI
             }
         }
 
+        private void Start()
+        {
+            cachedCurrency = CurrencyManager.Instance;
+            if (cachedCurrency != null)
+            {
+                cachedCurrency.OnBrainPowerChanged += HandleCurrencyChanged;
+                cachedCurrency.OnPointsChanged.RemoveListener(HandlePointsChangedUnity);
+                cachedCurrency.OnPointsChanged.AddListener(HandlePointsChangedUnity);
+            }
+
+            RefreshButtonFaces();
+        }
+
         private void OnDestroy()
         {
             if (shopButton != null) shopButton.onClick.RemoveListener(OnShopClicked);
@@ -85,6 +100,12 @@ namespace BrainDrain.UI
             if (shopUIController != null)
             {
                 shopUIController.ShopClosed -= HandleShopClosed;
+            }
+
+            if (cachedCurrency != null)
+            {
+                cachedCurrency.OnBrainPowerChanged -= HandleCurrencyChanged;
+                cachedCurrency.OnPointsChanged.RemoveListener(HandlePointsChangedUnity);
             }
         }
 
@@ -192,6 +213,49 @@ namespace BrainDrain.UI
             if (shopOverlayShade != null)
             {
                 shopOverlayShade.SetActive(visible);
+            }
+        }
+
+        private void HandleCurrencyChanged(double _) => RefreshButtonFaces();
+        private void HandlePointsChangedUnity(double _) => RefreshButtonFaces();
+
+        /// <summary>
+        /// Live preview text on CONVERT/RESTORE. CONVERT previews the BP-&gt;$ yield at the same
+        /// 1,000 BP = $1 rate ConvertUIController uses. RESTORE shows the Points balance it's about
+        /// to spend in full, since OnRestoreClicked still spends CurrentPoints wholesale rather than
+        /// a fixed per-tap price -- surfacing the live number is the safe fix; changing that to an
+        /// actual fixed price is a separate design decision.
+        /// </summary>
+        private void RefreshButtonFaces()
+        {
+            if (cachedCurrency == null)
+            {
+                cachedCurrency = CurrencyManager.Instance;
+                if (cachedCurrency == null)
+                {
+                    return;
+                }
+            }
+
+            if (convertButton != null)
+            {
+                var text = convertButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (text != null)
+                {
+                    double previewCash = cachedCurrency.BrainPower / 1000d;
+                    text.text = $"CONVERT\n+${NumberFormatter.Format(previewCash)}";
+                }
+            }
+
+            if (restoreButton != null)
+            {
+                var text = restoreButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (text != null)
+                {
+                    double points = cachedCurrency.CurrentPoints;
+                    text.text = $"RESTORE\n-{NumberFormatter.Format(points)} PTS";
+                }
+                restoreButton.interactable = cachedCurrency.CurrentPoints > 0d;
             }
         }
     }
