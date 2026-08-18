@@ -68,13 +68,8 @@ namespace BrainDrain.EditorTools
         // group plus this row's own vertical padding.
         private const float InteractiveRowHeight = ShopConvertHeight + (RowPaddingVertical * 2f);
 
-        // xp_bar_frame.png's real imported pixel size (2,14,1667,727 per its .meta sprite rect).
-        // Used to size RestorationBarTrack itself to the vessel's true aspect instead of stretching
-        // it full-width -- see BuildVessel.
-        private const float VesselNativeAspect = 1667f / 727f;
-
         [MenuItem("Tools/Eighth Kind/Fix Restoration Bar Wiring")]
-        private static void Run()
+        public static void Run()
         {
             if (EditorToolGuard.BlockedByPlayMode("RestorationBarWireFix.Run")) return;
 
@@ -143,8 +138,8 @@ namespace BrainDrain.EditorTools
             // (read from its current anchors, not duplicated) is preserved, only its position moves.
             ApplyEconomyBarAnchors(economyBar, VesselRowHeight + InteractiveRowHeight);
 
-            BuildVessel(vesselRow, out Image fillImage, out Image plungerImage);
-            BuildLabel(interactiveRow);
+            BuildVessel(vesselRow, out Image fillImage, out Image glowImage, out Image plungerImage);
+            BuildLabel(interactiveRow, vesselRow);
 
             if (pointsTextTf.parent != interactiveRow) pointsTextTf.SetParent(interactiveRow, false);
             StylePointsTextForRow(pointsTextTf);
@@ -168,6 +163,7 @@ namespace BrainDrain.EditorTools
 
             SerializedObject so = new SerializedObject(hud);
             so.FindProperty("restorationFillImage").objectReferenceValue = fillImage;
+            so.FindProperty("restorationGlowImage").objectReferenceValue = glowImage;
             so.FindProperty("restorationPlungerImage").objectReferenceValue = plungerImage;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(hud);
@@ -264,11 +260,18 @@ namespace BrainDrain.EditorTools
             EditorUtility.SetDirty(hlg);
         }
 
-        private static void BuildLabel(Transform interactiveRow)
+        private static void BuildLabel(Transform interactiveRow, Transform vesselRow)
         {
             TextMeshProUGUI referenceFont = FindReferenceFont();
 
-            Transform labelTf = interactiveRow.Find("RestorationLabel");
+            // RestorationLabel now lives on the vessel row (overlaid on the bar), not the button
+            // row -- check there first and reuse it in place. Fall back to interactiveRow for scenes
+            // that haven't been migrated yet; only create fresh (in interactiveRow) if neither has one.
+            Transform labelTf = vesselRow.Find("RestorationLabel");
+            if (labelTf == null)
+            {
+                labelTf = interactiveRow.Find("RestorationLabel");
+            }
             if (labelTf == null)
             {
                 var labelGo = new GameObject("RestorationLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
@@ -438,7 +441,7 @@ namespace BrainDrain.EditorTools
         /// fills the row's entire rect), then Fill/Plunger/Frame inside it as before. Forces sibling
         /// order Fill(0)/Plunger(1)/Frame(2) every run.
         /// </summary>
-        private static void BuildVessel(Transform vesselRow, out Image fillImage, out Image plungerImage)
+        private static void BuildVessel(Transform vesselRow, out Image fillImage, out Image glowImage, out Image plungerImage)
         {
             Transform trackTf = vesselRow.Find("RestorationBarTrack");
             if (trackTf == null)
@@ -463,29 +466,49 @@ namespace BrainDrain.EditorTools
                 trackTf.SetParent(vesselRow, false);
             }
 
-            // Was a full (0,0)-(1,1) stretch across vesselRow -- at a ~1080px-wide row and 90px tall,
-            // that read as a pale full-width horizontal band with no vessel silhouette at all: Fill/
-            // Plunger/Frame all stretch-fill Track, so a full-bleed Track meant a full-bleed
-            // everything. Track is now sized to the vessel art's true aspect (1667:727) at
-            // VesselRowHeight, centered horizontally in the row -- Fill/Plunger/Frame automatically
-            // inherit these correct, tube-shaped bounds since they still stretch-fill Track itself.
             var trackRt = trackTf.GetComponent<RectTransform>();
-            trackRt.anchorMin = new Vector2(0.5f, 0f);
-            trackRt.anchorMax = new Vector2(0.5f, 1f);
+            trackRt.anchorMin = Vector2.zero;
+            trackRt.anchorMax = Vector2.one;
             trackRt.pivot = new Vector2(0.5f, 0.5f);
             trackRt.anchoredPosition = Vector2.zero;
-            trackRt.sizeDelta = new Vector2(VesselRowHeight * VesselNativeAspect, 0f);
+            trackRt.sizeDelta = Vector2.zero;
+            trackRt.offsetMin = Vector2.zero;
+            trackRt.offsetMax = Vector2.zero;
 
-            // The vessel (frame + plunger + retinted fill, below) replaces the flat bar look this
-            // Image used to provide -- disabled, not removed. No LayoutElement needed any more
-            // (Track isn't inside a LayoutGroup here); a leftover one from an earlier version is left
-            // in place, inert, rather than destroyed.
             var track = trackTf.GetComponent<Image>();
             Undo.RecordObject(track, "Restoration Bar Track");
             track.color = TrackColor;
             track.raycastTarget = false;
             track.enabled = false;
             EditorUtility.SetDirty(track);
+
+            Vector2 fillOffsetMin = new Vector2(59.4f, 18.0f);
+            Vector2 fillOffsetMax = new Vector2(-59.4f, -18.0f);
+
+            Transform glowTf = trackTf.Find("RestorationBarGlow");
+            if (glowTf == null)
+            {
+                var glowGo = new GameObject("RestorationBarGlow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                Undo.RegisterCreatedObjectUndo(glowGo, "Create RestorationBarGlow");
+                glowGo.transform.SetParent(trackTf, false);
+                glowTf = glowGo.transform;
+            }
+
+            var glowRt = glowTf.GetComponent<RectTransform>();
+            glowRt.anchorMin = Vector2.zero;
+            glowRt.anchorMax = Vector2.one;
+            glowRt.offsetMin = fillOffsetMin;
+            glowRt.offsetMax = fillOffsetMax;
+
+            var glow = glowTf.GetComponent<Image>();
+            Undo.RecordObject(glow, "Restoration Bar Glow");
+            glow.color = new Color(FillColor.r, FillColor.g, FillColor.b, 0.4f);
+            glow.type = Image.Type.Filled;
+            glow.fillMethod = Image.FillMethod.Horizontal;
+            glow.fillOrigin = (int)Image.OriginHorizontal.Left;
+            glow.fillAmount = 0f;
+            glow.raycastTarget = false;
+            EditorUtility.SetDirty(glow);
 
             Transform fillTf = trackTf.Find("RestorationBarFill");
             if (fillTf == null)
@@ -499,8 +522,8 @@ namespace BrainDrain.EditorTools
             var fillRt = fillTf.GetComponent<RectTransform>();
             fillRt.anchorMin = Vector2.zero;
             fillRt.anchorMax = Vector2.one;
-            fillRt.offsetMin = Vector2.zero;
-            fillRt.offsetMax = Vector2.zero;
+            fillRt.offsetMin = fillOffsetMin;
+            fillRt.offsetMax = fillOffsetMax;
 
             var fill = fillTf.GetComponent<Image>();
             Undo.RecordObject(fill, "Restoration Bar Fill");
@@ -511,6 +534,11 @@ namespace BrainDrain.EditorTools
             fill.fillAmount = 0f;
             fill.raycastTarget = false;
             EditorUtility.SetDirty(fill);
+
+            if (fill.sprite != null && glow.sprite == null)
+            {
+                glow.sprite = fill.sprite;
+            }
 
             Sprite plungerSprite = LoadSpriteRobust(PlungerSpritePath);
             Sprite frameSprite = LoadSpriteRobust(FrameSpritePath);
@@ -527,19 +555,12 @@ namespace BrainDrain.EditorTools
             var plungerRt = plungerTf.GetComponent<RectTransform>();
             plungerRt.anchorMin = new Vector2(0f, 0.5f);
             plungerRt.anchorMax = new Vector2(0f, 0.5f);
-            // Pivot on the LEFT edge (0, 0.5), not center -- with anchoredPosition.x = 0 this puts
-            // the plunger's own left edge flush against Track's left edge, disk extending rightward.
-            // A center pivot here was a bug in an earlier version: half the disk hung off Track's
-            // left edge at fillAmount 0, reading as "sitting mid-track" instead of flush left.
             plungerRt.pivot = new Vector2(0f, 0.5f);
-            // Native plunger art is 1097x1724 (tall, narrow) -- size to Track's full height (Track
-            // equals VesselRowHeight exactly, no row padding to subtract). Preserves its own aspect
-            // (unlike the frame below) since it's a small foreground disk whose roundness matters;
-            // plungerEllipseScaleX (applied by HUDController, default 0.35) squashes it to match the
-            // tube's ellipse on top of this.
+            
+            const float cavityHeight = 95f;
             const float plungerNativeAspect = 1097f / 1724f;
-            plungerRt.sizeDelta = new Vector2(VesselRowHeight * plungerNativeAspect, VesselRowHeight);
-            plungerRt.anchoredPosition = Vector2.zero; // left edge, matching fillAmount == 0's starting position
+            plungerRt.sizeDelta = new Vector2(cavityHeight * plungerNativeAspect, cavityHeight);
+            plungerRt.anchoredPosition = new Vector2(fillOffsetMin.x, 0f);
 
             var plungerImg = plungerTf.GetComponent<Image>();
             Undo.RecordObject(plungerImg, "Restoration Bar Plunger");
@@ -572,23 +593,19 @@ namespace BrainDrain.EditorTools
             {
                 frameImg.sprite = frameSprite;
             }
-            // Was false ("full-width, cropped/fitted") -- reversed. Track is now itself sized to
-            // the vessel's true aspect (see BuildVessel's trackRt block above), so stretching Frame
-            // to fill Track 1:1 is already undistorted; preserveAspect=true here is just a defensive
-            // no-op against any rounding mismatch between VesselNativeAspect and the sprite's actual
-            // imported rect, matching the plunger's own approach above.
             frameImg.preserveAspect = true;
             frameImg.raycastTarget = false;
             frameImg.color = Color.white;
             EditorUtility.SetDirty(frameImg);
 
-            // Back to front: Fill (0), Plunger (1), Frame (2) -- forced every run so re-runs can't
-            // leave stale sibling order if these were ever created out of sequence.
-            fillTf.SetSiblingIndex(0);
-            plungerTf.SetSiblingIndex(1);
-            frameTf.SetSiblingIndex(2);
+            // Sibling order: Glow (0), Fill (1), Plunger (2), Frame (3)
+            glowTf.SetSiblingIndex(0);
+            fillTf.SetSiblingIndex(1);
+            plungerTf.SetSiblingIndex(2);
+            frameTf.SetSiblingIndex(3);
 
             fillImage = fill;
+            glowImage = glow;
             plungerImage = plungerImg;
         }
 

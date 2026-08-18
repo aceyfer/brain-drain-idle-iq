@@ -40,6 +40,8 @@ namespace BrainDrain.UI
         [SerializeField] private Button restoreButton;
         [Tooltip("Fill-type Image showing progress toward the next World Restoration stage threshold. Optional -- no effect if unassigned.")]
         [SerializeField] private Image restorationFillImage;
+        [Tooltip("Soft glow Image placed behind fill. Optional -- no effect if unassigned.")]
+        [SerializeField] private Image restorationGlowImage;
         [Tooltip("Plunger disk Image inside the vessel; its anchoredPosition.x is lerped across the track width by the same fraction that drives restorationFillImage. Optional -- no effect if unassigned.")]
         [SerializeField] private Image restorationPlungerImage;
         [Tooltip("Non-uniform X scale applied to the plunger so its ellipse matches the 3/4-angle vessel's tube-opening ellipse. Tune live in the Inspector; reapplied on every InitializeHUD.")]
@@ -144,6 +146,12 @@ namespace BrainDrain.UI
         {
             get => restorationFillImage;
             set => restorationFillImage = value;
+        }
+
+        public Image RestorationGlowImage
+        {
+            get => restorationGlowImage;
+            set => restorationGlowImage = value;
         }
 
         public void ForceUpdatePointsLockState(int rebirthCount)
@@ -469,10 +477,11 @@ namespace BrainDrain.UI
                 return 0f;
             }
 
-            float trackWidth = restorationFillImage.rectTransform.rect.width;
+            float startX = restorationFillImage.rectTransform.offsetMin.x;
+            float cavityWidth = restorationFillImage.rectTransform.rect.width;
             float plungerVisualWidth = restorationPlungerImage.rectTransform.rect.width * restorationPlungerImage.rectTransform.localScale.x;
-            float travelRange = Mathf.Max(0f, trackWidth - plungerVisualWidth);
-            return Mathf.Lerp(0f, travelRange, fraction);
+            float travelRange = Mathf.Max(0f, cavityWidth - plungerVisualWidth);
+            return startX + Mathf.Lerp(0f, travelRange, fraction);
         }
 
         private void MarkRankDirty()
@@ -578,17 +587,31 @@ namespace BrainDrain.UI
             if (restorationFillImage != null)
             {
                 float fraction = worldRestoration != null ? worldRestoration.StageProgressFraction : 0f;
+                float previousFraction = restorationFillImage.fillAmount;
                 restorationFillImage.fillAmount = fraction;
+
+                if (restorationGlowImage != null)
+                {
+                    restorationGlowImage.fillAmount = fraction;
+                    Color glowColor = restorationFillImage.color;
+                    glowColor.a = Mathf.Lerp(0.35f, 0.85f, fraction);
+                    restorationGlowImage.color = glowColor;
+                }
 
                 // Glow scales with fill level -- plain alpha lerp, same technique as
                 // AnimationController.AffordablePulseRoutine's color.a = Mathf.Lerp(...). No shader.
                 Color fillColor = restorationFillImage.color;
-                fillColor.a = Mathf.Lerp(0.55f, 1f, fraction);
+                fillColor.a = Mathf.Lerp(0.75f, 1f, fraction);
                 restorationFillImage.color = fillColor;
 
                 if (restorationPlungerImage != null)
                 {
                     AnimationController.PlayPlungerMove(restorationPlungerImage.rectTransform, ComputePlungerTargetX(fraction));
+                }
+
+                if (fraction > previousFraction && previousFraction > 0f)
+                {
+                    AnimationController.PlayRestorationGainPulse(restorationFillImage, restorationGlowImage, restorationPlungerImage != null ? restorationPlungerImage.rectTransform : null);
                 }
             }
 

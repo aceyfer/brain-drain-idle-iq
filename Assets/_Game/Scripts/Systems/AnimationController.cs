@@ -480,6 +480,7 @@ namespace BrainDrain.Systems
 
         private readonly Dictionary<RectTransform, Tween> plungerMoveTweens = new();
         private readonly Dictionary<Image, Sequence> restorationSurgeSequences = new();
+        private readonly Dictionary<Image, Sequence> restorationPulseSequences = new();
 
         private static readonly Color RestorationSurgeFlashColor = new Color(0.85f, 0.98f, 1f, 1f);
 
@@ -499,6 +500,56 @@ namespace BrainDrain.Systems
 
             KillExisting(controller.plungerMoveTweens, plunger);
             controller.plungerMoveTweens[plunger] = plunger.DOAnchorPosX(targetX, duration).SetEase(Ease.OutQuad);
+        }
+
+        /// <summary>
+        /// Brief brightness pulse on the fill liquid + subtle plunger scale reaction when fill advances.
+        /// Duration 0.3s matching PlayPlungerMove.
+        /// </summary>
+        public static void PlayRestorationGainPulse(Image fillImage, Image glowImage, RectTransform plunger)
+        {
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            EnsureInstance()?.DoRestorationGainPulse(fillImage, glowImage, plunger);
+        }
+
+        private void DoRestorationGainPulse(Image fillImage, Image glowImage, RectTransform plunger)
+        {
+            if (restorationPulseSequences.TryGetValue(fillImage, out Sequence existingSeq) && existingSeq != null && existingSeq.IsActive())
+            {
+                existingSeq.Kill();
+            }
+
+            Color baseColor = fillImage.color;
+            Color brightColor = new Color(
+                Mathf.Min(1f, baseColor.r * 1.35f + 0.15f),
+                Mathf.Min(1f, baseColor.g * 1.35f + 0.15f),
+                Mathf.Min(1f, baseColor.b * 1.35f + 0.15f),
+                baseColor.a
+            );
+
+            Sequence seq = DOTween.Sequence();
+            seq.Append(fillImage.DOColor(brightColor, 0.12f).SetEase(Ease.OutQuad));
+            if (glowImage != null)
+            {
+                Color glowBase = glowImage.color;
+                Color glowBright = new Color(brightColor.r, brightColor.g, brightColor.b, Mathf.Min(1f, glowBase.a * 1.4f));
+                seq.Join(glowImage.DOColor(glowBright, 0.12f).SetEase(Ease.OutQuad));
+                seq.Append(glowImage.DOColor(glowBase, 0.18f).SetEase(Ease.InQuad));
+            }
+            seq.Append(fillImage.DOColor(baseColor, 0.18f).SetEase(Ease.InQuad));
+
+            if (plunger != null)
+            {
+                plunger.DOKill();
+                plunger.DOPunchScale(new Vector3(0.15f, 0.1f, 0f), 0.3f, 2, 0.5f);
+            }
+
+            seq.SetTarget(fillImage);
+            restorationPulseSequences[fillImage] = seq;
         }
 
         /// <summary>
