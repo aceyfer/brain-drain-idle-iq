@@ -27,6 +27,18 @@ namespace BrainDrain.UI
             anchorMax.x /= Screen.width;
             anchorMax.y /= Screen.height;
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // Screen.safeArea does not reliably exclude the Android navigation/gesture bar -- on many
+            // devices (especially gesture nav / edge-to-edge) it reports the full screen as safe even
+            // though the bottom N px are covered by the system bar. Query the real inset natively and
+            // take the larger of the two so we never under-inset.
+            float navBarFraction = GetAndroidBottomInsetFraction();
+            if (navBarFraction > anchorMin.y)
+            {
+                anchorMin.y = navBarFraction;
+            }
+#endif
+
             // Top/bottom only -- force full width regardless of what the safe area says.
             anchorMin.x = 0f;
             anchorMax.x = 1f;
@@ -36,5 +48,33 @@ namespace BrainDrain.UI
             safeAreaRect.offsetMin = Vector2.zero;
             safeAreaRect.offsetMax = Vector2.zero;
         }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private static float GetAndroidBottomInsetFraction()
+        {
+            try
+            {
+                using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (AndroidJavaObject window = activity.Call<AndroidJavaObject>("getWindow"))
+                using (AndroidJavaObject decorView = window.Call<AndroidJavaObject>("getDecorView"))
+                using (AndroidJavaObject insets = decorView.Call<AndroidJavaObject>("getRootWindowInsets"))
+                {
+                    if (insets == null)
+                    {
+                        return 0f;
+                    }
+
+                    int bottomPx = insets.Call<int>("getSystemWindowInsetBottom");
+                    return Screen.height > 0 ? bottomPx / (float)Screen.height : 0f;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"SafeAreaManager: failed to query Android nav bar inset, falling back to Screen.safeArea only. {e.Message}");
+                return 0f;
+            }
+        }
+#endif
     }
 }
