@@ -371,11 +371,11 @@ Read-only audit of all 16 building `.asset` files against their `description` te
 
 **Status:** CLOSED. All findings resolved — 3 code/asset fixes (`f0ba24d`), 2 doc-syncs (`CLAUDE.md`/`PROJECT_BIBLE.md` §6), 3 confirmed-intentional/no-action.
 
-## §27 CashConverted_VeryResponsible narrator line describes the wrong conversion — LOGGED 2026-08-08, NOT FIXED
+## §27 CashConverted_VeryResponsible narrator line describes the wrong conversion — FIXED 2026-08-19
 **File:** `Assets/_Game/Dialogue/CashConverted_VeryResponsible.asset:19`
-**Text:** `dialogueLine: Converting brain power to cash. Very responsible. Very sad.`
+**Text (as it was):** `dialogueLine: Converting brain power to cash. Very responsible. Very sad.`
 **Trigger:** gated on `triggerType: 6` (`CashConverted`, cross-referenced against `NarratorTriggerType` in `NarratorLine.cs:14`). `CurrencyManager.OnCashConverted` is invoked exactly once in the codebase, inside `ConvertCashToPoints` (`CurrencyManager.cs:368-383`, invocation at line 381) — i.e. it fires only on Cash→RP conversion. `ConvertHalfBP`/`ConvertAllBP` (`ConvertUIController.cs:207-240`, the actual BP→Cash actions) call `SpendBrainPower`/`AddCash` directly and never touch `OnCashConverted`.
-**Status:** the line's copy ("brain power to cash") describes a conversion its own trigger can never fire on — the trigger wiring itself is correct, only this one line's text is wrong. Pre-existing, surfaced by the 2026-08-07/08 CLAUDE.md audit (`CLAUDE_MD_FINDINGS.md`), unrelated to the RP bar / Convert-panel split design work. **Not fixed this pass — documentation only**, per explicit instruction. Fix is a one-line copy edit whenever this is scoped.
+**Status:** the line's copy ("brain power to cash") described a conversion its own trigger can never fire on — the trigger wiring itself was already correct, only this one line's text was wrong. Pre-existing, surfaced by the 2026-08-07/08 CLAUDE.md audit (`CLAUDE_MD_FINDINGS.md`), unrelated to the RP bar / Convert-panel split design work. **Fixed 2026-08-19** — `dialogueLine` now reads `Converting cash to Restoration Points. Very responsible. Very sad.`, matching what the trigger can actually fire on. One-line copy edit, no wiring change.
 
 ## §28 Duplicate convert wiring: HUDController vs MainUIController — CLOSED 2026-08-08
 **Fields (as they were):** `HUDController.cs:36-37` declared its own private `Button convertButton` and `ConvertUIController convertUIController`, plus a public `ConfigureConvertPanel(ConvertUIController controller, Button pointsButton)` (`HUDController.cs:148-152`). `MainUIController.cs:17,22` independently declares the same two field types.
@@ -399,18 +399,18 @@ Supersedes/refines the plain "session-only dialogue log" idea originally capture
 
 **Status:** concept only. No acceptance criteria, no system design, no code. Not scoped until both open questions above are answered by Aceyfer.
 
-## §30 TMP fallback missing U+2794 (right-arrow glyph), substitutes a box — LOGGED 2026-08-08, NOT FIXED
+## §30 TMP fallback missing U+2794 (right-arrow glyph), substitutes a box — FIXED 2026-08-19
 This exact character already caused this exact problem once: `de5d4c0` (§16 Phase B4) replaced `➔` with `->` in `ConvertUIController`'s dynamically-built status text after it was found not to be in `LiberationSans SDF`'s character set, spamming TMP fallback-font console warnings. That fix targeted the C# string construction, not these locations.
 
-**Current occurrences, all in `Assets/Scenes/SampleScene.unity`, all pre-authored `m_text` defaults (not the runtime-generated string `de5d4c0` fixed):**
-- Line 20482 — `TextMeshProUGUI` on GameObject **`Heading`** (fileID `810139047`, component `810139049`): `"BRAIN POWER ➔ $ EXCHANGE"`
-- Line 42240 — `TextMeshProUGUI` on GameObject **`StatusText`** (fileID `1718507983`, component `1718507985`): `"Current BP: 0\nRate: 1,000 BP ➔ $1\nYields: $0"`
-- Line 42873 — `TextMeshProUGUI` on GameObject **`Heading`** (fileID `1745705617`, component `1745705619`): `"$ ➔ GOD-TIER POINTS EXCHANGE"`
-- Line 44823 — `TextMeshProUGUI` on GameObject **`StatusText`** (fileID `1821686306`, component `1821686308`): `"Current $: $0\nRate: $1 ➔ 0.10 Points\nYields: 0 Points"`
+**Occurrences fixed, all in `Assets/Scenes/SampleScene.unity`, all pre-authored `m_text` defaults (not the runtime-generated string `de5d4c0` fixed):**
+- `TextMeshProUGUI` on GameObject **`Heading`** (fileID `810139047`, component `810139049`): `"BRAIN POWER ➔ $ EXCHANGE"` → `"BRAIN POWER -> $ EXCHANGE"`
+- `TextMeshProUGUI` on GameObject **`StatusText`** (fileID `1718507983`, component `1718507985`): `"Current BP: 0\nRate: 1,000 BP ➔ $1\nYields: $0"` → `"Current BP: 0\nRate: 1,000 BP -> $1\nYields: $0"`
+- `TextMeshProUGUI` on GameObject **`Heading`** (fileID `1745705617`, component `1745705619`): `"$ ➔ GOD-TIER POINTS EXCHANGE"` → `"$ -> GOD-TIER POINTS EXCHANGE"`
+- `TextMeshProUGUI` on GameObject **`StatusText`** (fileID `1821686306`, component `1821686308`): `"Current $: $0\nRate: $1 ➔ 0.10 Points\nYields: 0 Points"` → `"Current $: $0\nRate: $1 -> 0.10 Points\nYields: 0 Points"`
 
-All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash→RP) — headings and status-readout labels. Repo-wide search confirms the literal glyph (not the `➔` escape) exists nowhere else live: only in two non-rendered docs (`TASKLIST_DETAILS.md`'s own §16 history above, and `Assets/Plans/shops_rework_plan.md:64`). Whether the two `StatusText` occurrences are visibly broken (permanently) or only flash the fallback box for one frame before `ConvertUIController` overwrites them at runtime with fresh (already-`->`-safe) text is not determined here — not verified live, and not needed to log the finding.
+All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash→RP) — headings and status-readout labels. Repo-wide search confirmed the literal glyph existed nowhere else live: only in two non-rendered docs (`TASKLIST_DETAILS.md`'s own §16 history above, and `Assets/Plans/shops_rework_plan.md:64`, both left untouched as historical record).
 
-**Status:** not fixed, documentation only. Fix (whenever scoped) is the same pattern as `de5d4c0`: swap `➔` for `->` (or a font that actually covers the glyph) in these four `m_text` values — a scene edit, not a code change, unlike the original fix.
+**Status:** fixed 2026-08-19, same pattern as `de5d4c0` — swapped `➔` (serialized as `➔`) for `->` in these four `m_text` values. Verified via header-multiset diff against HEAD: only these four lines changed, no objects or components added/removed/reparented.
 
 ---
 

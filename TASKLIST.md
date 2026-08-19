@@ -22,9 +22,9 @@
 - [x] 20b. Dialogue log panel + button (GTA-style narrator-line history; also enables anti-repeat) — CLOSED, remaining play-checks moved to §11 (details §20)
 - [x] 20c. Chatter bubble fade curve + readability + pedestrian duplicate-NPC fix — CLOSED (details §20)
 - [x] 21. World portrait overlap check — CLOSED, verified clear by Aceyfer in Play mode 2026-07-15 (moot anyway: world portrait retired §17/§18); SNOTTING badge sits alone top-right (details §21)
-- [ ] 27. Pre-existing bug — `CashConverted_VeryResponsible` narrator line describes BP→Cash but its trigger only fires on Cash→RP; logged, not fixed (details §27)
+- [x] 27. Pre-existing bug — `CashConverted_VeryResponsible` narrator line described BP→Cash but its trigger only fires on Cash→RP; fixed 2026-08-19 (details §27)
 - [x] 28. Pre-existing bug — duplicate convert wiring: `HUDController`'s `convertButton`/`convertUIController` fields confirmed dead via live Play Mode check 2026-08-08, removed (details §28)
-- [ ] 30. Pre-existing bug — TMP fallback missing U+2794 (right-arrow glyph), substitutes a box; 4 occurrences in the Convert panel's scene-authored text, logged, not fixed (details §30)
+- [x] 30. Pre-existing bug — TMP fallback missing U+2794 (right-arrow glyph), substituted a box; 4 occurrences in the Convert panel's scene-authored text, fixed 2026-08-19 (details §30)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $3.99 (details §10)
