@@ -27,15 +27,17 @@ namespace BrainDrain.EditorTools
     /// </summary>
     public static class RestorationBarWireFix
     {
-        private static readonly Color TrackColor = new Color(0.12f, 0.12f, 0.12f, 0.85f);
+        private static readonly Color TrackColor = new Color(0.06f, 0.04f, 0.11f, 1f);
 
-        // Matches AnimationController.ExtractionBlueColor exactly (duplicated, not referenced --
-        // this is static scene-authoring data, same as TrackColor/label color already were) so the
-        // vessel liquid and the tap-extraction particles read as the same substance.
-        private static readonly Color FillColor = new Color(0.25f, 0.75f, 1f, 1f);
+        // Neon pill system (2026-08-19) -- was tuned to match AnimationController.ExtractionBlueColor
+        // exactly so the vessel liquid and tap-extraction particles read as the same substance; that's
+        // no longer true now that this is a vivid purple. Flagged, not reconciled -- ExtractionBlueColor
+        // itself and its own doc comments in AnimationController.cs are untouched.
+        private static readonly Color FillColor = new Color(0.66f, 0.33f, 0.97f, 1f);
 
         private const string PlungerSpritePath = "Assets/_Game/Sprites/UI/xp_bar_plunger.png";
         private const string FrameSpritePath = "Assets/_Game/Sprites/UI/xp_bar_frame.png";
+        private const string PillSpritePath = "Assets/_Game/Sprites/UI/ui_pill.png";
 
         // CanvasScaler's reference resolution height -- the fixed frame every pixel value in this
         // file (VesselRowHeight, InteractiveRowHeight, etc.) is authored against. Needed to convert
@@ -467,18 +469,28 @@ namespace BrainDrain.EditorTools
                 trackTf.SetParent(vesselRow, false);
             }
 
+            Sprite pillSprite = LoadSpriteRobust(PillSpritePath);
+            Sprite frameSprite = LoadSpriteRobust(FrameSpritePath);
+
             var trackRt = trackTf.GetComponent<RectTransform>();
-            trackRt.anchorMin = new Vector2(0.5f, 0f);
-            trackRt.anchorMax = new Vector2(0.5f, 1f);
+            trackRt.anchorMin = Vector2.zero;
+            trackRt.anchorMax = Vector2.one;
             trackRt.pivot = new Vector2(0.5f, 0.5f);
             trackRt.anchoredPosition = Vector2.zero;
-            trackRt.sizeDelta = new Vector2(VesselRowHeight * VesselTrackAspect, 0f);
+            trackRt.sizeDelta = Vector2.zero;
+            trackRt.offsetMin = Vector2.zero;
+            trackRt.offsetMax = Vector2.zero;
 
             var track = trackTf.GetComponent<Image>();
             Undo.RecordObject(track, "Restoration Bar Track");
+            if (pillSprite != null)
+            {
+                track.sprite = pillSprite;
+            }
+            track.type = Image.Type.Sliced;
             track.color = TrackColor;
             track.raycastTarget = false;
-            track.enabled = false;
+            track.enabled = true;
             EditorUtility.SetDirty(track);
 
             Vector2 fillOffsetMin = new Vector2(59.4f, 18.0f);
@@ -501,6 +513,10 @@ namespace BrainDrain.EditorTools
 
             var glow = glowTf.GetComponent<Image>();
             Undo.RecordObject(glow, "Restoration Bar Glow");
+            if (glow.sprite == frameSprite)
+            {
+                glow.sprite = null;
+            }
             glow.color = new Color(FillColor.r, FillColor.g, FillColor.b, 0.4f);
             glow.type = Image.Type.Filled;
             glow.fillMethod = Image.FillMethod.Horizontal;
@@ -526,6 +542,10 @@ namespace BrainDrain.EditorTools
 
             var fill = fillTf.GetComponent<Image>();
             Undo.RecordObject(fill, "Restoration Bar Fill");
+            if (fill.sprite == frameSprite)
+            {
+                fill.sprite = null;
+            }
             fill.color = FillColor;
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
@@ -540,7 +560,6 @@ namespace BrainDrain.EditorTools
             }
 
             Sprite plungerSprite = LoadSpriteRobust(PlungerSpritePath);
-            Sprite frameSprite = LoadSpriteRobust(FrameSpritePath);
 
             Transform plungerTf = trackTf.Find("RestorationBarPlunger");
             if (plungerTf == null)
@@ -588,10 +607,7 @@ namespace BrainDrain.EditorTools
 
             var frameImg = frameTf.GetComponent<Image>();
             Undo.RecordObject(frameImg, "Restoration Bar Vessel Frame");
-            if (frameSprite != null)
-            {
-                frameImg.sprite = frameSprite;
-            }
+            frameImg.enabled = false;
             frameImg.type = Image.Type.Sliced;
             frameImg.preserveAspect = false;
             frameImg.raycastTarget = false;
