@@ -580,6 +580,7 @@ namespace BrainDrain.UI
 
             var worldRestoration = WorldRestorationManager.Instance;
             double percent = worldRestoration != null ? worldRestoration.RestorationPercent : 0d;
+            double finalThreshold = worldRestoration != null && worldRestoration.Stages.Count > 0 ? worldRestoration.Stages[worldRestoration.Stages.Count - 1].pointsRequired : 0d;
             string stageName = worldRestoration != null && worldRestoration.CurrentStage != null
                 ? worldRestoration.CurrentStage.stageName
                 : "DYSTOPIA";
@@ -624,17 +625,18 @@ namespace BrainDrain.UI
 
             if (snottingUnlocked)
             {
-                restorationProgressText.text = $"{stageName.ToUpper()} ({percent:F1}% RESTORED)";
+                restorationProgressText.text =
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%)";
             }
             else if (cumulativePointsSpent >= threshold)
             {
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED) | <color=#00FF88><size=14>SNOTTING READY</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#00FF88><size=14>SNOTTING READY</size></color>";
             }
             else
             {
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} ({percent:F1}% RESTORED) | <color=#FFD700><size=14>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#FFD700><size=14>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
             }
         }
 
