@@ -863,8 +863,9 @@ namespace BrainDrain.Systems
 
         /// <summary>
         /// Spawns a futuristic expanding ring and a soft glow at the click position, tinted
-        /// extraction-blue (matches AnimationController.ExtractionBlueColor / the RESTORATION
-        /// fill) -- was neon green until the tap-feedback palette shifted to blue.
+        /// extraction-blue (matches AnimationController.ExtractionBlueColor -- no longer matches
+        /// the RESTORATION fill, which moved to purple under the neon pill system, 2026-08-19) --
+        /// was neon green until the tap-feedback palette shifted to blue.
         /// </summary>
         public static void PlayTouchRipple(Vector2 screenPosition, RectTransform parent)
         {
@@ -895,11 +896,12 @@ namespace BrainDrain.Systems
             Image glowImg = glowGo.GetComponent<Image>();
             glowImg.sprite = GetGlowSprite();
             // Was neon green (0.224, 1, 0.078) -- retinted to extraction blue, matching
-            // ExtractionBlueColor / the RESTORATION fill. GetGlowSprite() loads RadialGlow.png,
-            // which is neutral white pixel data (flattened from the old baked-green art) with
-            // only alpha carrying the falloff shape -- this tint is the sprite's sole source of
-            // color now, so it renders as clean blue, not the dark/muddy result the old
-            // baked-green sprite would have produced.
+            // ExtractionBlueColor (the RESTORATION fill has since moved to purple and no longer
+            // matches -- see RestorationBarWireFix.cs's FillColor, 2026-08-19). GetGlowSprite()
+            // loads RadialGlow.png, which is neutral white pixel data (flattened from the old
+            // baked-green art) with only alpha carrying the falloff shape -- this tint is the
+            // sprite's sole source of color now, so it renders as clean blue, not the dark/muddy
+            // result the old baked-green sprite would have produced.
             glowImg.color = new Color(0.25f, 0.75f, 1f, 0.6f);
             glowImg.raycastTarget = false;
 
