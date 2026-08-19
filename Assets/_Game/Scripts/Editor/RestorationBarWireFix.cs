@@ -593,7 +593,8 @@ namespace BrainDrain.EditorTools
             {
                 frameImg.sprite = frameSprite;
             }
-            frameImg.preserveAspect = true;
+            frameImg.type = Image.Type.Sliced;
+            frameImg.preserveAspect = false;
             frameImg.raycastTarget = false;
             frameImg.color = Color.white;
             EditorUtility.SetDirty(frameImg);
