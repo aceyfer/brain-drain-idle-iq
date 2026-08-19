@@ -46,6 +46,7 @@ namespace BrainDrain.EditorTools
         // Anchored to CustomSafeArea's own bottom (y=0), which is already safe-area-clipped by
         // SafeAreaManager -- see the class doc comment. This is the one element allowed there.
         private const float VesselRowHeight = 90f;
+        private const float VesselTrackAspect = 6f;
 
         // ShopButton/ConvertButton's CURRENT rendered height, traced from EconomyBar's existing
         // nested layout: EconomyBar (134.4px = 0.07 * 1920) -> its VerticalLayoutGroup (padding
@@ -467,13 +468,11 @@ namespace BrainDrain.EditorTools
             }
 
             var trackRt = trackTf.GetComponent<RectTransform>();
-            trackRt.anchorMin = Vector2.zero;
-            trackRt.anchorMax = Vector2.one;
+            trackRt.anchorMin = new Vector2(0.5f, 0f);
+            trackRt.anchorMax = new Vector2(0.5f, 1f);
             trackRt.pivot = new Vector2(0.5f, 0.5f);
             trackRt.anchoredPosition = Vector2.zero;
-            trackRt.sizeDelta = Vector2.zero;
-            trackRt.offsetMin = Vector2.zero;
-            trackRt.offsetMax = Vector2.zero;
+            trackRt.sizeDelta = new Vector2(VesselRowHeight * VesselTrackAspect, 0f);
 
             var track = trackTf.GetComponent<Image>();
             Undo.RecordObject(track, "Restoration Bar Track");
