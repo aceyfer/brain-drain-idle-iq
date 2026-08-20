@@ -34,6 +34,7 @@ A satirical mobile idle-clicker by **AcEclipse Games**. You play the evil mogul 
    - **COGS 1–6** (narrator portrait progression)
    These may be visually *upgraded/polished* to merge with the art style. **No new character or entity sprites may be introduced** before first playable ships.
    - Inventory (2026-07-05): COGS 1–6 ✅ in repo. Pedestrians: 35/36 in repo — Ped1 stage 1 uses Ped1_Stage2 as an approved workaround (see blocker #8). Stage 1-6 backdrops ✅ produced and wired (BG1.jpg, BG2-6.png).
+6. **Zero tolerance for visible AI-generation distortion in shipped character art** (effective 2026-08-20). No visible AI-generation distortion — voids, blur, warping, corruption — is acceptable in shipped character-facing art: pedestrians, COGS, or any future character assets. The game is being tested by high-profile streamers who play on PC/Steam and will notice close-up/zoomed imperfections a mobile screen would hide. Patches/inpainting are fine as temporary development stopgaps but must never be the final shipped version — the bar is full clean regeneration. (See `PEDESTRIAN_SPRITES_FINDINGS.md` for the case that established this: Ped4's inpainted sleeve/shoulder patch was reclassified interim-only after failing this bar under zoom.)
 
 ## 3. Definition of Done — First Playable
 

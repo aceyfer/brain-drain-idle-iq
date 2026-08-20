@@ -7,11 +7,18 @@ scratch later).
 
 ## Status update — 2026-08-20
 
-- **Ped4: FIXED.** The sleeve/shoulder rendering defect identified below (largest single
-  contiguous near-black blob, 18.5% of subject area) has been repaired via inpainting —
+- **Ped4: INTERIM PATCH SHIPPED, FULL REGEN STILL REQUIRED BEFORE STREAMER PLAYTEST.**
+  The sleeve/shoulder rendering defect identified below (largest single contiguous near-black
+  blob, 18.5% of subject area) was repaired via inpainting —
   `Assets/_Game/Sprites/Pedestrians/Ped4_Stage1.png` replaced on disk (same filename, same
   1008x1776 dimensions, same RGBA mode, `.meta` unchanged), committed `1638884`. Legs and the
-  rest of the sprite untouched. No longer a corruption candidate.
+  rest of the sprite untouched. **Reclassified 2026-08-20, no longer treated as final ship
+  quality**: under close pixel-level zoom, the patched region reads visibly softer/blurrier
+  than the surrounding fabric grain — a mismatch a mobile screen would hide but a PC/Steam
+  close-up won't. This fails the new zero-tolerance no-visible-AI-distortion bar (see
+  `PROJECT_BIBLE.md` §2 rule 6). The inpaint remains a legitimate development-time stopgap, not
+  a defect anymore in the corruption-audit sense below, but Ped4 now needs the same full art
+  regeneration as Ped5, not just the patch, before it can ship.
 - **Ped5: NOT PATCHED — flagged for full art regeneration.** Direct backup comparison
   (`Pedestrians_backup_20260625/Ped5_Stage1.png`) confirms the defect is **baked into the
   original AI-generated source photo**, present identically in the backup — not a `rembg`
