@@ -5,6 +5,72 @@ staged, nothing committed. One report for this investigation thread (mirrors
 `CODEX_FINDINGS.md`'s convention: replace, don't accumulate, if this topic is revisited from
 scratch later).
 
+## Full pedestrian-sprite distortion audit — 2026-08-20 (all 35 Ped*_Stage*.png)
+
+Systematic scan of all 35 `Ped*_Stage*.png` files, completed outside this session using the
+corrected near-black-blob heuristic established below, with every flag visually verified by eye
+to rule out false positives from legitimately dark clothing. Results reported here and acted on
+in this session.
+
+**New confirmed defects, beyond the already-known Ped4_Stage1 (interim patch) and Ped5_Stage1
+(severe, regen needed) covered in the status update below:**
+
+| Ped/Stage | Severity | Description |
+|---|---|---|
+| Ped1_Stage2 | Severe | Large jagged void across the sweatshirt torso |
+| Ped2_Stage2 | Moderate | Blotchy void patches on both shirt shoulders |
+| Ped2_Stage3 | Moderate | Same shoulder void pattern as Stage2 |
+| Ped4_Stage2 | Severe | Large void through chest/hood |
+| Ped4_Stage3 | Severe | Large void through chest |
+| Ped4_Stage4 | Mild | Thin jagged transparent notch at sleeve edge |
+| Ped6_Stage3 | Mild | Small void bitten out of the hairline |
+| Ped6_Stage4 | Mild | Same hairline void pattern as Stage3 |
+
+**Confirmed clean, do not touch:** Ped1_Stage5, Ped3 (all stages), Ped4_Stage5, Ped4_Stage6,
+Ped6_Stage1, Ped6_Stage2, Ped6_Stage5, Ped6_Stage6, Ped2_Stage1, Ped2_Stage4, Ped2_Stage5,
+Ped2_Stage6, Ped5_Stage2 through Stage6.
+
+**Decision (2026-08-20):** per the zero-tolerance no-visible-distortion rule (`PROJECT_BIBLE.md`
+§2 rule 6), every confirmed-defective stage above is temporarily repointed to reference a clean
+stage's art, so nothing broken can appear during the streamer playtest, while full regeneration
+gets scoped separately. **The corrupted PNG files themselves are left untouched on disk** —
+same policy already established for Ped4/Ped5 — they remain the regen reference/source. This is
+a sprite-*reference* swap only, never a file edit.
+
+**Swap mapping applied, commit `6b9fb03`:**
+
+| Defective stage | Now references |
+|---|---|
+| Ped1_Stage2 | Ped1_Stage3's art |
+| Ped2_Stage2 | Ped2_Stage1's art |
+| Ped2_Stage3 | Ped2_Stage1's art |
+| Ped4_Stage2 | Ped4_Stage5's art |
+| Ped4_Stage3 | Ped4_Stage5's art |
+| Ped4_Stage4 | Ped4_Stage5's art |
+| Ped5_Stage1 | Ped5_Stage2's art |
+| Ped6_Stage3 | Ped6_Stage2's art |
+| Ped6_Stage4 | Ped6_Stage2's art |
+
+**Mechanism, confirmed before any edit was made:** pedestrian stage→sprite wiring is split
+across two independent systems. (1) `BackgroundPedestrianManager.cs`'s live spawn path reads
+each `Ped{N}_Prefab.prefab`'s `SpriteRenderer.m_Sprite` directly and only ever shows Stage1 art
+— this is the only stage actually visible in the shipped game today. (2) Each
+`Ped{N}_AnimController.controller` has `Walk_Stage1`–`Walk_Stage6` states driven by an int
+`StageIndex` parameter, each state's `Ped{N}_Walk_Stage{X}.anim` clip keyframing `m_Sprite` via
+a `PPtrCurve`. **No code anywhere sets `StageIndex`** (confirmed via repo-wide grep), so every
+`Walk_Stage2`–`Walk_Stage6` state is currently dead/unreachable. Practical consequence: 8 of
+these 9 swaps (everything except Ped5_Stage1) currently have zero visible effect in the shipped
+game, since that whole progression system is unwired — done anyway per the standing policy,
+since they cost nothing and mean nothing is broken the moment that system does get wired up.
+**Ped5_Stage1 is the one swap with live effect** — its sprite is read directly off
+`Ped5_Prefab.prefab`, which is listed in `PROJECT_BIBLE.md` §5 Protected Zones
+(`Assets/_Game/Prefabs/Pedestrians/` — no edits); editing it was an **explicit, approved
+one-field exception** (`SpriteRenderer.m_Sprite` only, nothing else in the prefab touched).
+
+All nine swaps repoint a `{fileID, guid}` sprite reference inside a `.anim` clip or the one
+approved prefab field — no PNG file was deleted, renamed, or overwritten; git diff confirmed
+exactly these 9 files changed, each only on the sprite-reference lines.
+
 ## Status update — 2026-08-20
 
 - **Ped4: INTERIM PATCH SHIPPED, FULL REGEN STILL REQUIRED BEFORE STREAMER PLAYTEST.**
