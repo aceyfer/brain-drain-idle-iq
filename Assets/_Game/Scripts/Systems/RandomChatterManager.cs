@@ -70,7 +70,7 @@ namespace BrainDrain.Systems
             "Oh no, my iguana drank my Stupaid",
             "I don't know what this is but I'm gonna sniff it",
             "Armadillo sauce goes with everything",
-            "Snake utters taste better cold",
+            "I've still got the last bag of discontinued Cheese Dirt and I'm not sharing a speck of it",
             "I found a Stupaid under the couch and it was still good",
             "They discontinued my favorite flavor, Cheese Dirt",
             "My left shoe has been making decisions for me",
@@ -91,7 +91,7 @@ namespace BrainDrain.Systems
             "They're hiding the good corn from us",
             "I saw a shadow man near my mailbox again",
             "My microwave is reporting my thoughts to someone",
-            "The Illumisnotty don't want you to know about snake utters",
+            "The Illumisnotty microchipped my left shoe and now it won't let me turn left",
             "Every time I think too hard my nose bleeds a little",
             "They cancelled that show because it was making us smart",
             "The Illumisnotty replaced my neighbor with a quieter one",
@@ -108,7 +108,7 @@ namespace BrainDrain.Systems
         [SerializeField]
         private List<string> tierThreeLines = new List<string>
         {
-            "I don't know what the hell snake utters are but I bought twelve",
+            "I don't know who's putting fluoride in the Stupaid but goddamn it works, I feel great",
             "My corndog fell in the damn toilet and I had to think about it",
             "The Illumisnotty can kiss my ass, I found the good Stupaid",
             "What the hell is armadillo sauce and why does it taste like home",
