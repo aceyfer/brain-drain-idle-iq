@@ -20613,7 +20613,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "BRAIN POWER -> $ EXCHANGE"
+  m_text: BRAIN POWER -> $ EXCHANGE
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -23528,7 +23528,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000041758947}
+  m_AnchoredPosition: {x: 0, y: 0.000054528977}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &901832125
@@ -29465,6 +29465,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2374300569d1051575ff93a59073e5ca, type: 2}
   - {fileID: 11400000, guid: 0e4e15f58afffd7a867312e79e52bb4e, type: 2}
   - {fileID: 11400000, guid: 493858f38ec01c3f26321124007f536c, type: 2}
+  - {fileID: 11400000, guid: 18279e0b2c3a40c4bfac2355797fa35c, type: 2}
+  - {fileID: 11400000, guid: 4ee8facfe9414cf7a158098a0d1bfef3, type: 2}
+  - {fileID: 11400000, guid: c4a431df92ef470ca4e74556db3ef310, type: 2}
+  - {fileID: 11400000, guid: 55f1d3cc8d504c2c934e7b68e50bc911, type: 2}
+  - {fileID: 11400000, guid: f8732d412d734e5c98a6dddb36d6bfd6, type: 2}
+  - {fileID: 11400000, guid: 2da8387bb6b440a294a7ec148fa9eb57, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d40a, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d401, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d402, type: 2}
@@ -29513,6 +29519,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 749d8c0a3717e64cfa445b51881eac0e, type: 2}
   - {fileID: 11400000, guid: cc4bf1d96698f12d7a074a1b3a6706a1, type: 2}
   - {fileID: 11400000, guid: 5675ac47783807debd38b89849a47a95, type: 2}
+  - {fileID: 11400000, guid: 43dca3f3b8c44a66aafcede6540e623d, type: 2}
+  - {fileID: 11400000, guid: e5f331cb22ac4ef8ab996b2fff46f481, type: 2}
+  - {fileID: 11400000, guid: 2ac05511e47a498abeecb9ff3d33451f, type: 2}
+  - {fileID: 11400000, guid: f084e9cb8067427985d1e5bfebe4a903, type: 2}
+  - {fileID: 11400000, guid: f4cec4a54bb24f6c8130f62372bff7f1, type: 2}
+  - {fileID: 11400000, guid: 556ab228f4544d57bdbd7f91965897be, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d411, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d410, type: 2}
   - {fileID: 11400000, guid: a1a1a1a1b2b2b2b2c3c3c3c3d4d4d412, type: 2}
@@ -29559,12 +29571,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b050925f8d8efdd409b58b7861eb1c17, type: 2}
   - {fileID: 11400000, guid: 8dc8b3ca9d0c1ff4695444cb42480130, type: 2}
   - {fileID: 11400000, guid: e669d2aafc7d9c94a86484be32dbea94, type: 2}
-  - {fileID: 11400000, guid: f8732d412d734e5c98a6dddb36d6bfd6, type: 2}
-  - {fileID: 11400000, guid: c4a431df92ef470ca4e74556db3ef310, type: 2}
-  - {fileID: 11400000, guid: 2da8387bb6b440a294a7ec148fa9eb57, type: 2}
-  - {fileID: 11400000, guid: 55f1d3cc8d504c2c934e7b68e50bc911, type: 2}
-  - {fileID: 11400000, guid: 18279e0b2c3a40c4bfac2355797fa35c, type: 2}
-  - {fileID: 11400000, guid: 4ee8facfe9414cf7a158098a0d1bfef3, type: 2}
   OnDialogueLine:
     m_PersistentCalls:
       m_Calls: []
@@ -30403,7 +30409,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 436342713}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999989
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -38610,6 +38616,7 @@ MonoBehaviour:
   pointsShopButton: {fileID: 748951777}
   restoreButton: {fileID: 620001005}
   restorationFillImage: {fileID: 1669718301}
+  restorationGlowImage: {fileID: 0}
   restorationPlungerImage: {fileID: 1944500555}
   plungerEllipseScaleX: 0.35
   hudCanvasGroup: {fileID: 1574612720}
@@ -42377,7 +42384,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Current BP: 0\nRate: 1,000 BP -> $1\nYields: $0"
+  m_text: 'Current BP: 0
+
+    Rate: 1,000 BP -> $1
+
+    Yields: $0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -43010,7 +43021,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "$ -> GOD-TIER POINTS EXCHANGE"
+  m_text: $ -> GOD-TIER POINTS EXCHANGE
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -44960,7 +44971,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Current $: $0\nRate: $1 -> 0.10 Points\nYields: 0 Points"
+  m_text: 'Current $: $0
+
+    Rate: $1 -> 0.10 Points
+
+    Yields: 0 Points'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
