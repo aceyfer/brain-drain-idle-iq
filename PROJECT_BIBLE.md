@@ -26,8 +26,8 @@ A satirical mobile idle-clicker by **AcEclipse Games**. You play the evil mogul 
 4. **The 3-Tab Unified Shop Panel.** The main Shop icon opens ONE panel with exactly three tabs:
    - Tab 1: **BP Store** (Brain Power → buildings)
    - Tab 2: **Cash Store**
-   - Tab 3: **RP Store** (Restoration Points)
-   This is a *presentation* unification only. The three backend managers (`UpgradeManager`, `CashShopManager`, `PointsShopManager`) remain separate — do NOT merge their code. "Points" is renamed **Restoration Points (RP)** in all player-facing text; C# names stay unchanged (same convention as The Snotting rename).
+   - Tab 3: **God Shop** (Premium, direct real-currency only via `GodTierStoreManager` — see §7.13)
+   This is a *presentation* unification only. The backend managers (`UpgradeManager`, `CashShopManager`, `GodTierStoreManager`) remain separate — do NOT merge their code. **Decided 2026-07-09: the original RP Store tab was cut** (`TASKLIST_DETAILS.md` §16) — that third slot became the God Shop instead. World Restoration / Restoration Points progression stays in the game, just not presented as a shop tab. "Points" is renamed **Restoration Points (RP)** in all player-facing text; C# names stay unchanged (same convention as The Snotting rename).
 5. **The Protected Sprite Lock.** The only gameplay character/entity sprites in the first playable are:
    - **Pedestrians 1–6** (six pedestrians × six stages)
    - **Stages 1–6** (world restoration backdrops)
@@ -135,7 +135,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
     0–1 SNOTTY ROOKIE · 2–3 UNDER-SNOT ELITE · 4–5 BUNKER BUREAUCRAT · 6–10 ILLUMISNOTTY INTERN · 11+ BUNKER SUPREME.
     Title is visible from Snotting 0 (no blank state). Player-facing spelling is "Illumisnotty".
 12. Ped1 stage 1 intentionally reuses the Stage 2 sprite until new art is produced (first-playable workaround).
-13. **Premium = direct real currency only, via `GodTierStoreManager` exclusively** (decided 2026-07-09/10, `TASKLIST_DETAILS.md` §10/§16). Neuron premium currency was purged repo-wide (`939222f`–`34841b7`); `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` are deleted, not dormant. **No soft-currency path to premium content may ever exist** — the 2,500-Cash `ProfanityPack` was killed outright rather than repriced specifically because it was such a path, independent of whether anything was literally named "neurons." The store is called the **God Shop**; its tab UI is Phase B of §16, not yet built.
+13. **Premium = direct real currency only, via `GodTierStoreManager` exclusively** (decided 2026-07-09/10, `TASKLIST_DETAILS.md` §10/§16). Neuron premium currency was purged repo-wide (`939222f`–`34841b7`); `PremiumShopManager`/`PremiumShopUIController`/`PremiumShopSlotUI` are deleted, not dormant. **No soft-currency path to premium content may ever exist** — the 2,500-Cash `ProfanityPack` was killed outright rather than repriced specifically because it was such a path, independent of whether anything was literally named "neurons." The store is called the **God Shop**; its tab UI (Phase B of §16) shipped 2026-07-11 — tab UI + owned-toggle (`8d15c22`), code-owned tab label (`0f0809c`), rebirth-trigger suppression while the shop is open (`9cb8075`), convert-arrow-glyph cleanup (`de5d4c0`). §16 is CLOSED end to end.
 14. **Android is the launch platform; iOS is post-launch** (decided 2026-08-05). The development machine is Windows-only, so iOS is blocked by the absence of Mac hardware and not by the $99 Apple Developer fee — buying that account changes nothing until a Mac exists. Bundle identifier is `com.eighthkind.braindrain` on both Android and iPhone, permanent and never renamed, and it is the parent of the four locked God Shop product IDs. This reorders §12 (Google Play IAP first, StoreKit later) and §15 (Play Store listing first).
 
 ## 8. Known scar tissue (bugs already paid for — read before debugging)
@@ -172,7 +172,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 **Phase 1 — Runs correctly: PHASE 1 COMPLETE 2026-07-05**
 ☑ Light 2D (blocker 1) · ☑ title ladder + HUD title (blocker 5) · ☑ Ped1 repoint workaround (blocker 8) · ☑ wire GameManager refs (blocker 4) · ☑ add + wire COGSWorldPortraitUI (blocker 3) · ☑ add PremiumShopManager to `_Systems` + wire UI ref (blocker 6) · ☑ verify (2 Play Mode cycles) + merge singleton teardown guards (blocker 9, commits 9639860/828dc36) · ☑ produce and wire Stage 1–6 backdrops (blocker 2)
 **Phase 2 — Reads correctly:**
-☐ UI icon downsize pass (§2.2) · ☐ build 3-tab unified shop panel (§2.4) · ☐ COGS/chatter bubble readability pass (§2.3) · ☐ middle-screen decongestion (blocker 7) · ☐ Play Mode pass: every HUD readout updates (BP, cumulative, BPPS, Cash, RP, IQ, Snottings, Restoration %, title)
+☐ UI icon downsize pass (§2.2) · ☑ 3-tab unified shop panel built (§2.4, §16 CLOSED) · ☐ COGS/chatter bubble readability pass (§2.3) · ☐ middle-screen decongestion (blocker 7) · ☐ Play Mode pass: every HUD readout updates (BP, cumulative, BPPS, Cash, RP, IQ, Snottings, Restoration %, title)
 **Phase 3 — Feels correct:**
 ☐ tap feedback end-to-end (punch + floating "+X" + splat) · ☐ audit the manual-wiring backlog (event pool ×16, narrator lines ×70+, COGS stages ×6, chapters ×12, SafeArea re-parenting) — verify what's actually still unwired · ☐ full loop test per §3 Definition of Done, including save/reload
 
