@@ -56,6 +56,10 @@ namespace BrainDrain.EditorTools
         // Preserved here so moving them into the new row doesn't shrink their tap size.
         private const float ShopConvertHeight = 102.4f;
 
+        // minHeight was incorrectly forced to match preferredHeight -- confirmed live minHeight is
+        // 52, independent of the 102.4 preferredHeight.
+        private const float ShopConvertMinHeight = 52f;
+
         // Height for the RestorationLabel/PointsText/RestoreButton sub-group -- deliberately
         // shorter than ShopConvertHeight. Stretching text/a smaller button to 102.4px would leave
         // them dwarfed in a mostly-empty box; the two groups get their own explicit
@@ -144,7 +148,7 @@ namespace BrainDrain.EditorTools
             BuildVessel(vesselRow, out Image fillImage, out Image glowImage, out Image plungerImage);
             BuildLabel(interactiveRow, vesselRow);
 
-            if (pointsTextTf.parent != interactiveRow) pointsTextTf.SetParent(interactiveRow, false);
+            if (pointsTextTf.parent != vesselRow) pointsTextTf.SetParent(vesselRow, false);
             StylePointsTextForRow(pointsTextTf);
 
             if (restoreButtonTf.parent != interactiveRow) restoreButtonTf.SetParent(interactiveRow, false);
@@ -179,13 +183,13 @@ namespace BrainDrain.EditorTools
                       "What changed this pass: Shop/Convert now flexibleWidth=1 (was a fixed 140px) " +
                       "so they split whatever width remains after Label(150px)/PointsText(140px)/" +
                       "RestoreButton(120px) claim their fixed share -- fills the row edge to edge " +
-                      "instead of leaving a dead gap on the right; minWidth=100 floor, minHeight now " +
-                      "paired with preferredHeight (102.4px) on all five elements as a defensive " +
+                      "instead of leaving a dead gap on the right; minWidth=100 floor, minHeight=52 independent of preferredHeight (102.4px) -- " +
+                      "no longer forced to match on Shop/Convert; " +
                       "guarantee. Vessel Track is no longer a full-width stretch -- it's now sized to " +
                       "the frame art's true aspect (1667:727) at 90px tall (~206px wide), centered in " +
                       "the row; Fill/Plunger/Frame inherit these bounds automatically since they still " +
                       "stretch-fill Track. Frame's preserveAspect is back to true. RestorationLabel " +
-                      "font 18/18/14 -> 20/20/16, color brightened to (0.85,0.85,0.85,1); PointsText " +
+                      "font min/max now 24/32 (was incorrectly 16/20), color brightened to (0.85,0.85,0.85,1); PointsText " +
                       "font 16/22 -> 18/24. " +
                       "xp_bar_frame.png's .meta still carries 2 stray sub-sprite rects alongside the " +
                       "real frame despite Single sprite mode -- not fixed here.");
@@ -294,10 +298,12 @@ namespace BrainDrain.EditorTools
             // History: 14/14/10 (fontSize/Max/Min) originally, then 18/18/14 -- still read as tiny
             // and low-contrast at phone scale. Bumped again to 20/20/16, and preferredWidth widened
             // 120->150 so autosizing has room to actually render at 20 instead of shrinking toward
-            // the floor to fit "RESTORATION" in a too-narrow box.
-            label.fontSize = 20f;
-            label.fontSizeMax = 20f;
-            label.fontSizeMin = 16f;
+            // the floor to fit "RESTORATION" in a too-narrow box. Current live values confirmed
+            // 2026-08-25 as fontSizeMin 24 / fontSizeMax 32 (auto-sized render ~27.3) -- the
+            // "20/20/16" comment above was stale.
+            label.fontSize = 32f;
+            label.fontSizeMax = 32f;
+            label.fontSizeMin = 24f;
             label.enableAutoSizing = true;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             // Was (0.7,0.7,0.7,1) -- flagged as low-contrast. Brightened toward near-white.
@@ -377,11 +383,12 @@ namespace BrainDrain.EditorTools
             if (layout == null) layout = Undo.AddComponent<LayoutElement>(buttonTf.gameObject);
 
             Undo.RecordObject(layout, "Restoration Row Shop/Convert Button Layout");
-            layout.preferredWidth = -1f;
+            layout.preferredWidth = 150f;
             layout.flexibleWidth = 1f;
+            layout.flexibleHeight = -1f;
             layout.minWidth = 100f;
             layout.preferredHeight = ShopConvertHeight;
-            layout.minHeight = ShopConvertHeight;
+            layout.minHeight = ShopConvertMinHeight;
             EditorUtility.SetDirty(layout);
         }
 
