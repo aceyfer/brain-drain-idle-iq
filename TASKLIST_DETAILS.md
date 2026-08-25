@@ -446,6 +446,24 @@ All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash�
 **Also confirmed:** new `NarratorLine` assets do NOT need manual Inspector wiring into `DialogueManager.narratorLines` — `SceneManagerWiring.cs`'s Editor menu tool (`BrainDrain/Wire Scene Managers/...`) auto-discovers all `NarratorLine` assets via `AssetDatabase.FindAssets("t:NarratorLine")` and wholesale-replaces the wired list; just re-run that tool.
 **Status:** shipped, pushed. Gating design question added to TASKLIST.md PARKED section pending Aceyfer's decision.
 
+## §35 Narrator-line auto-wiring gap — FIXED 2026-08-25
+**Found:** staged every `.meta` file under `Assets/_Game/Dialogue/` (124 files, 118 of them real `NarratorLine` assets) and cross-checked every guid against `DialogueManager.narratorLines` directly in `SampleScene.unity`. 112/118 wired — the missing 6 were exactly `OfflineDecayReturn_WelcomeBack_Stage0CorruptedCRT` through `Stage5FullHologram` (§34's new lines, commit `3ee00b2`). SceneManagerWiring hadn't been re-run since they were created, so they were content-complete but unreachable at runtime.
+**Fix:** Aceyfer ran `BrainDrain/Wire Scene Managers/RandomEventManager + DialogueManager` and saved the scene. Reverified directly against the resaved scene file: 118/118 wired, all 6 new lines present.
+**Status:** closed.
+
+## §36 SafeArea re-parenting gap — OPEN, needs Aceyfer's call
+**Found:** traced the live Canvas hierarchy in `SampleScene.unity`. There is exactly one `CustomSafeArea` node; `SafeAreaManager` only ever corrects its own rect. The Canvas has 7 top-level children — `BackgroundRoot`, `WorldRoot`, `CustomSafeArea`, `CelebrationFlashOverlay`, `DialogueLogPanel`, `LogOpenButton` (plus one more). `BackgroundRoot`/`WorldRoot`/`CelebrationFlashOverlay` are correctly excluded (full-bleed content should ignore safe area). `LogOpenButton` and `DialogueLogPanel` are not — both sit outside the corrected hierarchy.
+**Risk:** `LogOpenButton`'s RectTransform is corner-anchored (`anchorMin/Max (1,1)`, offset -20/-340px from the top-right) with no inset correction — a device with a corner camera cutout or rounded-corner clip could obscure it. `DialogueLogPanel` is full-stretch with large fixed margins (-80/-600), lower risk, same root cause.
+**Proposed fix:** reparent both under `CustomSafeArea` in the Editor Inspector (scene-hierarchy edit, not a code change — not something to hand off as a YAML edit per the standing scene-surgery rule).
+**Status:** open, waiting on Aceyfer's go-ahead before anything touches the scene.
+
+## §37 Chapter 9 PointsSpent gate may soft-lock — OPEN, needs Aceyfer's call
+**Found:** read all 12 `ChapterData` assets directly. Chapter 9 ("The Liberator") gates on `unlockConditionType: PointsSpent, unlockThreshold: 500000`. `ChapterManager.IsConditionMet`'s `PointsSpent` case checks `CurrencyManager.Instance.CurrentPoints` — i.e. live held balance, not lifetime spend — per the code's own comment: "nothing spends Points yet, so 'current' and 'lifetime spent' are the same number today."
+**That comment is stale.** `WorldRestorationManager.TrySpendPointsOnRestoration` calls `CurrencyManager.Instance.SpendPoints(amount)` directly — spending Points on World Restoration (the game's actual core loop, per Bible §6) already decrements this same balance.
+**Risk:** a player following the intended loop (convert Cash→RP, spend RP on Restoration as you go) may never hold a live, unspent balance of 500,000 Points at once. Since chapters unlock strictly in sequence (`ChapterManager.TryAdvanceToNextChapter`), this could stall Chapter 9 and, behind it, Chapters 10-12. Chapter 5 has the same aliasing at a much lower threshold (5,000), lower risk.
+**Options, Aceyfer's call:** (a) switch Chapter 9 to `WorldRestorationPercent` (defined, implemented, currently unused by any of the 12 chapters), (b) switch to `CumulativeBrainPower` or `RebirthCount` instead, (c) leave as-is and accept some players may need to deliberately hoard Points to clear it.
+**Status:** open, no asset touched yet.
+
 ---
 
 ## DECISION LOG

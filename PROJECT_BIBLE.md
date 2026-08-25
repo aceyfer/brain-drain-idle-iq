@@ -174,7 +174,7 @@ Real Money ──▶ Shop: GOD SHOP tab (GodTierStoreManager; IAP wiring still s
 **Phase 2 — Reads correctly:**
 ☐ UI icon downsize pass (§2.2) · ☑ 3-tab unified shop panel built (§2.4, §16 CLOSED) · ☐ COGS/chatter bubble readability pass (§2.3) · ☐ middle-screen decongestion (blocker 7) · ☐ Play Mode pass: every HUD readout updates (BP, cumulative, BPPS, Cash, RP, IQ, Snottings, Restoration %, title)
 **Phase 3 — Feels correct:**
-☐ tap feedback end-to-end (punch + floating "+X" + splat) · ☐ audit the manual-wiring backlog (event pool ×16, narrator lines ×70+, COGS stages ×6, chapters ×12, SafeArea re-parenting) — verify what's actually still unwired · ☐ full loop test per §3 Definition of Done, including save/reload
+☐ tap feedback end-to-end (punch + floating "+X" + splat) · ☑ manual-wiring backlog audited 2026-08-25 — event pool 16/16 wired, chapters 12/12 wired, COGS stages 6/6 wired, narrator lines 118/118 wired (was 112/118, fixed same day, see TASKLIST §35); 2 new findings spun off pending Aceyfer's call, see TASKLIST §36 (SafeArea) and §37 (Chapter 9 gate) · ☐ full loop test per §3 Definition of Done, including save/reload
 
 **Everything not on this checklist is deferred (§10).**
 
