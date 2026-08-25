@@ -19,25 +19,25 @@ namespace BrainDrain.EditorTools
     /// entirely above the vessel), then EconomyBar itself, moved up to sit above the interactive
     /// row (its anchors DO move now -- ShopButton/ConvertButton no longer live in it, so it ends up
     /// an empty container kept only for scene-hygiene, not because anything still renders there).
-    /// Wires HUDController.restorationFillImage/restorationPlungerImage.
+    /// Wires HUDController.restorationFillImage/restorationGlowImage.
     /// Menu: Tools/Eighth Kind/Fix Restoration Bar Wiring.
     /// Idempotent -- safe to re-run. Migrates the old single combined RestorationBarRow (or an
     /// intermediate RestorationInfoRow) by renaming it to RestorationInteractiveRow in place and
     /// moving RestorationBarTrack out of it into RestorationVesselRow.
+    ///
+    /// 2026-08-25: the glass-tube/plunger visual (RestorationBarPlunger + RestorationBarVesselFrame,
+    /// backed by xp_bar_plunger.png/xp_bar_frame.png) was abandoned and removed -- the source art was
+    /// deleted and the two objects were removed from the scene by hand. This tool no longer creates
+    /// or wires either one; the vessel is Track + Glow + Fill only, a plain colored bar.
     /// </summary>
     public static class RestorationBarWireFix
     {
-        private static readonly Color TrackColor = new Color(0.06f, 0.04f, 0.11f, 1f);
+        private static readonly Color TrackColor = new Color(0.12f, 0.12f, 0.12f, 0.85f);
 
-        // Neon pill system (2026-08-19) -- was tuned to match AnimationController.ExtractionBlueColor
-        // exactly so the vessel liquid and tap-extraction particles read as the same substance; that's
-        // no longer true now that this is a vivid purple. Flagged, not reconciled -- ExtractionBlueColor
-        // itself and its own doc comments in AnimationController.cs are untouched.
-        private static readonly Color FillColor = new Color(0.66f, 0.33f, 0.97f, 1f);
-
-        private const string PlungerSpritePath = "Assets/_Game/Sprites/UI/xp_bar_plunger.png";
-        private const string FrameSpritePath = "Assets/_Game/Sprites/UI/xp_bar_frame.png";
-        private const string PillSpritePath = "Assets/_Game/Sprites/UI/ui_pill.png";
+        // Matches AnimationController.ExtractionBlueColor exactly (duplicated, not referenced --
+        // this is static scene-authoring data, same as TrackColor/label color already were) so the
+        // vessel liquid and the tap-extraction particles read as the same substance.
+        private static readonly Color FillColor = new Color(0.25f, 0.75f, 1f, 1f);
 
         // CanvasScaler's reference resolution height -- the fixed frame every pixel value in this
         // file (VesselRowHeight, InteractiveRowHeight, etc.) is authored against. Needed to convert
@@ -48,7 +48,6 @@ namespace BrainDrain.EditorTools
         // Anchored to CustomSafeArea's own bottom (y=0), which is already safe-area-clipped by
         // SafeAreaManager -- see the class doc comment. This is the one element allowed there.
         private const float VesselRowHeight = 90f;
-        private const float VesselTrackAspect = 6f;
 
         // ShopButton/ConvertButton's CURRENT rendered height, traced from EconomyBar's existing
         // nested layout: EconomyBar (134.4px = 0.07 * 1920) -> its VerticalLayoutGroup (padding
@@ -56,8 +55,8 @@ namespace BrainDrain.EditorTools
         // Preserved here so moving them into the new row doesn't shrink their tap size.
         private const float ShopConvertHeight = 102.4f;
 
-        // minHeight was incorrectly forced to match preferredHeight -- confirmed live minHeight is
-        // 52, independent of the 102.4 preferredHeight.
+        // Confirmed live 2026-08-25: minHeight is independent of preferredHeight, not tied to it --
+        // ShopButton/ConvertButton's actual minHeight is 52, separate from ShopConvertHeight above.
         private const float ShopConvertMinHeight = 52f;
 
         // Height for the RestorationLabel/PointsText/RestoreButton sub-group -- deliberately
@@ -145,7 +144,7 @@ namespace BrainDrain.EditorTools
             // (read from its current anchors, not duplicated) is preserved, only its position moves.
             ApplyEconomyBarAnchors(economyBar, VesselRowHeight + InteractiveRowHeight);
 
-            BuildVessel(vesselRow, out Image fillImage, out Image glowImage, out Image plungerImage);
+            BuildVessel(vesselRow, out Image fillImage, out Image glowImage);
             BuildLabel(interactiveRow, vesselRow);
 
             if (pointsTextTf.parent != vesselRow) pointsTextTf.SetParent(vesselRow, false);
@@ -165,13 +164,11 @@ namespace BrainDrain.EditorTools
             shopButtonTf.SetSiblingIndex(0);
             convertButtonTf.SetSiblingIndex(1);
             interactiveRow.Find("RestorationLabel")?.SetSiblingIndex(2);
-            pointsTextTf.SetSiblingIndex(3);
-            restoreButtonTf.SetSiblingIndex(4);
+            restoreButtonTf.SetSiblingIndex(3);
 
             SerializedObject so = new SerializedObject(hud);
             so.FindProperty("restorationFillImage").objectReferenceValue = fillImage;
             so.FindProperty("restorationGlowImage").objectReferenceValue = glowImage;
-            so.FindProperty("restorationPlungerImage").objectReferenceValue = plungerImage;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(hud);
 
@@ -180,19 +177,11 @@ namespace BrainDrain.EditorTools
                       "Stack (bottom to top of CustomSafeArea, local px) -- unchanged from last run: " +
                       "RestorationVesselRow [0, 90] (non-interactive) -> RestorationInteractiveRow " +
                       "[90, 204.4] -> EconomyBar [204.4, 338.8] (moved, height preserved, now empty). " +
-                      "What changed this pass: Shop/Convert now flexibleWidth=1 (was a fixed 140px) " +
-                      "so they split whatever width remains after Label(150px)/PointsText(140px)/" +
-                      "RestoreButton(120px) claim their fixed share -- fills the row edge to edge " +
-                      "instead of leaving a dead gap on the right; minWidth=100 floor, minHeight=52 independent of preferredHeight (102.4px) -- " +
-                      "no longer forced to match on Shop/Convert; " +
-                      "guarantee. Vessel Track is no longer a full-width stretch -- it's now sized to " +
-                      "the frame art's true aspect (1667:727) at 90px tall (~206px wide), centered in " +
-                      "the row; Fill/Plunger/Frame inherit these bounds automatically since they still " +
-                      "stretch-fill Track. Frame's preserveAspect is back to true. RestorationLabel " +
-                      "font min/max now 24/32 (was incorrectly 16/20), color brightened to (0.85,0.85,0.85,1); PointsText " +
-                      "font 16/22 -> 18/24. " +
-                      "xp_bar_frame.png's .meta still carries 2 stray sub-sprite rects alongside the " +
-                      "real frame despite Single sprite mode -- not fixed here.");
+                      "2026-08-25: RestorationBarPlunger and RestorationBarVesselFrame (the glass-tube " +
+                      "art attempt) were removed for good -- xp_bar_frame.png/xp_bar_plunger.png " +
+                      "deleted, this tool no longer builds or wires either object. Vessel is now just " +
+                      "Track + Glow + Fill, a plain colored bar. RestorationLabel/Shop/Convert font and " +
+                      "sizing fixes from earlier today are unaffected.");
         }
 
         // ----- RestorationInteractiveRow (all tap targets, above the vessel) --------------------
@@ -295,12 +284,7 @@ namespace BrainDrain.EditorTools
                 label.fontSharedMaterial = referenceFont.fontSharedMaterial;
             }
             label.text = "RESTORATION";
-            // History: 14/14/10 (fontSize/Max/Min) originally, then 18/18/14 -- still read as tiny
-            // and low-contrast at phone scale. Bumped again to 20/20/16, and preferredWidth widened
-            // 120->150 so autosizing has room to actually render at 20 instead of shrinking toward
-            // the floor to fit "RESTORATION" in a too-narrow box. Current live values confirmed
-            // 2026-08-25 as fontSizeMin 24 / fontSizeMax 32 (auto-sized render ~27.3) -- the
-            // "20/20/16" comment above was stale.
+            // Confirmed live 2026-08-25: fontSizeMin 24 / fontSizeMax 32 (auto-sized render ~27.3).
             label.fontSize = 32f;
             label.fontSizeMax = 32f;
             label.fontSizeMin = 24f;
@@ -338,13 +322,12 @@ namespace BrainDrain.EditorTools
                 EditorUtility.SetDirty(layout);
             }
 
-            // History: 14/18 originally, then 16/22 -- still reported tiny/low-contrast. Raised again.
             var tmp = pointsTextTf.GetComponent<TextMeshProUGUI>();
             if (tmp != null)
             {
                 Undo.RecordObject(tmp, "Restoration Row Points Font");
-                tmp.fontSizeMin = 18f;
-                tmp.fontSizeMax = 24f;
+                tmp.fontSizeMin = 24f;
+                tmp.fontSizeMax = 32f;
                 EditorUtility.SetDirty(tmp);
             }
         }
@@ -365,17 +348,8 @@ namespace BrainDrain.EditorTools
 
         /// <summary>
         /// ShopConvertHeight tall, flexible-width -- does not touch the button's own Button/Image/
-        /// label components. Previously a fixed preferredWidth=140f, which (combined with Label/
-        /// PointsText/RestoreButton's own fixed widths) left most of the row's width unclaimed: Shop/
-        /// Convert came out far narrower than their old ButtonsRow footprint (they used to
-        /// force-expand to split ~half of EconomyBar's ~1000px width each, i.e. ~490px), reading as
-        /// "smaller," and the leftover space piled up as dead space on the row's right edge.
-        /// flexibleWidth=1 on both makes them split whatever width remains after the three fixed-width
-        /// info elements, so the row fills edge to edge with no dead gap regardless of exact fixed-
-        /// width tuning elsewhere. minWidth is a floor only, not the expected result.
-        /// minHeight is set alongside preferredHeight as a defensive belt-and-suspenders pairing --
-        /// preferredHeight alone should already be sufficient, but the previous pass's unexplained
-        /// height shrink means it's worth not relying on preferredHeight being respected in isolation.
+        /// label components. minHeight (52) is confirmed independent of preferredHeight (102.4),
+        /// not tied to it -- see ShopConvertMinHeight.
         /// </summary>
         private static void StyleShopConvertButtonForRow(Transform buttonTf)
         {
@@ -384,7 +358,7 @@ namespace BrainDrain.EditorTools
 
             Undo.RecordObject(layout, "Restoration Row Shop/Convert Button Layout");
             layout.preferredWidth = 150f;
-            layout.flexibleWidth = 1f;
+            layout.flexibleWidth = -1f;
             layout.flexibleHeight = -1f;
             layout.minWidth = 100f;
             layout.preferredHeight = ShopConvertHeight;
@@ -443,15 +417,15 @@ namespace BrainDrain.EditorTools
             EditorUtility.SetDirty(rt);
         }
 
-        // ----- Vessel build (Track/Fill/Plunger/Frame) -------------------------------------------
+        // ----- Vessel build (Track/Glow/Fill only -- Plunger/VesselFrame removed 2026-08-25) -----
 
         /// <summary>
         /// Builds/migrates RestorationBarTrack as a direct, fully stretch-anchored child of
         /// vesselRow (no LayoutGroup/LayoutElement involved -- it's the row's only child, so it just
-        /// fills the row's entire rect), then Fill/Plunger/Frame inside it as before. Forces sibling
-        /// order Fill(0)/Plunger(1)/Frame(2) every run.
+        /// fills the row's entire rect), then Glow/Fill inside it. Forces sibling order Glow(0)/Fill(1)
+        /// every run.
         /// </summary>
-        private static void BuildVessel(Transform vesselRow, out Image fillImage, out Image glowImage, out Image plungerImage)
+        private static void BuildVessel(Transform vesselRow, out Image fillImage, out Image glowImage)
         {
             Transform trackTf = vesselRow.Find("RestorationBarTrack");
             if (trackTf == null)
@@ -476,9 +450,6 @@ namespace BrainDrain.EditorTools
                 trackTf.SetParent(vesselRow, false);
             }
 
-            Sprite pillSprite = LoadSpriteRobust(PillSpritePath);
-            Sprite frameSprite = LoadSpriteRobust(FrameSpritePath);
-
             var trackRt = trackTf.GetComponent<RectTransform>();
             trackRt.anchorMin = Vector2.zero;
             trackRt.anchorMax = Vector2.one;
@@ -490,14 +461,9 @@ namespace BrainDrain.EditorTools
 
             var track = trackTf.GetComponent<Image>();
             Undo.RecordObject(track, "Restoration Bar Track");
-            if (pillSprite != null)
-            {
-                track.sprite = pillSprite;
-            }
-            track.type = Image.Type.Sliced;
             track.color = TrackColor;
             track.raycastTarget = false;
-            track.enabled = true;
+            track.enabled = false;
             EditorUtility.SetDirty(track);
 
             Vector2 fillOffsetMin = new Vector2(59.4f, 18.0f);
@@ -520,10 +486,6 @@ namespace BrainDrain.EditorTools
 
             var glow = glowTf.GetComponent<Image>();
             Undo.RecordObject(glow, "Restoration Bar Glow");
-            if (glow.sprite == frameSprite)
-            {
-                glow.sprite = null;
-            }
             glow.color = new Color(FillColor.r, FillColor.g, FillColor.b, 0.4f);
             glow.type = Image.Type.Filled;
             glow.fillMethod = Image.FillMethod.Horizontal;
@@ -549,10 +511,6 @@ namespace BrainDrain.EditorTools
 
             var fill = fillTf.GetComponent<Image>();
             Undo.RecordObject(fill, "Restoration Bar Fill");
-            if (fill.sprite == frameSprite)
-            {
-                fill.sprite = null;
-            }
             fill.color = FillColor;
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
@@ -566,99 +524,12 @@ namespace BrainDrain.EditorTools
                 glow.sprite = fill.sprite;
             }
 
-            Sprite plungerSprite = LoadSpriteRobust(PlungerSpritePath);
-
-            Transform plungerTf = trackTf.Find("RestorationBarPlunger");
-            if (plungerTf == null)
-            {
-                var plungerGo = new GameObject("RestorationBarPlunger", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                Undo.RegisterCreatedObjectUndo(plungerGo, "Create RestorationBarPlunger");
-                plungerGo.transform.SetParent(trackTf, false);
-                plungerTf = plungerGo.transform;
-            }
-
-            var plungerRt = plungerTf.GetComponent<RectTransform>();
-            plungerRt.anchorMin = new Vector2(0f, 0.5f);
-            plungerRt.anchorMax = new Vector2(0f, 0.5f);
-            plungerRt.pivot = new Vector2(0f, 0.5f);
-            
-            const float cavityHeight = 95f;
-            const float plungerNativeAspect = 1097f / 1724f;
-            plungerRt.sizeDelta = new Vector2(cavityHeight * plungerNativeAspect, cavityHeight);
-            plungerRt.anchoredPosition = new Vector2(fillOffsetMin.x, 0f);
-
-            var plungerImg = plungerTf.GetComponent<Image>();
-            Undo.RecordObject(plungerImg, "Restoration Bar Plunger");
-            if (plungerSprite != null)
-            {
-                plungerImg.sprite = plungerSprite;
-            }
-            plungerImg.preserveAspect = true;
-            plungerImg.raycastTarget = false;
-            EditorUtility.SetDirty(plungerImg);
-
-            Transform frameTf = trackTf.Find("RestorationBarVesselFrame");
-            if (frameTf == null)
-            {
-                var frameGo = new GameObject("RestorationBarVesselFrame", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                Undo.RegisterCreatedObjectUndo(frameGo, "Create RestorationBarVesselFrame");
-                frameGo.transform.SetParent(trackTf, false);
-                frameTf = frameGo.transform;
-            }
-
-            var frameRt = frameTf.GetComponent<RectTransform>();
-            frameRt.anchorMin = Vector2.zero;
-            frameRt.anchorMax = Vector2.one;
-            frameRt.offsetMin = Vector2.zero;
-            frameRt.offsetMax = Vector2.zero;
-
-            var frameImg = frameTf.GetComponent<Image>();
-            Undo.RecordObject(frameImg, "Restoration Bar Vessel Frame");
-            frameImg.enabled = false;
-            frameImg.type = Image.Type.Sliced;
-            frameImg.preserveAspect = false;
-            frameImg.raycastTarget = false;
-            frameImg.color = Color.white;
-            EditorUtility.SetDirty(frameImg);
-
-            // Sibling order: Glow (0), Fill (1), Plunger (2), Frame (3)
+            // Sibling order: Glow (0), Fill (1)
             glowTf.SetSiblingIndex(0);
             fillTf.SetSiblingIndex(1);
-            plungerTf.SetSiblingIndex(2);
-            frameTf.SetSiblingIndex(3);
 
             fillImage = fill;
             glowImage = glow;
-            plungerImage = plungerImg;
-        }
-
-        /// <summary>
-        /// AssetDatabase.LoadAssetAtPath&lt;Sprite&gt; first, falling back to scanning
-        /// LoadAllAssetsAtPath for a Sprite sub-asset -- same defensive pattern
-        /// MainUIControllerWireFix.LoadStageBackgroundSprites already uses, needed here because
-        /// xp_bar_frame.png's .meta carries 3 sub-sprite entries despite Single sprite mode (2 tiny
-        /// stray rects alongside the real frame -- flagged separately, not something this tool can
-        /// or should silently resolve).
-        /// </summary>
-        private static Sprite LoadSpriteRobust(string path)
-        {
-            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (sprite != null)
-            {
-                return sprite;
-            }
-
-            Object[] subAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-            for (int i = 0; i < subAssets.Length; i++)
-            {
-                if (subAssets[i] is Sprite found)
-                {
-                    return found;
-                }
-            }
-
-            Debug.LogWarning($"[RestorationBarWireFix] No Sprite found at '{path}'.");
-            return null;
         }
 
         private static TextMeshProUGUI FindReferenceFont()
