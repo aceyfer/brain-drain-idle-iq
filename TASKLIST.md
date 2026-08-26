@@ -44,7 +44,7 @@
 - [x] 11. Define "first playable" cut line — what ships v1, what waits — **PASSED**. First-playable achieved 2026-07-23, Aceyfer verdict (details §11)
 - [x] 26. Economy display/design audit — CLOSED. Jumper Cables/IQ Overclock Chip descriptions fixed, PlayerIQManager subscribe guard added (`f0ba24d`); Overcharged IQ system + Underground Economy's 9BP/7Cash split doc-synced into CLAUDE.md/Bible §6; remaining findings confirmed intentional, no action needed (details §26)
 - [ ] 12. Real IAP wiring for direct-currency purchases (platform store) (details §12)
-- [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)
+- [ ] 13. Art debt: remaining placeholder art pass — Player Character art debt is now moot, that whole system was removed 2026-08-27 as abandoned scaffolding, not replaced (details §13)
 - [!] 14. Device build + test on real phone — BLOCKED on hardware (no Android device owned; iOS unbuildable on Windows). Android-first decided 2026-08-05. Player Settings prep landed (`c6d6b90`) (details §14)
 - [ ] 15. Store presence: name/ratings/screenshots/description (details §15)
 - [ ] 40. Player-favorite question system (pets/food) — deliver via a pulsing mailbox/note icon on the side of the screen, not an interrupting popup; ties into the deferred Phase 2 player-seeded procedural-dialogue weighting (details §40)

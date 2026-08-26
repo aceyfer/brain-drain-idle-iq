@@ -9,7 +9,7 @@ namespace BrainDrain.Systems
     /// live from RebirthManager.RebirthCount (no separate "owned outfits" tracking needed,
     /// since RebirthCount only ever increases -- once unlocked, always unlocked). Equip choice
     /// is the one piece of real state here, since it doesn't follow automatically from
-    /// RebirthCount the way CharacterAppearanceStage's auto-progression does.
+    /// RebirthCount the way a pure auto-progression would.
     /// </summary>
     public sealed class WardrobeManager : MonoBehaviour
     {
@@ -17,7 +17,7 @@ namespace BrainDrain.Systems
         [SerializeField] private List<OutfitData> outfits = new();
 
         [Header("Visual")]
-        [Tooltip("SpriteRenderer the equipped outfit's sprite is applied to. Expected to be a layer on the Player Character, on top of its base CharacterAppearanceStage sprite.")]
+        [Tooltip("SpriteRenderer the equipped outfit's sprite is applied to.")]
         [SerializeField] private SpriteRenderer outfitRenderer;
 
         private static WardrobeManager instance;

@@ -101,7 +101,6 @@ namespace BrainDrain.Core
             currencyManager.AddBrainPower(brainPowerEarned);
             PlayerIQManager.Instance?.RestoreIQFromTap();
 
-            PlayerCharacterController.Instance?.NotifyTap();
             AnimationController.PlayButtonPunch(tapButtonVisual);
 
             RectTransform particleParent = particleContainer != null ? particleContainer : FindParticleContainer();

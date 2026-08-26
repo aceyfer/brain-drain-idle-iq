@@ -5,12 +5,11 @@ using UnityEngine.UI;
 namespace BrainDrain.Systems
 {
     /// <summary>
-    /// Spawns up to 6 Hot Chick visual placeholders alongside the player character, one per
-    /// CompanionManager.HotChickCount purchased. UI Image/RectTransform-based, not
-    /// SpriteRenderer -- checked the scene directly: PlayerCharacterController's
-    /// appearanceImage field is wired (appearanceRenderer is not), confirming this project's
-    /// player character is Canvas/UI-based, matching BackgroundPedestrianManager's existing
-    /// pattern for "spawn multiple simple visuals near the player" exactly.
+    /// Spawns up to 6 Hot Chick visual placeholders, one per CompanionManager.HotChickCount
+    /// purchased. UI Image/RectTransform-based, not SpriteRenderer -- matching
+    /// BackgroundPedestrianManager's existing pattern for "spawn multiple simple visuals"
+    /// exactly. (There is no player character in this game -- see TASKLIST_DETAILS.md §13 --
+    /// so these spawn independently, not "alongside" one.)
     ///
     /// SCENE WIRING NOT DONE: this script is code-complete but not attached to anything in
     /// SampleScene.unity -- per instruction, Unity AI handles that.
