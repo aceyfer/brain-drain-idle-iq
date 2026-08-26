@@ -33,7 +33,7 @@
 - [x] 36. SafeArea re-parenting gap — LogOpenButton and DialogueLogPanel sat as Canvas siblings, not children of CustomSafeArea, so they never got the runtime safe-area inset correction. Fixed 2026-08-26 by reparenting both under CustomSafeArea (commit `dbc69e6`) (details §36)
 - [x] 37. Chapter 9 ("The Liberator") PointsSpent gate soft-lock risk — its threshold checked live Points balance, not lifetime spent, contradicting ChapterManager's own stale "nothing spends Points yet" comment. Fixed 2026-08-26 by switching Chapter 9's gate from PointsSpent to WorldRestorationPercent >= 50 (commit `20bc7f4`) (details §37)
 - [x] 38. Glass-tube/plunger restoration bar fully removed — RestorationBarPlunger/RestorationBarVesselFrame and their Leonardo-AI art (xp_bar_frame.png, xp_bar_plunger.png) deleted, RestorationBarWireFix.cs no longer builds or wires either object (commit `6cfe4b7`), scene-side GameObjects removed and HUDController.restorationPlungerImage nulled (commit `92e3e10`) (details §38)
-- [!] 39. Editor click-to-select broken — clicking objects in the Game view or Scene view (outside Play mode) doesn't select them or show them in the Inspector. Long-standing, present since early in development, not caused by anything from the 2026-08-24/25/26 sessions. Not yet investigated (details §39)
+- [~] 39. Editor click-to-select broken — investigated 2026-08-26: no project code touches Scene View input/picking/Selection, so this is Editor-local session state, most likely the Scene View Layers dropdown's per-layer Pickability toggle. Not a code bug; needs a live-Editor check, not yet fixed (details §39)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $3.99 (details §10)
@@ -47,6 +47,8 @@
 - [ ] 13. Art debt: COGS Level 1 portrait, remaining placeholder art pass (details §13)
 - [!] 14. Device build + test on real phone — BLOCKED on hardware (no Android device owned; iOS unbuildable on Windows). Android-first decided 2026-08-05. Player Settings prep landed (`c6d6b90`) (details §14)
 - [ ] 15. Store presence: name/ratings/screenshots/description (details §15)
+- [ ] 40. Player-favorite question system (pets/food) — deliver via a pulsing mailbox/note icon on the side of the screen, not an interrupting popup; ties into the deferred Phase 2 player-seeded procedural-dialogue weighting (details §40)
+- [ ] 41. Settings menu needed — mute toggle + a picker for which unlocked stage's ambient music track plays; BackgroundMusicManager has been stuck on one track since it was first wired up despite the CyberWare pack having more per stage (details §41)
 
 ## PARKED (do not touch until NOW+NEXT clear)
 - ShopTabView virtualization + real purchase routing (dormant by design)
