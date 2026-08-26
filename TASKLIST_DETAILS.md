@@ -439,12 +439,21 @@ All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash�
 - `tierThreeLines[0]`: "I don't know what the hell snake utters are but I bought twelve" → "I don't know who's putting fluoride in the Stupaid but goddamn it works, I feel great"
 **Status:** closed. The dialogue pool meets the standing "supersaiyan gold" bar as of 2026-08-25; nothing else flagged.
 
-## §34 6 new stage-themed OfflineDecayReturn welcome-back lines — SHIPPED 2026-08-25, gating deferred
+## §34 6 new stage-themed OfflineDecayReturn welcome-back lines — SHIPPED 2026-08-25, gating resolved 2026-08-26
 **Ask:** Aceyfer requested more welcome-back narrator variety tied to COGS's 6 visual evolution stages (`COGSStage_0_CorruptedCRT` through `COGSStage_5_FullHologram`), since the existing single `OfflineDecayReturn_WelcomeBack` line was the only variant.
 **Shipped (commit `3ee00b2`):** 6 new `NarratorLine` assets (`OfflineDecayReturn_WelcomeBack_Stage0CorruptedCRT.asset` through `..._Stage5FullHologram.asset`), same trigger type as the original (7), each with its own stage-flavored line — e.g. Stage0: "W-welcome b-back. The signal degraded a little while you were gone. So did your attention span."; Stage5: "Welcome back. I don't need a screen anymore. I see everything. Including exactly how long you left me running without you."
-**Gating deferred, not a bug:** the original ask was to gate each line to its matching COGS stage via `minRebirthCount`/`maxRebirthCount` (matching COGS's own rebirth thresholds 0/1/3/6/11/20). Investigation found `minRebirthCount`/`maxRebirthCount` are dead/unused fields (`NarratorLine.cs`'s own comment confirms this) — the actual live dialogue gate is `RestorationPercent` (`DialogueManager.cs:450-456`), which has no natural mapping to COGS's rebirth-count-based stage thresholds. All 6 new lines were shipped as an unrestricted flavor-rotation pool (`minRestorationPercent: 0, maxRestorationPercent: 100`) rather than inventing new gating logic to force the original ask. **Open design question, needs Aceyfer's call:** either build a RestorationPercent-band mapping equivalent to COGS's rebirth thresholds, or accept the unrestricted-pool behavior as final.
+**Gating originally deferred, now resolved:** the original ask was to gate each line to its matching COGS stage via `minRebirthCount`/`maxRebirthCount` (matching COGS's own rebirth thresholds 0/1/3/6/11/20). Investigation found `minRebirthCount`/`maxRebirthCount` are dead/unused fields (`NarratorLine.cs`'s own comment confirms this) — the actual live dialogue gate is `RestorationPercent` (`DialogueManager.cs:450-456`), which has no natural linear mapping to COGS's rebirth-count-based stage thresholds. All 6 lines initially shipped as an unrestricted flavor-rotation pool (`minRestorationPercent: 0, maxRestorationPercent: 100`).
+**Resolution (2026-08-26):** Aceyfer decided to build a manual `RestorationPercent` band mapping matching COGS's 6-stage order (rather than accept the unrestricted pool as final). Even 6-way split of the 0-100 range, in stage order, using the same integer-boundary-with-small-gap convention as the existing 5-tier `NarratorLine` pool (~20-point bands):
+- Stage0CorruptedCRT: 0-16
+- Stage1PatchedCRT: 17-33
+- Stage2Flatscreen: 34-50
+- Stage3CleanMonitor: 51-66
+- Stage4HologramProto: 67-83
+- Stage5FullHologram: 84-100
+
+Verified against `DialogueManager.cs:450-456`'s real filter (`currentRestorationPercent >= line.minRestorationPercent && currentRestorationPercent <= line.maxRestorationPercent`, trigger type 7 for all 6): bands are non-overlapping and jointly cover the full 0-100 range with no gap large enough to leave any reachable `RestorationPercent` value with zero candidates for the `OfflineDecayReturn` trigger.
 **Also confirmed:** new `NarratorLine` assets do NOT need manual Inspector wiring into `DialogueManager.narratorLines` — `SceneManagerWiring.cs`'s Editor menu tool (`BrainDrain/Wire Scene Managers/...`) auto-discovers all `NarratorLine` assets via `AssetDatabase.FindAssets("t:NarratorLine")` and wholesale-replaces the wired list; just re-run that tool.
-**Status:** shipped, pushed. Gating design question added to TASKLIST.md PARKED section pending Aceyfer's decision.
+**Status:** shipped, gating resolved and implemented, pushed.
 
 ## §35 Narrator-line auto-wiring gap — FIXED 2026-08-25
 **Found:** staged every `.meta` file under `Assets/_Game/Dialogue/` (124 files, 118 of them real `NarratorLine` assets) and cross-checked every guid against `DialogueManager.narratorLines` directly in `SampleScene.unity`. 112/118 wired — the missing 6 were exactly `OfflineDecayReturn_WelcomeBack_Stage0CorruptedCRT` through `Stage5FullHologram` (§34's new lines, commit `3ee00b2`). SceneManagerWiring hadn't been re-run since they were created, so they were content-complete but unreachable at runtime.
