@@ -451,18 +451,25 @@ All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash�
 **Fix:** Aceyfer ran `BrainDrain/Wire Scene Managers/RandomEventManager + DialogueManager` and saved the scene. Reverified directly against the resaved scene file: 118/118 wired, all 6 new lines present.
 **Status:** closed.
 
-## §36 SafeArea re-parenting gap — OPEN, needs Aceyfer's call
-**Found:** traced the live Canvas hierarchy in `SampleScene.unity`. There is exactly one `CustomSafeArea` node; `SafeAreaManager` only ever corrects its own rect. The Canvas has 7 top-level children — `BackgroundRoot`, `WorldRoot`, `CustomSafeArea`, `CelebrationFlashOverlay`, `DialogueLogPanel`, `LogOpenButton` (plus one more). `BackgroundRoot`/`WorldRoot`/`CelebrationFlashOverlay` are correctly excluded (full-bleed content should ignore safe area). `LogOpenButton` and `DialogueLogPanel` are not — both sit outside the corrected hierarchy.
+## §36 SafeArea re-parenting gap — FIXED 2026-08-26
+**Found:** traced the live Canvas hierarchy in `SampleScene.unity`. There is exactly one `CustomSafeArea` node; `SafeAreaManager` only ever corrects its own rect. The Canvas has 7 top-level children — `BackgroundRoot`, `WorldRoot`, `CustomSafeArea`, `CelebrationFlashOverlay`, `DialogueLogPanel`, `LogOpenButton` (plus one more). `BackgroundRoot`/`WorldRoot`/`CelebrationFlashOverlay` are correctly excluded (full-bleed content should ignore safe area). `LogOpenButton` and `DialogueLogPanel` are not — both sat outside the corrected hierarchy.
 **Risk:** `LogOpenButton`'s RectTransform is corner-anchored (`anchorMin/Max (1,1)`, offset -20/-340px from the top-right) with no inset correction — a device with a corner camera cutout or rounded-corner clip could obscure it. `DialogueLogPanel` is full-stretch with large fixed margins (-80/-600), lower risk, same root cause.
-**Proposed fix:** reparent both under `CustomSafeArea` in the Editor Inspector (scene-hierarchy edit, not a code change — not something to hand off as a YAML edit per the standing scene-surgery rule).
-**Status:** open, waiting on Aceyfer's go-ahead before anything touches the scene.
+**Fix (commit `dbc69e6`):** reparented both under `CustomSafeArea` directly in `SampleScene.unity` (Unity closed, header-multiset verified: zero objects/components added or removed, only the two `m_Father` values and the two rows' `m_Children` lists changed).
+**Status:** closed.
 
-## §37 Chapter 9 PointsSpent gate may soft-lock — OPEN, needs Aceyfer's call
-**Found:** read all 12 `ChapterData` assets directly. Chapter 9 ("The Liberator") gates on `unlockConditionType: PointsSpent, unlockThreshold: 500000`. `ChapterManager.IsConditionMet`'s `PointsSpent` case checks `CurrencyManager.Instance.CurrentPoints` — i.e. live held balance, not lifetime spend — per the code's own comment: "nothing spends Points yet, so 'current' and 'lifetime spent' are the same number today."
-**That comment is stale.** `WorldRestorationManager.TrySpendPointsOnRestoration` calls `CurrencyManager.Instance.SpendPoints(amount)` directly — spending Points on World Restoration (the game's actual core loop, per Bible §6) already decrements this same balance.
-**Risk:** a player following the intended loop (convert Cash→RP, spend RP on Restoration as you go) may never hold a live, unspent balance of 500,000 Points at once. Since chapters unlock strictly in sequence (`ChapterManager.TryAdvanceToNextChapter`), this could stall Chapter 9 and, behind it, Chapters 10-12. Chapter 5 has the same aliasing at a much lower threshold (5,000), lower risk.
-**Options, Aceyfer's call:** (a) switch Chapter 9 to `WorldRestorationPercent` (defined, implemented, currently unused by any of the 12 chapters), (b) switch to `CumulativeBrainPower` or `RebirthCount` instead, (c) leave as-is and accept some players may need to deliberately hoard Points to clear it.
-**Status:** open, no asset touched yet.
+## §37 Chapter 9 PointsSpent gate may soft-lock — FIXED 2026-08-26
+**Found:** read all 12 `ChapterData` assets directly. Chapter 9 ("The Liberator") gated on `unlockConditionType: PointsSpent, unlockThreshold: 500000`. `ChapterManager.IsConditionMet`'s `PointsSpent` case checks `CurrencyManager.Instance.CurrentPoints` — i.e. live held balance, not lifetime spend — per the code's own comment: "nothing spends Points yet, so 'current' and 'lifetime spent' are the same number today."
+**That comment was stale.** `WorldRestorationManager.TrySpendPointsOnRestoration` calls `CurrencyManager.Instance.SpendPoints(amount)` directly — spending Points on World Restoration (the game's actual core loop, per Bible §6) already decrements this same balance.
+**Risk:** a player following the intended loop (convert Cash→RP, spend RP on Restoration as you go) may never hold a live, unspent balance of 500,000 Points at once. Since chapters unlock strictly in sequence (`ChapterManager.TryAdvanceToNextChapter`), this could stall Chapter 9 and, behind it, Chapters 10-12. Chapter 5 has the same aliasing at a much lower threshold (5,000), lower risk, not addressed here.
+**Fix (commit `20bc7f4`):** `Chapter09_TheLiberator.asset`'s `unlockConditionType` changed from `PointsSpent` (2) to `WorldRestorationPercent` (3); `unlockThreshold` set to `50` (i.e. 50%), which was already the case when the fix landed — the threshold value had already been changed to 50 by hand in advance, only the condition type still needed flipping to match.
+**Status:** closed.
+
+## §38 Glass-tube/plunger restoration bar removal — CLOSED 2026-08-25/26
+**Background:** the photoreal "glass tube" vessel visual — `RestorationBarPlunger` (a moving disk riding along the fill) and `RestorationBarVesselFrame` (the tube's outer frame), backed by Leonardo-AI-generated `xp_bar_plunger.png`/`xp_bar_frame.png` — was abandoned as part of the neon-pill art direction shift (`art_direction_neon_pill_system` memory, 2026-08-19). The vessel is now Track + Glow + Fill only, a plain colored bar; no plunger, no frame overlay.
+**Removed, in two parts:**
+1. **Code + source art (commit `6cfe4b7`, 2026-08-25):** `RestorationBarWireFix.cs` rewritten (193 lines removed) to stop creating or wiring either object — the tool's own doc comment now records this explicitly. `xp_bar_frame.png`/`.meta` and `xp_bar_plunger.png`/`.meta` deleted outright. This commit did not touch the scene.
+2. **Scene-side GameObjects (commit `92e3e10`, 2026-08-26):** the `RestorationBarPlunger` and `RestorationBarVesselFrame` GameObjects were still present in `SampleScene.unity`, each holding a dangling reference to art that no longer existed on disk. Removed both (8 headers total: 2 GameObjects x 4 components each, header-multiset verified), trimmed `RestorationBarTrack`'s children list down to Fill only, and nulled `HUDController.restorationPlungerImage` (was pointing at the now-deleted `RestorationBarPlunger`'s Image).
+**Status:** closed end to end — code, art, and scene all consistent now.
 
 ---
 
