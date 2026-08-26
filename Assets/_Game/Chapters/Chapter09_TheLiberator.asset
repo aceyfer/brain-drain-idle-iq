@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Chapter09_TheLiberator
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.ChapterData
   chapterNumber: 9
-  chapterTitle:
+  chapterTitle: 
   playerTitle: The Liberator
-  unlockConditionType: 2
-  unlockThreshold: 500000
-  introDialogue:
-  cogsReactionLine:
-  ministryBroadcastLine:
+  unlockConditionType: 3
+  unlockThreshold: 50
+  introDialogue: 
+  cogsReactionLine: 
+  ministryBroadcastLine: 
