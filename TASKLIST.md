@@ -33,6 +33,7 @@
 - [x] 36. SafeArea re-parenting gap — LogOpenButton and DialogueLogPanel sat as Canvas siblings, not children of CustomSafeArea, so they never got the runtime safe-area inset correction. Fixed 2026-08-26 by reparenting both under CustomSafeArea (commit `dbc69e6`) (details §36)
 - [x] 37. Chapter 9 ("The Liberator") PointsSpent gate soft-lock risk — its threshold checked live Points balance, not lifetime spent, contradicting ChapterManager's own stale "nothing spends Points yet" comment. Fixed 2026-08-26 by switching Chapter 9's gate from PointsSpent to WorldRestorationPercent >= 50 (commit `20bc7f4`) (details §37)
 - [x] 38. Glass-tube/plunger restoration bar fully removed — RestorationBarPlunger/RestorationBarVesselFrame and their Leonardo-AI art (xp_bar_frame.png, xp_bar_plunger.png) deleted, RestorationBarWireFix.cs no longer builds or wires either object (commit `6cfe4b7`), scene-side GameObjects removed and HUDController.restorationPlungerImage nulled (commit `92e3e10`) (details §38)
+- [!] 39. Editor click-to-select broken — clicking objects in the Game view or Scene view (outside Play mode) doesn't select them or show them in the Inspector. Long-standing, present since early in development, not caused by anything from the 2026-08-24/25/26 sessions. Not yet investigated (details §39)
 
 ## DECISION REQUIRED — Monetization (owner: Aceyfer)
 - [x] 10. KILL "neurons" premium currency — DONE. All premium = direct real-world currency via GodTierStoreManager only. Bad Words Pack = $3.99 (details §10)

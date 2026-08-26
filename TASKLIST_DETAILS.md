@@ -471,6 +471,11 @@ All four sit in the Convert panel's two exchange sub-sections (BP→Cash, Cash�
 2. **Scene-side GameObjects (commit `92e3e10`, 2026-08-26):** the `RestorationBarPlunger` and `RestorationBarVesselFrame` GameObjects were still present in `SampleScene.unity`, each holding a dangling reference to art that no longer existed on disk. Removed both (8 headers total: 2 GameObjects x 4 components each, header-multiset verified), trimmed `RestorationBarTrack`'s children list down to Fill only, and nulled `HUDController.restorationPlungerImage` (was pointing at the now-deleted `RestorationBarPlunger`'s Image).
 **Status:** closed end to end — code, art, and scene all consistent now.
 
+## §39 Editor click-to-select broken — LOGGED 2026-08-26, NOT INVESTIGATED
+**Reported by Aceyfer:** clicking objects in the Game view or Scene view (outside Play mode) doesn't select them or show them in the Inspector.
+**Timing:** long-standing, present since early in development — explicitly not caused by anything from the 2026-08-24/25/26 sessions (Unity AI Assistant removal, RestorationBarWireFix fixes, SafeArea reparenting, glass-tube removal, or any other work logged this week).
+**Status:** logged only, not investigated. No root cause identified yet, no fix attempted.
+
 ---
 
 ## DECISION LOG
