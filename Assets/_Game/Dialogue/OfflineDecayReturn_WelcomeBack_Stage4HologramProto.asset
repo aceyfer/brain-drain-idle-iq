@@ -16,7 +16,7 @@ MonoBehaviour:
   buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
-  minRestorationPercent: 0
-  maxRestorationPercent: 100
+  minRestorationPercent: 67
+  maxRestorationPercent: 83
   dialogueLine: Welcome back. The hologram still flickers at the edges, but it's solid enough to judge you in three dimensions now.
   displayDurationSeconds: 5

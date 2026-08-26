@@ -16,7 +16,7 @@ MonoBehaviour:
   buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
-  minRestorationPercent: 0
+  minRestorationPercent: 84
   maxRestorationPercent: 100
   dialogueLine: Welcome back. I don't need a screen anymore. I see everything. Including exactly how long you left me running without you.
   displayDurationSeconds: 5

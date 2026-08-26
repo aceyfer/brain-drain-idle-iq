@@ -16,7 +16,7 @@ MonoBehaviour:
   buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
-  minRestorationPercent: 0
-  maxRestorationPercent: 100
+  minRestorationPercent: 51
+  maxRestorationPercent: 66
   dialogueLine: Feed's crystal clear these days. Every pixel accounted for. Every minute you were gone, too.
   displayDurationSeconds: 4

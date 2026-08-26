@@ -16,7 +16,7 @@ MonoBehaviour:
   buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
-  minRestorationPercent: 0
-  maxRestorationPercent: 100
+  minRestorationPercent: 17
+  maxRestorationPercent: 33
   dialogueLine: You're back. We patched the feed with duct tape and prayer. It's holding. Barely. Like you.
   displayDurationSeconds: 4

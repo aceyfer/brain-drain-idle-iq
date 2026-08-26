@@ -17,6 +17,6 @@ MonoBehaviour:
   minRebirthCount: 0
   maxRebirthCount: 0
   minRestorationPercent: 0
-  maxRestorationPercent: 100
+  maxRestorationPercent: 16
   dialogueLine: W-welcome b-back. The signal degraded a little while you were gone. So did your attention span.
   displayDurationSeconds: 4

@@ -16,7 +16,7 @@ MonoBehaviour:
   buildingId:
   minRebirthCount: 0
   maxRebirthCount: 0
-  minRestorationPercent: 0
-  maxRestorationPercent: 100
+  minRestorationPercent: 34
+  maxRestorationPercent: 50
   dialogueLine: Welcome back. Picture's cleaner now. Unfortunately, so is the read on exactly how long you were gone.
   displayDurationSeconds: 4
