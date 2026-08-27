@@ -245,8 +245,17 @@ namespace BrainDrain.UI
 
             if (next == null)
             {
-                // All 6 tiers owned.
-                if (companionQuoteText != null) companionQuoteText.text = "THEY ARE THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
+                // All 6 tiers owned. Mirrors the non-maxed branch's displayName/quote/Effect
+                // line format below, using the actually-owned tier's data instead of the
+                // generic hardcoded line -- falls back to it only if the tier asset is somehow
+                // missing (shouldn't happen once maxed, but defensive).
+                CompanionTierData owned = companionManager.GetOwnedTier();
+                if (companionQuoteText != null)
+                {
+                    companionQuoteText.text = owned != null
+                        ? $"{owned.displayName}\n{owned.quote}\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>"
+                        : "THEY ARE THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
+                }
                 if (companionCostText != null) companionCostText.text = "MAXED";
                 if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";
                 ApplyCompanionAccent(CompanionMaxedColor);

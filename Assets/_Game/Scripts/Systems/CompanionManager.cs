@@ -119,6 +119,20 @@ namespace BrainDrain.Systems
             return null;
         }
 
+        /// <summary>Returns the currently owned tier's data, or null if no tier has been purchased yet (currentTier == 0).</summary>
+        public CompanionTierData GetOwnedTier()
+        {
+            foreach (CompanionTierData tier in tiers)
+            {
+                if (tier != null && tier.tierIndex == currentTier)
+                {
+                    return tier;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>Returns true when the next tier's gate (real hours since first launch / RebirthCount / RebirthCount+WorldStage) is currently met.</summary>
         public bool IsNextTierGateMet()
         {
