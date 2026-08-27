@@ -7,8 +7,8 @@ using BrainDrain.Systems;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// Sole owner of bottom navigation: SHOP, CONVERT, and RESTORE.
-    /// Delegates panel visibility to ShopUIController / ConvertUIController;
+    /// Sole owner of bottom navigation: SHOP, CONVERT, RESTORE, and SETTINGS.
+    /// Delegates panel visibility to ShopUIController / ConvertUIController / SettingsUIController;
     /// restoration spend stays on WorldRestorationManager (view triggers action only).
     /// </summary>
     public sealed class MainUIController : MonoBehaviour
@@ -17,10 +17,12 @@ namespace BrainDrain.UI
         [SerializeField] private Button shopButton;
         [SerializeField] private Button convertButton;
         [SerializeField] private Button restoreButton;
+        [SerializeField] private Button settingsButton;
 
         [Header("Panel Controllers")]
         [SerializeField] private ShopUIController shopUIController;
         [SerializeField] private ConvertUIController convertUIController;
+        [SerializeField] private SettingsUIController settingsUIController;
 
         [Header("Optional Overlay")]
         [Tooltip("Dimmer shown while the shop panel is open (matches mock #shade).")]
@@ -49,6 +51,12 @@ namespace BrainDrain.UI
             {
                 restoreButton.onClick.RemoveListener(OnRestoreClicked);
                 restoreButton.onClick.AddListener(OnRestoreClicked);
+            }
+
+            if (settingsButton != null)
+            {
+                settingsButton.onClick.RemoveListener(OnSettingsClicked);
+                settingsButton.onClick.AddListener(OnSettingsClicked);
             }
 
             if (shopOverlayShade != null)
@@ -87,6 +95,7 @@ namespace BrainDrain.UI
             if (shopButton != null) shopButton.onClick.RemoveListener(OnShopClicked);
             if (convertButton != null) convertButton.onClick.RemoveListener(OnConvertClicked);
             if (restoreButton != null) restoreButton.onClick.RemoveListener(OnRestoreClicked);
+            if (settingsButton != null) settingsButton.onClick.RemoveListener(OnSettingsClicked);
 
             if (shopOverlayShade != null)
             {
@@ -138,6 +147,11 @@ namespace BrainDrain.UI
                 convertUIController = FindAnyObjectByType<ConvertUIController>();
             }
 
+            if (settingsUIController == null)
+            {
+                settingsUIController = FindAnyObjectByType<SettingsUIController>();
+            }
+
             if (shopButton == null)
             {
                 shopButton = FindButtonByName("ShopButton");
@@ -151,6 +165,11 @@ namespace BrainDrain.UI
             if (restoreButton == null)
             {
                 restoreButton = FindButtonByName("RestoreButton");
+            }
+
+            if (settingsButton == null)
+            {
+                settingsButton = FindButtonByName("SettingsButton");
             }
 
             if (cachedRebirthUI == null)
@@ -177,6 +196,11 @@ namespace BrainDrain.UI
                 convertUIController.ClosePanel();
             }
 
+            if (settingsUIController != null && settingsUIController.IsOpen)
+            {
+                settingsUIController.ClosePanel();
+            }
+
             shopUIController.ToggleShop();
             SetShopShadeVisible(shopUIController.IsOpen);
         }
@@ -194,7 +218,33 @@ namespace BrainDrain.UI
                 SetShopShadeVisible(false);
             }
 
+            if (settingsUIController != null && settingsUIController.IsOpen)
+            {
+                settingsUIController.ClosePanel();
+            }
+
             convertUIController.TogglePanel();
+        }
+
+        private void OnSettingsClicked()
+        {
+            if (settingsUIController == null)
+            {
+                return;
+            }
+
+            if (shopUIController != null && shopUIController.IsOpen)
+            {
+                shopUIController.CloseShop();
+                SetShopShadeVisible(false);
+            }
+
+            if (convertUIController != null && convertUIController.IsOpen)
+            {
+                convertUIController.ClosePanel();
+            }
+
+            settingsUIController.TogglePanel();
         }
 
         private void OnRestoreClicked()

@@ -140,6 +140,14 @@ namespace BrainDrain.Systems
         // "different day" and resets to a fresh allowance for today. No version bump needed.
         public float dailyCapCountedSeconds;
         public string dailyCapDayKey;
+
+        // -- Settings menu (2026-08-27) -- bool/int both zero-fill correctly on saves predating
+        // these fields (false = unmuted, 0 = first song in BackgroundMusicManager.availableTracks),
+        // which are already the right defaults, so unlike tapMultiplier/the shop multipliers
+        // above no per-field migration guard is needed. saveVersion is bumped to 5 anyway,
+        // per explicit instruction, not because these particular fields require it.
+        public bool muted;
+        public int selectedTrackIndex;
     }
 
     /// <summary>
@@ -335,6 +343,15 @@ namespace BrainDrain.Systems
                     data.saveVersion = 4;
                 }
 
+                // v4 → v5: settings menu (muted/selectedTrackIndex). No migration guard needed --
+                // both fields' zero-fill values (false/0) are already the correct defaults -- but
+                // the version is still stamped per the struct's convention of advancing on every
+                // field-list change.
+                if (data.saveVersion < 5)
+                {
+                    data.saveVersion = 5;
+                }
+
                 LoadedData = data;
             }
             catch (Exception exception)
@@ -505,6 +522,12 @@ namespace BrainDrain.Systems
                 data.dailyCapDayKey = capState.dayKey;
             }
 
+            if (BackgroundMusicManager.Instance != null)
+            {
+                data.muted = BackgroundMusicManager.Instance.IsMuted;
+                data.selectedTrackIndex = BackgroundMusicManager.Instance.CurrentTrackIndex;
+            }
+
             data.lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (LoadedData.firstLaunchUnixSeconds != 0)
@@ -663,6 +686,9 @@ namespace BrainDrain.Systems
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
             DailyEngagementCapManager.Instance?.LoadState(data.dailyCapCountedSeconds, data.dailyCapDayKey);
+
+            BackgroundMusicManager.Instance?.SelectTrack(data.selectedTrackIndex);
+            BackgroundMusicManager.Instance?.SetMuted(data.muted);
         }
 
         /// <summary>
@@ -747,7 +773,7 @@ namespace BrainDrain.Systems
                 firstLaunchUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 hotChickCount = 0,
-                saveVersion = 4,
+                saveVersion = 5,
                 ftueBootBriefingSeen = false,
                 ftueCard1Seen = false,
                 ftueCard2Seen = false,
@@ -757,7 +783,9 @@ namespace BrainDrain.Systems
                 ftueNameRevealSeen = false,
                 ftueNameRevealElapsedSeconds = 0f,
                 dailyCapCountedSeconds = 0f,
-                dailyCapDayKey = null
+                dailyCapDayKey = null,
+                muted = false,
+                selectedTrackIndex = 0
             };
         }
     }
