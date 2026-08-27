@@ -66,7 +66,7 @@
 - Build size: `Assets/Resources` is 12 KB — keep it that way, anything placed there force-ships regardless of references
 - Audio: `BackgroundMusicManager` has a single `backgroundMusicClip` field; CyberWare ships layered stems (Layer-1/2/3/Full + stingers), already owned. Add instrument layers as World Restoration progresses instead of swapping tracks — the world heals and the music fills in
 - VFX: no smoke/fog asset exists yet, needed for the six restoration backdrops — URP particles can do this natively with layered soft-noise sprites, alpha tuned per stage, choking at stage 0, clear by stage 5
-- VFX: two rain packs installed (Rain Particles, Rainy VFX) — acid rain early, clearing later, tied to restoration stage
+- VFX: two rain packs installed (Rain Particles, Rainy VFX) — acid rain early, clearing later, tied to restoration stage. Idea captured 2026-08-27 (Aceyfer): Rain Particles can also drive sidewalk-splash particles layered into the pedestrian background scenery, not just overhead weather — worth a look when this gets built.
 - VFX: URP color grading per restoration stage on the existing volume profile — sickly desaturated green early, warm/saturated at Utopia, one volume, six presets
 - Retention: `SimpleAndroidNotifications` is installed, unused — hook it to the daily engagement cap reset ("population's cognitive surplus replenishes")
 - Retention: easter egg for a later chatter pass — a pedestrian line crediting the player with getting someone's IQ to exactly 117, deliberate Halo nod, distinct from the 113 floor
