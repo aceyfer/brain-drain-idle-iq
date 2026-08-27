@@ -48,7 +48,7 @@
 - [!] 14. Device build + test on real phone — BLOCKED on hardware (no Android device owned; iOS unbuildable on Windows). Android-first decided 2026-08-05. Player Settings prep landed (`c6d6b90`) (details §14)
 - [ ] 15. Store presence: name/ratings/screenshots/description (details §15)
 - [ ] 40. Player-favorite question system (pets/food) — deliver via a pulsing mailbox/note icon on the side of the screen, not an interrupting popup; ties into the deferred Phase 2 player-seeded procedural-dialogue weighting (details §40)
-- [ ] 41. Settings menu needed — mute toggle + a picker for which unlocked stage's ambient music track plays; BackgroundMusicManager has been stuck on one track since it was first wired up despite the CyberWare pack having more per stage (details §41)
+- [x] 41. Settings menu — DONE. Mute toggle + 4-song picker built and wired (commit 4dfff12), verified in Play mode by Aceyfer 2026-08-27, no console errors. Gear button lives next to Dia-Log, top-right. Note: "Gutters Filled with Light" uses its G1-1 stem as a stand-in since the pack ships no combined "Full" mix for that song — worth a listen to confirm/swap later (details §41)
 
 ## PARKED (do not touch until NOW+NEXT clear)
 - ShopTabView virtualization + real purchase routing (dormant by design)
