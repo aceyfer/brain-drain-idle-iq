@@ -1,9 +1,17 @@
 # buildingId Migration Plan
 
-Status: **Commit 1 LANDED** (`eaf25d2`, "refactor(buildings): add stable buildingId to
-BuildingData"). 17 files, 18 insertions, 0 deletions — `BuildingData.cs` field + 16 asset
-values. Not pushed. Commits 2-3 (the actual migration logic) remain unstarted and
-unapproved.
+Status: **All three commits LANDED and pushed to origin/main.**
+- Commit 1: `eaf25d2` — `buildingId` field on `BuildingData` + 16 asset values.
+- Commit 2: `51f66f1` — `buildingId` field on `BuildingSaveEntry`, additive/unread.
+- Commit 3: `65db0f8` — ownership keyed by `buildingId` throughout (`LoadBuildingLevels`,
+  `TryBuyBuilding`, `GetBuildingLevel`, `SaveGame`'s DTO write); no fallback, hard-required;
+  verified via the 7-step list in §4, including a rebirth pass via `DebugCheats.ForceRebirth()`
+  (the real HUD Snotting button was locked at verification time — see the unrelated-issues
+  note at the bottom of this file) and a `MaxAllBuildings()` stress pass, both clean.
+
+Migration complete. `DialogueManager`'s narrator matching remains on `buildingName` by design
+— Amendment 1's hard prerequisite gate — and is the one open item before any Phase 2
+stage-dependent-naming work can begin.
 
 ## Goal
 
@@ -325,7 +333,31 @@ resting on reasoning alone.
   handling (drop + warn instead of silently accumulating) — isolated so it can be
   reviewed/reverted independently of the migration itself.
 
-## Outstanding blockers before Commit 2
+## Outstanding blockers
 
-- None recorded yet. Commit 2 (add `buildingId` to `BuildingSaveEntry`) has not been scoped
-  for a go-ahead; awaiting explicit approval before any further code changes.
+None. All three commits landed and pushed (`eaf25d2`, `51f66f1`, `65db0f8`). Migration
+complete pending Phase 2's own future scoping, which is gated on Amendment 1 (§2).
+
+## Unrelated issues found during Commit 3 verification (not fixed — recorded only)
+
+Both surfaced incidentally while running the 7-step verification list against a real Play
+Mode session. Neither is caused by, or related to, the `buildingId` migration — recorded here
+only because this is where they were found, not because they belong to this plan's scope.
+
+**1. The SNOTTING trigger button gives zero feedback when clicked while locked.**
+`RebirthUIController.ApplyTriggerButtonVisibility()` sets `Button.interactable = false` while
+`CumulativePointsSpentOnRestoration < RebirthManager.SnottingUnlockThreshold` (5,658,229 RP).
+A non-interactable Unity `Button` silently swallows clicks — no shake, no toast, no log, no
+error. The button visually looks pressable (color/label do communicate "locked," but nothing
+fires on the actual click attempt to confirm the player even registered as trying). This is
+exactly what caused the apparent "rebirth did nothing" scare earlier in this session — the
+dev save's 983 RP was nowhere near the threshold, the click never reached `TriggerRebirth()`,
+and there was no feedback to explain why. Real UX trap, needs its own investigation
+(some kind of locked-tap feedback — shake, toast, or an explicit log at minimum).
+
+**2. The RESTORATION bar does not appear to update visually.** Observed during the same
+session: converting 50% BP→Cash via CONVERT produced no visible change to the bar. Both
+CONVERT and something else apparently need to be clicked before RESTORE becomes available.
+Possibly no fill animation exists at all — the bar reads as a flat blue background with no
+indication of current progress. Not investigated further — flagged for its own separate
+diagnosis pass, not attempted here.
