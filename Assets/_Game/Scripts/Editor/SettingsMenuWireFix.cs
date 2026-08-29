@@ -95,12 +95,15 @@ namespace BrainDrain.EditorTools
             host.transform.SetParent(safeArea, false);
 
             RectTransform rect = host.GetComponent<RectTransform>();
-            // Top-right, just below LogOpenButton (anchored at -20,-340, size 140x50).
+            // Top-right, below the runtime-built PocketOpenButton. PocketPanelUI places that
+            // 140x50 button at y=-402 (LogOpenButton's -340 minus its 50px height and 12px gap),
+            // so y=-464 leaves the same 12px gap beneath it. The previous y=-400 overlapped the
+            // Pocket button almost exactly and one click could open both panels.
             rect.anchorMin = new Vector2(1f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(1f, 1f);
             rect.sizeDelta = new Vector2(50f, 50f);
-            rect.anchoredPosition = new Vector2(-20f, -400f);
+            rect.anchoredPosition = new Vector2(-20f, -464f);
 
             Image image = host.GetComponent<Image>();
             if (image == null) image = host.AddComponent<Image>();

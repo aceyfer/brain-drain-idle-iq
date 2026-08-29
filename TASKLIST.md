@@ -49,6 +49,7 @@
 - [ ] 15. Store presence: name/ratings/screenshots/description (details §15)
 - [ ] 40. Player-favorite question system (pets/food) — deliver via a pulsing mailbox/note icon on the side of the screen, not an interrupting popup; ties into the deferred Phase 2 player-seeded procedural-dialogue weighting (details §40)
 - [x] 41. Settings menu — DONE. Mute toggle + 4-song picker built and wired (commit 4dfff12), verified in Play mode by Aceyfer 2026-08-27, no console errors. Gear button lives next to Dia-Log, top-right. Note: "Gutters Filled with Light" uses its G1-1 stem as a stand-in since the pack ships no combined "Full" mix for that song — worth a listen to confirm/swap later (details §41)
+- [x] 42. Settings/Pocket button overlap — live WireFix audit found `SettingsButton` at y=-400 overlapping runtime-built `PocketOpenButton` at y=-402, allowing one click to open both panels. Settings scene data and `SettingsMenuWireFix` moved below Pocket to y=-464; live Play mode confirmed each button now opens only its own correctly rendered panel.
 
 ## PARKED (do not touch until NOW+NEXT clear)
 - ShopTabView virtualization + real purchase routing (dormant by design)
