@@ -32,6 +32,10 @@ Thumbs.db
 # Machine-local MCP config with session token; never commit
 .cursor/
 
+# Machine-local agent and Google Version Handler state
+/.claude/
+/ProjectSettings/GvhProjectSettings.xml
+
 # Crashlytics
 crashlytics-build.properties
 
