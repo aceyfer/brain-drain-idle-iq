@@ -1050,8 +1050,8 @@ namespace BrainDrain.UI
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
             }
 
-            // Never leave the rebirth trigger suppressed past this controller's lifetime.
-            SetRebirthTriggerSuppressed(false);
+            // CloseShop owns restoring the rebirth trigger. Do not reactivate sibling UI from
+            // OnDestroy: during scene teardown that GameObject may already be being destroyed.
         }
 
         private void SetRebirthTriggerSuppressed(bool suppressed)
