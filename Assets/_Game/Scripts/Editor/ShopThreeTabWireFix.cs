@@ -9,7 +9,8 @@ using BrainDrain.UI;
 namespace BrainDrain.EditorTools
 {
     /// <summary>
-    /// Wires the 3-tab shop layout on ShopPanel: BP UPGRADES, CASH INVESTMENTS, RP RESTORATIONS.
+    /// Legacy migration that wires the old 3-tab ShopPanel layout: BP UPGRADES, CASH
+    /// INVESTMENTS, RP RESTORATIONS. It refuses to run against the current ShopRoot/Tab_* layout.
     /// Menu: BrainDrain/Wire 3-Tab Shop
     /// </summary>
     public static class ShopThreeTabWireFix
@@ -41,6 +42,16 @@ namespace BrainDrain.EditorTools
             }
 
             Transform shopPanel = shopUI.transform;
+            if (shopPanel.name == "ShopRoot" &&
+                shopPanel.Find("Tab_BP") != null &&
+                shopPanel.Find("Tab_Cash") != null &&
+                shopPanel.Find("Tab_RP") != null)
+            {
+                Debug.LogWarning("[ShopThreeTabWireFix] Current ShopRoot/Tab_* hierarchy detected; " +
+                                 "the obsolete ShopPanel migration was not run.");
+                return;
+            }
+
             ScrollRect bpScroll = shopPanel.GetComponentInChildren<ScrollRect>(true);
             if (bpScroll == null)
             {
