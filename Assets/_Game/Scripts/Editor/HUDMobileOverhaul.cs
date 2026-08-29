@@ -10,8 +10,9 @@ using BrainDrain.UI;
 namespace BrainDrain.EditorTools
 {
     /// <summary>
-    /// Refined mobile HUD layout. Run in Edit Mode via
-    /// BrainDrain > Fix HUD Layout (Mobile Overhaul). Idempotent — safe to re-run.
+    /// Legacy migration for the pre-restoration-row mobile HUD. Run in Edit Mode via
+    /// BrainDrain > Fix HUD Layout (Mobile Overhaul). It refuses to run once either modern
+    /// restoration row exists because its old percentage bands would overwrite that layout.
     ///
     /// Layout (bottom → top of SafeArea, portrait 1080×1920):
     ///   y 0.14–0.26  ButtonsArea  ~230 px  — two rows: BP SHOP|$ SHOP / CONVERT|RESTORE
@@ -38,6 +39,18 @@ namespace BrainDrain.EditorTools
         private static void RunOverhaul()
         {
             if (EditorToolGuard.BlockedByPlayMode("HUDMobileOverhaul.RunOverhaul")) return;
+
+            // RestorationBarWireFix superseded this whole-screen migration. The old percentage
+            // bands below would move today's vessel, interactive controls, economy strip, and
+            // SNOTTING button back into the abandoned layout if this menu item were re-run.
+            if (FindInScene("RestorationVesselRow") != null ||
+                FindInScene("RestorationInteractiveRow") != null)
+            {
+                Debug.LogWarning("[HUDMobileOverhaul] Modern restoration-row layout detected; " +
+                                 "the legacy mobile-overhaul migration was not run.");
+                return;
+            }
+
             HUDController hud = Object.FindAnyObjectByType<HUDController>();
             if (hud == null)
             {
