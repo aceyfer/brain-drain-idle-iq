@@ -59,13 +59,33 @@ namespace BrainDrain.EditorTools
                 so.FindProperty("convertUIController").objectReferenceValue = convertUI;
             }
 
-            GameObject shade = GameObject.Find("ShopOverlayShade");
-            if (shade == null)
+            bool usesFullScreenShop = UsesCurrentFullScreenShop();
+            GameObject shade = null;
+            Transform[] allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
+            foreach (Transform candidate in allTransforms)
+            {
+                if (!candidate.gameObject.scene.IsValid()
+                    || !candidate.gameObject.scene.isLoaded
+                    || candidate.name != "ShopOverlayShade") continue;
+
+                if (usesFullScreenShop)
+                {
+                    Undo.DestroyObjectImmediate(candidate.gameObject);
+                }
+                else if (shade == null)
+                {
+                    shade = candidate.gameObject;
+                }
+            }
+
+            if (!usesFullScreenShop && shade == null)
             {
                 shade = CreateShopOverlayShade(canvas.transform);
             }
 
-            so.FindProperty("shopOverlayShade").objectReferenceValue = shade;
+            // The current ShopRoot fills CustomSafeArea, so the old mock's click-to-close
+            // dimmer would be invisible behind it (or block it if placed above it).
+            so.FindProperty("shopOverlayShade").objectReferenceValue = usesFullScreenShop ? null : shade;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             if (shopUI != null)
@@ -79,7 +99,9 @@ namespace BrainDrain.EditorTools
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             EditorSceneManager.SaveOpenScenes();
-            Debug.Log("[MainUIControllerWireFix] MainUIController wired and pedestrian container re-anchored.");
+            Debug.Log(usesFullScreenShop
+                ? "[MainUIControllerWireFix] MainUIController wired for the full-screen shop (legacy overlay omitted) and pedestrian container re-anchored."
+                : "[MainUIControllerWireFix] MainUIController wired and pedestrian container re-anchored.");
         }
 
         [MenuItem("BrainDrain/Wire Background Stage View")]
@@ -244,6 +266,37 @@ namespace BrainDrain.EditorTools
             {
                 so.FindProperty(propertyName).objectReferenceValue = button;
             }
+        }
+
+        private static bool UsesCurrentFullScreenShop()
+        {
+            Transform shopRoot = null;
+            Transform[] allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
+            foreach (Transform candidate in allTransforms)
+            {
+                if (candidate.gameObject.scene.IsValid()
+                    && candidate.gameObject.scene.isLoaded
+                    && candidate.name == "ShopRoot")
+                {
+                    shopRoot = candidate;
+                    break;
+                }
+            }
+
+            if (shopRoot == null
+                || shopRoot.Find("Tab_BP") == null
+                || shopRoot.Find("Tab_Cash") == null
+                || shopRoot.Find("Tab_RP") == null)
+            {
+                return false;
+            }
+
+            RectTransform rect = shopRoot.GetComponent<RectTransform>();
+            return rect != null
+                && rect.anchorMin == Vector2.zero
+                && rect.anchorMax == Vector2.one
+                && rect.anchoredPosition == Vector2.zero
+                && rect.sizeDelta == Vector2.zero;
         }
 
         private static GameObject CreateShopOverlayShade(Transform canvasTransform)
