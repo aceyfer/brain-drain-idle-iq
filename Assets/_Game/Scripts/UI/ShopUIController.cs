@@ -90,12 +90,6 @@ namespace BrainDrain.UI
             EnsureThreeTabLayout();
             WireTabButtons();
 
-            // Owns each tab panel's on-screen bounds in code, matching shopPanel exactly,
-            // regardless of whatever anchors got saved in the scene. Two scene-edit reports
-            // this session did not persist as expected (see PROJECT_BIBLE.md §8) -- geometry-
-            // critical values now live here, not the .unity file. Must run before BuildShop()
-            // so the freshly-instantiated rows' layout computes against final bounds.
-            NormalizeTabGeometry();
             NormalizeDrawOrder();
 
             if (closeButton != null)
@@ -157,6 +151,11 @@ namespace BrainDrain.UI
         private void Start()
         {
             ResolveDependencies();
+
+            // Own each tab panel's on-screen bounds after every component's Awake has run,
+            // then force the Canvas layout inside NormalizeTabGeometry. This prevents stale
+            // pre-CanvasScaler bounds from rejecting the usable region.
+            NormalizeTabGeometry();
 
             if (GameManager.Instance != null)
             {
@@ -669,6 +668,15 @@ namespace BrainDrain.UI
                 currencyManager = CurrencyManager.Instance;
             }
 
+            // Match MainUIController's fallback for scene instances where this legacy
+            // serialized field was never wired. The button's parent is the shared,
+            // persistent bottom navigation row used to bound the shop tab content.
+            if (shopButton == null)
+            {
+                GameObject shopButtonObject = GameObject.Find("ShopButton");
+                shopButton = shopButtonObject != null ? shopButtonObject.GetComponent<Button>() : null;
+            }
+
             if (shopRoot == null && bpTabPanel != null && bpTabPanel.transform.parent != null)
             {
                 shopRoot = bpTabPanel.transform.parent.gameObject;
@@ -687,12 +695,84 @@ namespace BrainDrain.UI
                 return;
             }
 
-            NormalizeTabPanelRect(bpTabPanel, shopPanelRect);
-            NormalizeTabPanelRect(cashTabPanel, shopPanelRect);
-            NormalizeTabPanelRect(rpTabPanel, shopPanelRect);
+            // Awake can run before CanvasScaler and layout groups have finalized their
+            // RectTransforms. Bounds read before this update reflect the Editor viewport's
+            // stale size and can make the tab bar and bottom navigation appear to overlap.
+            Canvas.ForceUpdateCanvases();
+
+            RectTransform layoutRoot = shopRoot != null
+                ? shopRoot.transform as RectTransform
+                : bpTabPanel != null ? bpTabPanel.transform.parent as RectTransform : null;
+            RectTransform tabBarRect = layoutRoot != null
+                ? layoutRoot.Find("ShopTabBar") as RectTransform
+                : null;
+
+            // MainUIController owns the persistent SHOP / CONVERT / RESTORE / SETTINGS row.
+            // ShopUIController already has the row's Shop button wired, so resolve the shared
+            // navigation RectTransform from that existing reference instead of adding another
+            // serialized dependency that can drift out of sync.
+            RectTransform bottomNavigationRect = shopButton != null
+                ? shopButton.transform.parent as RectTransform
+                : null;
+
+            if (!TryGetTabPanelInsets(
+                    layoutRoot,
+                    tabBarRect,
+                    bottomNavigationRect,
+                    out float bottomInset,
+                    out float topInset))
+            {
+                string layoutRootName = layoutRoot != null ? layoutRoot.name : "null";
+                string tabBarName = tabBarRect != null ? tabBarRect.name : "null";
+                string bottomNavigationName = bottomNavigationRect != null ? bottomNavigationRect.name : "null";
+                float layoutRootHeight = layoutRoot != null ? layoutRoot.rect.height : 0f;
+                Debug.LogWarning(
+                    $"[ShopUIController] Cannot normalize tab geometry: " +
+                    $"root={layoutRootName} height={layoutRootHeight}, " +
+                    $"tabBar={tabBarName}, bottomNav={bottomNavigationName}, " +
+                    $"topInset={topInset}, bottomInset={bottomInset}.",
+                    this);
+                return;
+            }
+
+            NormalizeTabPanelRect(bpTabPanel, shopPanelRect, bottomInset, topInset);
+            NormalizeTabPanelRect(cashTabPanel, shopPanelRect, bottomInset, topInset);
+            NormalizeTabPanelRect(rpTabPanel, shopPanelRect, bottomInset, topInset);
         }
 
-        private static void NormalizeTabPanelRect(GameObject tabPanel, RectTransform referenceRect)
+        private static bool TryGetTabPanelInsets(
+            RectTransform layoutRoot,
+            RectTransform tabBarRect,
+            RectTransform bottomNavigationRect,
+            out float bottomInset,
+            out float topInset)
+        {
+            bottomInset = 0f;
+            topInset = 0f;
+
+            if (layoutRoot == null || tabBarRect == null || bottomNavigationRect == null)
+            {
+                return false;
+            }
+
+            Bounds tabBarBounds = RectTransformUtility.CalculateRelativeRectTransformBounds(
+                layoutRoot,
+                tabBarRect);
+            Bounds bottomNavigationBounds = RectTransformUtility.CalculateRelativeRectTransformBounds(
+                layoutRoot,
+                bottomNavigationRect);
+
+            topInset = Mathf.Max(0f, layoutRoot.rect.yMax - tabBarBounds.min.y);
+            bottomInset = Mathf.Max(0f, bottomNavigationBounds.max.y - layoutRoot.rect.yMin);
+
+            return topInset + bottomInset < layoutRoot.rect.height;
+        }
+
+        private static void NormalizeTabPanelRect(
+            GameObject tabPanel,
+            RectTransform referenceRect,
+            float bottomInset,
+            float topInset)
         {
             RectTransform tabRect = tabPanel != null ? tabPanel.GetComponent<RectTransform>() : null;
             if (tabRect == null)
@@ -702,8 +782,8 @@ namespace BrainDrain.UI
 
             tabRect.anchorMin = referenceRect.anchorMin;
             tabRect.anchorMax = referenceRect.anchorMax;
-            tabRect.offsetMin = Vector2.zero;
-            tabRect.offsetMax = Vector2.zero;
+            tabRect.offsetMin = new Vector2(0f, bottomInset);
+            tabRect.offsetMax = new Vector2(0f, -topInset);
 
             ScrollRect scrollRect = tabPanel.GetComponentInChildren<ScrollRect>(true);
             if (scrollRect != null)
@@ -717,6 +797,16 @@ namespace BrainDrain.UI
             // Tab content's sortingOrder is asserted every call in SetTabPanelPresentation
             // (Awake's InitializeTabPresentation + every SelectTab call), not just once here
             // -- see that method for why.
+
+            RectTransform layoutRoot = shopRoot != null ? shopRoot.transform as RectTransform : null;
+            Transform tabBar = layoutRoot != null ? layoutRoot.Find("ShopTabBar") : null;
+            if (tabBar != null)
+            {
+                // Tab panels use override canvases so their generated rows draw above the
+                // shop backdrop. Keep the persistent tab chrome above those panels as well;
+                // otherwise overflowing row graphics can hide and intercept the adjacent tabs.
+                SetOverrideSorting(tabBar.gameObject, ShopChromeSortingOrder, ensureRaycaster: true);
+            }
 
             // closeButton has no Canvas of its own today -- it's raycasted only via the root
             // canvas. Give it one so it can sort above the tab content regardless of whether
