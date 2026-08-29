@@ -47,7 +47,9 @@ namespace BrainDrain.EditorTools
         // RestorationVesselRow's total sizeDelta.y -- vessel only, full width, non-interactive.
         // Anchored to CustomSafeArea's own bottom (y=0), which is already safe-area-clipped by
         // SafeAreaManager -- see the class doc comment. This is the one element allowed there.
-        private const float VesselRowHeight = 90f;
+        // The scene has intentionally used 130px since the vessel-frame sizing work; keep this
+        // migration tool aligned with the current authored and live Play-mode geometry.
+        private const float VesselRowHeight = 130f;
 
         // ShopButton/ConvertButton's CURRENT rendered height, traced from EconomyBar's existing
         // nested layout: EconomyBar (134.4px = 0.07 * 1920) -> its VerticalLayoutGroup (padding
@@ -175,8 +177,8 @@ namespace BrainDrain.EditorTools
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Debug.Log("[RestorationBarWireFix] Done. Save the scene (Ctrl+S).\n" +
                       "Stack (bottom to top of CustomSafeArea, local px) -- unchanged from last run: " +
-                      "RestorationVesselRow [0, 90] (non-interactive) -> RestorationInteractiveRow " +
-                      "[90, 204.4] -> EconomyBar [204.4, 338.8] (moved, height preserved, now empty). " +
+                      "RestorationVesselRow [0, 130] (non-interactive) -> RestorationInteractiveRow " +
+                      "[130, 244.4] -> EconomyBar [244.4, 378.8] (moved, height preserved, now empty). " +
                       "2026-08-25: RestorationBarPlunger and RestorationBarVesselFrame (the glass-tube " +
                       "art attempt) were removed for good -- xp_bar_frame.png/xp_bar_plunger.png " +
                       "deleted, this tool no longer builds or wires either object. Vessel is now just " +
