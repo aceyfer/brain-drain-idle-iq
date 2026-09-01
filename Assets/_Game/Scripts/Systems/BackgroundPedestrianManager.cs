@@ -11,6 +11,11 @@ namespace BrainDrain.Systems
     /// which keys off WorldRestorationStage.stageIndex instead. Affects movement speed and a
     /// simple posture tilt on newly-spawned pedestrians only (no retroactive update of
     /// already-walking ones, matching how the sprite-pool swap already behaves).
+    /// 2026-08-31: also drives the wobble-to-levitation arc (see StageWobbleAmplitudeMultiplier
+    /// and MoveRoutine) -- the South Park stumble-wobble fades out band by band as the world
+    /// heals, and Engaged (the final band, >80% restored -- "the god stage") replaces it
+    /// entirely with a gentle hover, per Aceyfer's original intent that this be visible and
+    /// confirmed live at the top of World Restoration.
     /// </summary>
     public enum PedestrianBehaviorStage
     {
@@ -23,7 +28,9 @@ namespace BrainDrain.Systems
 
     /// <summary>
     /// Spawns and moves 2D pedestrian sprites in the UI street band behind the player character.
-    /// Stage 1 art only in the current view; South Park-style wobble with a Y ceiling clamp.
+    /// Stage 1 art only in the current view. South Park-style ground wobble at low World
+    /// Restoration, fading out band by band until the final ("god stage") band levitates
+    /// instead of walking -- see PedestrianBehaviorStage and MoveRoutine.
     /// </summary>
     public sealed class BackgroundPedestrianManager : MonoBehaviour
     {
@@ -51,6 +58,23 @@ namespace BrainDrain.Systems
         [SerializeField] private float wobbleVerticalAmplitude = 14f;
         [SerializeField] private float wobbleRotationAmplitude = 16f;
         [SerializeField] private float wobbleFrequency = 8.5f;
+
+        /// <summary>2026-08-31: how much of the ground wobble above survives at each of the 5
+        /// PedestrianBehaviorStage bands, in enum declaration order (SlackJawed..Engaged). Fades
+        /// the South Park stumble-waddle out gradually as the world heals; Engaged is 0 here
+        /// because that band doesn't wobble at all -- it hovers instead (see godHover* fields
+        /// and MoveRoutine).</summary>
+        private static readonly float[] StageWobbleAmplitudeMultiplier = { 1.0f, 0.65f, 0.3f, 0.1f, 0f };
+
+        [Header("Levitation (Engaged band -- \"god stage\")")]
+        [Tooltip("Vertical hover distance above walkBaselineY that Engaged-band pedestrians float at, before the sine bob is added.")]
+        [SerializeField] private float godHoverHeightOffset = 36f;
+        [Tooltip("How far the hover bobs up/down from godHoverHeightOffset, symmetric both ways (unlike the walk wobble, which only bounces upward).")]
+        [SerializeField] private float godHoverAmplitude = 20f;
+        [Tooltip("Much slower than wobbleFrequency -- a calm float, not a footstep cadence.")]
+        [SerializeField] private float godHoverFrequency = 1.4f;
+        [Tooltip("Gentle side-to-side sway in degrees, replacing the walk-cycle tilt.")]
+        [SerializeField] private float godHoverSwayDegrees = 6f;
 
         [Header("Dimensions")]
         [SerializeField] private float pedestrianWidth = 140f;
@@ -398,11 +422,29 @@ namespace BrainDrain.Systems
                     continue;
                 }
 
-                float rotAngle = Mathf.Sin(elapsed * wobbleFrequency) * wobbleRotationAmplitude;
-                float verticalOffset = Mathf.Abs(Mathf.Sin(elapsed * wobbleFrequency)) * wobbleVerticalAmplitude;
+                float rotAngle;
+                float desiredY;
+
+                if (stage == PedestrianBehaviorStage.Engaged)
+                {
+                    // "God stage": fully healed world, pedestrians hover rather than walk.
+                    // Symmetric sine (not Mathf.Abs) so it floats evenly up AND down around the
+                    // raised baseline, unlike the footstep-bounce wobble below which only ever
+                    // pushes upward from the ground.
+                    float hoverSine = Mathf.Sin(elapsed * godHoverFrequency);
+                    desiredY = walkBaselineY + godHoverHeightOffset + hoverSine * godHoverAmplitude;
+                    rotAngle = hoverSine * godHoverSwayDegrees;
+                }
+                else
+                {
+                    float wobbleMultiplier = StageWobbleAmplitudeMultiplier[(int)stage];
+                    float wobbleSine = Mathf.Sin(elapsed * wobbleFrequency);
+                    rotAngle = wobbleSine * wobbleRotationAmplitude * wobbleMultiplier;
+                    float verticalOffset = Mathf.Abs(wobbleSine) * wobbleVerticalAmplitude * wobbleMultiplier;
+                    desiredY = walkBaselineY + verticalOffset;
+                }
 
                 float nextX = rt.anchoredPosition.x + direction * speed * Time.deltaTime;
-                float desiredY = walkBaselineY + verticalOffset;
                 float clampedY = Mathf.Clamp(desiredY, walkBaselineY, maxAnchoredY);
 
                 rt.anchoredPosition = new Vector2(nextX, clampedY);
