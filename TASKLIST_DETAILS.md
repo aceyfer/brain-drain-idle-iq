@@ -498,11 +498,11 @@ Verified against `DialogueManager.cs:450-456`'s real filter (`currentRestoration
 **Deprioritized (Aceyfer's call, 2026-08-26):** the game is fully playable without in-Editor click-to-select working — every other workflow (Hierarchy selection, Inspector field edits, the Editor tooling menus) is unaffected. Not worth chasing further right now; revisit only if it becomes a real bottleneck.
 **Status:** root cause narrowed to Editor-local session state (not a code bug). Deprioritized, not fixed, not blocking.
 
-## §40 Player-favorite question system — delivery mechanism decided, not scoped
+## §40 Player-favorite question system — DROPPED 2026-08-31
 **Ask (Aceyfer, 2026-08-26):** a question system asking the player their favorite pets/food etc., feeding into the deferred Phase 2 player-seeded weighting for the procedural dialogue system (`PROCEDURAL_DIALOGUE_SPEC.md` explicitly parked this: "Do NOT build player-seeded weighting or the question system yet" during Phase 1).
 **Delivery mechanism, decided:** a pulsing mailbox/note icon on the side of the screen that the player taps to open and answer a question — not a popup that interrupts play.
-**Not scoped:** question cadence/scheduling, how answers map onto word-bank/template weighting (Phase 2 of the procedural dialogue spec), where answered/unanswered state persists (new save field), and the actual question copy are all still open.
-**Status:** logged only, not scoped, not started.
+**Never scoped:** question cadence/scheduling, how answers map onto word-bank/template weighting (Phase 2 of the procedural dialogue spec), where answered/unanswered state persists (new save field), and the actual question copy were all still open when this was dropped.
+**Status:** DROPPED 2026-08-31 — Aceyfer's call ("not feeling it anymore"). No scoping or code work had started; nothing to unwind. If it resurfaces later, restart from the ask above rather than assuming any of the "not scoped" gaps got answered.
 
 ## §41 Settings menu needed — mute toggle + stage-music track picker
 **Ask (Aceyfer, 2026-08-26):** the game has no settings menu at all. Two things needed: a mute toggle, and a picker letting the player choose which stage's ambient music track plays, out of whatever stage tracks have been unlocked so far (i.e. gated by World Restoration progress reached, not all six available up front).
