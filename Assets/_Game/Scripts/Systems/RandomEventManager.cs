@@ -211,6 +211,17 @@ namespace BrainDrain.Systems
                 return;
             }
 
+            // 2026-08-31: defer rather than fire over an FTUE onboarding beat that's already on
+            // screen (FTUEManager.IsModalShowing) -- a satirical chaos-event popup interrupting a
+            // first-time player mid-tutorial-card is a jarring first impression regardless of
+            // which UI would technically win the raycast. Deliberately just re-checks next tick
+            // rather than rescheduling a fresh 90-180s wait: the event isn't skipped, only
+            // delayed by however long the FTUE card takes to clear (typically a few seconds).
+            if (FTUEManager.Instance != null && FTUEManager.Instance.IsModalShowing)
+            {
+                return;
+            }
+
             TriggerRandomEvent();
             ScheduleNextEvent();
         }
@@ -219,5 +230,19 @@ namespace BrainDrain.Systems
         {
             secondsUntilNextEvent = UnityEngine.Random.Range(MinSecondsBetweenEvents, MaxSecondsBetweenEvents);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only test hook (2026-08-31): zeroes the cooldown so the very next
+        /// GameManager.OnSecondTick runs HandleSecondTick's real gated path -- including the
+        /// FTUEManager.IsModalShowing check -- instead of firing immediately like
+        /// TriggerRandomEvent() does. Lets DebugCheats.ForceRandomEventCooldownElapsed
+        /// live-verify that gate without waiting out the real 90-180s cooldown.
+        /// </summary>
+        public void ForceCooldownElapsed()
+        {
+            secondsUntilNextEvent = 0f;
+        }
+#endif
     }
 }

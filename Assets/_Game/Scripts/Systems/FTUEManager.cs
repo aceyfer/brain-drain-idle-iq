@@ -204,6 +204,19 @@ namespace BrainDrain.Systems
         private readonly List<ModalRequest> modalQueue = new();
         private bool modalShowing;
 
+        /// <summary>
+        /// 2026-08-31: lets other systems that show their own full-screen popups (currently
+        /// RandomEventManager's chaos-event popup) check before firing over an FTUE beat card
+        /// that's already on screen. The two systems previously had zero mutual awareness --
+        /// IntelCardUI's overlay (sortingOrder 500) and RandomEventUIController's popup canvas
+        /// (sortingOrder 10, confirmed via live Inspector read) don't overlap in sorting order,
+        /// so this was never a "which one wins the raycast" problem, but it's still a jarring
+        /// player experience for a satirical chaos event to interrupt (or queue invisibly behind,
+        /// then pop the moment the FTUE card closes) a first-time-player onboarding beat. See
+        /// RandomEventManager.HandleSecondTick for the consumer.
+        /// </summary>
+        public bool IsModalShowing => modalShowing;
+
         // Cached per the §19 "4a" convention (subscribe via a cached reference, never
         // FindAnyObjectByType again at teardown) -- ShopUIController has no static Instance to
         // fall back on the way CurrencyManager/WorldRestorationManager do below.

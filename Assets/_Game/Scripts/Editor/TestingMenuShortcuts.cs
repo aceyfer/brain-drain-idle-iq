@@ -25,6 +25,12 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Force Rebirth")]
         private static void ForceRebirthMenuItem() => RequirePlayMode(DebugCheats.ForceRebirth);
 
+        [MenuItem("BrainDrain/Testing/Trigger Random Event")]
+        private static void TriggerRandomEventMenuItem() => RequirePlayMode(DebugCheats.TriggerRandomEvent);
+
+        [MenuItem("BrainDrain/Testing/Force Random Event Cooldown Elapsed")]
+        private static void ForceRandomEventCooldownElapsedMenuItem() => RequirePlayMode(DebugCheats.ForceRandomEventCooldownElapsed);
+
         [MenuItem("BrainDrain/Testing/Snotting Cycle Test")]
         private static void SnottingCycleTestMenuItem() => RequirePlayMode(DebugCheats.RunSnottingCycleTest);
 

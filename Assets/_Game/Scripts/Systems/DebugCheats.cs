@@ -40,6 +40,29 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
+        /// 2026-08-31: forces one RandomEventManager chaos-event popup immediately, bypassing its
+        /// normal 90-180s real-time cooldown -- added specifically to test whether that popup can
+        /// stack with an already-open FTUEManager/IntelCardUI modal (the two systems have no
+        /// mutual awareness) without needing to sit through the real cooldown to find out.
+        /// </summary>
+        public static void TriggerRandomEvent()
+        {
+            RandomEventManager.Instance?.TriggerRandomEvent();
+        }
+
+        /// <summary>
+        /// 2026-08-31: unlike TriggerRandomEvent above, this does NOT fire the popup directly --
+        /// it zeroes RandomEventManager's internal cooldown so the very next
+        /// GameManager.OnSecondTick reaches HandleSecondTick's normal gated path, IsModalShowing
+        /// check included. Added to live-verify that gate (defers while an FTUE card is on screen,
+        /// fires within ~1s of it clearing) without sitting through the real 90-180s cooldown.
+        /// </summary>
+        public static void ForceRandomEventCooldownElapsed()
+        {
+            RandomEventManager.Instance?.ForceCooldownElapsed();
+        }
+
+        /// <summary>
         /// Sets up a known non-trivial pre-Snotting state (max buildings, large cash/points
         /// balance, restoration just over the 50k unlock threshold), fires one Snotting cycle,
         /// then logs PASS/FAIL assertions to the Console for checks 3-6:
