@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27cd703eb9d99d5d3fcc4697782f190c, type: 3}
   m_Name: BrainFreeze48
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.GodTierStoreItemData
-  itemId: brain_freeze_48
-  productId: com.eighthkind.braindrain.brainfreeze48
-  displayName: 'Brain Freeze: 48'
-  description: Same 113 floor, same 200 start. Two days before you have to think
+  itemId: brain_freeze_72
+  productId: com.eighthkind.braindrain.brainfreeze72
+  displayName: 'Brain Freeze: 72'
+  description: Same 113 floor, same 200 start. Three days before you have to think
     about it again.
-  realMoneyPriceDisplay: $2.50
+  realMoneyPriceDisplay: $2.99
   effectType: 6
   isConsumable: 1
   offlineExtensionHours: 0
-  freezeDurationHours: 48
+  freezeDurationHours: 72
