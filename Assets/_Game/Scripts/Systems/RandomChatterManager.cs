@@ -190,9 +190,15 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
-        /// Returns ambient chatter keyed to the player's current Idiocracy Game Rank index.
-        /// Low ranks skew Tier 1 (food rot), mid ranks mix Tier 2 (Illumisnotty), high ranks
-        /// blend all tiers with optional Tier 3 when unlocked and enabled.
+        /// Returns ambient chatter keyed to the player's current Idiocracy Game Rank index
+        /// (== World Restoration stage, see GameManager.UpdateRankFromRestorationStage). Low
+        /// ranks skew Tier 1 (food rot), mid ranks mix in Tier 2 (Illumisnotty).
+        /// Tier 3 (Bad Words Pack) is layered on top at EVERY rank once unlocked and enabled --
+        /// 2026-08-31 fix: it used to be additionally gated behind rankIndex > 3, so a player who
+        /// bought the pack early (most likely purchase moment) heard zero difference until
+        /// reaching a late-game stage, contradicting the store description ("Toggle them on/off
+        /// anytime once owned") and the intended design (existing tier lines stay, profanity is
+        /// an added layer of evolution, not a late unlock).
         /// </summary>
         public string GetLineForRank(int rankIndex)
         {
@@ -212,10 +218,11 @@ namespace BrainDrain.Systems
             {
                 pool.AddRange(tierOneLines);
                 pool.AddRange(tierTwoLines);
-                if (includeTierThree)
-                {
-                    pool.AddRange(tierThreeLines);
-                }
+            }
+
+            if (includeTierThree)
+            {
+                pool.AddRange(tierThreeLines);
             }
 
             if (pool.Count == 0)
