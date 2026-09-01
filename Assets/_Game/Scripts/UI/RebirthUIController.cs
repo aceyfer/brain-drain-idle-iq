@@ -173,14 +173,26 @@ namespace BrainDrain.UI
             if (img != null)
             {
                 img.color = unlocked ? ButtonColorReady : ButtonColorLocked;
-                img.raycastTarget = unlocked;
+
+                // FIXED 2026-08-30 (found via Codex Play Mode test + temp logging, see
+                // Assets/Plans/tutorial-direction-and-cogs-trust.md): this used to be
+                // `img.raycastTarget = unlocked`, which left the locked button with zero
+                // raycastable graphic (child InnerFill was gated the same way). With nothing on
+                // this GameObject left for GraphicRaycaster to hit, a locked tap never reached
+                // OpenModal() at all -- it fell through to whatever was underneath (the
+                // full-screen MainTapButton), registering as a normal tap instead. That silently
+                // defeated the "always interactable, gate inside OpenModal" fix above: the gate
+                // logic was correct, but the tap could no longer arrive to be gated. Must stay
+                // raycastable in both states now that OpenModal (not Button.interactable) is the
+                // real gate.
+                img.raycastTarget = true;
             }
 
             Transform innerFill = rebirthTriggerButton.transform.Find("InnerFill");
             Image innerFillImage = innerFill != null ? innerFill.GetComponent<Image>() : null;
             if (innerFillImage != null)
             {
-                innerFillImage.raycastTarget = unlocked;
+                innerFillImage.raycastTarget = true;
             }
 
             TextMeshProUGUI txt = rebirthTriggerButton.GetComponentInChildren<TextMeshProUGUI>(true);

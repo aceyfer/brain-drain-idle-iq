@@ -1077,8 +1077,16 @@ namespace BrainDrain.Systems
 
         /// <summary>
         /// Starts an infinite sine pulse on rect.localScale (1.0-1.02) and graphic's alpha
-        /// channel (0.4-1.0), period 1.0s. Only overrides alpha, so it composes with whatever
+        /// channel (0.82-1.0), period 1.3s. Only overrides alpha, so it composes with whatever
         /// already set the graphic's base RGB color.
+        /// RETUNED 2026-08-30 (see Assets/Plans/tutorial-direction-and-cogs-trust.md, Option A):
+        /// this was previously a 0.4-1.0 alpha swing on a 1.0s period, disabled in UpgradeSlotUI
+        /// as "too flashy" -- a shop list can show several affordable rows pulsing in and out of
+        /// near-transparency at once, which reads as noise rather than a nudge. Narrowed to a
+        /// gentle breathing glow instead of a full fade; re-enabled in UpgradeSlotUI alongside
+        /// this change. If this still reads as too much once several rows are affordable
+        /// simultaneously, the next step is restricting the pulse to a single recommended row
+        /// rather than narrowing the range further -- see that doc's Option B notes.
         /// </summary>
         public static void PlayAffordablePulse(RectTransform rect, Graphic graphic)
         {
@@ -1116,7 +1124,7 @@ namespace BrainDrain.Systems
 
         private IEnumerator AffordablePulseRoutine(RectTransform rect, Graphic graphic)
         {
-            const float period = 1.0f;
+            const float period = 1.3f;
             float elapsed = 0f;
 
             while (true)
@@ -1133,7 +1141,7 @@ namespace BrainDrain.Systems
                 if (graphic != null)
                 {
                     Color color = graphic.color;
-                    color.a = Mathf.Lerp(0.4f, 1.0f, sine);
+                    color.a = Mathf.Lerp(0.82f, 1.0f, sine);
                     graphic.color = color;
                 }
 

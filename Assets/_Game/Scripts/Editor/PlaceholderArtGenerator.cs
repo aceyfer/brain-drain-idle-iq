@@ -5,7 +5,9 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using BrainDrain.Systems;
+using BrainDrain.UI;
 
 namespace BrainDrain.EditorTools
 {
@@ -214,6 +216,170 @@ namespace BrainDrain.EditorTools
                 c + new Vector2(0.32f * r, 0.22f * r)
             }, 0.06f * r, FeatureColor);
         }
+
+        // ===================== Nudge pointer (Option B, tutorial-direction-and-cogs-trust.md) =====================
+
+        private const string NudgeArtFolder = "Assets/_Game/Art/UI";
+        private const string NudgePointerObjectName = "UINudgePointer (Generated)";
+        private static readonly Color NudgeArrowColor = HexColor("#FFD700"); // same gold already used for UpgradeSlotUI's "TOTAL" highlight -- reads as a player-facing hint, distinct from COGS's own cyan/pink neon palette.
+
+        /// <summary>
+        /// Generates the single "look here" arrow sprite UINudgePointer.cs uses and wires an
+        /// instance of that component into the active scene under the root Canvas -- the
+        /// procedural-art route (Option B.1) tutorial-direction-and-cogs-trust.md recommended
+        /// over hand-authoring a pointer/spotlight asset. Deliberately arrow-only for this pass:
+        /// a ring/spotlight variant would reuse the same FillEllipse-minus-inner-FillEllipse
+        /// technique CreateFaceTexture's outline already demonstrates, but nothing calls for one
+        /// yet, so it isn't built speculatively. Idempotent: re-running finds and updates the
+        /// existing object instead of duplicating it, same as GenerateCOGSPortraits's stage
+        /// lookup.
+        /// </summary>
+        [MenuItem("BrainDrain/Generate Placeholder Art/Nudge Pointer")]
+        public static void GenerateNudgePointer()
+        {
+            if (EditorToolGuard.BlockedByPlayMode("PlaceholderArtGenerator.GenerateNudgePointer")) return;
+            Directory.CreateDirectory(NudgeArtFolder);
+            AssetDatabase.Refresh();
+
+            Sprite arrowSprite = GenerateArrowSprite();
+            WireNudgePointerObject(arrowSprite);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[PlaceholderArtGenerator] Done. Generated Assets/_Game/Art/UI/NudgeArrow.png and created/updated '" + NudgePointerObjectName + "' under Canvas in the active scene (starts hidden -- UINudgePointer.Awake() disables its Image until something calls PointAt). Save the scene (Ctrl+S) to persist the wiring.");
+        }
+
+        private static Sprite GenerateArrowSprite()
+        {
+            const int width = 96;
+            const int height = 128;
+            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            ClearTransparent(tex);
+
+            // Shaft: black outline pass (wider) then gold fill (narrower) -- the same two-pass
+            // outline technique CreateFaceTexture uses for the COGS portrait circles.
+            // NOTE: SaveTextureAsSprite flips the texture vertically before writing it to disk
+            // (see that method's comment), so a low pre-flip y ends up at the TOP of the saved
+            // sprite and a high pre-flip y ends up at the BOTTOM -- the same convention
+            // CreateFaceTexture's eyes (negative offset -> top) and mouth (positive offset ->
+            // bottom) already rely on. The tip needs to land at the bottom (pointing down at
+            // whatever this hovers above), so it gets the highest y here, not the lowest.
+            Vector2 shaftTop = new Vector2(width * 0.5f, height * 0.08f);
+            Vector2 shaftBottom = new Vector2(width * 0.5f, height * 0.58f);
+            DrawThickLine(tex, shaftTop, shaftBottom, width * 0.30f, Color.black);
+            DrawThickLine(tex, shaftTop, shaftBottom, width * 0.16f, NudgeArrowColor);
+
+            // Arrowhead: a downward-pointing triangle, same outline trick via a larger black
+            // triangle scaled out from the centroid, then a smaller gold triangle on top.
+            Vector2 tip = new Vector2(width * 0.5f, height * 0.94f);
+            Vector2 headLeft = new Vector2(width * 0.10f, height * 0.54f);
+            Vector2 headRight = new Vector2(width * 0.90f, height * 0.54f);
+            Vector2 centroid = (tip + headLeft + headRight) / 3f;
+            const float outlineScale = 1.35f;
+
+            FillTriangle(tex, centroid + (tip - centroid) * outlineScale, centroid + (headLeft - centroid) * outlineScale, centroid + (headRight - centroid) * outlineScale, Color.black);
+            FillTriangle(tex, tip, headLeft, headRight, NudgeArrowColor);
+
+            tex.Apply();
+            return SaveTextureAsSprite(tex, $"{NudgeArtFolder}/NudgeArrow.png");
+        }
+
+        /// <summary>
+        /// Finds (or creates) the pointer's GameObject as a direct child of the scene's root
+        /// "Canvas" object -- it has to live at that level (not under a scroll view's content, or
+        /// it would clip when a target row scrolls out of view) since UINudgePointer repositions
+        /// it every frame in that canvas's local space via RectTransformUtility. Pivot is bottom-
+        /// center (0.5, 0) so anchoredPosition always refers to the arrow's tip, matching how
+        /// UINudgePointer.RepositionOverTarget hovers that tip just above a target's top edge.
+        /// </summary>
+        private static void WireNudgePointerObject(Sprite arrowSprite)
+        {
+            GameObject canvasObject = GameObject.Find("Canvas");
+            if (canvasObject == null)
+            {
+                Debug.LogWarning("[PlaceholderArtGenerator] No GameObject named 'Canvas' found in the active scene -- cannot host the nudge pointer. Create '" + NudgePointerObjectName + "' manually under your root canvas with an Image (sprite: " + AssetDatabase.GetAssetPath(arrowSprite) + ") and a UINudgePointer component.");
+                return;
+            }
+
+            Transform existing = canvasObject.transform.Find(NudgePointerObjectName);
+            GameObject nudgeObject = existing != null ? existing.gameObject : null;
+
+            if (nudgeObject == null)
+            {
+                nudgeObject = new GameObject(NudgePointerObjectName, typeof(RectTransform));
+                nudgeObject.transform.SetParent(canvasObject.transform, false);
+                Undo.RegisterCreatedObjectUndo(nudgeObject, "Create UINudgePointer");
+            }
+
+            RectTransform rect = nudgeObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(64f, 85.3f); // matches the 96x128 arrow texture's aspect ratio at a readable on-screen size
+
+            Image image = nudgeObject.GetComponent<Image>();
+            if (image == null) image = nudgeObject.AddComponent<Image>();
+            image.sprite = arrowSprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false; // purely visual -- must never intercept the tap meant for whatever it's pointing at
+            image.enabled = false; // UINudgePointer.Awake() also does this at runtime; set here too so the saved scene doesn't show it lit up in the Editor
+
+            if (nudgeObject.GetComponent<UINudgePointer>() == null)
+            {
+                nudgeObject.AddComponent<UINudgePointer>();
+            }
+
+            // 2026-08-31: living directly under the root Canvas (plain sibling order, no
+            // override) is not enough on its own -- several other UI systems (e.g.
+            // ShopUIController's per-tab content) give their own subtree a nested Canvas with
+            // overrideSorting so THEY layer correctly among themselves, and a nested
+            // overrideSorting Canvas renders relative to other Canvases purely by sortingOrder,
+            // ignoring Transform sibling position in a shared ancestor entirely. Without its own
+            // override here, this pointer could never render above that content no matter its
+            // sibling index. UINudgePointer.Awake() also enforces this at runtime (so it's correct
+            // even if this generator isn't re-run against an already-saved object), but setting it
+            // here too keeps a freshly-generated object correct without needing Play mode.
+            Canvas nudgeCanvas = nudgeObject.GetComponent<Canvas>();
+            if (nudgeCanvas == null) nudgeCanvas = nudgeObject.AddComponent<Canvas>();
+            nudgeCanvas.overrideSorting = true;
+            nudgeCanvas.sortingOrder = 10; // above ShopUIController.TabContentSortingOrder (1), below IntelCardUI.OverlaySortingOrder (500)
+
+            nudgeObject.transform.SetAsLastSibling();
+            EditorUtility.SetDirty(nudgeObject);
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        }
+
+        private static void FillTriangle(Texture2D tex, Vector2 a, Vector2 b, Vector2 c, Color color)
+        {
+            int minX = Mathf.Max(0, Mathf.FloorToInt(Mathf.Min(a.x, Mathf.Min(b.x, c.x))));
+            int maxX = Mathf.Min(tex.width - 1, Mathf.CeilToInt(Mathf.Max(a.x, Mathf.Max(b.x, c.x))));
+            int minY = Mathf.Max(0, Mathf.FloorToInt(Mathf.Min(a.y, Mathf.Min(b.y, c.y))));
+            int maxY = Mathf.Min(tex.height - 1, Mathf.CeilToInt(Mathf.Max(a.y, Mathf.Max(b.y, c.y))));
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
+                    if (IsInsideTriangle(p, a, b, c))
+                    {
+                        tex.SetPixel(x, y, color);
+                    }
+                }
+            }
+        }
+
+        private static bool IsInsideTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float d1 = Cross(p - a, b - a);
+            float d2 = Cross(p - b, c - b);
+            float d3 = Cross(p - c, a - c);
+            bool hasNeg = d1 < 0f || d2 < 0f || d3 < 0f;
+            bool hasPos = d1 > 0f || d2 > 0f || d3 > 0f;
+            return !(hasNeg && hasPos);
+        }
+
+        private static float Cross(Vector2 a, Vector2 b) => a.x * b.y - a.y * b.x;
 
         // ===================== Shared asset-pipeline helpers =====================
 
