@@ -134,6 +134,11 @@ namespace BrainDrain.Systems
         public bool ftueNameRevealSeen;
         public float ftueNameRevealElapsedSeconds;
 
+        // -- Beat "Gary" (2026-08-31) -- retired GaryBarkManager's ambient character folded into
+        // a one-shot Pocket card (IntelCardCatalog.GaryPod2Id). false zero-fills correctly for
+        // saves predating this field.
+        public bool ftueGaryCardSeen;
+
         // -- Daily active-engagement cap (2026-07-30) -- countedSeconds zero-fills correctly for
         // saves predating this feature (0 = "haven't used any of today's allowance"); dayKey
         // zero-fills to null/empty, which DailyEngagementCapManager.LoadState treats the same as
@@ -434,6 +439,7 @@ namespace BrainDrain.Systems
                 data.ftueSnottingIntelSeen = FTUEManager.Instance.SnottingIntelSeen;
                 data.ftueNameRevealSeen = FTUEManager.Instance.NameRevealSeen;
                 data.ftueNameRevealElapsedSeconds = FTUEManager.Instance.NameRevealElapsedSeconds;
+                data.ftueGaryCardSeen = FTUEManager.Instance.GaryCardSeen;
             }
 
             if (CashShopManager.Instance != null)
@@ -681,7 +687,8 @@ namespace BrainDrain.Systems
                 data.ftueRestoreBeatSeen,
                 data.ftueSnottingIntelSeen,
                 data.ftueNameRevealSeen,
-                data.ftueNameRevealElapsedSeconds);
+                data.ftueNameRevealElapsedSeconds,
+                data.ftueGaryCardSeen);
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
@@ -782,6 +789,7 @@ namespace BrainDrain.Systems
                 ftueSnottingIntelSeen = false,
                 ftueNameRevealSeen = false,
                 ftueNameRevealElapsedSeconds = 0f,
+                ftueGaryCardSeen = false,
                 dailyCapCountedSeconds = 0f,
                 dailyCapDayKey = null,
                 muted = false,

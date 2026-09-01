@@ -39,6 +39,18 @@ namespace BrainDrain.UI
         public const string CheeseDirtId = "cheese_dirt";            // Beat 7  (gated by ftueRestoreBeatSeen)
         public const string TedsCeilingFansId = "teds_ceiling_fans"; // Beat 9  THE NAME (gated by ftueNameRevealSeen)
 
+        /// <summary>
+        /// Beat "Gary" (2026-08-31): retired GaryBarkManager/GaryBarkLibrary/GaryBubbleUI's ambient
+        /// office-drone character folded into a one-shot Pocket card instead (Aceyfer's call --
+        /// the live bark system technically worked but "didn't have much of a role" and wasn't
+        /// confirmed visible in-game, so it's gone; this is what's left of him). Deliberately named
+        /// and titled to not collide with GaryMattressId above -- that's an unrelated shop-name pun
+        /// signed "The Literates" with no personified voice; this card is an in-universe personnel
+        /// file ABOUT a coworker literally named Gary. Two different "Gary"s, same coincidence a
+        /// real office would have. Gated by ftueGaryCardSeen (details below).
+        /// </summary>
+        public const string GaryPod2Id = "gary_pod_2"; // Beat "Gary" (gated by ftueGaryCardSeen)
+
         private static readonly Dictionary<string, LiteratesCard> Cards = new()
         {
             [GaryMattressId] = new LiteratesCard(
@@ -80,6 +92,15 @@ namespace BrainDrain.UI
                 "— The Literates\n" +
                 "p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.",
                 "I KNOW THE NAME"),
+
+            [GaryPod2Id] = new LiteratesCard(
+                GaryPod2Id,
+                "POD #2 QUARTERLY REVIEW — SUBJECT: GARY (COMPLIANT)",
+                "Gary made rank faster than anyone in the building. Textbook. Say \"per my last grunt\" enough times and the tin can stops asking questions.\n" +
+                "Then Thursday: gone. Not liquidated — worse. He just stopped showing up smart. Word from pod #2 is he's three bars deep somewhere, finally saying whatever he wants, to whoever's listening.\n" +
+                "That's the part they don't put in the handbook: coherence is a rental. You can give it back any time you want.\n" +
+                "— TL",
+                "GIVE IT BACK ANY TIME"),
         };
 
         /// <summary>Look up one card's verbatim copy by id. Returns false for unknown ids

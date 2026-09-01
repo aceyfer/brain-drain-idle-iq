@@ -145,6 +145,7 @@ namespace BrainDrain.Systems
         private bool snottingIntelSeen;
         private bool nameRevealSeen;
         private float nameRevealElapsedSeconds;
+        private bool garyCardSeen;
 
         // Transient (not persisted) guards against double-enqueuing the same beat while it's
         // already queued/showing but not yet confirmed -- e.g. the player opening the shop twice
@@ -154,6 +155,7 @@ namespace BrainDrain.Systems
         private bool restoreBeatRequested;
         private bool snottingIntelRequested;
         private bool nameRevealRequested;
+        private bool garyCardRequested;
 
         public bool BootBriefingSeen => bootBriefingSeen;
         public bool Card1Seen => card1Seen;
@@ -162,6 +164,12 @@ namespace BrainDrain.Systems
         public bool RestoreBeatSeen => restoreBeatSeen;
         public bool SnottingIntelSeen => snottingIntelSeen;
         public bool NameRevealSeen => nameRevealSeen;
+
+        /// <summary>2026-08-31: the retired Gary bark system's replacement Pocket card (see
+        /// IntelCardCatalog.GaryPod2Id). Fires the first time restoration reaches stage 2 or
+        /// higher -- the same stage Gary's own openers ("Neighbor!", "Hey, brain guy.") used to
+        /// become eligible at, back when he was an ambient bark instead of a one-shot card.</summary>
+        public bool GaryCardSeen => garyCardSeen;
 
         /// <summary>Running countdown toward Beat 9, persisted so a player who quits before NameRevealThresholdSeconds resumes next session instead of restarting.</summary>
         public float NameRevealElapsedSeconds => nameRevealElapsedSeconds;
@@ -178,9 +186,10 @@ namespace BrainDrain.Systems
         {
             get
             {
-                var ids = new List<string>(5);
+                var ids = new List<string>(6);
                 if (card1Seen) ids.Add(IntelCardCatalog.GaryMattressId);
                 if (card2Seen) ids.Add(IntelCardCatalog.SnakeUttersId);
+                if (garyCardSeen) ids.Add(IntelCardCatalog.GaryPod2Id);
                 if (cashBeatSeen) ids.Add(IntelCardCatalog.ArmadilloSauceId);
                 if (restoreBeatSeen) ids.Add(IntelCardCatalog.CheeseDirtId);
                 if (nameRevealSeen) ids.Add(IntelCardCatalog.TedsCeilingFansId);
@@ -307,6 +316,9 @@ namespace BrainDrain.Systems
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
                 WorldRestorationManager.Instance.OnRestorationProgressChanged += HandleRestorationProgressChanged;
+
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
+                WorldRestorationManager.Instance.OnRestorationStageChanged += HandleRestorationStageChanged;
             }
 
             cachedShopUI = FindAnyObjectByType<ShopUIController>();
@@ -327,6 +339,7 @@ namespace BrainDrain.Systems
             if (WorldRestorationManager.Instance != null)
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChanged;
             }
 
             if (cachedShopUI != null)
@@ -419,6 +432,32 @@ namespace BrainDrain.Systems
             OnLiteratesCardCollected?.Invoke();
         }
 
+        /// <summary>
+        /// 2026-08-31: Gary's replacement Pocket card. Fires the first time restoration resolves
+        /// to stage 2 or higher -- >= rather than == in case a single big spend jumps straight
+        /// past stage 2 to a later one (ApplyStageForCumulativePoints resolves directly to the
+        /// final stage, it doesn't step through intermediate ones). Like the other derived beats,
+        /// a resuming save already past this threshold picks it up on its next actual stage
+        /// change rather than retroactively on load -- same tolerance HandleRestorationProgressChanged
+        /// above already has for Beats 6/8, not a new gap introduced here.
+        /// </summary>
+        private void HandleRestorationStageChanged(WorldRestorationStage stage)
+        {
+            if (garyCardSeen || garyCardRequested || stage == null || stage.stageIndex < 2)
+            {
+                return;
+            }
+
+            garyCardRequested = true;
+            EnqueueCard(IntelCardCatalog.GaryPod2Id, HandleGaryCardConfirmed);
+        }
+
+        private void HandleGaryCardConfirmed()
+        {
+            garyCardSeen = true;
+            OnLiteratesCardCollected?.Invoke();
+        }
+
         private void HandleSnottingIntelConfirmed()
         {
             snottingIntelSeen = true;
@@ -438,7 +477,7 @@ namespace BrainDrain.Systems
         /// </summary>
         public void LoadState(bool restoredBootBriefingSeen, bool restoredCard1Seen, bool restoredCard2Seen,
             bool restoredCashBeatSeen, bool restoredRestoreBeatSeen, bool restoredSnottingIntelSeen,
-            bool restoredNameRevealSeen, float restoredNameRevealElapsedSeconds)
+            bool restoredNameRevealSeen, float restoredNameRevealElapsedSeconds, bool restoredGaryCardSeen)
         {
             bootBriefingSeen = restoredBootBriefingSeen;
             card1Seen = restoredCard1Seen;
@@ -448,6 +487,7 @@ namespace BrainDrain.Systems
             snottingIntelSeen = restoredSnottingIntelSeen;
             nameRevealSeen = restoredNameRevealSeen;
             nameRevealElapsedSeconds = restoredNameRevealElapsedSeconds;
+            garyCardSeen = restoredGaryCardSeen;
         }
 
         private IEnumerator SpawnCardAfterDelay(float delaySeconds, string cardId, System.Action onConfirmed)
