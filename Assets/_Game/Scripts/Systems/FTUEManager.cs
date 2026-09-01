@@ -188,6 +188,19 @@ namespace BrainDrain.Systems
             }
         }
 
+        /// <summary>
+        /// 2026-08-31 fix: fired from each Handle*Confirmed below the instant its *Seen flag
+        /// flips true, i.e. the instant CollectedLiteratesCardIds would include one more entry.
+        /// PocketPanelUI subscribes to this so a card collected while THE POCKET is already open
+        /// (non-modal -- it "coexists with gameplay" per its own class comment, so this is a real
+        /// case, not a hypothetical) shows up immediately instead of requiring the player to
+        /// close and reopen the panel to force RebuildList()'s on-open read. Previously
+        /// CollectedLiteratesCardIds's only reader (PocketPanelUI.RebuildList) only ran from
+        /// Open(), so this was the missing half of "can never desync from what the player has
+        /// actually read" -- true across sessions, false within one if the panel stayed open.
+        /// </summary>
+        public event System.Action OnLiteratesCardCollected;
+
         private readonly List<ModalRequest> modalQueue = new();
         private bool modalShowing;
 
@@ -318,6 +331,7 @@ namespace BrainDrain.Systems
         private void HandleCard1Confirmed()
         {
             card1Seen = true;
+            OnLiteratesCardCollected?.Invoke();
         }
 
         private void HandleShopOpened()
@@ -334,6 +348,7 @@ namespace BrainDrain.Systems
         private void HandleCard2Confirmed()
         {
             card2Seen = true;
+            OnLiteratesCardCollected?.Invoke();
         }
 
         private void HandleFirstCashEarned()
@@ -350,6 +365,7 @@ namespace BrainDrain.Systems
         private void HandleCashBeatConfirmed()
         {
             cashBeatSeen = true;
+            OnLiteratesCardCollected?.Invoke();
         }
 
         private void HandleRestorationProgressChanged(double cumulativeSpent)
@@ -387,6 +403,7 @@ namespace BrainDrain.Systems
         private void HandleRestoreBeatConfirmed()
         {
             restoreBeatSeen = true;
+            OnLiteratesCardCollected?.Invoke();
         }
 
         private void HandleSnottingIntelConfirmed()
@@ -397,6 +414,7 @@ namespace BrainDrain.Systems
         private void HandleNameRevealConfirmed()
         {
             nameRevealSeen = true;
+            OnLiteratesCardCollected?.Invoke();
         }
 
         /// <summary>

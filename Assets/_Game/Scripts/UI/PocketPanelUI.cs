@@ -13,12 +13,16 @@ namespace BrainDrain.UI
     /// precedent, Bible §8's "own it in code"). Builds its own open button parented next to the
     /// scene's existing "Dia-Log" button (LogOpenButton) and its own CanvasGroup-gated panel; each
     /// collected card renders as a tappable aged-paper spine that re-opens the full card through
-    /// IntelCardUI.Show. The collected set is derived on open from
+    /// IntelCardUI.Show. The collected set is derived from
     /// FTUEManager.CollectedLiteratesCardIds (the persisted seen-flags), so THE POCKET holds no
     /// save state of its own and can never desync from what the player has actually read (Option A,
     /// 2026-07-24). Card copy is read from IntelCardCatalog, the single verbatim-copy source shared
     /// with FTUEManager. Non-modal, like the dialogue log: no dimming backdrop, coexists with the
-    /// Dia-Log panel and gameplay; closed via its X, its toggle button, or Close().
+    /// Dia-Log panel and gameplay -- literally: since the panel can legitimately stay open while
+    /// the player keeps playing and collects another card, RebuildList() runs both on Open() and
+    /// live via FTUEManager.OnLiteratesCardCollected (2026-08-31 fix; see SubscribeToEvents) so an
+    /// already-open Pocket never has to be closed and reopened to reveal a just-collected card.
+    /// Closed via its X, its toggle button, or Close().
     /// </summary>
     public sealed class PocketPanelUI : MonoBehaviour
     {
@@ -97,6 +101,7 @@ namespace BrainDrain.UI
         private void Start()
         {
             Build();
+            SubscribeToEvents();
         }
 
         private void OnApplicationQuit()
@@ -106,11 +111,47 @@ namespace BrainDrain.UI
 
         private void OnDestroy()
         {
+            UnsubscribeFromEvents();
+
             if (instance == this)
             {
                 isShuttingDown = true;
                 instance = null;
             }
+        }
+
+        /// <summary>
+        /// 2026-08-31 fix: THE POCKET is explicitly non-modal and "coexists with gameplay" (class
+        /// comment above), so a player can leave it open while continuing to play and collect a
+        /// new LITERATES card in the background -- RebuildList() previously only ran from Open(),
+        /// so that card silently didn't appear until the player closed and reopened the panel.
+        /// FTUEManager.Instance is self-bootstrapping (creates its own hosting GameObject on
+        /// first access, same as this class), so calling it here is safe even before FTUEManager
+        /// has otherwise been touched -- matches RebuildList()'s existing FTUEManager.Instance use.
+        /// </summary>
+        private void SubscribeToEvents()
+        {
+            if (FTUEManager.Instance == null) return;
+
+            FTUEManager.Instance.OnLiteratesCardCollected -= HandleLiteratesCardCollected;
+            FTUEManager.Instance.OnLiteratesCardCollected += HandleLiteratesCardCollected;
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            if (FTUEManager.Instance == null) return;
+
+            FTUEManager.Instance.OnLiteratesCardCollected -= HandleLiteratesCardCollected;
+        }
+
+        /// <summary>Live-refreshes the spine list only while the panel is actually visible --
+        /// if it's closed, the next Open() already does a fresh RebuildList(), so refreshing here
+        /// too would just be wasted work.</summary>
+        private void HandleLiteratesCardCollected()
+        {
+            if (!isVisible) return;
+
+            RebuildList();
         }
 
         /// <summary>
@@ -365,9 +406,10 @@ namespace BrainDrain.UI
             panelGroup.interactable = !hidden;
         }
 
-        /// <summary>Rebuilds the spine list from the derived collected set each time the panel
-        /// opens (FTUE cards are one-time and rare, so no live subscription is needed -- a fresh
-        /// read on open always reflects the current save state).</summary>
+        /// <summary>Rebuilds the spine list from the derived collected set. Called from Open()
+        /// (a fresh read always reflects the current save state) and, since 2026-08-31, from
+        /// HandleLiteratesCardCollected while the panel is already open -- see that method and
+        /// the class comment for why the on-open-only version wasn't enough.</summary>
         private void RebuildList()
         {
             if (contentRoot == null) return;
