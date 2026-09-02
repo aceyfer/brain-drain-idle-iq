@@ -18,6 +18,7 @@ namespace BrainDrain.UI
         private void Awake()
         {
             backgroundImage = GetComponent<Image>();
+            backgroundImage.enabled = true;
             backgroundImage.raycastTarget = false;
             backgroundImage.preserveAspect = true;
             ApplyDefaultStageSprite();
