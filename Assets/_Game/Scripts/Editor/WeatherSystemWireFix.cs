@@ -3,6 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using BrainDrain.Systems;
 using BrainDrain.UI;
@@ -38,7 +39,13 @@ namespace BrainDrain.EditorTools
         {
             if (EditorToolGuard.BlockedByPlayMode("WeatherSystemWireFix.Fix")) return;
 
-            GameObject worldRoot = GameObject.Find("WorldRoot");
+            // GameObject.Find only searches active objects -- WorldRoot is inactive by default
+            // in the saved scene (its Awake/OnEnable-driven children presumably activate it, or
+            // something else does; not investigated here, and deliberately not flipped active as
+            // a workaround), so GameObject.Find("WorldRoot") silently returns null. Search
+            // scene roots directly instead, which sees inactive objects at any depth.
+            Transform worldRootTransform = FindInSceneIncludingInactive("WorldRoot");
+            GameObject worldRoot = worldRootTransform != null ? worldRootTransform.gameObject : null;
             if (worldRoot == null || worldRoot.transform.parent == null)
             {
                 Debug.LogWarning("[WeatherSystemWireFix] No 'WorldRoot' found under the Canvas -- cannot place AtmosphereOverlay. Aborting.");
@@ -71,7 +78,8 @@ namespace BrainDrain.EditorTools
             AssignObjectField(rainEffectView, "dropContainer", rainOverlay.GetComponent<RectTransform>());
             AssignArrayField(rainEffectView, "drops", drops);
 
-            GameObject weatherManagerHost = GameObject.Find("WeatherManager");
+            Transform weatherManagerTransform = FindInSceneIncludingInactive("WeatherManager");
+            GameObject weatherManagerHost = weatherManagerTransform != null ? weatherManagerTransform.gameObject : null;
             if (weatherManagerHost == null)
             {
                 weatherManagerHost = new GameObject("WeatherManager");
@@ -91,6 +99,41 @@ namespace BrainDrain.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log($"[WeatherSystemWireFix] Done (AtmosphereOverlay {(atmosphereCreated ? "created" : "found")}, RainOverlay {(rainCreated ? "created" : "found")}, {drops.Length} drops). Save the scene (Ctrl+S) to persist.");
+        }
+
+        /// <summary>GameObject.Find/transform.Find on a loose root only ever sees active objects. This walks every scene root's hierarchy directly (including inactive ones) to find a GameObject by exact name.</summary>
+        private static Transform FindInSceneIncludingInactive(string name)
+        {
+            Scene scene = EditorSceneManager.GetActiveScene();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                Transform found = FindRecursive(root.transform, name);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindRecursive(Transform current, string name)
+        {
+            if (current.name == name)
+            {
+                return current;
+            }
+
+            for (int i = 0; i < current.childCount; i++)
+            {
+                Transform found = FindRecursive(current.GetChild(i), name);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
         }
 
         private static GameObject FindOrCreateChild(Transform parent, string name, out bool created)
