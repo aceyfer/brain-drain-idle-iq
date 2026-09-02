@@ -8,18 +8,21 @@ using TMPro;
 namespace BrainDrain.EditorTools
 {
     /// <summary>
-    /// Gives CashText a dedicated TMP underlay material (Oswald_DarkUnderlay.mat) instead of
-    /// relying on tuning AtmosphereOverlay's haze alpha to stay out of its way. A soft, centered
-    /// (zero-offset) dark halo drawn behind the glyphs stays legible against any background tint
-    /// -- haze, pedestrians, whatever's behind it -- regardless of the exact alpha value, which
-    /// is the more robust fix Aceyfer asked for after the 0.34->0.20 alpha cut alone wasn't
-    /// enough at a small Editor Game view size.
+    /// Gives CashText a dedicated TMP underlay material (Oswald_GoldUnderlay.mat) instead of
+    /// relying on tuning AtmosphereOverlay's haze alpha to stay out of its way. TMP's underlay is
+    /// a soft dilated glow behind the glyph, not an opaque backing plate -- so a bright, fully
+    /// saturated color contrasts against nearly any backdrop, while a dark/near-black underlay
+    /// (this fix's first attempt) only helps against a solid light background and can blend
+    /// straight into a dark scene, which is what was actually happening. Root-caused by Aceyfer
+    /// via a byte-for-byte diff against Oswald_CyanGlow.mat (proven working on "0 BP") that
+    /// isolated _UnderlayColor as the only differing property.
     ///
-    /// Oswald_DarkUnderlay.mat is a clone of this project's own existing
-    /// Assets/_Game/Materials/TMP/Oswald_CyanGlow.mat (already live on the "0 BP" readout, same
-    /// UNDERLAY_ON technique, proven working in this exact project) with _UnderlayColor swapped
-    /// from cyan to near-opaque black -- same _UnderlayDilate/_UnderlaySoftness (0.35/0.55) as
-    /// that proven precedent, not invented from scratch.
+    /// Oswald_GoldUnderlay.mat -- renamed from Oswald_DarkUnderlay.mat, same GUID preserved via
+    /// git mv so any already-serialized scene reference stays valid -- is still a clone of this
+    /// project's own existing Assets/_Game/Materials/TMP/Oswald_CyanGlow.mat, but now with
+    /// _UnderlayColor matching CyanGlow's own brightness/alpha recipe (fully saturated, alpha 1)
+    /// just a gold/amber hue instead of cyan, so CashText isn't visually identical to BPPSText.
+    /// _UnderlayDilate/_UnderlaySoftness (0.35/0.55) are unchanged -- confirmed not the problem.
     ///
     /// Only CashText's own m_sharedMaterial reference changes. The font's bundled default
     /// material (Oswald Bold SDF's own embedded material, used by every other text object in the
@@ -29,9 +32,9 @@ namespace BrainDrain.EditorTools
     /// </summary>
     public static class CashTextLegibilityFix
     {
-        private const string MaterialPath = "Assets/_Game/Materials/TMP/Oswald_DarkUnderlay.mat";
+        private const string MaterialPath = "Assets/_Game/Materials/TMP/Oswald_GoldUnderlay.mat";
 
-        [MenuItem("BrainDrain/Fix Cash Text Legibility (Dark Underlay)")]
+        [MenuItem("BrainDrain/Fix Cash Text Legibility (Gold Underlay)")]
         public static void Fix()
         {
             if (EditorToolGuard.BlockedByPlayMode("CashTextLegibilityFix.Fix")) return;
@@ -50,18 +53,18 @@ namespace BrainDrain.EditorTools
                 return;
             }
 
-            Material darkUnderlay = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
-            if (darkUnderlay == null)
+            Material goldUnderlay = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            if (goldUnderlay == null)
             {
                 Debug.LogWarning($"[CashTextLegibilityFix] Could not load material at '{MaterialPath}' -- aborting.");
                 return;
             }
 
-            tmp.fontSharedMaterial = darkUnderlay;
+            tmp.fontSharedMaterial = goldUnderlay;
             EditorUtility.SetDirty(tmp);
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
-            Debug.Log("[CashTextLegibilityFix] CashText now uses Oswald_DarkUnderlay. Save the scene (Ctrl+S) to persist.");
+            Debug.Log("[CashTextLegibilityFix] CashText now uses Oswald_GoldUnderlay. Save the scene (Ctrl+S) to persist.");
         }
 
         // Same inactive-safe lookup as WeatherSystemWireFix -- GameObject.Find only sees active
