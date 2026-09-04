@@ -386,13 +386,19 @@ namespace BrainDrain.Systems
 
         private void PlayTextFlash(TextMeshProUGUI text, Color flashColor)
         {
-            if (!textFlashBaseColors.TryGetValue(text, out Color baseColor))
-            {
-                baseColor = text.color;
-                textFlashBaseColors[text] = baseColor;
-            }
+            bool flashInProgress = textFlashCoroutines.TryGetValue(text, out Coroutine running) && running != null;
 
-            if (textFlashCoroutines.TryGetValue(text, out Coroutine running) && running != null)
+            // Only trust the cached resting color while a flash is actually mid-flight (text.color
+            // is mid-lerp right now and would poison the cache with the flash color itself). While
+            // idle, text.color IS the true resting color, so always refresh from it -- previously
+            // this only ever read text.color on the very first call for a given text and reused
+            // that one value forever after, so any legitimate external recolor between flashes
+            // (e.g. a stage/theme change) got silently reverted back to the stale original the
+            // next time this text flashed.
+            Color baseColor = flashInProgress ? textFlashBaseColors[text] : text.color;
+            textFlashBaseColors[text] = baseColor;
+
+            if (flashInProgress)
             {
                 StopCoroutine(running);
             }
