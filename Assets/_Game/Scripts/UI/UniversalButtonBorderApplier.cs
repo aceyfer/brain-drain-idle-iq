@@ -68,6 +68,20 @@ namespace BrainDrain.UI
             RectTransform buttonRect = button.transform as RectTransform;
             if (buttonRect == null) { return null; }
 
+            // Invisible full-screen tap-catchers (MainTapButton, TapButton) signal "not a real
+            // visual button" via their own Image.color.a == 0 -- their RectTransforms span the
+            // entire screen, so bordering them stretched the border sprite across the whole
+            // screen too, rendering as a huge vignette/glow over the HUD (the actual root cause
+            // of a reported "golden flash" bug). Checking alpha rather than sprite-presence
+            // matters: ShopButton/ConvertButton/RestoreButton are legitimately visible via a
+            // solid tint color with no sprite at all, so a sprite-based filter would wrongly
+            // exclude those too.
+            Image ownImage = button.GetComponent<Image>();
+            if (ownImage != null && ownImage.color.a <= 0f)
+            {
+                return null;
+            }
+
             Transform existing = buttonRect.Find(BorderChildName);
             GameObject borderObject = existing != null ? existing.gameObject : null;
 
