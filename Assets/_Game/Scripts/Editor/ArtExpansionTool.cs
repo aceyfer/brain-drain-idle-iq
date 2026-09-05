@@ -168,6 +168,15 @@ namespace BrainDrain.EditorTools
             return tex;
         }
 
+        /// <summary>
+        /// Ensures the UniversalButtonBorderApplier component exists in the scene (creating its
+        /// host if needed) so ButtonThemeWireFix has something to wire theme assets onto. Does
+        /// NOT assign the generated sprites directly -- 2026-09-05's button-theme system replaced
+        /// the old raw stageBorderSprites array with a stageThemes: ButtonTheme[] array (border,
+        /// fill, and label text all sourced from a theme asset instead of a bare sprite); run
+        /// BrainDrain/Fix Button Theme System to build ButtonTheme assets from these sprites and
+        /// wire that array instead.
+        /// </summary>
         private static void WireUniversalButtonBorderApplier(UnityEngine.Object[] sprites)
         {
             var applier = Object.FindAnyObjectByType<UniversalButtonBorderApplier>();
@@ -178,9 +187,9 @@ namespace BrainDrain.EditorTools
                 Undo.RegisterCreatedObjectUndo(host, "Create UniversalButtonBorderApplier");
             }
 
-            AssignArrayField(applier, "stageBorderSprites", sprites);
             EditorUtility.SetDirty(applier);
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[ArtExpansionTool] Border sprites generated. Run 'BrainDrain/Fix Button Theme System' to build ButtonTheme assets from them and wire UniversalButtonBorderApplier.stageThemes.");
         }
 
         // ===================== 2. TopBG stage-evolving accent art =====================
