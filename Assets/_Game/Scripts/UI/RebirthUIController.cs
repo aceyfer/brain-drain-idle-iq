@@ -143,6 +143,22 @@ namespace BrainDrain.UI
             }
 
             rebirthTriggerButton.SetActive(!triggerSuppressed);
+
+            // Toggling a child's active state under a HorizontalLayoutGroup (RestorationInteractiveRow,
+            // ChildControlWidth/Height both on) does NOT itself trigger that group to recompute --
+            // Unity only rebuilds a LayoutGroup automatically on rect/size changes, not plain
+            // SetActive calls on a sibling. Without forcing a rebuild here, this button's very first
+            // activation (when World Restoration progress first unlocks Snotting) rendered with
+            // whatever anchors/anchoredPosition/sizeDelta happened to be last baked into the scene --
+            // a large stale Y offset that placed its ArrowIcon over the top HUD's "BRAIN POWER" text
+            // instead of inside the button itself, since the layout group never got a chance to
+            // recompute the correct in-row position/size before the player saw it.
+            RectTransform parentRect = rebirthTriggerButton.transform.parent as RectTransform;
+            if (parentRect != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(parentRect);
+            }
+
             if (triggerSuppressed)
             {
                 return;
