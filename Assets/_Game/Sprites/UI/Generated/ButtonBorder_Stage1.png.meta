@@ -51,8 +51,8 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 2
-  spriteBorder: {x: 16, y: 16, z: 16, w: 16}
+  spritePixelsToUnits: 400
+  spriteBorder: {x: 194, y: 50, z: 194, w: 50}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -131,12 +131,12 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 48
-        height: 48
+        width: 1064
+        height: 387
       alignment: 0
       pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      border: {x: 194, y: 50, z: 194, w: 50}
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -144,17 +144,17 @@ TextureImporter:
       spriteID: 0ae0db75ed1a18150800000000000000
       internalID: 5873153365394656928
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     outline: []
-    customData: 
+    customData:
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
-    indices: 
+    indices:
     edges: []
     weights: []
     secondaryTextures: []
@@ -162,8 +162,8 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       ButtonBorder_Stage1_0: 5873153365394656928
-  mipmapLimitGroupName: 
+  mipmapLimitGroupName:
   pSDRemoveMatte: 0
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+  userData:
+  assetBundleName:
+  assetBundleVariant:
