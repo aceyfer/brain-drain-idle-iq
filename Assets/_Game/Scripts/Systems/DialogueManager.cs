@@ -402,7 +402,7 @@ namespace BrainDrain.Systems
                 return;
             }
 
-            TryFireLine(NarratorTriggerType.RestorationStageChange, null);
+            TryFireLine(NarratorTriggerType.RestorationStageChange, null, stage.stageIndex);
         }
 
         /// <summary>OnThrottleOnset fires at most once per local day (re-armed only at the next
@@ -424,7 +424,10 @@ namespace BrainDrain.Systems
             }
         }
 
-        private void TryFireLine(NarratorTriggerType triggerType, string buildingId)
+        private void TryFireLine(
+            NarratorTriggerType triggerType,
+            string buildingId,
+            int enteredRestorationStageIndex = -1)
         {
             // Flood gate: repeatable triggers respect a cooldown (SS20). Checked before
             // candidate selection so a suppressed fire costs nothing.
@@ -450,8 +453,11 @@ namespace BrainDrain.Systems
             List<NarratorLine> candidates = narratorLines.Where(line =>
                 line != null
                 && line.triggerType == triggerType
-                && currentRestorationPercent >= line.minRestorationPercent
-                && currentRestorationPercent <= line.maxRestorationPercent
+                && (line.triggerType == NarratorTriggerType.RestorationStageChange
+                    && line.restorationStageIndex >= 0
+                        ? line.restorationStageIndex == enteredRestorationStageIndex
+                        : currentRestorationPercent >= line.minRestorationPercent
+                          && currentRestorationPercent <= line.maxRestorationPercent)
                 && (string.IsNullOrWhiteSpace(line.buildingId) || line.buildingId == buildingId)
             ).ToList();
 

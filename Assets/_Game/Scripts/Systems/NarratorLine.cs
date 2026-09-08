@@ -22,7 +22,8 @@ namespace BrainDrain.Systems
 
     /// <summary>
     /// Authoring data for one narrator dialogue line. DialogueManager matches lines by
-    /// triggerType, current WorldRestorationManager.RestorationPercent falling within
+    /// triggerType, an optional exact World Restoration stage for stage-change reactions,
+    /// current WorldRestorationManager.RestorationPercent falling within
     /// [minRestorationPercent, maxRestorationPercent], and (for BuildingPurchase) buildingId
     /// if set.
     /// </summary>
@@ -33,6 +34,8 @@ namespace BrainDrain.Systems
         public NarratorTriggerType triggerType;
         [Tooltip("Optional. If set, only matches a BuildingPurchase trigger for this exact buildingId.")]
         public string buildingId;
+        [Tooltip("For RestorationStageChange lines only: exact WorldRestorationStage.stageIndex to match. Leave at -1 to use the restoration-percent range instead.")]
+        public int restorationStageIndex = -1;
 
         /// <summary>
         /// No longer read by DialogueManager's trigger-matching filter (replaced 2026-06-22 by
