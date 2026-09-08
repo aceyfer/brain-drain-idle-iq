@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94a2cf22ee53496cbdebb379ac0cd693, type: 3}
   m_Name: ButtonTheme_Stage4
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.Systems.ButtonTheme
-  borderSprite: {fileID: 21300000, guid: c96806c4e6efe294f9b5229e227e736c, type: 3}
+  borderSprite: {fileID: 21300000, guid: 42aa6bb44ffc4be4e8d8e3c7531576b2, type: 3}
   overrideFillColor: 0
   fillColor: {r: 1, g: 1, b: 1, a: 1}
   fillSprite: {fileID: 0}
