@@ -7,10 +7,10 @@
 
 ## 1. What this game is
 
-A satirical mobile idle-clicker by **AcEclipse Games**. You play the evil mogul harvesting **Brain Power** from a dumbed-down population, building a corporate empire, rising against — and ironically becoming — the **Illumisnotty** shadow elite via "The Snotting" (prestige/rebirth). A narrator, **COGS**, roasts everyone as the world slowly heals from dystopia to utopia.
+A satirical mobile idle-clicker by **Eighth Kind Studios** (renamed from AcEclipse Games — see TASKLIST_DETAILS.md §15; bundle ID `com.eighthkind.braindrain` reflects the current name). You play the evil mogul harvesting **Brain Power** from a dumbed-down population, building a corporate empire, rising against — and ironically becoming — the **Illumisnotty** shadow elite via "The Snotting" (prestige/rebirth). A narrator, **COGS**, roasts everyone as the world slowly heals from dystopia to utopia.
 
 - **Engine:** Unity 6000.4.8f1, URP 2D
-- **Platform:** iOS, portrait, 1080×1920
+- **Platform:** Android (launch), portrait, 1080×1920 — iOS is post-launch (decided 2026-08-05, see §7.14; this line previously said "iOS," which was stale)
 - **Repo:** `github.com/aceyfer/brain-drain-idle-iq`, branch `main` = source of truth
 - **Active dev environment: the PC** (`C:\Users\aceyf\Brain Drain`). The Mac copy is a stale failed transfer — do not treat it as current.
 - **AI roles:** Claude (chat) = architect/reviewer against the GitHub clone. Codex / Claude Code = hands on the local repo and Unity Editor. **Never run two AI agents on the repo concurrently** — historical "mystery concurrent activity" came from exactly that, **and** (root-caused 2026-08-24) from Unity 6's own built-in AI Assistant (Muse) operating via an independent relay with live Editor-manipulation capability, invisible to any terminal AI session — see §8. Now disabled in both Brain Drain and Skate ParKour.

@@ -13,6 +13,27 @@ Migration complete. `DialogueManager`'s narrator matching remains on `buildingNa
 — Amendment 1's hard prerequisite gate — and is the one open item before any Phase 2
 stage-dependent-naming work can begin.
 
+### STATUS UPDATE (2026-08-30) — this file is stale past Commit 3; Amendment 1's gate is closed and Phase 2 has started
+
+Verified directly against the live repo (`.git/logs/HEAD`, `BuildingData.cs`, `UpgradeManager.cs`,
+`DialogueManager.cs` as they exist on disk today) rather than assumed from this file. Everything
+above this note (Commits 1-3, the 16 `buildingId` values, the no-fallback save decision) checked
+out exactly as written. But four more commits landed after `65db0f8` that this file was never
+updated to reflect:
+
+| Commit | What it does |
+|---|---|
+| `e25b7452` | `DialogueManager`'s `TryFireLine`/narrator-line matching switched from `buildingName` to `buildingId` (all 11 `NarratorLine` assets updated) — **this is Amendment 1's hard prerequisite gate, and it's done.** |
+| `9dd4945e` | Editor validator added for `NarratorLine.buildingId`. |
+| `62eabd44` | `BuildingData` gained the stage-based evolution schema: `BuildingEvolution[] evolutions` plus `GetDisplayName(stageIndex)`/`GetDescription(stageIndex)` resolvers (inherit-forward semantics, independent name/description resolution) — this **is** Phase 2's core mechanism. |
+| `25b0be05` | 6-stage evolution copy authored and populated for all 16 buildings. |
+
+Net effect: Phase 2 (stage-dependent `buildingName`) is not a future item gated on this file's
+Amendment 1 — it already shipped. The `DoomscrollBillboard`/`DoomscrollEngine` cross-building
+naming-collision risk flagged above is worth a spot-check against the 16 buildings'
+`evolutions` arrays now that real per-stage copy exists, since that's exactly the scenario it
+warned about.
+
 ## Goal
 
 Split identity from display text on `BuildingData` by introducing a stable `buildingId`
@@ -335,8 +356,18 @@ resting on reasoning alone.
 
 ## Outstanding blockers
 
-None. All three commits landed and pushed (`eaf25d2`, `51f66f1`, `65db0f8`). Migration
-complete pending Phase 2's own future scoping, which is gated on Amendment 1 (§2).
+None. All three commits landed and pushed (`eaf25d2`, `51f66f1`, `65db0f8`). **Superseded by
+the 2026-08-30 status update above:** Phase 2 is not pending future scoping — it has already
+shipped (`62eabd44`, `25b0be05`), and Amendment 1's gate is already satisfied (`e25b7452`).
+
+**2026-08-30 follow-up, now fully closed:** the spot-check this section used to call for is done.
+Computed every building's `GetDisplayName`-resolved name at each World Restoration stage (0-5)
+from the 16 `.asset` files directly and checked for cross-building reuse — none found; the
+Doomscroll pair's risk never materialized. Separately verified all 11 `NarratorLine` assets with
+a non-empty `buildingId` (the 7 base `BuildingPurchase_*` + 4 `Tier*_BuildingPurchase_*` this
+section's table already named) against the real `buildingId` values on `BuildingData` — every
+one matches exactly, no typos, no stale leftover display-text values under the renamed field.
+Nothing left open from this plan.
 
 ## Unrelated issues found during Commit 3 verification (not fixed — recorded only)
 
