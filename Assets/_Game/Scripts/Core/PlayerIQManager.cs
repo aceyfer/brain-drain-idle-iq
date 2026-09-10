@@ -62,6 +62,21 @@ namespace BrainDrain.Core
         /// </summary>
         private long brainFreezeExpiryUnixSeconds;
 
+        /// <summary>
+        /// Added 2026-09-09 for §57's rewarded-ad idle-window recovery -- the exact inputs
+        /// ApplyOfflineDecay used for the most recent offline-decay event, captured so
+        /// RecoverOfflineDecay can re-run the same lerp with a smaller effective offline duration.
+        /// In-memory only, deliberately not persisted via SaveManager: if the app is killed mid
+        /// ad-flow, the player simply loses that specific recovery opportunity, and whatever IQ
+        /// was already decayed/saved stays exactly as it was either way -- no economy risk.
+        /// Overwritten every time a new offline-decay event actually changes playerIQ, so it can
+        /// never apply to a stale, already-superseded absence.
+        /// </summary>
+        private float lastDecayPreIQ;
+        private float lastDecayOfflineHours;
+        private float lastDecayFloor;
+        private float lastDecayEffectiveMaxHours;
+
         /// <summary>Unix seconds (UTC) the current Brain Freeze expires at, or 0 if none is active. For SaveManager persistence.</summary>
         public long BrainFreezeExpiryUnixSeconds => brainFreezeExpiryUnixSeconds;
 
@@ -289,6 +304,48 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
+        /// §57 rewarded-ad idle-window recovery: partially undoes the most recent offline-decay
+        /// event by re-running ApplyOfflineDecay's exact lerp as if the player had been away
+        /// totalAdsWatchedThisEvent * 30 fewer minutes, capped at 4 hours off the real offline
+        /// duration -- 1 ad = 30 min recovered, 2 ads = 1 hour, linear, matching the approved
+        /// ladder. Deliberately NOT built on ExtendOfflineDecayWindow: that accumulator is
+        /// permanent by design for the one-time $9.99 Corporate Cloak purchase, and free
+        /// repeatable ad-watches feeding the same permanent stat would eventually let players
+        /// out-earn what someone paid for, with no ceiling. This instead only ever recomputes
+        /// against the single event captured in lastDecay* (PlayerIQManager's own private
+        /// fields, set at the end of ApplyOfflineDecay) -- in memory only, no SaveManager field,
+        /// so a fresh absence's ApplyOfflineDecay call simply overwrites it; there is nothing to
+        /// go stale. Never lowers playerIQ -- if the player already tapped some IQ back via
+        /// RestoreIQFromTap, this only ever raises it further toward the recovered value.
+        /// No-ops if called with no prior decay event this session (lastDecayEffectiveMaxHours
+        /// stays 0 until ApplyOfflineDecay's first real run).
+        /// </summary>
+        public void RecoverOfflineDecay(int totalAdsWatchedThisEvent)
+        {
+            if (totalAdsWatchedThisEvent <= 0 || lastDecayEffectiveMaxHours <= 0f)
+            {
+                return;
+            }
+
+            const float RecoveredHoursPerAd = 0.5f;
+            const float MaxRecoveredHours = 4f;
+
+            float recoveredHours = Mathf.Min(MaxRecoveredHours, RecoveredHoursPerAd * totalAdsWatchedThisEvent);
+            float adjustedOfflineHours = Mathf.Max(0f, lastDecayOfflineHours - recoveredHours);
+            float t = Mathf.Min(1f, adjustedOfflineHours / lastDecayEffectiveMaxHours);
+            float recoveredIQ = Mathf.Lerp(lastDecayPreIQ, lastDecayFloor, t);
+
+            float previousIQ = playerIQ;
+            playerIQ = Mathf.Max(playerIQ, recoveredIQ);
+
+            if (!Mathf.Approximately(previousIQ, playerIQ))
+            {
+                OnPlayerIQChanged?.Invoke(playerIQ);
+                CheckMilestone();
+            }
+        }
+
+        /// <summary>
         /// Simplification, deliberately approved over a precise two-phase calculation (2026-08-03):
         /// if a Brain Freeze was still active at the moment the app closed (lastActiveUtc precedes
         /// brainFreezeExpiryUnixSeconds), the ENTIRE offline gap decays toward BrainFreezeFloor
@@ -322,6 +379,15 @@ namespace BrainDrain.Core
 
             float effectiveMaxHours = OfflineDecayMaxHours + bonusOfflineDecayMaxHours;
             float t = (float)Math.Min(1d, offlineHours / effectiveMaxHours);
+
+            // Captured for RecoverOfflineDecay (§57) -- only reached on the path that actually
+            // produces a nonzero loss, matching LoadStateWithOfflineDecay's own >0.01f gate on
+            // firing OnOfflineDecayApplied, so a recovery manager only ever sees real events.
+            lastDecayPreIQ = iq;
+            lastDecayOfflineHours = (float)offlineHours;
+            lastDecayFloor = floor;
+            lastDecayEffectiveMaxHours = effectiveMaxHours;
+
             return Mathf.Lerp(iq, floor, t);
         }
 
