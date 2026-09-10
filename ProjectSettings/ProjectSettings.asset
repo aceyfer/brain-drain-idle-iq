@@ -776,7 +776,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: DOTWEEN
+    Android: DOTWEEN;ENABLE_VOXELBUSTERS_ESSENTIAL_KIT
     EmbeddedLinux: DOTWEEN
     GameCoreScarlett: DOTWEEN
     GameCoreXboxOne: DOTWEEN
@@ -787,12 +787,12 @@ PlayerSettings:
     PS4: DOTWEEN
     PS5: DOTWEEN
     QNX: DOTWEEN
-    Standalone: DOTWEEN
+    Standalone: DOTWEEN;ENABLE_VOXELBUSTERS_ESSENTIAL_KIT
     VisionOS: DOTWEEN
     WebGL: DOTWEEN
     Windows Store Apps: DOTWEEN
     XboxOne: DOTWEEN
-    iPhone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY;DOTWEEN
+    iPhone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY;DOTWEEN;ENABLE_VOXELBUSTERS_ESSENTIAL_KIT;LEVELPLAY_DEPENDENCIES_INSTALLED
     tvOS: DOTWEEN
   additionalCompilerArguments: {}
   platformArchitecture: {}
