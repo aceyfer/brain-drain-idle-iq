@@ -17,6 +17,6 @@ MonoBehaviour:
   displayName: Bad Words Pack
   description: Unlocks the Tier 3 unfiltered swear-word narrator lines. Toggle them
     on/off anytime once owned.
-  realMoneyPriceDisplay: $3.99
+  realMoneyPriceDisplay: $5.00
   effectType: 5
   offlineExtensionHours: 0

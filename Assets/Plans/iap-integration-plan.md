@@ -48,7 +48,7 @@ The suffix should contain lowercase ASCII letters and digits only. Never encode 
 
 | God Shop item | Local `itemId` | Google Play type | Product ID | Current display-only price |
 |---|---|---|---|---:|
-| Bad Words Pack | `bad_words_pack` | Non-consumable | `com.eighthkind.braindrain.badwordspack` (already in asset) | $3.99 |
+| Bad Words Pack | `bad_words_pack` | Non-consumable | `com.eighthkind.braindrain.badwordspack` (already in asset) | $5.00 (corrected 2026-09-20 — see §12 decision 4 in TASKLIST_DETAILS.md; was wrongly $3.99) |
 | Brain Freeze — 24 hours | `brain_freeze` | Consumable | `com.eighthkind.braindrain.brainfreeze` (already in asset) | $1.50 |
 | Brain Freeze: 48 | `brain_freeze_48` | Consumable | `com.eighthkind.braindrain.brainfreeze48` (already in asset) | $2.50 |
 | Deep Freeze — 168 hours | `deep_freeze` | Consumable | `com.eighthkind.braindrain.deepfreeze` (already in asset) | $5.99 |
