@@ -73,6 +73,16 @@ namespace BrainDrain.Systems
         /// </summary>
         public long brainFreezeExpiryUnixSeconds;
 
+        /// <summary>
+        /// THE WALLET's ledger of still-active timed God Tier Store purchases (see the
+        /// ActiveTimedPurchase struct in GodTierStoreManager.cs) -- separate from
+        /// brainFreezeExpiryUnixSeconds above, which is PlayerIQManager's own merged/stacked
+        /// gameplay floor timer. This list exists purely so multiple purchases (even of the same
+        /// item) can each show their own independent countdown; a save predating this field
+        /// deserializes it as null, guarded by the same ??= pattern as the other owned-item lists.
+        /// </summary>
+        public List<ActiveTimedPurchase> activeTimedPurchases;
+
         // -- Profanity Dialogue Pack persisted state --
         public bool profanityUnlocked;
         public bool profanityEnabled;
@@ -124,6 +134,7 @@ namespace BrainDrain.Systems
         public bool ftueCard1Seen;
         public bool ftueCard2Seen;
         public bool ftueCashBeatSeen;
+        public bool ftuePointsBeatSeen;
         public bool ftueRestoreBeatSeen;
         public bool ftueSnottingIntelSeen;
 
@@ -332,6 +343,7 @@ namespace BrainDrain.Systems
                 data.cashShopOwnedItemIds ??= new List<string>();
                 data.pointsShopOwnedItemIds ??= new List<string>();
                 data.godTierStoreOwnedItemIds ??= new List<string>();
+                data.activeTimedPurchases ??= new List<ActiveTimedPurchase>();
 
                 // Migration fallback for Profanity Dialogue Pack:
                 // If loaded save data doesn't have profanity unlocked, check if it was previously unlocked in PlayerPrefs.
@@ -435,6 +447,7 @@ namespace BrainDrain.Systems
                 data.ftueCard1Seen = FTUEManager.Instance.Card1Seen;
                 data.ftueCard2Seen = FTUEManager.Instance.Card2Seen;
                 data.ftueCashBeatSeen = FTUEManager.Instance.CashBeatSeen;
+                data.ftuePointsBeatSeen = FTUEManager.Instance.PointsBeatSeen;
                 data.ftueRestoreBeatSeen = FTUEManager.Instance.RestoreBeatSeen;
                 data.ftueSnottingIntelSeen = FTUEManager.Instance.SnottingIntelSeen;
                 data.ftueNameRevealSeen = FTUEManager.Instance.NameRevealSeen;
@@ -489,6 +502,7 @@ namespace BrainDrain.Systems
                 data.illumisnottyMembershipCardOwned = GodTierStoreManager.Instance.IllumisnottyMembershipCardOwned;
                 data.holographicTrashCanFlexOwned = GodTierStoreManager.Instance.HolographicTrashCanFlexOwned;
                 data.offlineExtensionHoursGranted = GodTierStoreManager.Instance.OfflineExtensionHoursGranted;
+                data.activeTimedPurchases = new List<ActiveTimedPurchase>(GodTierStoreManager.Instance.ActiveTimedPurchases);
             }
 
             // Brain Freeze lives on PlayerIQManager directly, not GodTierStoreManager -- unlike
@@ -650,7 +664,8 @@ namespace BrainDrain.Systems
                 data.y2kGlitchSlumThemeOwned,
                 data.illumisnottyMembershipCardOwned,
                 data.holographicTrashCanFlexOwned,
-                data.offlineExtensionHoursGranted);
+                data.offlineExtensionHoursGranted,
+                data.activeTimedPurchases);
 
             // Brain Freeze expiry must be restored BEFORE LoadStateWithOfflineDecay, same ordering
             // reasoning as the Corporate Cloak above -- this load's offline-decay calculation
@@ -688,7 +703,8 @@ namespace BrainDrain.Systems
                 data.ftueSnottingIntelSeen,
                 data.ftueNameRevealSeen,
                 data.ftueNameRevealElapsedSeconds,
-                data.ftueGaryCardSeen);
+                data.ftueGaryCardSeen,
+                data.ftuePointsBeatSeen);
             CompanionManager.Instance?.LoadState(data.companionTier);
             CompanionManager.Instance?.LoadHotChickCount(data.hotChickCount);
             PointsShopManager.Instance?.LoadState(data.pointsShopOwnedItemIds, data.secretEndingUnlocked);
@@ -771,6 +787,7 @@ namespace BrainDrain.Systems
                 holographicTrashCanFlexOwned = false,
                 offlineExtensionHoursGranted = 0f,
                 brainFreezeExpiryUnixSeconds = 0L,
+                activeTimedPurchases = new List<ActiveTimedPurchase>(),
                 profanityUnlocked = false,
                 profanityEnabled = false,
                 shopCashMultiplier = 1d,
@@ -785,6 +802,7 @@ namespace BrainDrain.Systems
                 ftueCard1Seen = false,
                 ftueCard2Seen = false,
                 ftueCashBeatSeen = false,
+                ftuePointsBeatSeen = false,
                 ftueRestoreBeatSeen = false,
                 ftueSnottingIntelSeen = false,
                 ftueNameRevealSeen = false,

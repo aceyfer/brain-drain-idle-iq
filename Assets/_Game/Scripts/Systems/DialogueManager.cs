@@ -50,7 +50,19 @@ namespace BrainDrain.Systems
         /// pipelines stay independently tuned.
         /// </summary>
         private const float TargetCharsPerSecond = 26f;
-        private const int TapsWithoutPurchaseThreshold = 25;
+
+        /// <summary>
+        /// Raised from 25 (2026-09-17): TapWithoutPurchase draws from only 4 lines total, no
+        /// restoration-tier variants (see Assets/_Game/Dialogue/TapWithoutPurchase_*.asset) --
+        /// the smallest pool of any repeatable trigger. At the old threshold, a new player who
+        /// just started tapping (exactly the "when you start tapping" complaint) could cycle
+        /// through the whole pool within a couple of minutes, and the trigger competed for
+        /// airtime with FirstTap/FirstCashEarned/FTUE beats that ALSO fire in a fresh player's
+        /// first minute. Raising the threshold means fewer, better-spaced nags while a player is
+        /// actively engaged in tapping -- it doesn't fire at all for someone who's buying things,
+        /// which is the case it exists to nudge.
+        /// </summary>
+        private const int TapsWithoutPurchaseThreshold = 45;
 
         /// <summary>
         /// Pause between one line finishing and the next queued line displaying. Must exceed
@@ -58,10 +70,14 @@ namespace BrainDrain.Systems
         /// occupies the screen for displayDuration + 0.6s, while this manager's timer only
         /// waits displayDuration -- without this gap the next OnDialogueLine fires mid-slide-out
         /// and visibly yanks the panel back (the SS20 "lines interrupt each other" symptom).
-        /// 1.0s = 0.6s slide overhead + 0.4s breathing room. If DialogueDisplayUI's
-        /// SlideDurationSeconds ever changes, revisit this constant.
+        /// 1.0s = 0.6s slide overhead + 0.4s breathing room. Raised slightly (2026-09-17, was
+        /// 0.6s overhead + 0.4s = 1.0s exactly) to 1.4s for a touch more breathing room between
+        /// consecutive lines -- part of the same pacing pass as RepeatTriggerCooldownSeconds and
+        /// TapsWithoutPurchaseThreshold below, addressing reports that COGS lines during an
+        /// active tap session left no time to read one before the next appeared. If
+        /// DialogueDisplayUI's SlideDurationSeconds ever changes, revisit this constant.
         /// </summary>
-        private const float MinGapSeconds = 1f;
+        private const float MinGapSeconds = 1.4f;
 
         /// <summary>
         /// Repeatable triggers (see RepeatableTriggers) can't fire again within this window.
@@ -71,8 +87,15 @@ namespace BrainDrain.Systems
         /// [00:41]/[00:46]/[00:50] in the dialogue log; now only the burst's first purchase
         /// speaks, the rest stay silent for 20s) -- one-shot triggers (First*, Rebirth, stage
         /// changes) are exempt since they structurally can't flood.
+        ///
+        /// Raised from 20s to 35s (2026-09-17): several repeatable pools are small (CashConverted
+        /// has just 2 lines total, TapWithoutPurchase has 4, both with no restoration-tier
+        /// variants), so at the old cooldown a player actively tapping/converting during their
+        /// first few minutes could cycle the whole pool and start seeing real repeats well within
+        /// one sitting -- the "says the same thing" complaint. 35s gives each line more room to
+        /// land before its trigger is eligible again, without making the game feel silent.
         /// </summary>
-        private const float RepeatTriggerCooldownSeconds = 20f;
+        private const float RepeatTriggerCooldownSeconds = 35f;
 
         private static readonly HashSet<NarratorTriggerType> RepeatableTriggers = new()
         {

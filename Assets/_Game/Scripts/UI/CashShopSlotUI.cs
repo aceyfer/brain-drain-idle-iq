@@ -120,7 +120,7 @@ namespace BrainDrain.UI
                 if (descriptionText != null)
                 {
                     descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>";
-                    descriptionText.fontSize = 24f; // Large font
+                    descriptionText.fontSize = 26f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
                 }
                 if (costText != null)
                 {
@@ -133,7 +133,7 @@ namespace BrainDrain.UI
                     {
                         costText.text = "OWNED";
                     }
-                    costText.fontSize = 28f; // Large font
+                    costText.fontSize = 30f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
                 }
                 ApplyAccent(OwnedColor);
                 if (buyButton != null) buyButton.interactable = (boundData.itemId == "profanity_pack");
@@ -154,12 +154,12 @@ namespace BrainDrain.UI
                 if (descriptionText != null)
                 {
                     descriptionText.text = "Access restricted by the Snotty Council.";
-                    descriptionText.fontSize = 24f; // Large font
+                    descriptionText.fontSize = 26f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
                 }
                 if (costText != null)
                 {
                     costText.text = $"CLASSIFIED — REBIRTH {boundData.gateRebirthCount} REQUIRED";
-                    costText.fontSize = 28f; // Large font
+                    costText.fontSize = 30f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
                 }
                 ApplyAccent(LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
@@ -182,12 +182,12 @@ namespace BrainDrain.UI
                     ? ""
                     : "\n<size=16><color=#888888>Permanent boost — cash spent here won't convert to Points.</color></size>";
                 descriptionText.text = $"{boundData.description}\n<color=#00F0FF><font-weight=bold>Effect: {bonusText}</font-weight></color>{tradeoffNote}";
-                descriptionText.fontSize = 24f; // Large font
+                descriptionText.fontSize = 26f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
             }
             if (costText != null)
             {
                 costText.text = $"${NumberFormatter.Format(boundData.cost)}";
-                costText.fontSize = 28f; // Large font
+                costText.fontSize = 30f; // matches RestorationSlotUI/ShopRowView's shared shop-row scale
             }
             ApplyAccent(affordable ? AffordableColor : TooExpensiveColor);
             if (buyButton != null) buyButton.interactable = true;

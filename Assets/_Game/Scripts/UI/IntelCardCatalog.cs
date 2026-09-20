@@ -51,6 +51,16 @@ namespace BrainDrain.UI
         /// </summary>
         public const string GaryPod2Id = "gary_pod_2"; // Beat "Gary" (gated by ftueGaryCardSeen)
 
+        /// <summary>
+        /// Beat "Points" (2026-09-17): fires the first time the player ever holds Restoration
+        /// Points, right after FTUEManager's new proactive COGS ambient line -- closes the FTUE
+        /// gap where nothing taught a player that Points exist or that they fuel World
+        /// Restoration until AFTER they'd already found the RP Restorations shop tab on their
+        /// own. Sits between Beat 5 (ArmadilloSauceId, "Convert") and Beat 6/7 (the reactive
+        /// restoration-spend acknowledgment) in the sequence. Gated by ftuePointsBeatSeen.
+        /// </summary>
+        public const string MoleHoleSurveyingId = "mole_hole_surveying"; // Beat "Points" (gated by ftuePointsBeatSeen)
+
         private static readonly Dictionary<string, LiteratesCard> Cards = new()
         {
             [GaryMattressId] = new LiteratesCard(
@@ -92,6 +102,14 @@ namespace BrainDrain.UI
                 "— The Literates\n" +
                 "p.s. memorize this card. then eat it. kidding. paper's valuable. hide it.",
                 "I KNOW THE NAME"),
+
+            [MoleHoleSurveyingId] = new LiteratesCard(
+                MoleHoleSurveyingId,
+                "MOLE HOLE CIVIC SURVEYING — \"We've Been Down There\"",
+                "Every Restoration Point sitting in your pocket is a piece of the city COGS is hoping you forget about. Open the Shop. Find the RP tab. Spend every point you've got.\n" +
+                "The block doesn't fix itself. You do.\n" +
+                "— TL",
+                "FIXING IT MYSELF"),
 
             [GaryPod2Id] = new LiteratesCard(
                 GaryPod2Id,

@@ -6,6 +6,29 @@ using BrainDrain.Core;
 namespace BrainDrain.Systems
 {
     /// <summary>
+    /// One active timed (consumable) purchase's remaining-time record -- itemId only, no
+    /// duplicated displayName/description, so a display surface (TimedPurchaseWalletUI) always
+    /// resolves fresh text by looking itemId back up in GodTierStoreManager.Items rather than
+    /// risking stale copy baked in at purchase time. Reused directly as both the runtime ledger
+    /// entry and the SaveManager DTO -- same precedent as BuildingSaveEntry (UpgradeManager).
+    /// Multiple entries can share the same itemId: buying the same 24-hour item twice back to
+    /// back is meant to produce two independent entries/countdowns, not one merged entry, so
+    /// itemId is deliberately not a dictionary key anywhere in this system.
+    /// </summary>
+    [Serializable]
+    public struct ActiveTimedPurchase
+    {
+        public string itemId;
+        public long expiryUnixSeconds;
+
+        public ActiveTimedPurchase(string itemId, long expiryUnixSeconds)
+        {
+            this.itemId = itemId;
+            this.expiryUnixSeconds = expiryUnixSeconds;
+        }
+    }
+
+    /// <summary>
     /// Owns the 5 God Tier Store items -- real-money-only, cosmetics/QoL, never power. NO real
     /// payment processing exists in this project (no Unity IAP package, no App Store/Play Store
     /// product IDs configured) -- StubPurchase grants the item immediately and is a clearly
@@ -20,6 +43,14 @@ namespace BrainDrain.Systems
 
         private readonly HashSet<string> ownedItemIds = new();
         private float offlineExtensionHoursGranted;
+
+        /// <summary>
+        /// Ledger of still-active timed consumable purchases (e.g. an owned-but-not-yet-expired
+        /// Brain Freeze family item) -- separate from ownedItemIds, which consumables never join
+        /// (see StubPurchase). Backs THE WALLET's "item + time remaining" display. Access only
+        /// through the pruning ActiveTimedPurchases property below, never this field directly.
+        /// </summary>
+        private readonly List<ActiveTimedPurchase> activeTimedPurchases = new();
 
         private static GodTierStoreManager instance;
         private static bool isShuttingDown;
@@ -54,6 +85,21 @@ namespace BrainDrain.Systems
         public bool IllumisnottyMembershipCardOwned { get; private set; }
         public bool HolographicTrashCanFlexOwned { get; private set; }
         public float OfflineExtensionHoursGranted => offlineExtensionHoursGranted;
+
+        /// <summary>
+        /// Every still-active timed consumable purchase, pruned of anything whose expiry has
+        /// already passed each time this is read. Multiple purchases of the same item -- even
+        /// back to back -- each get their own independent entry, so buying two 24-hour items
+        /// shows as two separate countdowns rather than being silently merged into one.
+        /// </summary>
+        public IReadOnlyList<ActiveTimedPurchase> ActiveTimedPurchases
+        {
+            get
+            {
+                PruneExpiredTimedPurchases();
+                return activeTimedPurchases;
+            }
+        }
 
         /// <summary>Fired after an item is successfully (stub-)purchased or the owned set is restored from a save.</summary>
         public event Action OnItemsChanged;
@@ -146,9 +192,38 @@ namespace BrainDrain.Systems
                 ownedItemIds.Add(item.itemId);
             }
 
+            // Timed consumables (currently the Brain Freeze family) additionally get their own
+            // independent wallet entry -- deliberately separate from the stacking math inside
+            // ApplyItemEffect/PlayerIQManager.ApplyBrainFreeze, which stays the sole source of
+            // truth for the actual gameplay floor. This ledger only ever powers display (THE
+            // WALLET's per-item countdowns); buying the same item twice adds two entries here so
+            // both show up separately, even though the underlying IQ-floor effect still merges
+            // into one stacked expiry as it always has.
+            if (item.isConsumable && item.freezeDurationHours > 0f)
+            {
+                PruneExpiredTimedPurchases();
+                long expiry = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (long)(item.freezeDurationHours * 3600f);
+                activeTimedPurchases.Add(new ActiveTimedPurchase(item.itemId, expiry));
+            }
+
             ApplyItemEffect(item);
             OnItemsChanged?.Invoke();
             return true;
+        }
+
+        /// <summary>Drops any ledger entry whose expiry has already passed. Called on every read
+        /// (ActiveTimedPurchases getter) and before every new entry is added, so the list never
+        /// grows unbounded and a stale entry never lingers past its own countdown reaching zero.</summary>
+        private void PruneExpiredTimedPurchases()
+        {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            for (int i = activeTimedPurchases.Count - 1; i >= 0; i--)
+            {
+                if (activeTimedPurchases[i].expiryUnixSeconds <= now)
+                {
+                    activeTimedPurchases.RemoveAt(i);
+                }
+            }
         }
 
         private void ApplyItemEffect(GodTierStoreItemData item)
@@ -199,7 +274,7 @@ namespace BrainDrain.Systems
         /// every fresh load, so this is the one re-application that's correct, not a double
         /// count, since restoredOfflineExtensionHours is the full accumulated total).
         /// </summary>
-        public void LoadState(IEnumerable<string> restoredOwnedItemIds, bool restoredVoicepack, bool restoredTheme, bool restoredMembershipCard, bool restoredTrashCanFlex, float restoredOfflineExtensionHours)
+        public void LoadState(IEnumerable<string> restoredOwnedItemIds, bool restoredVoicepack, bool restoredTheme, bool restoredMembershipCard, bool restoredTrashCanFlex, float restoredOfflineExtensionHours, IEnumerable<ActiveTimedPurchase> restoredActiveTimedPurchases = null)
         {
             ownedItemIds.Clear();
             if (restoredOwnedItemIds != null)
@@ -238,6 +313,22 @@ namespace BrainDrain.Systems
                 PlayerIQManager.Instance?.ExtendOfflineDecayWindow(restoredOfflineExtensionHours);
             }
 
+            // Restore the wallet ledger, dropping anything that already expired while the app was
+            // closed -- matches this project's existing real-time-decay convention (e.g.
+            // DailyEngagementCapManager's day rollover) of never resurrecting stale timed state.
+            activeTimedPurchases.Clear();
+            if (restoredActiveTimedPurchases != null)
+            {
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                foreach (ActiveTimedPurchase purchase in restoredActiveTimedPurchases)
+                {
+                    if (!string.IsNullOrWhiteSpace(purchase.itemId) && purchase.expiryUnixSeconds > now)
+                    {
+                        activeTimedPurchases.Add(purchase);
+                    }
+                }
+            }
+
             // Targeted re-sync for the ONE effect whose state lives outside this manager:
             // RandomChatterManager persists profanity in its own PlayerPrefs keys, which can
             // diverge from the JSON save (save file deleted for testing while prefs survive,
@@ -258,5 +349,30 @@ namespace BrainDrain.Systems
 
             OnItemsChanged?.Invoke();
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only test hook: buys the 24-hour Brain Freeze item (itemId "brain_freeze")
+        /// exactly as a real "Buy" button would, so THE WALLET's two-independent-entries behavior
+        /// (buying the same 24-hour item twice back to back) can be verified from the Inspector
+        /// without the God Tier Store's own popup being wired into the scene yet. Compiles out of
+        /// any build, matching DailyEngagementCapManager's DebugBurnFullRateAllowance precedent.
+        /// </summary>
+        [ContextMenu("DEBUG: Buy Brain Freeze (24h)")]
+        private void DebugBuyBrainFreeze()
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] != null && items[i].itemId == "brain_freeze")
+                {
+                    bool bought = StubPurchase(items[i]);
+                    Debug.Log($"[GodTierStoreManager] DEBUG buy brain_freeze -> {bought}. Active timed purchases: {ActiveTimedPurchases.Count}");
+                    return;
+                }
+            }
+
+            Debug.LogWarning("[GodTierStoreManager] DEBUG buy brain_freeze -- no item with itemId 'brain_freeze' found in items.");
+        }
+#endif
     }
 }

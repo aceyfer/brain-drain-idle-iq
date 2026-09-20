@@ -141,6 +141,12 @@ namespace BrainDrain.UI
         {
             if (button == null || theme == null || !IsVisualButton(button)) { return; }
 
+            // UpgradeSlotUI owns its buy-button surface and label colors because those communicate
+            // locked / affordable / unavailable state. The stage border sprites are center-filled,
+            // so even applying only their frame would paint over that semantic presentation.
+            bool rowOwnsPresentation = IsUpgradeSlotBuyButton(button);
+            if (rowOwnsPresentation) { return; }
+
             Image border = EnsureBorderOn(button);
             if (border != null && theme.borderSprite != null)
             {
@@ -162,6 +168,34 @@ namespace BrainDrain.UI
                     if (theme.overrideTextColor) { label.color = theme.labelTextColor; }
                 }
             }
+        }
+
+        private static bool IsUpgradeSlotBuyButton(Button button)
+        {
+            if (UpgradeSlotUI.OwnsButtonPresentation(button))
+            {
+                return true;
+            }
+
+            // BuildShop names each instantiated row UpgradeSlot_<buildingName>. Keep this
+            // structural fallback because the global applier and the shop can initialize in
+            // either Start order after GameManager becomes ready.
+            if (button.name != "BuyButton")
+            {
+                return false;
+            }
+
+            Transform current = button.transform.parent;
+            while (current != null)
+            {
+                if (current.name.StartsWith("UpgradeSlot_"))
+                {
+                    return true;
+                }
+                current = current.parent;
+            }
+
+            return false;
         }
 
         /// <summary>

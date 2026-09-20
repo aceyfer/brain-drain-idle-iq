@@ -75,7 +75,7 @@ namespace BrainDrain.UI
             
             if (rectTransform != null)
             {
-                rectTransform.anchoredPosition = new Vector2(lastKnownX, startY);
+                rectTransform.anchoredPosition = new Vector2(ClampXToParentBounds(lastKnownX), startY);
             }
         }
 
@@ -136,7 +136,7 @@ namespace BrainDrain.UI
 
             if (rectTransform != null)
             {
-                rectTransform.anchoredPosition = new Vector2(lastKnownX, currentY);
+                rectTransform.anchoredPosition = new Vector2(ClampXToParentBounds(lastKnownX), currentY);
             }
 
             // Fade out: hold full opacity through 70% of lifetime, then fade over the last 30%
@@ -150,6 +150,30 @@ namespace BrainDrain.UI
             {
                 Destroy(gameObject);
             }
+        }
+
+        /// <summary>
+        /// Keeps the bubble's horizontal position fully inside its parent container (2026-09-17
+        /// legibility pass): TrackPedestrian/Update previously copied the tracked pedestrian's
+        /// raw anchoredPosition.x with no bound, so a bubble spawned on a pedestrian near either
+        /// edge of the street (pedestrians walk from fully off-screen inward) could render
+        /// partially or entirely outside the visible safe area -- unreadable no matter how good
+        /// the font/contrast is. Uses this bubble's own current rect width (already floored to
+        /// 300px by SetText) against the parent's width, so it degrades gracefully if the parent
+        /// is ever narrower than the bubble itself (clamps to center rather than producing a
+        /// negative range).
+        /// </summary>
+        private float ClampXToParentBounds(float desiredX)
+        {
+            if (rectTransform == null || !(rectTransform.parent is RectTransform parentRect))
+            {
+                return desiredX;
+            }
+
+            float halfBubbleWidth = rectTransform.rect.width * 0.5f;
+            float halfParentWidth = parentRect.rect.width * 0.5f;
+            float maxOffset = Mathf.Max(0f, halfParentWidth - halfBubbleWidth);
+            return Mathf.Clamp(desiredX, -maxOffset, maxOffset);
         }
     }
 }

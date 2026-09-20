@@ -349,7 +349,11 @@ namespace BrainDrain.UI
                 tmp.color = Color.white;
                 tmp.raycastTarget = false;
                 tmp.enableAutoSizing = true;
-                tmp.fontSizeMin = 10f;
+                // Floor raised from 10 (2026-09-17): 10pt is illegible on a phone-scale tab
+                // button and was the smallest hardcoded font anywhere in the shop UI. 14
+                // still lets "CASH INVESTMENTS" (the longest of the three tab labels) shrink
+                // to fit a narrow button without forcing every tab down to the same size.
+                tmp.fontSizeMin = 14f;
                 tmp.fontSizeMax = 20f;
             }
             else
@@ -526,11 +530,18 @@ namespace BrainDrain.UI
 
             TMPro.TextMeshProUGUI tmp = textGo.GetComponent<TMPro.TextMeshProUGUI>();
             tmp.text = label;
-            tmp.fontSize = 18f;
             tmp.fontStyle = TMPro.FontStyles.Bold;
             tmp.alignment = TMPro.TextAlignmentOptions.Center;
             tmp.color = Color.white;
             tmp.raycastTarget = false;
+            // Auto-sizing added (2026-09-17) to match SetTabButtonLabel's scene-authored path:
+            // this fallback used to hardcode a fixed 18pt with no fit guarantee at all, so a
+            // narrow generated button could clip "CASH INVESTMENTS" outright. Same min/max as
+            // the other path so a tab label reads identically regardless of which code
+            // constructs the button.
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 14f;
+            tmp.fontSizeMax = 20f;
         }
 
         private static GameObject EnsureRuntimeTabPanel(

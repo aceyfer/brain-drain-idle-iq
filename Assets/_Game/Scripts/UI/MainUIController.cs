@@ -23,6 +23,8 @@ namespace BrainDrain.UI
         [SerializeField] private ShopUIController shopUIController;
         [SerializeField] private ConvertUIController convertUIController;
         [SerializeField] private SettingsUIController settingsUIController;
+        [Tooltip("So this controller can hide the ad-recovery popup while Shop/Convert/Settings is open and let it back through once none of them are -- see UpdateAdRecoverySuppression's doc comment.")]
+        [SerializeField] private RewardedAdRecoveryUIController rewardedAdRecoveryUIController;
 
         [Header("Optional Overlay")]
         [Tooltip("Dimmer shown while the shop panel is open (matches mock #shade).")]
@@ -88,6 +90,7 @@ namespace BrainDrain.UI
             }
 
             RefreshButtonFaces();
+            UpdateAdRecoverySuppression();
         }
 
         private void OnDestroy()
@@ -121,6 +124,7 @@ namespace BrainDrain.UI
         private void HandleShopClosed()
         {
             SetShopShadeVisible(false);
+            UpdateAdRecoverySuppression();
         }
 
         private void OnShopShadeClicked()
@@ -133,6 +137,35 @@ namespace BrainDrain.UI
             {
                 SetShopShadeVisible(false);
             }
+
+            UpdateAdRecoverySuppression();
+        }
+
+        /// <summary>
+        /// 2026-09-16: RewardedAdRecoveryUIController shows its popup automatically off
+        /// RewardedAdRecoveryManager's own event, with zero awareness of Shop/Convert/Settings --
+        /// unlike those three, which already close each other out via the checks in
+        /// OnShopClicked/OnConvertClicked/OnSettingsClicked below. Without this, the popup could
+        /// still be showing when the player opens one of those three, and the two would visually
+        /// stack on top of each other (the startup Settings/ad-popup stacking bug this fixes).
+        /// Called at the end of every path that changes which of Shop/Convert/Settings is open,
+        /// so the popup hides for as long as any of the three is up and reappears on its own the
+        /// moment none of them are. Suppresses the view only -- never touches
+        /// RewardedAdRecoveryManager.HasPendingRecovery -- so a player who checks Settings mid-
+        /// popup doesn't lose their pending recovery or ads-watched progress.
+        /// </summary>
+        private void UpdateAdRecoverySuppression()
+        {
+            if (rewardedAdRecoveryUIController == null)
+            {
+                return;
+            }
+
+            bool anyOtherPanelOpen = (shopUIController != null && shopUIController.IsOpen)
+                || (convertUIController != null && convertUIController.IsOpen)
+                || (settingsUIController != null && settingsUIController.IsOpen);
+
+            rewardedAdRecoveryUIController.SetSuppressedByOtherPanel(anyOtherPanelOpen);
         }
 
         private void ResolveReferences()
@@ -150,6 +183,11 @@ namespace BrainDrain.UI
             if (settingsUIController == null)
             {
                 settingsUIController = FindAnyObjectByType<SettingsUIController>();
+            }
+
+            if (rewardedAdRecoveryUIController == null)
+            {
+                rewardedAdRecoveryUIController = FindAnyObjectByType<RewardedAdRecoveryUIController>();
             }
 
             if (shopButton == null)
@@ -203,6 +241,7 @@ namespace BrainDrain.UI
 
             shopUIController.ToggleShop();
             SetShopShadeVisible(shopUIController.IsOpen);
+            UpdateAdRecoverySuppression();
         }
 
         private void OnConvertClicked()
@@ -224,6 +263,7 @@ namespace BrainDrain.UI
             }
 
             convertUIController.TogglePanel();
+            UpdateAdRecoverySuppression();
         }
 
         private void OnSettingsClicked()
@@ -245,6 +285,7 @@ namespace BrainDrain.UI
             }
 
             settingsUIController.TogglePanel();
+            UpdateAdRecoverySuppression();
         }
 
         private void OnRestoreClicked()

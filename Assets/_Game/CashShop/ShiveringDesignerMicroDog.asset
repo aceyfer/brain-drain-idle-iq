@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Shivering Designer Micro-Dog
   description: Genetically engineered to vibrate with anxiety.
   cost: 50000
-  gateRebirthCount: 0
+  gateRebirthCount: 1
   effectType: 1
   effectPercent: 0.08

@@ -32,6 +32,8 @@ namespace BrainDrain.EditorTools
         private const string GeneratedArtFolder = "Assets/_Game/Sprites/UI/Generated";
         private const string RainStreakSourcePath = "Assets/Rain Particles/Textures/Rain Sprite.png";
         private const string RainStreakDestPath = GeneratedArtFolder + "/RainStreak.png";
+        private const string RainGroundHitSourcePath = "Assets/Rain Particles/Textures/Rain Ground Hit.png";
+        private const string RainGroundHitDestPath = GeneratedArtFolder + "/RainGroundHit.png";
         private const int DropCount = 28;
 
         [MenuItem("BrainDrain/Fix Weather System (Smog + Rain)")]
@@ -73,10 +75,15 @@ namespace BrainDrain.EditorTools
             Sprite rainStreak = ImportRainStreakSprite();
             Image[] drops = BuildDropPool(rainOverlay.transform, rainStreak);
 
+            Sprite rainGroundHit = ImportRainGroundHitSprite();
+            Image[] splashes = BuildSplashPool(rainOverlay.transform, rainGroundHit);
+
             RainEffectView rainEffectView = rainOverlay.GetComponent<RainEffectView>();
             if (rainEffectView == null) { rainEffectView = rainOverlay.AddComponent<RainEffectView>(); }
             AssignObjectField(rainEffectView, "dropContainer", rainOverlay.GetComponent<RectTransform>());
             AssignArrayField(rainEffectView, "drops", drops);
+            AssignArrayField(rainEffectView, "splashes", splashes);
+            AssignFloatField(rainEffectView, "sidewalkBaselineNormalized", ResolveSidewalkBaselineNormalized());
 
             Transform weatherManagerTransform = FindInSceneIncludingInactive("WeatherManager");
             GameObject weatherManagerHost = weatherManagerTransform != null ? weatherManagerTransform.gameObject : null;
@@ -98,7 +105,7 @@ namespace BrainDrain.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[WeatherSystemWireFix] Done (AtmosphereOverlay {(atmosphereCreated ? "created" : "found")}, RainOverlay {(rainCreated ? "created" : "found")}, {drops.Length} drops). Save the scene (Ctrl+S) to persist.");
+            Debug.Log($"[WeatherSystemWireFix] Done (AtmosphereOverlay {(atmosphereCreated ? "created" : "found")}, RainOverlay {(rainCreated ? "created" : "found")}, {drops.Length} drops, {splashes.Length} ground splashes). Save the scene (Ctrl+S) to persist.");
         }
 
         /// <summary>GameObject.Find/transform.Find on a loose root only ever sees active objects. This walks every scene root's hierarchy directly (including inactive ones) to find a GameObject by exact name.</summary>
@@ -188,6 +195,79 @@ namespace BrainDrain.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(RainStreakDestPath);
         }
 
+        /// <summary>Same baseline ArtExpansionTool.WireSidewalk() reads to place Sidewalk.png -- PedestrianContainer's own bottom anchor, read live rather than hardcoded so a future re-anchor of the sidewalk is picked up automatically on the next Fix() run.</summary>
+        private static float ResolveSidewalkBaselineNormalized()
+        {
+            GameObject pedestrianContainer = GameObject.Find("PedestrianContainer");
+            RectTransform pedRect = pedestrianContainer != null ? pedestrianContainer.GetComponent<RectTransform>() : null;
+            if (pedRect == null)
+            {
+                Debug.LogWarning("[WeatherSystemWireFix] No 'PedestrianContainer' found -- leaving RainEffectView.sidewalkBaselineNormalized at its existing/default value.");
+                return 0.12f;
+            }
+
+            return pedRect.anchorMin.y;
+        }
+
+        private static Sprite ImportRainGroundHitSprite()
+        {
+            Directory.CreateDirectory(GeneratedArtFolder);
+
+            if (!File.Exists(RainGroundHitDestPath))
+            {
+                AssetDatabase.CopyAsset(RainGroundHitSourcePath, RainGroundHitDestPath);
+                AssetDatabase.ImportAsset(RainGroundHitDestPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            TextureImporter importer = AssetImporter.GetAtPath(RainGroundHitDestPath) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.filterMode = FilterMode.Bilinear;
+                importer.mipmapEnabled = false;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(RainGroundHitDestPath);
+        }
+
+        private static Image[] BuildSplashPool(Transform parent, Sprite splashSprite)
+        {
+            var splashes = new Image[DropCount];
+            for (int i = 0; i < DropCount; i++)
+            {
+                string name = $"Splash_{i:00}";
+                Transform existing = parent.Find(name);
+                GameObject splashObject = existing != null ? existing.gameObject : null;
+                if (splashObject == null)
+                {
+                    splashObject = new GameObject(name, typeof(RectTransform));
+                    splashObject.transform.SetParent(parent, false);
+                    Undo.RegisterCreatedObjectUndo(splashObject, "Create " + name);
+                }
+
+                RectTransform rect = splashObject.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = new Vector2(40f, 40f);
+
+                Image image = splashObject.GetComponent<Image>();
+                if (image == null) { image = splashObject.AddComponent<Image>(); }
+                image.sprite = splashSprite;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+
+                splashes[i] = image;
+            }
+
+            return splashes;
+        }
+
         private static Image[] BuildDropPool(Transform parent, Sprite streakSprite)
         {
             var drops = new Image[DropCount];
@@ -234,6 +314,20 @@ namespace BrainDrain.EditorTools
             }
 
             prop.objectReferenceValue = value;
+            so.ApplyModifiedProperties();
+        }
+
+        private static void AssignFloatField(Component component, string fieldName, float value)
+        {
+            SerializedObject so = new SerializedObject(component);
+            SerializedProperty prop = so.FindProperty(fieldName);
+            if (prop == null)
+            {
+                Debug.LogWarning($"[WeatherSystemWireFix] Could not find serialized field '{fieldName}' on {component.GetType().Name}.");
+                return;
+            }
+
+            prop.floatValue = value;
             so.ApplyModifiedProperties();
         }
 

@@ -25,10 +25,16 @@ namespace BrainDrain.UI
         // original 0.34 peak alpha. Real devices always render at native resolution (no
         // analogous shrunk-window case), so this was a mild, not severe, regression there --
         // tightened anyway per Aceyfer's call.
+        // Stage 0 corrected 2026-09-16 (live Play Mode comparison, per
+        // CODEX_VISUAL_STYLE_HANDOFF_2026-09-15.md's P0 visual check): the prior brown-toxic tint
+        // (0.45, 0.36, 0.14, a=0.20) sat directly over Leo's integrated cryotube/black-room BG1
+        // composition and read as an olive/muddy cast rather than atmosphere. Stage 0 is now
+        // neutral/fully transparent -- no haze over the opening composition -- and the polluted
+        // treatment now begins at Stage 1 exactly as it already was (untouched below).
         private static readonly Color[] StageHazeColor =
         {
-            new Color(0.45f, 0.36f, 0.14f, 0.20f), // 0 -- thick brown-toxic haze
-            new Color(0.44f, 0.38f, 0.20f, 0.16f), // 1
+            new Color(1f, 1f, 1f, 0f),              // 0 -- neutral/clear, do not tint Leo's black-room composition
+            new Color(0.44f, 0.38f, 0.20f, 0.16f), // 1 -- polluted treatment begins here
             new Color(0.42f, 0.42f, 0.34f, 0.11f), // 2
             new Color(0.55f, 0.60f, 0.56f, 0.07f), // 3
             new Color(0.75f, 0.84f, 0.88f, 0.04f), // 4

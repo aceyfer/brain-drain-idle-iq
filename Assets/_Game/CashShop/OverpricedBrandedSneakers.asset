@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Overpriced Branded Sneakers
   description: Plastic shoes. One month's rent. Worth it.
   cost: 200000
-  gateRebirthCount: 0
+  gateRebirthCount: 1
   effectType: 2
   effectPercent: 0.12

@@ -35,6 +35,17 @@ namespace BrainDrain.UI
 
         private RewardedAdRecoveryManager subscribedManager;
 
+        /// <summary>
+        /// 2026-09-16: set by MainUIController while Shop/Convert/Settings is open, so this
+        /// popup -- which shows itself automatically off RewardedAdRecoveryManager's own event,
+        /// with no awareness of what else is on screen -- stops visually stacking on top of
+        /// whichever of those three the player just opened. Suppresses the VIEW only; never
+        /// touches RewardedAdRecoveryManager.HasPendingRecovery, so the pending recovery (and
+        /// ads-watched progress) is untouched and the popup reappears on its own the moment
+        /// MainUIController reports none of Shop/Convert/Settings are open anymore.
+        /// </summary>
+        private bool suppressedByOtherPanel;
+
         private void Awake()
         {
             if (watchAdButton != null)
@@ -102,11 +113,23 @@ namespace BrainDrain.UI
             RewardedAdRecoveryManager.Instance?.DismissPendingRecovery();
         }
 
+        /// <summary>Called by MainUIController -- see suppressedByOtherPanel's doc comment.</summary>
+        public void SetSuppressedByOtherPanel(bool suppressed)
+        {
+            if (suppressedByOtherPanel == suppressed)
+            {
+                return;
+            }
+
+            suppressedByOtherPanel = suppressed;
+            RefreshVisuals();
+        }
+
         /// <summary>Single source of truth for both visibility and content -- called on every state change rather than splitting "show" and "update text" into separate paths, so there is only one place that can drift out of sync with the manager's real state.</summary>
         private void RefreshVisuals()
         {
             RewardedAdRecoveryManager manager = RewardedAdRecoveryManager.Instance;
-            if (manager == null || !manager.HasPendingRecovery)
+            if (manager == null || !manager.HasPendingRecovery || suppressedByOtherPanel)
             {
                 SetCanvasState(false);
                 return;

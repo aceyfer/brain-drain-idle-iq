@@ -10,6 +10,8 @@ namespace BrainDrain.Core
     public static class HUDNumericFormatter
     {
         private static readonly StringBuilder SharedBuilder = new StringBuilder(64);
+        private static readonly UnityEngine.Color RestorationColor = new UnityEngine.Color32(117, 240, 76, 255);
+        private static readonly UnityEngine.Color LockedRestorationColor = new UnityEngine.Color32(201, 154, 56, 255);
 
         public static void SetBrainPowerCounter(TextMeshProUGUI label, double brainPower)
         {
@@ -102,7 +104,7 @@ namespace BrainDrain.Core
             NumberFormatter.FormatInto(SharedBuilder, currentPoints);
             SharedBuilder.Append(isRebirthActivated ? " POINTS" : " RESTORATION PTS");
             label.SetText(SharedBuilder);
-            label.color = isRebirthActivated ? UnityEngine.Color.white : new UnityEngine.Color(1f, 0.85f, 0.2f, 1f);
+            label.color = isRebirthActivated ? RestorationColor : LockedRestorationColor;
         }
 
         public static void SetRank(TextMeshProUGUI label, string rankName)

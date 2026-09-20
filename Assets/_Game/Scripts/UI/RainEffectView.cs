@@ -32,6 +32,14 @@ namespace BrainDrain.UI
         [SerializeField] private float maxFallSpeed = 1400f;
         [SerializeField] private float driftXPerSecond = -80f;
 
+        [Header("Ground Splash")]
+        [Tooltip("Normalized (0-1) height within dropContainer's own rect where drops hit the sidewalk and splash instead of falling further. Wired by WeatherSystemWireFix from PedestrianContainer.anchorMin.y -- the same baseline ArtExpansionTool.WireSidewalk() uses to place Sidewalk.png -- so the splash lines up with the drawn sidewalk rather than the screen's bottom edge.")]
+        [SerializeField, Range(0f, 1f)] private float sidewalkBaselineNormalized = 0.12f;
+        [SerializeField] private Image[] splashes = System.Array.Empty<Image>();
+        [SerializeField] private float splashDurationSeconds = 0.35f;
+        [SerializeField] private float splashStartScale = 0.4f;
+        [SerializeField] private float splashEndScale = 1.2f;
+
         // Stage 0..5, murky/acid-tinted early -> clean and clear late. Same arc as
         // WeatherAtmosphereView's haze table, kept separate rather than shared -- independent
         // trackers using the same interval "by convention, not shared implementation," matching
@@ -47,6 +55,8 @@ namespace BrainDrain.UI
         };
 
         private float[] fallSpeeds;
+        private float[] splashTimers;
+        private Color currentTint = Color.white;
         private bool isRaining;
 
         private void Awake()
@@ -57,18 +67,29 @@ namespace BrainDrain.UI
                 fallSpeeds[i] = Random.Range(minFallSpeed, maxFallSpeed);
             }
 
+            splashTimers = new float[splashes.Length];
+            for (int i = 0; i < splashes.Length; i++)
+            {
+                splashTimers[i] = -1f;
+                if (splashes[i] != null)
+                {
+                    Color c = splashes[i].color;
+                    splashes[i].color = new Color(c.r, c.g, c.b, 0f);
+                }
+            }
+
             gameObject.SetActive(false);
         }
 
         public void SetStageIndex(int index)
         {
             index = Mathf.Clamp(index, 0, StageTint.Length - 1);
-            Color tint = StageTint[index];
+            currentTint = StageTint[index];
             foreach (Image drop in drops)
             {
                 if (drop != null)
                 {
-                    drop.color = tint;
+                    drop.color = currentTint;
                 }
             }
         }
@@ -120,6 +141,7 @@ namespace BrainDrain.UI
 
             Rect bounds = dropContainer.rect;
             float dt = Time.deltaTime;
+            float splashY = Mathf.Lerp(bounds.yMin, bounds.yMax, sidewalkBaselineNormalized);
 
             for (int i = 0; i < drops.Length; i++)
             {
@@ -134,8 +156,9 @@ namespace BrainDrain.UI
                 pos.y -= fallSpeeds[i] * dt;
                 pos.x += driftXPerSecond * dt;
 
-                if (pos.y < bounds.yMin)
+                if (pos.y < splashY)
                 {
+                    TriggerSplash(i, pos.x, splashY);
                     pos.y = bounds.yMax;
                     pos.x = Random.Range(bounds.xMin, bounds.xMax);
                 }
@@ -149,6 +172,45 @@ namespace BrainDrain.UI
                 }
 
                 dropRect.anchoredPosition = pos;
+            }
+
+            UpdateSplashes(dt);
+        }
+
+        /// <summary>Splash index mirrors its triggering drop's index 1:1 -- each drop lane owns exactly one splash slot, so a drop can never need a second splash before its first one finishes (a fall cycle is always far longer than splashDurationSeconds).</summary>
+        private void TriggerSplash(int index, float x, float y)
+        {
+            if (index < 0 || index >= splashes.Length || splashes[index] == null)
+            {
+                return;
+            }
+
+            RectTransform splashRect = (RectTransform)splashes[index].transform;
+            splashRect.anchoredPosition = new Vector2(x, y);
+            splashRect.localScale = Vector3.one * splashStartScale;
+            splashTimers[index] = 0f;
+        }
+
+        private void UpdateSplashes(float dt)
+        {
+            for (int i = 0; i < splashes.Length; i++)
+            {
+                if (splashTimers[i] < 0f || splashes[i] == null)
+                {
+                    continue;
+                }
+
+                splashTimers[i] += dt;
+                float t = Mathf.Clamp01(splashTimers[i] / splashDurationSeconds);
+
+                RectTransform splashRect = (RectTransform)splashes[i].transform;
+                splashRect.localScale = Vector3.one * Mathf.Lerp(splashStartScale, splashEndScale, t);
+                splashes[i].color = new Color(currentTint.r, currentTint.g, currentTint.b, Mathf.Lerp(1f, 0f, t));
+
+                if (splashTimers[i] >= splashDurationSeconds)
+                {
+                    splashTimers[i] = -1f;
+                }
             }
         }
     }

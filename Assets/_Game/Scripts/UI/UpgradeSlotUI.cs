@@ -3,6 +3,7 @@ using UnityEngine.Serialization;
 using TMPro;
 using BrainDrain.Core;
 using BrainDrain.Systems;
+using System.Collections.Generic;
 
 namespace BrainDrain.UI
 {
@@ -12,10 +13,20 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class UpgradeSlotUI : MonoBehaviour
     {
-        // Calmer, professional, non-flashy palette.
-        private static readonly Color LockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0x2E, 0x7D, 0x32, 0xFF); // Matte dark green
-        private static readonly Color TooExpensiveColor = new Color32(0x7F, 0x8C, 0x8D, 0xFF); // Matte grey or muted slate
+        // Visual-style-guide semantic palette. The card remains carbon; these colors communicate
+        // identity/state through the rail and price instead of flooding the whole row.
+        private static readonly Color CardColor = new Color32(0x11, 0x15, 0x1B, 0xF5);
+        // Lightened from the original (0x18, 0x20, 0x28) -- that value sat too close to
+        // CardColor (0x11, 0x15, 0x1B) to read as a distinct control once the rounded-rect
+        // sprite bug below is fixed; see 2026-09-16 button-polish pass.
+        private static readonly Color PurchaseSurfaceColor = new Color32(0x25, 0x30, 0x3C, 0xFF);
+        private static readonly Color LockedColor = new Color32(0x59, 0x61, 0x6A, 0xFF);
+        private static readonly Color LockedPriceColor = new Color32(0xF2, 0xF0, 0xE8, 0xFF);
+        private static readonly Color AffordableColor = new Color32(0x75, 0xF0, 0x4C, 0xFF);
+        private static readonly Color TooExpensiveColor = new Color32(0x9B, 0xA8, 0xB5, 0xFF);
+        private static readonly Color BrainPowerIdentityColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
+        private static readonly Color CashIdentityColor = new Color32(0xF5, 0xC5, 0x42, 0xFF);
+        private static readonly HashSet<UnityEngine.UI.Button> PresentationOwnedButtons = new();
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
@@ -27,6 +38,11 @@ namespace BrainDrain.UI
         [Header("Interaction")]
         [SerializeField] private UnityEngine.UI.Button buyButton;
         [SerializeField] private UnityEngine.UI.Image background;
+        [Tooltip("Thin semantic rail: cyan for BP Upgrades, gold for Cash Investments, ash while locked.")]
+        [SerializeField] private UnityEngine.UI.Image identityRail;
+
+        [Tooltip("9-sliced rounded-rect fill for the buy button (defaults to RoundedRect8 if left unassigned in the Inspector). Reapplied every RefreshState -- see EnsureBuyButtonShape's doc comment for why.")]
+        [SerializeField] private Sprite buyButtonFillSprite;
 
         public TextMeshProUGUI NameText { get => nameText; set => nameText = value; }
         public TextMeshProUGUI DescriptionText { get => descriptionText; set => descriptionText = value; }
@@ -34,9 +50,13 @@ namespace BrainDrain.UI
         public TextMeshProUGUI CountText { get => countText; set => countText = value; }
         public UnityEngine.UI.Button BuyButton { get => buyButton; set => buyButton = value; }
         public UnityEngine.UI.Image Background { get => background; set => background = value; }
+        public UnityEngine.UI.Image IdentityRail { get => identityRail; set => identityRail = value; }
 
         private BuildingData boundData;
         private UpgradeManager boundManager;
+
+        /// <summary>Cached Image component for buyButton.targetGraphic -- resolved once in Bind() rather than re-cast on every ApplyAccent call.</summary>
+        private UnityEngine.UI.Image buyButtonImage;
 
         /// <summary>Cached result of the last RefreshState purchasability computation (unlocked
         /// AND past the BP gate AND currently affordable) -- read by HandleBuyClicked so a tap
@@ -63,9 +83,16 @@ namespace BrainDrain.UI
 
             if (buyButton != null)
             {
+                PresentationOwnedButtons.Add(buyButton);
                 buyButton.onClick.RemoveListener(HandleBuyClicked);
                 buyButton.onClick.AddListener(HandleBuyClicked);
+                buyButtonImage = buyButton.targetGraphic as UnityEngine.UI.Image;
             }
+        }
+
+        internal static bool OwnsButtonPresentation(UnityEngine.UI.Button button)
+        {
+            return button != null && PresentationOwnedButtons.Contains(button);
         }
 
         /// <summary>
@@ -168,7 +195,7 @@ namespace BrainDrain.UI
             if (countText != null)
             {
                 countText.text = $"OWNED: {level}";
-                countText.fontSize = 28f; // Large font
+                countText.fontSize = 28f; // matches ShopRowView's countText scale
             }
 
             if (descriptionText != null)
@@ -223,7 +250,7 @@ namespace BrainDrain.UI
                 {
                     descriptionText.text = "Access restricted by the Ministry.";
                 }
-                descriptionText.fontSize = 26f;
+                descriptionText.fontSize = 22f;
             }
 
             if (!unlocked)
@@ -231,7 +258,7 @@ namespace BrainDrain.UI
                 if (nameText != null)
                 {
                     nameText.text = ClassificationTier.GetLabel(boundData.unlockCumulativeBrainPower);
-                    nameText.fontSize = 32f;
+                    nameText.fontSize = 32f; // matches RestorationSlotUI/ShopRowView/CashShopSlotUI's shared shop-row scale
                 }
                 if (countText != null) countText.text = string.Empty;
                 if (costText != null)
@@ -243,9 +270,12 @@ namespace BrainDrain.UI
                     // the item's own costType. $ formatting is reserved for an actual Cash price
                     // on an unlocked, purchasable row (see below).
                     costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
-                    costText.fontSize = 28f;
+                    costText.fontSize = 30f; // unified with the unlocked-state cost text below (was 24 vs 26 -- same field, two sizes)
                 }
-                ApplyAccent(LockedColor);
+                // The global stage theme gives BuyButton a saturated fill. Keep the locked rail
+                // ash, but use bone white for the requirement so it remains readable over that
+                // inherited fill instead of putting low-contrast ash text on teal.
+                ApplyAccent(LockedPriceColor, LockedColor);
                 if (buyButton != null) buyButton.interactable = false;
                 return;
             }
@@ -253,7 +283,7 @@ namespace BrainDrain.UI
             if (nameText != null)
             {
                 nameText.text = boundData.GetDisplayName(worldStageIndex);
-                nameText.fontSize = 32f;
+                nameText.fontSize = 32f; // matches RestorationSlotUI/ShopRowView/CashShopSlotUI's shared shop-row scale
             }
             if (costText != null)
             {
@@ -262,10 +292,11 @@ namespace BrainDrain.UI
                     : isCash
                         ? $"${NumberFormatter.Format(cost)}"
                         : $"{NumberFormatter.Format(cost)} BP";
-                costText.fontSize = 30f;
+                costText.fontSize = 30f; // unified with the locked-state cost text above (was 24 vs 26 -- same field, two sizes)
             }
 
-            ApplyAccent(affordable ? AffordableColor : TooExpensiveColor);
+            Color identityColor = isCash ? CashIdentityColor : BrainPowerIdentityColor;
+            ApplyAccent(affordable ? AffordableColor : TooExpensiveColor, identityColor);
 
             // Keep interactable so the player can attempt purchase; manager silently rejects if unaffordable.
             if (buyButton != null) buyButton.interactable = true;
@@ -273,6 +304,11 @@ namespace BrainDrain.UI
 
         private void OnDestroy()
         {
+            if (buyButton != null)
+            {
+                PresentationOwnedButtons.Remove(buyButton);
+            }
+
             if (background != null)
             {
                 AnimationController.StopAffordablePulse(background.rectTransform);
@@ -362,12 +398,16 @@ namespace BrainDrain.UI
             UINudgePointer.Instance?.PointAt(nudgeTarget, clampArea);
         }
 
-        private void ApplyAccent(Color accent)
+        private void ApplyAccent(Color stateColor, Color identityColor)
         {
             if (background != null)
             {
-                // Subtle translucent tint so neon rows read as glowing panels, not solid blocks.
-                background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
+                background.color = CardColor;
+            }
+
+            if (identityRail != null)
+            {
+                identityRail.color = identityColor;
             }
 
             if (nameText != null)
@@ -382,8 +422,76 @@ namespace BrainDrain.UI
 
             if (costText != null)
             {
-                costText.color = accent;
+                // Restore the font asset's own material in case the global button theme ran after
+                // the slot was populated. Theme materials can carry a dark face color that
+                // multiplies this vertex color and destroys contrast even when color is white.
+                if (costText.font != null && costText.font.material != null)
+                {
+                    costText.fontSharedMaterial = costText.font.material;
+                }
+                costText.faceColor = Color.white;
+                costText.color = stateColor;
             }
+
+            if (buyButton != null)
+            {
+                // UpgradeSlotUI owns this button's semantic state. The universal stage theme may
+                // still frame it, but the fill stays quiet so state-colored price text retains
+                // contrast instead of competing with a saturated global fill.
+                buyButton.transition = UnityEngine.UI.Selectable.Transition.ColorTint;
+                UnityEngine.UI.ColorBlock colors = buyButton.colors;
+                colors.normalColor = PurchaseSurfaceColor;
+                colors.highlightedColor = Color.Lerp(PurchaseSurfaceColor, stateColor, 0.18f);
+                colors.pressedColor = Color.Lerp(PurchaseSurfaceColor, stateColor, 0.32f);
+                colors.selectedColor = colors.highlightedColor;
+                colors.disabledColor = Color.Lerp(PurchaseSurfaceColor, LockedColor, 0.2f);
+                colors.colorMultiplier = 1f;
+                colors.fadeDuration = 0.1f;
+                buyButton.colors = colors;
+
+                if (buyButton.targetGraphic != null)
+                {
+                    buyButton.targetGraphic.color = PurchaseSurfaceColor;
+                }
+
+                EnsureBuyButtonShape();
+            }
+        }
+
+        /// <summary>
+        /// UNRESOLVED as of 2026-09-16 -- see Assets/Docs/CODEX_VISUAL_STYLE_HANDOFF_2026-09-15.md
+        /// for the full investigation. Short version: the original theory (a units mismatch where
+        /// RoundedRect8's 16px spriteBorder needs pixelsPerUnitMultiplier tuned down to become
+        /// visible) was tested exhaustively at 0.025, 0.1, 0.2, 1, 2, 4, and 20 against the live
+        /// "Apex Brain Greens" BuyButton at real device resolution (iPhone 11 Pro, 2436x1125) and
+        /// disproven -- every value in that range rendered identically. A `Debug.Log` placed at the
+        /// very top of this method (before any null check) never fired even once across multiple
+        /// Play sessions, including immediately after a real purchase that visibly updated that same
+        /// row's price/owned text -- meaning RefreshState/ApplyAccent visibly ran, but this method,
+        /// or the buyButton wiring feeding it, apparently did not. Manually overriding the live
+        /// Image.color via the Inspector at runtime DID work and was visible on screen, confirming
+        /// the visible button is a real, reachable object -- just not one this method appears to be
+        /// touching. Left at the Unity default (1) rather than any of the tested values, since none
+        /// were shown to have any confirmed effect on the actual rendered button. Do not resume
+        /// tuning this multiplier without first confirming (e.g. via a differently-instrumented
+        /// build, PlayMode test, or Frame Debugger) that this method actually executes against the
+        /// on-screen button -- otherwise further multiplier changes are guaranteed to be as
+        /// inconclusive as this session's.
+        /// </summary>
+        private void EnsureBuyButtonShape()
+        {
+            if (buyButtonImage == null)
+            {
+                return;
+            }
+
+            if (buyButtonImage.sprite == null && buyButtonFillSprite != null)
+            {
+                buyButtonImage.sprite = buyButtonFillSprite;
+            }
+
+            buyButtonImage.type = UnityEngine.UI.Image.Type.Sliced;
+            buyButtonImage.pixelsPerUnitMultiplier = 1f;
         }
     }
 }

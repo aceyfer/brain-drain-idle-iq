@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Private VIP Velvet Rope
   description: You stand behind it in public. Alone. Powerful.
   cost: 1000000
-  gateRebirthCount: 0
+  gateRebirthCount: 2
   effectType: 2
   effectPercent: 0.15

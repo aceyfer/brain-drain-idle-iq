@@ -167,8 +167,20 @@ namespace BrainDrain.Core
         /// <summary>Fired exactly once, the first time Cash is ever earned (Underground Economy first payout).</summary>
         public event Action OnFirstCashEarned;
 
+        /// <summary>
+        /// Fired exactly once, the first time Points are ever earned (via AddPoints or
+        /// ConvertCashToPoints). Added for §23 FTUE -- previously nothing taught a new player
+        /// that Points exist or that they fuel World Restoration until AFTER they'd already
+        /// found the RP Restorations shop tab and spent some, which meant a player who never
+        /// stumbled onto that tab never got taught it exists at all. This hooks the moment
+        /// Points first appear in the wallet -- before the first spend -- so FTUEManager can
+        /// proactively point the player at the mechanic instead of only reacting to it.
+        /// </summary>
+        public event Action OnFirstPointsEarned;
+
         private bool hasEarnedFirstBrainPower;
         private bool hasEarnedFirstCash;
+        private bool hasEarnedFirstPoints;
 
         private void Start()
         {
@@ -357,6 +369,7 @@ namespace BrainDrain.Core
 
             currentPoints += amount;
             OnPointsChanged?.Invoke(currentPoints);
+            CheckFirstPointsEarned();
         }
 
         /// <summary>
@@ -379,7 +392,20 @@ namespace BrainDrain.Core
             OnCashChanged?.Invoke(currentCash);
             OnPointsChanged?.Invoke(currentPoints);
             OnCashConverted?.Invoke(convertedAmount);
+            CheckFirstPointsEarned();
             return true;
+        }
+
+        /// <summary>Fires OnFirstPointsEarned exactly once, the instant currentPoints first becomes positive. Shared by AddPoints and ConvertCashToPoints -- the only two ways Points ever increase.</summary>
+        private void CheckFirstPointsEarned()
+        {
+            if (hasEarnedFirstPoints || currentPoints <= 0d)
+            {
+                return;
+            }
+
+            hasEarnedFirstPoints = true;
+            OnFirstPointsEarned?.Invoke();
         }
 
         /// <summary>
@@ -445,6 +471,11 @@ namespace BrainDrain.Core
             if (restoredCash > 0d)
             {
                 hasEarnedFirstCash = true;
+            }
+
+            if (restoredPoints > 0d)
+            {
+                hasEarnedFirstPoints = true;
             }
 
             OnBrainPowerChanged?.Invoke(brainPower);

@@ -1370,6 +1370,141 @@ namespace BrainDrain.Systems
             }
         }
 
+        // ----- IQ rise swirl (Portal-style spiral burst, added 2026-09-17) -------------------
+
+        private const int IQSwirlParticleCount = 7;
+
+        /// <summary>Matches the HUD's existing OVERCHARGED/BrainPower cyan (#00DDEB) so the swirl reads as "this is an IQ effect," not a generic sparkle.</summary>
+        private static readonly Color IQSwirlColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
+
+        /// <summary>
+        /// Portal-aperture-style spiral burst played around the IQ readout whenever PlayerIQ
+        /// actually rises (see HUDController.UpdatePlayerIQText, which rate-limits calls into
+        /// this so rapid small tap-driven gains don't spawn a burst every frame -- this method
+        /// itself is a plain one-shot with no cooldown of its own). Spawns IQSwirlParticleCount
+        /// small glow particles evenly spaced around target's position, each spiraling inward
+        /// while sweeping around the center and fading out on approach -- light being drawn into
+        /// an aperture, the same silhouette as Portal's own light-suck vignette. Reuses
+        /// GetGlowSprite() (already used by the tap ripple/celebration effects, procedural
+        /// fallback if no art asset is assigned) rather than requiring new art.
+        /// </summary>
+        public static void PlayIQRiseSwirl(RectTransform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            EnsureInstance()?.SpawnIQRiseSwirl(target);
+        }
+
+        private void SpawnIQRiseSwirl(RectTransform target)
+        {
+            if (isQuitting || target == null || !(target.parent is RectTransform parent))
+            {
+                return;
+            }
+
+            Vector2 center = target.anchoredPosition;
+
+            // Soft glow flash at the center, under the spiraling particles.
+            GameObject glowGo = new GameObject("IQSwirlGlow", typeof(RectTransform), typeof(Image));
+            glowGo.transform.SetParent(parent, false);
+            _trackedVfxObjects.Add(glowGo);
+            RectTransform glowRect = glowGo.GetComponent<RectTransform>();
+            glowRect.sizeDelta = new Vector2(140f, 140f);
+            glowRect.anchoredPosition = center;
+
+            Image glowImg = glowGo.GetComponent<Image>();
+            glowImg.sprite = GetGlowSprite();
+            glowImg.color = new Color(IQSwirlColor.r, IQSwirlColor.g, IQSwirlColor.b, 0f);
+            glowImg.raycastTarget = false;
+            StartCoroutine(IQSwirlGlowRoutine(glowRect, glowImg));
+
+            for (int i = 0; i < IQSwirlParticleCount; i++)
+            {
+                float startAngle = (360f / IQSwirlParticleCount) * i + UnityEngine.Random.Range(-10f, 10f);
+
+                GameObject particleGo = new GameObject("IQSwirlParticle", typeof(RectTransform), typeof(Image));
+                particleGo.transform.SetParent(parent, false);
+                _trackedVfxObjects.Add(particleGo);
+                RectTransform particleRect = particleGo.GetComponent<RectTransform>();
+                particleRect.sizeDelta = new Vector2(22f, 22f);
+                particleRect.anchoredPosition = center;
+
+                Image particleImg = particleGo.GetComponent<Image>();
+                particleImg.sprite = GetGlowSprite();
+                particleImg.color = IQSwirlColor;
+                particleImg.raycastTarget = false;
+
+                StartCoroutine(IQSwirlParticleRoutine(particleRect, particleImg, center, startAngle));
+            }
+        }
+
+        private IEnumerator IQSwirlGlowRoutine(RectTransform glowRect, Image glowImage)
+        {
+            const float duration = 0.45f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                if (glowRect == null || glowImage == null)
+                {
+                    yield break;
+                }
+
+                float alpha = t < 0.3f ? Mathf.Lerp(0f, 0.55f, t / 0.3f) : Mathf.Lerp(0.55f, 0f, (t - 0.3f) / 0.7f);
+                Color c = glowImage.color;
+                c.a = alpha;
+                glowImage.color = c;
+                glowRect.localScale = Vector3.one * Mathf.Lerp(0.6f, 1.3f, EaseOutQuad(t));
+
+                yield return null;
+            }
+
+            DestroyTrackedVfx(glowRect != null ? glowRect.gameObject : null);
+        }
+
+        /// <summary>
+        /// One spiraling particle: starts startRadius from center at startAngleDegrees, spirals
+        /// inward to 0 radius while sweeping spiralSweepDegrees around center, shrinking and
+        /// fading out on approach. EaseInQuad on the radius so the particle lingers on its outer
+        /// arc before accelerating inward at the end, matching the glow flash's own timing.
+        /// </summary>
+        private IEnumerator IQSwirlParticleRoutine(RectTransform rect, Image image, Vector2 center, float startAngleDegrees)
+        {
+            const float duration = 0.6f;
+            const float startRadius = 64f;
+            const float spiralSweepDegrees = 260f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                if (rect == null || image == null)
+                {
+                    yield break;
+                }
+
+                float radius = Mathf.LerpUnclamped(startRadius, 0f, EaseInQuad(t));
+                float angle = startAngleDegrees + spiralSweepDegrees * t;
+                float rad = angle * Mathf.Deg2Rad;
+                rect.anchoredPosition = center + new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * radius;
+                rect.localScale = Vector3.one * Mathf.Lerp(1f, 0.15f, t);
+
+                Color c = image.color;
+                c.a = t < 0.75f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.75f) / 0.25f);
+                image.color = c;
+
+                yield return null;
+            }
+
+            DestroyTrackedVfx(rect != null ? rect.gameObject : null);
+        }
+
         // ----- Shared helpers ---------------------------------------------------------------
 
         private void StopAndReplace<T>(Dictionary<T, Coroutine> map, T key, IEnumerator routine)

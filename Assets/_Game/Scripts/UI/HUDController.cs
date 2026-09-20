@@ -14,6 +14,25 @@ namespace BrainDrain.UI
         private const float IQCelebrationMilestoneInterval = 1000f;
         private const float TextFlushIntervalSeconds = 0.1f;
 
+        /// <summary>
+        /// Minimum real-time gap between IQ-rise swirl bursts (added 2026-09-17). PlayerIQ can
+        /// rise in small +1 increments on almost every tap while recovering toward 100 (see
+        /// PlayerIQManager.RestoreIQFromTap), and a full Portal-style particle burst on every
+        /// single one of those would read as visual spam rather than a celebration -- the same
+        /// "give it room to breathe" pacing principle as DialogueManager's repeat-trigger
+        /// cooldown. This gates AnimationController.PlayIQRiseSwirl itself, independent of
+        /// PlayIQFlash's per-tap text flash (HandleTapRewardEarned below), which stays uncapped.
+        /// </summary>
+        private const float IQSwirlCooldownSeconds = 1.2f;
+
+        private static readonly Color BoneWhite = new Color32(242, 240, 232, 255);
+        private static readonly Color BrainPowerColor = new Color32(0, 221, 235, 255);
+        private static readonly Color CashColor = new Color32(245, 197, 66, 255);
+        private static readonly Color RestorationColor = new Color32(117, 240, 76, 255);
+        private static readonly Color IllumisnottyColor = new Color32(201, 154, 56, 255);
+        private static readonly Color SecondaryColor = new Color32(155, 168, 181, 255);
+        private static readonly Color LockedColor = new Color32(89, 97, 106, 190);
+
         [Header("UI Text Fields")]
         [SerializeField] private TextMeshProUGUI capacityText;
         [FormerlySerializedAs("iqText")]
@@ -55,6 +74,8 @@ namespace BrainDrain.UI
 
         private int lastIQMilestoneIndex;
         private float nextTextFlushTime;
+        private float lastKnownPlayerIQ = -1f;
+        private float nextIQSwirlAllowedTime;
 
         private bool dirtyCapacity;
         private bool dirtyBrainPower;
@@ -161,6 +182,8 @@ namespace BrainDrain.UI
 
         private void Start()
         {
+            ApplyVisualStyle();
+
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.OnGameInitialized += InitializeHUD;
@@ -184,6 +207,7 @@ namespace BrainDrain.UI
         private void InitializeHUD()
         {
             UnsubscribeFromEvents();
+            ApplyVisualStyle();
 
             var currency = CurrencyManager.Instance;
             if (currency != null)
@@ -211,6 +235,9 @@ namespace BrainDrain.UI
             if (playerIQManager != null)
             {
                 lastIQMilestoneIndex = Mathf.FloorToInt(playerIQManager.PlayerIQ / IQCelebrationMilestoneInterval);
+                // Seeded to the current value before the first UpdatePlayerIQText call below, so
+                // that call's rise-check sees "no change" and doesn't fire a swirl on scene load.
+                lastKnownPlayerIQ = playerIQManager.PlayerIQ;
                 UpdatePlayerIQText(playerIQManager.PlayerIQ);
                 playerIQManager.OnPlayerIQChanged += UpdatePlayerIQText;
             }
@@ -259,6 +286,8 @@ namespace BrainDrain.UI
                 worldRestoration.OnRestorationStageChanged += HandleStageChangedForRank;
                 worldRestoration.OnRestorationStageChanged -= HandleRestorationMilestone;
                 worldRestoration.OnRestorationStageChanged += HandleRestorationMilestone;
+                worldRestoration.OnRestorationStageChanged -= HandleRestorationStageChangedForLabel;
+                worldRestoration.OnRestorationStageChanged += HandleRestorationStageChangedForLabel;
             }
 
             // Re-evaluate the restoration text when the player performs their first Snotting,
@@ -392,6 +421,7 @@ namespace BrainDrain.UI
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= UpdateRestorationProgressText;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleStageChangedForRank;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationMilestone;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChangedForLabel;
             }
         }
 
@@ -413,10 +443,20 @@ namespace BrainDrain.UI
             if (playerIQText != null)
             {
                 if (playerIQ > 100f)
-                    playerIQText.text = $"IQ: {playerIQ:F0} <color=#FF8C00>OVERCHARGED</color>";
+                    playerIQText.text = $"IQ: {playerIQ:F0} <color=#00DDEB>OVERCHARGED</color>";
                 else
                     playerIQText.text = $"IQ: {playerIQ:F0}";
             }
+
+            // Portal-style swirl on a genuine rise only (never on offline/overcharge decay ticks
+            // downward), rate-limited so a string of +1 tap-recovery gains doesn't spawn a burst
+            // per tap -- see IQSwirlCooldownSeconds.
+            if (playerIQ > lastKnownPlayerIQ && Time.unscaledTime >= nextIQSwirlAllowedTime && playerIQText != null)
+            {
+                nextIQSwirlAllowedTime = Time.unscaledTime + IQSwirlCooldownSeconds;
+                AnimationController.PlayIQRiseSwirl(playerIQText.rectTransform);
+            }
+            lastKnownPlayerIQ = playerIQ;
 
             int milestoneIndex = Mathf.FloorToInt(playerIQ / IQCelebrationMilestoneInterval);
             if (milestoneIndex > lastIQMilestoneIndex)
@@ -434,6 +474,27 @@ namespace BrainDrain.UI
         private void HandleStageChangedForRank(WorldRestorationStage _)
         {
             MarkRankDirty();
+        }
+
+        /// <summary>
+        /// Fixes the restoration-name lag reported in live QA (CODEX_VISUAL_STYLE_HANDOFF_2026-09-15.md,
+        /// P0 bug): WorldRestorationManager fires OnRestorationProgressChanged (which last set
+        /// restorationProgressText via UpdateRestorationProgressText) before it updates CurrentStage,
+        /// so a spend that crosses a stage threshold briefly shows the previous stage's name until the
+        /// next progress change. Re-runs only the label text once CurrentStage has actually updated --
+        /// deliberately calls RefreshRestorationProgressLabel rather than UpdateRestorationProgressText,
+        /// so this does not replay the fill/glow/plunger gain-pulse animation, which already played once
+        /// for this same points-spent change.
+        /// </summary>
+        private void HandleRestorationStageChangedForLabel(WorldRestorationStage _)
+        {
+            var worldRestoration = WorldRestorationManager.Instance;
+            if (worldRestoration == null)
+            {
+                return;
+            }
+
+            RefreshRestorationProgressLabel(worldRestoration.CumulativePointsSpentOnRestoration);
         }
 
         /// <summary>
@@ -557,12 +618,12 @@ namespace BrainDrain.UI
                 var img = pointsShopButton.GetComponent<UnityEngine.UI.Image>();
                 if (img != null)
                 {
-                    img.color = isRebirthActivated ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                    img.color = isRebirthActivated ? RestorationColor : LockedColor;
                 }
                 var txt = pointsShopButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (txt != null)
                 {
-                    txt.color = isRebirthActivated ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                    txt.color = isRebirthActivated ? RestorationColor : LockedColor;
                 }
             }
 
@@ -579,11 +640,6 @@ namespace BrainDrain.UI
             }
 
             var worldRestoration = WorldRestorationManager.Instance;
-            double percent = worldRestoration != null ? worldRestoration.RestorationPercent : 0d;
-            double finalThreshold = worldRestoration != null && worldRestoration.Stages.Count > 0 ? worldRestoration.Stages[worldRestoration.Stages.Count - 1].pointsRequired : 0d;
-            string stageName = worldRestoration != null && worldRestoration.CurrentStage != null
-                ? worldRestoration.CurrentStage.stageName
-                : "DYSTOPIA";
 
             if (restorationFillImage != null)
             {
@@ -616,6 +672,30 @@ namespace BrainDrain.UI
                 }
             }
 
+            RefreshRestorationProgressLabel(cumulativePointsSpent);
+        }
+
+        /// <summary>
+        /// Sets restorationProgressText's text only (stage name, percent, Snotting gate state) --
+        /// split out of UpdateRestorationProgressText so HandleRestorationStageChangedForLabel can
+        /// re-run just this part after WorldRestorationManager.CurrentStage actually changes, without
+        /// re-touching restorationFillImage/restorationGlowImage/restorationPlungerImage or replaying
+        /// their animations, which already ran once for this same points-spent change.
+        /// </summary>
+        private void RefreshRestorationProgressLabel(double cumulativePointsSpent)
+        {
+            if (restorationProgressText == null)
+            {
+                return;
+            }
+
+            var worldRestoration = WorldRestorationManager.Instance;
+            double percent = worldRestoration != null ? worldRestoration.RestorationPercent : 0d;
+            double finalThreshold = worldRestoration != null && worldRestoration.Stages.Count > 0 ? worldRestoration.Stages[worldRestoration.Stages.Count - 1].pointsRequired : 0d;
+            string stageName = worldRestoration != null && worldRestoration.CurrentStage != null
+                ? worldRestoration.CurrentStage.stageName
+                : "DYSTOPIA";
+
             bool snottingUnlocked = RebirthManager.Instance != null && RebirthManager.Instance.RebirthCount >= 1;
             // Fails closed: if RebirthManager isn't resolved, there's no way to verify the real
             // gate, so use a sentinel no cumulativePointsSpent value can ever reach rather than a
@@ -631,12 +711,56 @@ namespace BrainDrain.UI
             else if (cumulativePointsSpent >= threshold)
             {
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#00FF88><size=14>SNOTTING READY</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#75F04C><size=16>SNOTTING READY</size></color>";
             }
             else
             {
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#FFD700><size=14>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#C99A38><size=16>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
+            }
+        }
+
+        /// <summary>
+        /// Applies the visual guide's semantic palette without changing scene geometry or HUD
+        /// update ownership. Numeric formatters continue to own only their displayed values.
+        /// </summary>
+        private void ApplyVisualStyle()
+        {
+            SetTextColor(capacityText, SecondaryColor);
+            SetTextColor(playerIQText, BoneWhite);
+            SetTextColor(rankText, BoneWhite);
+            SetTextColor(illumisnottyTitleText, IllumisnottyColor);
+            SetTextColor(brainPowerCounterText, BrainPowerColor);
+            SetTextColor(cumulativeBrainPowerCounterText, SecondaryColor);
+            SetTextColor(rebirthCountText, IllumisnottyColor);
+            SetTextColor(bppsText, BrainPowerColor);
+            SetTextColor(cashText, CashColor);
+            SetTextColor(pointsText, RestorationColor);
+            SetTextColor(restorationProgressText, BoneWhite);
+
+            if (restorationFillImage != null)
+            {
+                restorationFillImage.color = RestorationColor;
+            }
+
+            if (restorationGlowImage != null)
+            {
+                Color glowColor = RestorationColor;
+                glowColor.a = 0.35f;
+                restorationGlowImage.color = glowColor;
+            }
+
+            if (restorationPlungerImage != null)
+            {
+                restorationPlungerImage.color = RestorationColor;
+            }
+        }
+
+        private static void SetTextColor(TextMeshProUGUI label, Color color)
+        {
+            if (label != null)
+            {
+                label.color = color;
             }
         }
 

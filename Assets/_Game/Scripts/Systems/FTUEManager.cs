@@ -73,6 +73,15 @@ namespace BrainDrain.Systems
         private const string Beat6Ambient =
             "ANOMALY: RESOURCES ALLOCATED TO \"FIXING THINGS.\" FILED UNDER: HARMLESS. THE STREETS DO NOT NEED TO BE SMARTER. RESUME EXTRACTION.";
 
+        // ---- Beat "Points": COGS ambient (FirstPointsEarned, regular narrator panel, NOT modal) -- ADDED 2026-09-17 ----
+        // Closes an FTUE gap: nothing previously taught the player that Points exist or fuel
+        // World Restoration until AFTER they'd already found the RP Restorations shop tab and
+        // spent some on their own. This fires the moment Points first appear in the wallet --
+        // before the first spend -- with the MoleHoleSurveyingId follow-up card (below) telling
+        // them exactly where to go. Sits between Beat 5 (ArmadilloSauceId, "Convert") and Beat 6.
+        private const string BeatPointsAmbient =
+            "ALERT: \"RESTORATION POINTS\" DETECTED. DO NOT SPEND THEM ON THE STREETS. A REPAIRED STREET ASKS QUESTIONS. RESUME EXTRACTION.";
+
         // ---- Beat 8: COGS SNOTTING (SnottingReady, modal, COGS terminal skin -- the ONLY other COGS modal) -- REVISED 2026-07-23 ----
         private const string Beat8Body =
             "MANDATORY NOTICE: YOU QUALIFY FOR THE SNOTTING. YOUR PROGRESS WILL BE LIQUIDATED AND REISSUED WITH A PRODUCTIVITY MULTIPLIER. " +
@@ -141,6 +150,7 @@ namespace BrainDrain.Systems
         private bool card1Seen;
         private bool card2Seen;
         private bool cashBeatSeen;
+        private bool pointsBeatSeen;
         private bool restoreBeatSeen;
         private bool snottingIntelSeen;
         private bool nameRevealSeen;
@@ -152,6 +162,7 @@ namespace BrainDrain.Systems
         // in quick succession before Beat 3's card is confirmed. Persisted *Seen flags alone only
         // gate re-firing across sessions/after confirmation; these close the same-session gap.
         private bool card2Requested;
+        private bool pointsBeatRequested;
         private bool restoreBeatRequested;
         private bool snottingIntelRequested;
         private bool nameRevealRequested;
@@ -161,6 +172,7 @@ namespace BrainDrain.Systems
         public bool Card1Seen => card1Seen;
         public bool Card2Seen => card2Seen;
         public bool CashBeatSeen => cashBeatSeen;
+        public bool PointsBeatSeen => pointsBeatSeen;
         public bool RestoreBeatSeen => restoreBeatSeen;
         public bool SnottingIntelSeen => snottingIntelSeen;
         public bool NameRevealSeen => nameRevealSeen;
@@ -186,11 +198,12 @@ namespace BrainDrain.Systems
         {
             get
             {
-                var ids = new List<string>(6);
+                var ids = new List<string>(7);
                 if (card1Seen) ids.Add(IntelCardCatalog.GaryMattressId);
                 if (card2Seen) ids.Add(IntelCardCatalog.SnakeUttersId);
                 if (garyCardSeen) ids.Add(IntelCardCatalog.GaryPod2Id);
                 if (cashBeatSeen) ids.Add(IntelCardCatalog.ArmadilloSauceId);
+                if (pointsBeatSeen) ids.Add(IntelCardCatalog.MoleHoleSurveyingId);
                 if (restoreBeatSeen) ids.Add(IntelCardCatalog.CheeseDirtId);
                 if (nameRevealSeen) ids.Add(IntelCardCatalog.TedsCeilingFansId);
                 return ids;
@@ -310,6 +323,9 @@ namespace BrainDrain.Systems
             {
                 CurrencyManager.Instance.OnFirstCashEarned -= HandleFirstCashEarned;
                 CurrencyManager.Instance.OnFirstCashEarned += HandleFirstCashEarned;
+
+                CurrencyManager.Instance.OnFirstPointsEarned -= HandleFirstPointsEarned;
+                CurrencyManager.Instance.OnFirstPointsEarned += HandleFirstPointsEarned;
             }
 
             if (WorldRestorationManager.Instance != null)
@@ -334,6 +350,7 @@ namespace BrainDrain.Systems
             if (CurrencyManager.Instance != null)
             {
                 CurrencyManager.Instance.OnFirstCashEarned -= HandleFirstCashEarned;
+                CurrencyManager.Instance.OnFirstPointsEarned -= HandleFirstPointsEarned;
             }
 
             if (WorldRestorationManager.Instance != null)
@@ -391,6 +408,30 @@ namespace BrainDrain.Systems
         private void HandleCashBeatConfirmed()
         {
             cashBeatSeen = true;
+            OnLiteratesCardCollected?.Invoke();
+        }
+
+        /// <summary>
+        /// Beat "Points": fires the first time the player ever holds Restoration Points (see
+        /// CurrencyManager.OnFirstPointsEarned's doc comment for why this exists) -- proactively
+        /// teaches the RP Restorations shop tab before the player has necessarily found it,
+        /// unlike HandleRestorationProgressChanged below which only reacts after a spend.
+        /// </summary>
+        private void HandleFirstPointsEarned()
+        {
+            if (pointsBeatSeen || pointsBeatRequested)
+            {
+                return;
+            }
+
+            pointsBeatRequested = true;
+            DialogueManager.Instance?.EnqueueDirectLine(BeatPointsAmbient, AmbientDisplayDurationSeconds);
+            StartCoroutine(SpawnCardAfterDelay(CardFollowUpDelaySeconds, IntelCardCatalog.MoleHoleSurveyingId, HandlePointsBeatConfirmed));
+        }
+
+        private void HandlePointsBeatConfirmed()
+        {
+            pointsBeatSeen = true;
             OnLiteratesCardCollected?.Invoke();
         }
 
@@ -477,7 +518,8 @@ namespace BrainDrain.Systems
         /// </summary>
         public void LoadState(bool restoredBootBriefingSeen, bool restoredCard1Seen, bool restoredCard2Seen,
             bool restoredCashBeatSeen, bool restoredRestoreBeatSeen, bool restoredSnottingIntelSeen,
-            bool restoredNameRevealSeen, float restoredNameRevealElapsedSeconds, bool restoredGaryCardSeen)
+            bool restoredNameRevealSeen, float restoredNameRevealElapsedSeconds, bool restoredGaryCardSeen,
+            bool restoredPointsBeatSeen = false)
         {
             bootBriefingSeen = restoredBootBriefingSeen;
             card1Seen = restoredCard1Seen;
@@ -488,6 +530,7 @@ namespace BrainDrain.Systems
             nameRevealSeen = restoredNameRevealSeen;
             nameRevealElapsedSeconds = restoredNameRevealElapsedSeconds;
             garyCardSeen = restoredGaryCardSeen;
+            pointsBeatSeen = restoredPointsBeatSeen;
         }
 
         private IEnumerator SpawnCardAfterDelay(float delaySeconds, string cardId, System.Action onConfirmed)
