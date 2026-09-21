@@ -67,6 +67,15 @@ namespace BrainDrain.Systems
         public float offlineExtensionHoursGranted;
 
         /// <summary>
+        /// §12 IAP idempotency ledger -- GodTierStoreManager.GrantVerifiedEntitlement's
+        /// processedTransactionIds, so a replayed purchase-approval callback across app restarts
+        /// still can't double-grant. IDs only, never a raw receipt/purchase token -- matches the
+        /// plan's "keep sensitive receipt data out of the save" rule. A save predating this field
+        /// deserializes it as null, guarded the same ??= way as the other owned-item lists.
+        /// </summary>
+        public List<string> godTierStoreProcessedTransactionIds;
+
+        /// <summary>
         /// Unix seconds (UTC) the current Brain Freeze expires at, 0 if none active. Zero-fills
         /// correctly for saves predating this field (0 = "no active freeze", already the correct
         /// default) -- no migration guard needed, no version bump.
@@ -344,6 +353,7 @@ namespace BrainDrain.Systems
                 data.pointsShopOwnedItemIds ??= new List<string>();
                 data.godTierStoreOwnedItemIds ??= new List<string>();
                 data.activeTimedPurchases ??= new List<ActiveTimedPurchase>();
+                data.godTierStoreProcessedTransactionIds ??= new List<string>();
 
                 // Migration fallback for Profanity Dialogue Pack:
                 // If loaded save data doesn't have profanity unlocked, check if it was previously unlocked in PlayerPrefs.
@@ -503,6 +513,7 @@ namespace BrainDrain.Systems
                 data.holographicTrashCanFlexOwned = GodTierStoreManager.Instance.HolographicTrashCanFlexOwned;
                 data.offlineExtensionHoursGranted = GodTierStoreManager.Instance.OfflineExtensionHoursGranted;
                 data.activeTimedPurchases = new List<ActiveTimedPurchase>(GodTierStoreManager.Instance.ActiveTimedPurchases);
+                data.godTierStoreProcessedTransactionIds = new List<string>(GodTierStoreManager.Instance.ProcessedTransactionIds);
             }
 
             // Brain Freeze lives on PlayerIQManager directly, not GodTierStoreManager -- unlike
@@ -666,6 +677,7 @@ namespace BrainDrain.Systems
                 data.holographicTrashCanFlexOwned,
                 data.offlineExtensionHoursGranted,
                 data.activeTimedPurchases);
+            GodTierStoreManager.Instance?.LoadProcessedTransactionIds(data.godTierStoreProcessedTransactionIds);
 
             // Brain Freeze expiry must be restored BEFORE LoadStateWithOfflineDecay, same ordering
             // reasoning as the Corporate Cloak above -- this load's offline-decay calculation
@@ -788,6 +800,7 @@ namespace BrainDrain.Systems
                 offlineExtensionHoursGranted = 0f,
                 brainFreezeExpiryUnixSeconds = 0L,
                 activeTimedPurchases = new List<ActiveTimedPurchase>(),
+                godTierStoreProcessedTransactionIds = new List<string>(),
                 profanityUnlocked = false,
                 profanityEnabled = false,
                 shopCashMultiplier = 1d,
