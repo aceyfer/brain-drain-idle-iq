@@ -2,21 +2,23 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using BrainDrain.Systems;
+using BrainDrain.Systems.Commerce;
 
 namespace BrainDrain.UI
 {
     /// <summary>
     /// Visual controller for a single God Tier Store row. No affordable/too-expensive states --
-    /// these are real-money items with no in-game currency check -- just Owned vs. not. The
-    /// "Buy" button calls GodTierStoreManager.StubPurchase directly, which is a clearly marked
-    /// placeholder (see GodTierStoreManager's class doc) that does NOT charge real money; wire a
-    /// real IAP plugin's purchase-success callback to call StubPurchase instead of this button
-    /// before shipping.
+    /// these are real-money items with no in-game currency check -- just Owned / Offline / Busy /
+    /// Available. The "Buy" button calls GodTierStoreManager.RequestPurchase, which starts a real
+    /// async store purchase via IapCommerceService (§12) -- nothing is granted here or by that
+    /// call itself; this row only reflects state IapCommerceService/GodTierStoreManager report
+    /// back (OnPurchaseStateChanged for busy/error, OnItemsChanged for the eventual grant).
     /// </summary>
     public sealed class GodTierStoreSlotUI : MonoBehaviour
     {
         private static readonly Color AvailableColor = new Color32(0xFF, 0xD7, 0x00, 0xFF);
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
+        private static readonly Color UnavailableColor = new Color32(0x80, 0x80, 0x80, 0xFF);
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
@@ -29,6 +31,8 @@ namespace BrainDrain.UI
 
         private GodTierStoreItemData boundData;
         private GodTierStoreManager boundManager;
+        private IapCommerceService subscribedCommerceService;
+        private bool purchaseInFlight;
 
         /// <summary>
         /// Populates the private serialized references for runtime-created instances (the
@@ -53,12 +57,61 @@ namespace BrainDrain.UI
         {
             boundData = data;
             boundManager = manager;
+            purchaseInFlight = false;
 
             if (buyButton != null)
             {
                 buyButton.onClick.RemoveListener(HandleBuyClicked);
                 buyButton.onClick.AddListener(HandleBuyClicked);
             }
+
+            // Touching .Instance here is fine (self-bootstraps if needed) -- GodTierStoreManager's
+            // own Start already does the same thing, and by the time slots are built/bound the
+            // commerce service normally already exists.
+            IapCommerceService commerce = IapCommerceService.Instance;
+            if (commerce != subscribedCommerceService)
+            {
+                UnsubscribeFromCommerce();
+                subscribedCommerceService = commerce;
+                if (subscribedCommerceService != null)
+                {
+                    subscribedCommerceService.OnPurchaseStateChanged += HandlePurchaseStateChanged;
+                    subscribedCommerceService.OnReadinessChanged += HandleReadinessChanged;
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromCommerce();
+        }
+
+        private void UnsubscribeFromCommerce()
+        {
+            if (subscribedCommerceService == null)
+            {
+                return;
+            }
+
+            subscribedCommerceService.OnPurchaseStateChanged -= HandlePurchaseStateChanged;
+            subscribedCommerceService.OnReadinessChanged -= HandleReadinessChanged;
+            subscribedCommerceService = null;
+        }
+
+        private void HandlePurchaseStateChanged(string productId, PurchaseRequestState state)
+        {
+            if (boundData == null || productId != boundData.productId)
+            {
+                return;
+            }
+
+            purchaseInFlight = state == PurchaseRequestState.Pending || state == PurchaseRequestState.ValidatingWithBackend;
+            RefreshState();
+        }
+
+        private void HandleReadinessChanged(CommerceReadiness readiness)
+        {
+            RefreshState();
         }
 
         private void HandleBuyClicked()
@@ -83,7 +136,12 @@ namespace BrainDrain.UI
                 return;
             }
 
-            boundManager.StubPurchase(boundData);
+            if (purchaseInFlight)
+            {
+                return; // extra guard on top of IapCommerceService's own double-tap protection
+            }
+
+            boundManager.RequestPurchase(boundData);
         }
 
         public void RefreshState()
@@ -97,13 +155,21 @@ namespace BrainDrain.UI
             if (descriptionText != null) descriptionText.text = boundData.description;
 
             // Consumables (e.g. the Brain Freeze family) are never added to ownedItemIds by
-            // StubPurchase, so boundManager.IsItemOwned would already always read false for
-            // them -- this check is made explicit rather than relying on that invariant, so a
-            // consumable's row always shows its price and stays interactable by this file's own
-            // logic, not by trusting a distant guarantee elsewhere.
+            // GrantVerifiedEntitlement, so boundManager.IsItemOwned would already always read
+            // false for them -- this check is made explicit rather than relying on that
+            // invariant, so a consumable's row always shows its price and stays interactable by
+            // this file's own logic, not by trusting a distant guarantee elsewhere.
             bool owned = !boundData.isConsumable && boundManager.IsItemOwned(boundData);
             bool profanityToggle = owned
                 && boundData.effectType == GodTierStoreEffectType.UnlockProfanityPack;
+
+            IapCommerceService commerce = IapCommerceService.Instance;
+            bool offline = commerce == null || commerce.IsOffline;
+            bool storeReady = commerce != null && commerce.IsReady;
+
+            // §12 decision 8: show owned items regardless of connectivity, only disable NEW
+            // purchases while offline -- ownership/ApplyAccent below never depends on offline.
+            bool canPurchase = !owned && !offline && storeReady && !purchaseInFlight;
 
             if (priceText != null)
             {
@@ -111,16 +177,34 @@ namespace BrainDrain.UI
                 {
                     RandomChatterManager chatter = RandomChatterManager.Instance;
                     bool on = chatter != null && chatter.ProfanityEnabled;
-                    priceText.text = on ? "OWNED \u00b7 ON" : "OWNED \u00b7 OFF";
+                    priceText.text = on ? "OWNED · ON" : "OWNED · OFF";
+                }
+                else if (owned)
+                {
+                    priceText.text = "OWNED";
+                }
+                else if (offline)
+                {
+                    priceText.text = "OFFLINE";
+                }
+                else if (purchaseInFlight)
+                {
+                    priceText.text = "...";
                 }
                 else
                 {
-                    priceText.text = owned ? "OWNED" : boundData.realMoneyPriceDisplay;
+                    // Store-localized price wins whenever the store has actually returned one;
+                    // realMoneyPriceDisplay is only the editor/offline preview fallback (see
+                    // GodTierStoreItemData's own doc comment) -- e.g. while storeReady is still
+                    // false during initial connect/fetch.
+                    string localizedPrice = commerce?.GetLocalizedPrice(boundData.productId);
+                    priceText.text = !string.IsNullOrEmpty(localizedPrice) ? localizedPrice : boundData.realMoneyPriceDisplay;
                 }
             }
 
-            ApplyAccent(owned ? OwnedColor : AvailableColor);
-            if (buyButton != null) buyButton.interactable = !owned || profanityToggle;
+            Color accent = owned ? OwnedColor : (offline || !storeReady) ? UnavailableColor : AvailableColor;
+            ApplyAccent(accent);
+            if (buyButton != null) buyButton.interactable = profanityToggle || canPurchase;
         }
 
         private void ApplyAccent(Color accent)

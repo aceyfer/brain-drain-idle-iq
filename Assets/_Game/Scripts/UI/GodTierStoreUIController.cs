@@ -8,8 +8,9 @@ namespace BrainDrain.UI
 {
     /// <summary>
     /// God Tier Store popup -- mirrors ShopUIController's build-one-row-per-template,
-    /// open/close-as-a-popup pattern. Real-money items; see GodTierStoreManager's class doc for
-    /// the stubbed-purchase caveat (no real IAP plugin is wired up in this project).
+    /// open/close-as-a-popup pattern. Real-money items, purchased through IapCommerceService/
+    /// Unity IAP with server-side validation (§12) -- see GodTierStoreManager's class doc for the
+    /// purchase boundary (RequestPurchase/GrantVerifiedEntitlement).
     ///
     /// SCENE WIRING NOT YET DONE: code-complete, but no panel/button/Content hierarchy exists in
     /// SampleScene.unity yet -- see CashShopUIController's identical note.
