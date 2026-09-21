@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace BrainDrain.Systems
 {
-    /// <summary>What a God Tier Store item actually does once stub-purchased.</summary>
+    /// <summary>What a God Tier Store item actually does once purchased (verified) and granted.</summary>
     public enum GodTierStoreEffectType
     {
         VoicepackDisdain,
@@ -16,11 +16,13 @@ namespace BrainDrain.Systems
 
     /// <summary>
     /// Authoring data for one God Tier Store item -- real-money-only, cosmetics/QoL, never
-    /// power. NO real payment processing exists in this project (no Unity IAP package installed,
-    /// no purchase flow wired) -- GodTierStoreManager.StubPurchase grants the item immediately and
-    /// is clearly marked as a placeholder for real IAP integration. Some items now carry a real
-    /// store productId (schema only, added ahead of actual IAP wiring) -- see productId below.
-    /// realMoneyPriceDisplay is a display-only string; nothing actually charges it yet.
+    /// power. Real purchases route through IapCommerceService (Unity IAP) with server-side
+    /// validation (§12); GodTierStoreManager.RequestPurchase starts a purchase, and only a
+    /// backend-approved result ever reaches GrantVerifiedEntitlement. productId is the real
+    /// App Store Connect / Play Console product SKU -- see its own tooltip below.
+    /// realMoneyPriceDisplay is a display-only fallback for when the store hasn't returned a
+    /// localized price yet (offline, or Editor Play Mode without a live store connection); the
+    /// store's own localized price is authoritative whenever it's available.
     /// </summary>
     [CreateAssetMenu(fileName = "GodTierStoreItemData", menuName = "BrainDrain/God Tier Store Item")]
     public sealed class GodTierStoreItemData : ScriptableObject
@@ -32,12 +34,12 @@ namespace BrainDrain.Systems
         public string displayName;
         [TextArea(2, 4)]
         public string description;
-        [Tooltip("Display only, e.g. \"$1.99\" -- no real IAP plugin is wired up to actually charge this.")]
+        [Tooltip("Display-only fallback, e.g. \"$1.99\" -- used only when the store hasn't returned a localized price yet. The real charge amount is always Play Console's own price for productId.")]
         public string realMoneyPriceDisplay;
 
         [Header("Effect")]
         public GodTierStoreEffectType effectType;
-        [Tooltip("If true, this is a timed consumable -- GodTierStoreManager.StubPurchase never adds it to ownedItemIds, so it can be bought again and again (its own effect target, e.g. PlayerIQManager.ApplyBrainFreeze, is what stacks the new duration onto whatever's already active). If false (default), it's a permanent one-time unlock tracked via ownedItemIds/IsItemOwned as usual.")]
+        [Tooltip("If true, this is a timed consumable -- GodTierStoreManager.GrantVerifiedEntitlement never adds it to ownedItemIds, so it can be bought again and again (its own effect target, e.g. PlayerIQManager.ApplyBrainFreeze, is what stacks the new duration onto whatever's already active). If false (default), it's a permanent one-time unlock tracked via ownedItemIds/IsItemOwned as usual.")]
         public bool isConsumable;
         [Tooltip("Used only by OfflineProgressionExtension -- added to PlayerIQManager's offline-decay-max-hours window.")]
         public float offlineExtensionHours;
