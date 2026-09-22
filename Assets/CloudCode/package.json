@@ -1,0 +1,10 @@
+{
+  "name": "brain-drain-cloud-code",
+  "version": "1.0.0",
+  "description": "Unity Cloud Code scripts for Brain Drain: Idle IQ (server-authoritative IAP validation, see Assets/Plans/iap-backend-scoping.md).",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.7.0",
+    "google-auth-library": "^9.14.0"
+  }
+}

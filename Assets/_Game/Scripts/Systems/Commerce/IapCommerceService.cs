@@ -111,10 +111,26 @@ namespace BrainDrain.Systems.Commerce
         // Production must never be able to resolve to the Editor-only fake store -- this branch
         // is the compile-time guarantee, on top of DevFakePurchaseValidationService's own
         // UNITY_EDITOR guard on the class itself (belt and suspenders, see its file).
+        //
+        // 2026-09-22: production branch swapped from UnconfiguredPurchaseValidationService to the
+        // real backend per §12 decision 1 -- "the call site should keep pointing at whatever type
+        // implements IPurchaseValidationService for real; swapping the interface binding is the
+        // whole point of the interface existing" (see UnconfiguredPurchaseValidationService's own
+        // doc comment). UNVERIFIED, WRITTEN BLIND -- this session has no Unity Editor/compiler
+        // access (file-bridge only). UgsCloudCodeValidationService references Unity.Services.
+        // Authentication and Unity.Services.CloudCode, NEITHER of which is installed yet
+        // (Packages/manifest.json unchanged by this pass -- add both via Package Manager > Add
+        // package by name, do not hand-edit a guessed version number). Until those packages are
+        // added, THIS WHOLE FILE WILL FAIL TO COMPILE, not just silently no-op -- same as any
+        // other missing-dependency state in this project, surfaced loudly rather than worked
+        // around. Needs the same real compile pass §12's IAP install already went through once
+        // (that pass is what caught the ExtractPurchaseToken guess above as wrong) before this can
+        // be trusted. If that's not acceptable yet, revert this one line to
+        // UnconfiguredPurchaseValidationService (fails closed, always safe) until verified.
 #if UNITY_EDITOR
         private readonly IPurchaseValidationService validationService = new DevFakePurchaseValidationService();
 #else
-        private readonly IPurchaseValidationService validationService = new UnconfiguredPurchaseValidationService();
+        private readonly IPurchaseValidationService validationService = new UgsCloudCodeValidationService();
 #endif
 
         private StoreController storeController;

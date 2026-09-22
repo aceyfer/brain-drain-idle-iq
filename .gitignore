@@ -57,3 +57,6 @@ Assets/_Recovery/
 Assets/_Recovery.meta
 Assets/files.zip.meta
 Packages/app.rive.rive-unity/
+
+# Cloud Code (Node.js) -- package-lock.json IS committed (repeatable installs), node_modules is not
+Assets/CloudCode/node_modules/

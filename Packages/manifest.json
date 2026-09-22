@@ -17,6 +17,8 @@
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.purchasing": "5.4.3",
     "com.unity.render-pipelines.universal": "17.4.0",
+    "com.unity.services.authentication": "3.8.0",
+    "com.unity.services.cloudcode": "2.10.4",
     "com.unity.services.core": "1.15.1",
     "com.unity.services.levelplay": "9.5.1",
     "com.unity.test-framework": "1.6.0",
