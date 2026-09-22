@@ -71,17 +71,15 @@ namespace BrainDrain.Systems.Commerce
     /// later iOS StoreKit path slot in without touching effect/catalog logic (per the plan's
     /// "keep platform-specific validation behind a small purchase/entitlement adapter").
     ///
-    /// IMPORTANT -- NOT COMPILE-VERIFIED THIS SESSION: written against Unity IAP 5.4's
-    /// documented Order/CartItem/StoreController API (docs.unity.com/en-us/iap/set-up-in-app-
-    /// purchasing, .../iap/purchases, .../iap/receipt-validation, .../iap/restore-purchases) with
-    /// no interactive Unity license available to actually compile it against the installed
-    /// package. The Connect/FetchProducts/OnPurchasePending/CartOrdered.Items()/
-    /// Product.definition/ConfirmPurchase shapes are quoted from Unity's own verbatim code
-    /// samples; the receipt-payload access path (ExtractPurchaseToken, below) is the single
-    /// lowest-confidence member access in this file and is isolated there specifically so a
-    /// compile error has one obvious place to look. First step before wiring Buy buttons for
-    /// real: open the Editor, let Package Manager resolve com.unity.purchasing, and fix whatever
-    /// this file gets wrong against the real API.
+    /// COMPILE-VERIFIED 2026-09-21 against the actually-installed com.unity.purchasing 5.4.3
+    /// (batch-mode Unity, zero compiler errors) -- originally written blind against Unity's
+    /// documented Order/CartItem/StoreController API with no license available, which got one
+    /// member access wrong (ExtractPurchaseToken guessed `order.receipt.Payload`; the real shape
+    /// is `order.Info.TransactionID`/`order.Info.Receipt` -- fixed once a real compile caught it,
+    /// see that method's own doc comment for the correction). This does not mean the purchase
+    /// flow has been exercised at runtime -- no Play Mode pass, no real store connection, no
+    /// backend to validate against yet. Compiling clean only proves the API surface matches;
+    /// Phase 4 (Google Play internal test) is still the real verification.
     /// </summary>
     public sealed class IapCommerceService : MonoBehaviour
     {
@@ -392,15 +390,24 @@ namespace BrainDrain.Systems.Commerce
         }
 
         /// <summary>
-        /// Lowest-confidence member access in this file -- see the class doc's compile-risk note.
-        /// "Payload" is the store-specific receipt/purchase-token blob a real backend would send
-        /// to Google's Play Developer API for verification; nothing in this project parses it
-        /// client-side (deliberately -- see IPurchaseValidationService's own doc comment on why
-        /// only an opaque token crosses this boundary, never a parsed receipt).
+        /// Fixed 2026-09-21 against the real installed package (Library/PackageCache) after a
+        /// batch-mode compile caught the original guess (`order.receipt.Payload`) as wrong --
+        /// `PendingOrder` has no `receipt` member. The real shape: `Order.Info` (`IOrderInfo`)
+        /// exposes `Receipt` (raw JSON, present only on a PendingOrder -- empty once confirmed)
+        /// and `TransactionID`. On Google Play specifically, `IOrderInfo.TransactionID` IS the
+        /// purchase token -- Unity's own doc comment on `IGoogleOrderInfo.PurchaseToken`: "On
+        /// Google Play, IOrderInfo.TransactionID contains the purchase token; this property
+        /// returns the same value under its Google name." Preferring TransactionID over the raw
+        /// Receipt JSON keeps this method returning exactly the opaque token a Google Play
+        /// Developer API validation call needs, nothing to parse client-side (see
+        /// IPurchaseValidationService's own doc comment on why only an opaque token crosses that
+        /// boundary). Falls back to Receipt only if TransactionID is ever empty (e.g. a future
+        /// non-Google platform behind this same adapter).
         /// </summary>
         private static string ExtractPurchaseToken(PendingOrder order)
         {
-            return order?.receipt?.Payload;
+            string transactionId = order?.Info?.TransactionID;
+            return !string.IsNullOrEmpty(transactionId) ? transactionId : order?.Info?.Receipt;
         }
 
         private void RaiseStateChanged(string productId, PurchaseRequestState state)
