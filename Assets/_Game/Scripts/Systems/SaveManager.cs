@@ -379,6 +379,40 @@ namespace BrainDrain.Systems
                     data.saveVersion = 5;
                 }
 
+                // v5 → v6: §12 decision 5 (Aceyfer, 2026-09-20) -- wipe dev saves clean of any God
+                // Shop entitlement the now-deleted GodTierStoreManager.StubPurchase granted for
+                // free. ONE-TIME migration, not a permanent behavior: this only fires for a save
+                // whose saveVersion is still below 6; once a save is stamped, a real, backend-
+                // verified purchase made afterward is never touched by this block again -- it has
+                // no bearing on GodTierStoreManager's own processedTransactionIds idempotency
+                // ledger, which is a separate, permanent mechanism. Clears every piece of state
+                // StubPurchase could grant: the non-consumable ownership list and its four
+                // cosmetic flags, the Corporate Cloak's offline-extension hours, the Brain Freeze
+                // wallet ledger AND PlayerIQManager's own Brain Freeze expiry (both -- a stale
+                // freeze would otherwise keep suppressing Overcharged IQ decay for free), and Bad
+                // Words Pack's profanity unlock -- including its PlayerPrefs mirror, since the
+                // profanity-PlayerPrefs fallback above (which already ran on this same `data`)
+                // would otherwise silently resurrect a wiped unlock on the very next load, after
+                // this one-time branch has stopped firing.
+                if (data.saveVersion < 6)
+                {
+                    data.godTierStoreOwnedItemIds = new List<string>();
+                    data.cogsVoicepackDisdainOwned = false;
+                    data.y2kGlitchSlumThemeOwned = false;
+                    data.illumisnottyMembershipCardOwned = false;
+                    data.holographicTrashCanFlexOwned = false;
+                    data.offlineExtensionHoursGranted = 0f;
+                    data.activeTimedPurchases = new List<ActiveTimedPurchase>();
+                    data.brainFreezeExpiryUnixSeconds = 0L;
+                    data.profanityUnlocked = false;
+                    data.profanityEnabled = false;
+                    PlayerPrefs.DeleteKey("BrainDrain_ProfanityUnlocked");
+                    PlayerPrefs.DeleteKey("BrainDrain_ProfanityEnabled");
+                    PlayerPrefs.Save();
+
+                    data.saveVersion = 6;
+                }
+
                 LoadedData = data;
             }
             catch (Exception exception)
@@ -810,7 +844,7 @@ namespace BrainDrain.Systems
                 firstLaunchUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 hotChickCount = 0,
-                saveVersion = 5,
+                saveVersion = 6,
                 ftueBootBriefingSeen = false,
                 ftueCard1Seen = false,
                 ftueCard2Seen = false,
