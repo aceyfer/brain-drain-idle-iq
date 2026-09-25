@@ -128,7 +128,13 @@ namespace BrainDrain.UI
             if (layoutElement == null) { layoutElement = borderObject.AddComponent<LayoutElement>(); }
             layoutElement.ignoreLayout = true;
 
-            borderObject.transform.SetAsLastSibling();
+            // First sibling, not last -- the border sprite is center-filled, so as last sibling
+            // it rendered on top of every bordered button's own label/icon children, burying the
+            // text (God Shop prices included). The button's own background Image isn't a sibling
+            // (it's a component on the button GameObject itself, drawn first regardless); first-
+            // sibling here just means the border draws before -- underneath -- whatever label/icon
+            // children the button already has.
+            borderObject.transform.SetAsFirstSibling();
             return image;
         }
 
