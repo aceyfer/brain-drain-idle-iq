@@ -229,5 +229,45 @@ namespace BrainDrain.Systems
             HasPendingRecovery = false;
             OnRecoveryStateChanged?.Invoke();
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only test hook: simulates PlayerIQManager.OnOfflineDecayApplied firing, so the
+        /// full recovery ladder (popup, HUD button, ad-watch progress) can be exercised without
+        /// waiting for a real offline-decay event. Uses a fixed test amount rather than a real
+        /// decay calculation -- this is a trigger, not a decay simulator. Compiles out of any
+        /// build, matching GodTierStoreManager.DebugBuyBrainFreeze's precedent.
+        /// </summary>
+        [ContextMenu("DEBUG: Fake Pending Recovery")]
+        private void DebugFakePendingRecovery()
+        {
+            HandleOfflineDecayApplied(25f);
+            Debug.Log($"[RewardedAdRecoveryManager] DEBUG fake pending recovery -> HasPendingRecovery={HasPendingRecovery}, AdsWatchedThisEvent={AdsWatchedThisEvent}/{MaxAdsForEvent}.");
+        }
+
+        /// <summary>
+        /// Editor-only test hook: simulates a successful rewarded-ad watch (the same
+        /// AdsWatchedThisEvent increment + PlayerIQManager.RecoverOfflineDecay call
+        /// HandleAdRewarded makes) without needing a real LevelPlay ad -- LevelPlay's AppKey is
+        /// still a placeholder (see the class doc), so no real ad can load/show in this project
+        /// yet. No-ops (with a warning) if there's no pending recovery or the ladder is already
+        /// maxed, same guard as the real RequestAdWatch path.
+        /// </summary>
+        [ContextMenu("DEBUG: Fake Ad Reward")]
+        private void DebugFakeAdReward()
+        {
+            if (!HasPendingRecovery || AdsWatchedThisEvent >= MaxAdsPerEvent)
+            {
+                Debug.LogWarning("[RewardedAdRecoveryManager] DEBUG fake ad reward -- no pending recovery or ladder already maxed.", this);
+                return;
+            }
+
+            AdsWatchedThisEvent = Mathf.Min(MaxAdsPerEvent, AdsWatchedThisEvent + 1);
+            PlayerIQManager.Instance?.RecoverOfflineDecay(AdsWatchedThisEvent);
+            OnRecoveryStateChanged?.Invoke();
+            rewardedAd?.LoadAd();
+            Debug.Log($"[RewardedAdRecoveryManager] DEBUG fake ad reward -> {AdsWatchedThisEvent}/{MaxAdsForEvent}.");
+        }
+#endif
     }
 }
