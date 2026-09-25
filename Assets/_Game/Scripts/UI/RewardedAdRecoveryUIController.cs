@@ -35,6 +35,19 @@ namespace BrainDrain.UI
 
         private RewardedAdRecoveryManager subscribedManager;
 
+        /// <summary>True once the player taps the popup's own close button, for THIS pending
+        /// recovery. View-only -- never touches RewardedAdRecoveryManager.HasPendingRecovery, so
+        /// remaining ladder progress survives a close. Cleared automatically the moment a brand
+        /// new pending recovery starts (see RefreshVisuals' false->true transition check below),
+        /// so the popup still auto-opens for a fresh offline-decay event same as before this flag
+        /// existed; otherwise cleared by ReopenPopup() (the new HUD button's entry point).</summary>
+        private bool hiddenByPlayer;
+
+        /// <summary>Tracks HasPendingRecovery across refreshes purely to detect the false->true
+        /// transition that means "a new recovery just started" -- see hiddenByPlayer's own doc
+        /// comment for why that transition matters.</summary>
+        private bool lastKnownHasPendingRecovery;
+
         /// <summary>
         /// 2026-09-16: set by MainUIController while Shop/Convert/Settings is open, so this
         /// popup -- which shows itself automatically off RewardedAdRecoveryManager's own event,
@@ -110,7 +123,18 @@ namespace BrainDrain.UI
 
         private void OnCloseClicked()
         {
-            RewardedAdRecoveryManager.Instance?.DismissPendingRecovery();
+            hiddenByPlayer = true;
+            RefreshVisuals();
+        }
+
+        /// <summary>Called by the RECOVER IQ HUD button. Clears a prior player-initiated close
+        /// and re-shows the popup -- opening/closing this view never touches
+        /// HasPendingRecovery/AdsWatchedThisEvent, only an actual ad watch or a brand new
+        /// offline-decay event does.</summary>
+        public void ReopenPopup()
+        {
+            hiddenByPlayer = false;
+            RefreshVisuals();
         }
 
         /// <summary>Called by MainUIController -- see suppressedByOtherPanel's doc comment.</summary>
@@ -129,7 +153,18 @@ namespace BrainDrain.UI
         private void RefreshVisuals()
         {
             RewardedAdRecoveryManager manager = RewardedAdRecoveryManager.Instance;
-            if (manager == null || !manager.HasPendingRecovery || suppressedByOtherPanel)
+            bool hasPending = manager != null && manager.HasPendingRecovery;
+
+            if (hasPending && !lastKnownHasPendingRecovery)
+            {
+                // false -> true transition: a brand new recovery just started (the only way
+                // HasPendingRecovery becomes true is HandleOfflineDecayApplied), so clear any
+                // earlier close from a previous event -- this event auto-opens, same as always.
+                hiddenByPlayer = false;
+            }
+            lastKnownHasPendingRecovery = hasPending;
+
+            if (manager == null || !hasPending || suppressedByOtherPanel || hiddenByPlayer)
             {
                 SetCanvasState(false);
                 return;

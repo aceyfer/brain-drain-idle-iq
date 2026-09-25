@@ -223,13 +223,6 @@ namespace BrainDrain.Systems
             Debug.LogWarning($"[RewardedAdRecoveryManager] Rewarded ad failed to display: {error}", this);
         }
 
-        /// <summary>Called by RewardedAdRecoveryUIController's close/dismiss button. Player is done for this event whether or not the ladder was maxed.</summary>
-        public void DismissPendingRecovery()
-        {
-            HasPendingRecovery = false;
-            OnRecoveryStateChanged?.Invoke();
-        }
-
 #if UNITY_EDITOR
         /// <summary>
         /// Editor-only test hook: simulates PlayerIQManager.OnOfflineDecayApplied firing, so the
