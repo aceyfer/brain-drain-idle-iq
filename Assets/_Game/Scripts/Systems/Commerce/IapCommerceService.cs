@@ -113,20 +113,15 @@ namespace BrainDrain.Systems.Commerce
         // UNITY_EDITOR guard on the class itself (belt and suspenders, see its file).
         //
         // 2026-09-22: production branch swapped from UnconfiguredPurchaseValidationService to the
-        // real backend per §12 decision 1 -- "the call site should keep pointing at whatever type
-        // implements IPurchaseValidationService for real; swapping the interface binding is the
-        // whole point of the interface existing" (see UnconfiguredPurchaseValidationService's own
-        // doc comment). UNVERIFIED, WRITTEN BLIND -- this session has no Unity Editor/compiler
-        // access (file-bridge only). UgsCloudCodeValidationService references Unity.Services.
-        // Authentication and Unity.Services.CloudCode, NEITHER of which is installed yet
-        // (Packages/manifest.json unchanged by this pass -- add both via Package Manager > Add
-        // package by name, do not hand-edit a guessed version number). Until those packages are
-        // added, THIS WHOLE FILE WILL FAIL TO COMPILE, not just silently no-op -- same as any
-        // other missing-dependency state in this project, surfaced loudly rather than worked
-        // around. Needs the same real compile pass §12's IAP install already went through once
-        // (that pass is what caught the ExtractPurchaseToken guess above as wrong) before this can
-        // be trusted. If that's not acceptable yet, revert this one line to
-        // UnconfiguredPurchaseValidationService (fails closed, always safe) until verified.
+        // real backend (UgsCloudCodeValidationService) per §12 decision 1 -- "the call site should
+        // keep pointing at whatever type implements IPurchaseValidationService for real; swapping
+        // the interface binding is the whole point of the interface existing" (see
+        // UnconfiguredPurchaseValidationService's own doc comment). COMPILE-VERIFIED 2026-09-22:
+        // com.unity.services.authentication and com.unity.services.cloudcode were added via
+        // Package Manager, the project compiled clean (0 errors), and Play Mode was confirmed
+        // working -- no longer the "written blind, untested" state. The remaining unverified piece
+        // is the Cloud Code backend deployment itself (see validatePurchase.js's own setup notes),
+        // not whether this file compiles or runs.
 #if UNITY_EDITOR
         private readonly IPurchaseValidationService validationService = new DevFakePurchaseValidationService();
 #else
@@ -137,6 +132,7 @@ namespace BrainDrain.Systems.Commerce
         private readonly Dictionary<string, Product> productsByProductId = new();
         private readonly HashSet<string> pendingProductIds = new();
         private CommerceReadiness readiness = CommerceReadiness.NotInitialized;
+        private bool storeConnected;
 
         public CommerceReadiness Readiness => readiness;
         public bool IsReady => readiness == CommerceReadiness.Ready;
@@ -188,9 +184,23 @@ namespace BrainDrain.Systems.Commerce
                 isShuttingDown = true;
                 instance = null;
             }
+
+            if (storeController == null)
+            {
+                return;
+            }
+
+            storeController.OnStoreConnected -= HandleStoreConnected;
+            storeController.OnStoreDisconnected -= HandleStoreDisconnected;
+            storeController.OnProductsFetched -= HandleProductsFetched;
+            storeController.OnProductsFetchFailed -= HandleProductsFetchFailed;
+            storeController.OnPurchasesFetched -= HandlePurchasesFetched;
+            storeController.OnPurchasesFetchFailed -= HandlePurchasesFetchFailed;
+            storeController.OnPurchasePending -= HandlePurchasePending;
+            storeController.OnPurchaseFailed -= HandlePurchaseFailed;
         }
 
-        private void InitializeCommerce()
+        private async void InitializeCommerce()
         {
             readiness = CommerceReadiness.Connecting;
             OnReadinessChanged?.Invoke(readiness);
@@ -228,6 +238,7 @@ namespace BrainDrain.Systems.Commerce
             }
 
             storeController = UnityIAPServices.StoreController();
+            storeController.OnStoreConnected += HandleStoreConnected;
             storeController.OnStoreDisconnected += HandleStoreDisconnected;
             storeController.OnProductsFetched += HandleProductsFetched;
             storeController.OnProductsFetchFailed += HandleProductsFetchFailed;
@@ -236,10 +247,41 @@ namespace BrainDrain.Systems.Commerce
             storeController.OnPurchasePending += HandlePurchasePending;
             storeController.OnPurchaseFailed += HandlePurchaseFailed;
 
-            storeController.Connect().ContinueWith(_ =>
+            try
             {
-                catalogProvider.FetchProducts(list => storeController.FetchProducts(list));
-            });
+                // Connect()'s Task completes normally on BOTH success and failure-after-retries
+                // (StoreConnectUseCase ties both OnStoreConnectionSucceeded and the exhausted-
+                // retries disconnect path to the same TaskCompletionSource) -- reaching here
+                // without an exception does NOT by itself mean the store connected. storeConnected
+                // (set by HandleStoreConnected) is the real signal; this try/catch is defensive
+                // coverage only, since Unity's own Connect() already swallows its internal
+                // exceptions into OnStoreDisconnected rather than throwing them out to us.
+                await storeController.Connect();
+            }
+            catch (Exception ex)
+            {
+                readiness = CommerceReadiness.Unavailable;
+                OnReadinessChanged?.Invoke(readiness);
+                Debug.LogWarning($"[IapCommerceService] Store connect threw unexpectedly: {ex.Message}", this);
+                return;
+            }
+
+            if (!storeConnected)
+            {
+                // HandleStoreDisconnected already set Unavailable, logged, and raised
+                // OnReadinessChanged for the real failure case -- nothing further to do.
+                return;
+            }
+
+            // Plain `await`, not Task.ContinueWith -- resumes on the Unity main thread via
+            // SynchronizationContext, unlike ContinueWith which has none and would otherwise run
+            // this on a thread-pool thread.
+            catalogProvider.FetchProducts(list => storeController.FetchProducts(list));
+        }
+
+        private void HandleStoreConnected()
+        {
+            storeConnected = true;
         }
 
         /// <summary>
