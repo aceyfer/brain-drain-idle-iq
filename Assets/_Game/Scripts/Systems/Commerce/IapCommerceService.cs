@@ -21,6 +21,7 @@ namespace BrainDrain.Systems.Commerce
         Idle,
         Pending,
         ValidatingWithBackend,
+        Deferred,
         Granted,
         Failed
     }
@@ -197,6 +198,7 @@ namespace BrainDrain.Systems.Commerce
             storeController.OnPurchasesFetched -= HandlePurchasesFetched;
             storeController.OnPurchasesFetchFailed -= HandlePurchasesFetchFailed;
             storeController.OnPurchasePending -= HandlePurchasePending;
+            storeController.OnPurchaseDeferred -= HandlePurchaseDeferred;
             storeController.OnPurchaseFailed -= HandlePurchaseFailed;
         }
 
@@ -245,6 +247,7 @@ namespace BrainDrain.Systems.Commerce
             storeController.OnPurchasesFetched += HandlePurchasesFetched;
             storeController.OnPurchasesFetchFailed += HandlePurchasesFetchFailed;
             storeController.OnPurchasePending += HandlePurchasePending;
+            storeController.OnPurchaseDeferred += HandlePurchaseDeferred;
             storeController.OnPurchaseFailed += HandlePurchaseFailed;
 
             try
@@ -445,6 +448,28 @@ namespace BrainDrain.Systems.Commerce
             }
 
             RaiseFailure(productId ?? "unknown", PurchaseOutcome.Declined, "Purchase failed or was canceled.");
+        }
+
+        /// <summary>
+        /// Payment is pending an external action (e.g. a cash-based payment method) -- not a
+        /// grant, not a failure. Do NOT confirm or grant anything here. When the payment actually
+        /// completes, Unity IAP delivers it through the existing OnPurchasePending -> validate ->
+        /// grant -> confirm path, same as any other purchase; this handler only clears the busy
+        /// state so a deferred row shows "PAYMENT PENDING" instead of looking permanently stuck,
+        /// and satisfies IPurchaseService's "Purchase called without a callback defined for
+        /// OnPurchaseDeferred" warning by existing at all.
+        /// </summary>
+        private void HandlePurchaseDeferred(DeferredOrder order)
+        {
+            var cartItem = order?.CartOrdered?.Items().FirstOrDefault();
+            string productId = cartItem?.Product?.definition?.id;
+
+            if (!string.IsNullOrEmpty(productId))
+            {
+                pendingProductIds.Remove(productId);
+            }
+
+            RaiseStateChanged(productId ?? "unknown", PurchaseRequestState.Deferred);
         }
 
         /// <summary>
