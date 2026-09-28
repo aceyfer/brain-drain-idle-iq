@@ -40,6 +40,14 @@ namespace BrainDrain.UI
         [Tooltip("How far the border frame extends beyond each button's own edges, in pixels. Safe to leave alone -- matches the padding baked into the generated sprites' 9-slice border.")]
         [SerializeField] private float outsetPixels = 5f;
 
+        // items 2+3 audit (2026-09): 57 managed buttons' live heights split cleanly at this
+        // boundary -- max "should skip" height was 67px (RewardedAdRecovery's WatchAdButton),
+        // min "should keep" height was 100px (Hot Chick PurchaseButton/bottom bar) -- so any
+        // value in [68,99] works; 90 sits comfortably in the middle. Height-only, deliberately no
+        // width check: a width floor would wrongly exclude the legitimate Points Shop tab button
+        // (160 wide, 115 tall).
+        private const float MinBorderableHeight = 90f;
+
         private const string BorderChildName = "UniversalBorder (Generated)";
 
         private readonly List<Button> managedButtons = new List<Button>();
@@ -96,6 +104,13 @@ namespace BrainDrain.UI
         {
             RectTransform buttonRect = button.transform as RectTransform;
             if (buttonRect == null || !IsVisualButton(button)) { return null; }
+
+            // Small utility buttons (Dia-Log, WALLET, POCKET, RECOVER IQ, every close-X) have no
+            // room for the sliced border's own fixed pixel margins -- those margins already
+            // exceed a 140x50 button's entire size on every stage, so the border art dominates
+            // the whole face and swallows the label instead of framing it. Below this height,
+            // skip the border child entirely rather than draw one that can only look broken.
+            if (buttonRect.rect.height < MinBorderableHeight) { return null; }
 
             Transform existing = buttonRect.Find(BorderChildName);
             GameObject borderObject = existing != null ? existing.gameObject : null;
