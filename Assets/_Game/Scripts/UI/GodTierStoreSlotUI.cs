@@ -65,6 +65,19 @@ namespace BrainDrain.UI
                 buyButton.onClick.AddListener(HandleBuyClicked);
             }
 
+            // Fixed here, not on the shared UpgradeSlotPrefab's CostText -- that same TMP object
+            // also backs the BP shop's UpgradeSlotUI rows, so editing the prefab's own alignment/
+            // margin would misalign those too. CostText ships Right-aligned with zero margin and
+            // Overflow mode, so the price renders flush against the button's right edge, under
+            // the border frame art -- worst on stages whose border eats furthest into the
+            // interior (Stage 2/5). Centering + a real margin keeps it clear of the frame on
+            // every stage without touching the prefab at all.
+            if (priceText != null)
+            {
+                priceText.alignment = TextAlignmentOptions.Center;
+                priceText.margin = new Vector4(16f, 4f, 16f, 4f);
+            }
+
             // Touching .Instance here is fine (self-bootstraps if needed) -- GodTierStoreManager's
             // own Start already does the same thing, and by the time slots are built/bound the
             // commerce service normally already exists.
