@@ -206,12 +206,19 @@ namespace BrainDrain.UI
                 }
                 else
                 {
+#if UNITY_EDITOR
+                    // The Editor's dev fake store returns a flat fake price ($0.01) for every
+                    // product -- not useful for eyeballing real pricing while testing. Device
+                    // builds never hit this branch; they always want the real localized price.
+                    priceText.text = boundData.realMoneyPriceDisplay;
+#else
                     // Store-localized price wins whenever the store has actually returned one;
-                    // realMoneyPriceDisplay is only the editor/offline preview fallback (see
+                    // realMoneyPriceDisplay is only the offline preview fallback (see
                     // GodTierStoreItemData's own doc comment) -- e.g. while storeReady is still
                     // false during initial connect/fetch.
                     string localizedPrice = commerce?.GetLocalizedPrice(boundData.productId);
                     priceText.text = !string.IsNullOrEmpty(localizedPrice) ? localizedPrice : boundData.realMoneyPriceDisplay;
+#endif
                 }
             }
 
