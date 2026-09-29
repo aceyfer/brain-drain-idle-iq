@@ -51,6 +51,17 @@ namespace BrainDrain.UI
 
         private const string BorderChildName = "UniversalBorder (Generated)";
 
+        // Runtime Sprite.name for Assets/_Game/Sprites/UI/Generated/GoldOrangeGradient.png (guid
+        // fdb2114c148d91b4ebe462ad57e169ac) -- the leftover baked-color gradient texture found
+        // directly on RebirthTriggerButton's own root Image (and, as a separate child rather than
+        // its own sprite, on ConvertButton -- see the "Gradient" child handling below). Named
+        // match rather than a blanket "clear every managed button's sprite": a scan of every
+        // managed button's own Image confirmed everything else either has no sprite, a plain
+        // white alpha mask (RoundedRect8), or a Unity built-in background shape -- all safe to
+        // tint -- but SettingsButton's gear and any future icon button prove a blind sprite=null
+        // isn't safe in general, only for this specific known-bad texture.
+        private const string LeftoverGradientSpriteName = "GoldOrangeGradient_0";
+
         // 2026-09-29 color pass (genre convention -- Egg Inc/AdVenture Capitalist/Idle Miner all
         // use one fixed fill across every button; only STATE (actionable vs not) changes label
         // brightness, never per-button hue). Only the stage border FRAME art still varies by
@@ -254,6 +265,17 @@ namespace BrainDrain.UI
             if (ownImage != null)
             {
                 ownImage.color = BaseFillColor;
+
+                // Narrowly scoped, not a blanket clear: some managed buttons use their own Image
+                // sprite as a real icon (a scan of every managed button found none today, but
+                // nothing guarantees a future one won't), so only the specific known-bad texture
+                // gets removed. Tinting a colored sprite can never produce a clean flat fill --
+                // BaseFillColor above was multiplying against this texture's own baked hues,
+                // reading live as dark maroon/brown next to SHOP's clean purple.
+                if (ownImage.sprite != null && ownImage.sprite.name == LeftoverGradientSpriteName)
+                {
+                    ownImage.sprite = null;
+                }
             }
 
             // Step 1b fix: ConvertButton (and possibly a future button) carries a leftover

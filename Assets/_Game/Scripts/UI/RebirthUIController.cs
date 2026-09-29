@@ -63,8 +63,20 @@ namespace BrainDrain.UI
             ApplyTriggerButtonVisibility();
         }
 
-        private static readonly Color ButtonColorLocked = new Color(0.35f, 0.35f, 0.35f, 0.85f);
-        private static readonly Color ButtonColorReady  = new Color(1f, 0.078f, 0.576f, 1f);
+        // 2026-09-29 color pass: fill is always the same fixed base everywhere else in the game
+        // (UniversalButtonBorderApplier.BaseFillColor) -- THE SNOTTING is the one deliberate hero
+        // highlight, but that highlight now lives entirely in the LABEL (cyan + a pulse when
+        // ready), not the fill. Previously this button's own fill swapped grey/hot-pink; it no
+        // longer varies at all.
+        private static readonly Color BaseFillColor = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
+        private static readonly Color ReadyLabelColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
+        private static readonly Color LockedLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
+
+        /// <summary>Guards PlayAffordablePulse so it only (re)starts on the actual locked-&gt;ready
+        /// transition -- ApplyTriggerButtonVisibility can run many times while already unlocked
+        /// (every OnRestorationProgressChanged tick), and re-calling PlayAffordablePulse each time
+        /// would restart the pulse's phase instead of letting it breathe continuously.</summary>
+        private bool isReadyPulsing;
 
 #if UNITY_EDITOR
         public GameObject TriggerButtonObject => rebirthTriggerButton;
@@ -99,6 +111,13 @@ namespace BrainDrain.UI
                     tmp.raycastTarget = false;
                 }
             }
+
+            // Static, subscribed here rather than in Start(): ALL objects' Awake() finish before
+            // ANY object's Start() begins, so this is guaranteed to be wired before
+            // UniversalButtonBorderApplier's own Start() resets this button to the base fill +
+            // white label and fires the event -- same startup-label-race fix as MainUIController.
+            UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
+            UniversalButtonBorderApplier.OnThemeApplied += HandleThemeApplied;
         }
 
         private void Start()
@@ -118,9 +137,16 @@ namespace BrainDrain.UI
             {
                 WorldRestorationManager.Instance.OnRestorationProgressChanged -= HandleRestorationProgressChanged;
             }
+
+            UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
         }
 
         private void HandleRestorationProgressChanged(double _)
+        {
+            ApplyTriggerButtonVisibility();
+        }
+
+        private void HandleThemeApplied()
         {
             ApplyTriggerButtonVisibility();
         }
@@ -183,12 +209,23 @@ namespace BrainDrain.UI
                 btn.interactable = true;
             }
 
-            // Drive the background image color directly so locked always looks grey and
-            // ready always looks hot pink — Unity's disabled-color tint alone is too subtle.
+            // 2026-09-29 color pass: fill is always the fixed base now, same as every other
+            // managed button -- locked/ready no longer swap the button's own fill, only its
+            // label (below) and, when ready, a pulse communicate state.
+            //
+            // sprite = null is required, not optional: this button's own baked Image sprite is
+            // the same non-white gradient texture as ConvertButton's old "Gradient" overlay
+            // (guid fdb2114c...) -- tinting it produced a muddy maroon/brown instead of a clean
+            // flat fill, since BaseFillColor was multiplying against that texture's own baked
+            // pixel hues. UniversalButtonBorderApplier now clears this generically too, but this
+            // controller re-asserts img.color independently on every visibility refresh (far more
+            // often than the applier's own pass), so it must clear sprite the same way or a later
+            // refresh would have nothing left to keep it cleared.
             Image img = rebirthTriggerButton.GetComponent<Image>();
             if (img != null)
             {
-                img.color = unlocked ? ButtonColorReady : ButtonColorLocked;
+                img.color = BaseFillColor;
+                img.sprite = null;
 
                 // FIXED 2026-08-30 (found via Codex Play Mode test + temp logging, see
                 // Assets/Plans/tutorial-direction-and-cogs-trust.md): this used to be
@@ -220,17 +257,30 @@ namespace BrainDrain.UI
                     txt.text = "THE SNOTTING";
                     txt.fontSizeMin = 24f;
                     txt.fontSizeMax = 46.35f;
-                    txt.color = Color.white;
+                    txt.color = ReadyLabelColor;
                 }
                 else
                 {
                     txt.text = $"SNOTTING LOCKED\n{NumberFormatter.Format(spent)} / {NumberFormatter.Format(unlockThreshold.GetValueOrDefault())}";
                     txt.fontSizeMin = 16f;
                     txt.fontSizeMax = 36f;
-                    txt.color = new Color(0.75f, 0.75f, 0.75f, 1f);
+                    txt.color = LockedLabelColor;
                 }
             }
 
+            // Hero highlight: a gentle breathing pulse only while ready, guarded so it (re)starts
+            // exactly once on the locked->ready transition rather than every visibility refresh.
+            RectTransform triggerRect = rebirthTriggerButton.GetComponent<RectTransform>();
+            if (unlocked && !isReadyPulsing)
+            {
+                AnimationController.PlayAffordablePulse(triggerRect, img);
+                isReadyPulsing = true;
+            }
+            else if (!unlocked && isReadyPulsing)
+            {
+                AnimationController.StopAffordablePulse(triggerRect);
+                isReadyPulsing = false;
+            }
         }
 
         public void OpenModal()
