@@ -65,8 +65,27 @@ namespace BrainDrain.UI
         private readonly List<Button> managedButtons = new List<Button>();
         private ButtonTheme overrideTheme;
 
+        /// <summary>Scene lookup for late-built buttons (POCKET/WALLET/RECOVER IQ etc.) that construct
+        /// themselves at runtime with no defined Start() ordering against this class's own scan.</summary>
+        public static UniversalButtonBorderApplier Instance => FindAnyObjectByType<UniversalButtonBorderApplier>();
+
         /// <summary>Whichever theme is currently being applied -- the override if one is set, otherwise whatever the current World Restoration stage resolves to.</summary>
         public ButtonTheme ActiveTheme => overrideTheme != null ? overrideTheme : ResolveThemeForStage(ResolveCurrentStageIndex());
+
+        /// <summary>
+        /// Entry point for a button built after this class's own Start() scan already ran (e.g.
+        /// PocketPanelUI/TimedPurchaseWalletUI/RewardedAdRecoveryHudButtonUI, which self-bootstrap
+        /// via RuntimeInitializeOnLoadMethod but construct their actual Button GameObject inside
+        /// their own Start() -- a same-frame race against DiscoverButtons with no ordering
+        /// guarantee either way). Themes it immediately with whatever's currently active, and adds
+        /// it to managedButtons so later stage changes keep re-theming it too.
+        /// </summary>
+        public void ApplyToButton(Button button)
+        {
+            if (button == null) { return; }
+            if (!managedButtons.Contains(button)) { managedButtons.Add(button); }
+            ApplyThemeToButton(button, ActiveTheme);
+        }
 
         private void Start()
         {
@@ -222,6 +241,38 @@ namespace BrainDrain.UI
             if (ownImage != null)
             {
                 ownImage.color = BaseFillColor;
+            }
+
+            // Step 1b fix: ConvertButton (and possibly a future button) carries a leftover
+            // decorative "Gradient" overlay child -- a translucent Image drawn on top of the
+            // button's own root Image, baked with its own gradient-colored sprite. The block
+            // above only ever touches the button's OWN Image component, never children, so this
+            // child kept rendering its old color regardless of what the base fill above became.
+            // Deactivate it generically by name rather than special-casing ConvertButton, in case
+            // the same leftover pattern shows up elsewhere later.
+            Transform gradientChild = button.transform.Find("Gradient");
+            if (gradientChild != null)
+            {
+                gradientChild.gameObject.SetActive(false);
+            }
+
+            // Step 1b fix: Unity's own ColorTint transition (Button.Transition.ColorTint) tints
+            // the targetGraphic by m_DisabledColor whenever Button.interactable is false --
+            // several buttons ship a ~50%-alpha grey disabledColor (e.g. RestoreButton), which
+            // fights this pass's "fill is always the constant base, only the label communicates
+            // actionable state" design: a disabled RESTORE looked near-transparent even though
+            // its Image.color was correctly set above. Neutralizing disabledColor to opaque white
+            // (colorMultiplier already 1) keeps Unity's own interactable gating/click-blocking
+            // intact -- per Aceyfer's explicit call not to touch interactable/gating logic --
+            // while removing the visual tint. Generic across every managed button, not just
+            // RestoreButton, since ConvertUIController's panel-internal buttons use the same
+            // interactable-gating pattern and would hit the identical problem once themed.
+            if (button.transition == Selectable.Transition.ColorTint)
+            {
+                ColorBlock colors = button.colors;
+                colors.disabledColor = Color.white;
+                colors.colorMultiplier = 1f;
+                button.colors = colors;
             }
 
             foreach (TextMeshProUGUI label in button.GetComponentsInChildren<TextMeshProUGUI>(true))

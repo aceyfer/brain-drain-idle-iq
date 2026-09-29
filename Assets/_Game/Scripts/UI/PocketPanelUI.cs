@@ -212,6 +212,12 @@ namespace BrainDrain.UI
             button.onClick.AddListener(ToggleOpen);
 
             CreateStretchedLabel(buttonObject.transform, "POCKET", Color.white, 26f, 14f, FontStyles.Bold);
+
+            // Built inside Start(), same as UniversalButtonBorderApplier's own scan -- a
+            // same-frame race with no ordering guarantee, so this button was never in
+            // managedButtons. ApplyToButton themes it immediately and registers it for future
+            // stage-change re-theming instead of relying on the initial scan finding it.
+            UniversalButtonBorderApplier.Instance?.ApplyToButton(button);
         }
 
         private void BuildPanel()
