@@ -146,6 +146,23 @@ namespace BrainDrain.Core
                 : currencyManager.CanAffordBrainPower(cost);
         }
 
+        /// <summary>Returns true when at least one unlocked building (BP or Cash tab) is
+        /// currently affordable -- drives the SHOP bottom-nav button's actionable/dim label
+        /// state (MainUIController). Reuses CanAffordBuilding's own unlock+afford gate rather
+        /// than duplicating it, so a single source of truth backs both the per-row and the
+        /// aggregate check.</summary>
+        public bool AnyBuildingAffordable()
+        {
+            for (int i = 0; i < buildingTemplates.Count; i++)
+            {
+                if (CanAffordBuilding(buildingTemplates[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Attempts to purchase one level of a building after validating unlock and cost.
         /// On success, registers the building's BPPS contribution as permanent idle income

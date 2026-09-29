@@ -30,8 +30,15 @@ namespace BrainDrain.UI
         [Tooltip("Dimmer shown while the shop panel is open (matches mock #shade).")]
         [SerializeField] private GameObject shopOverlayShade;
 
+        // 2026-09-29 color pass: actionable = bright label, not-actionable = dimmed grey. Fill
+        // stays the fixed base everywhere (UniversalButtonBorderApplier) -- only label
+        // brightness communicates state, per the genre-convention decision (no per-button hue).
+        private static readonly Color DimLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
+        private static readonly Color BrightLabelColor = Color.white;
+
         private RebirthUIController cachedRebirthUI;
         private CurrencyManager cachedCurrency;
+        private UpgradeManager cachedUpgradeManager;
 
         private void Awake()
         {
@@ -89,6 +96,13 @@ namespace BrainDrain.UI
                 cachedCurrency.OnPointsChanged.AddListener(HandlePointsChangedUnity);
             }
 
+            cachedUpgradeManager = UpgradeManager.Instance;
+            if (cachedUpgradeManager != null)
+            {
+                cachedUpgradeManager.OnBuildingsChanged -= HandleBuildingsChanged;
+                cachedUpgradeManager.OnBuildingsChanged += HandleBuildingsChanged;
+            }
+
             RefreshButtonFaces();
             UpdateAdRecoverySuppression();
         }
@@ -118,6 +132,11 @@ namespace BrainDrain.UI
             {
                 cachedCurrency.OnBrainPowerChanged -= HandleCurrencyChanged;
                 cachedCurrency.OnPointsChanged.RemoveListener(HandlePointsChangedUnity);
+            }
+
+            if (cachedUpgradeManager != null)
+            {
+                cachedUpgradeManager.OnBuildingsChanged -= HandleBuildingsChanged;
             }
         }
 
@@ -309,6 +328,7 @@ namespace BrainDrain.UI
 
         private void HandleCurrencyChanged(double _) => RefreshButtonFaces();
         private void HandlePointsChangedUnity(double _) => RefreshButtonFaces();
+        private void HandleBuildingsChanged() => RefreshButtonFaces();
 
         /// <summary>
         /// Live preview text on CONVERT/RESTORE. CONVERT previews the BP-&gt;$ yield at the same
@@ -325,6 +345,21 @@ namespace BrainDrain.UI
                 if (cachedCurrency == null)
                 {
                     return;
+                }
+            }
+
+            if (shopButton != null)
+            {
+                if (cachedUpgradeManager == null)
+                {
+                    cachedUpgradeManager = UpgradeManager.Instance;
+                }
+
+                var text = shopButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (text != null)
+                {
+                    bool anyAffordable = cachedUpgradeManager != null && cachedUpgradeManager.AnyBuildingAffordable();
+                    text.color = anyAffordable ? BrightLabelColor : DimLabelColor;
                 }
             }
 
