@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -209,12 +210,44 @@ namespace BrainDrain.UI
                 if (theme.fillSprite != null) { ownImage.sprite = theme.fillSprite; }
             }
 
-            if (theme.labelFontMaterial != null || theme.overrideTextColor)
+            foreach (TextMeshProUGUI label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
-                foreach (TextMeshProUGUI label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
+                if (theme.labelFontMaterial != null) { label.fontSharedMaterial = theme.labelFontMaterial; }
+                if (theme.overrideTextColor) { label.color = theme.labelTextColor; }
+
+                // Item 7: dark outline for label contrast on busy frames (Stage 5's gold filigree
+                // especially). outlineWidth/outlineColor create a per-label MATERIAL INSTANCE
+                // derived from whatever fontSharedMaterial this label already has -- unlike
+                // assigning a shared material directly (item 7's first attempt, reverted: a
+                // material's _MainTex is bound to one specific font atlas, so a label using a
+                // different font asset sampled the wrong atlas and rendered as garbled glyphs),
+                // this works for any font since it derives from the label's own existing
+                // material instead of replacing it. Unconditional, not theme-gated -- every
+                // managed button's labels get this regardless of stage.
+                //
+                // Real regression caught live: TMP_Text.outlineWidth's setter
+                // (TextMeshProUGUI.SetOutlineThickness) lazily creates a per-instance font
+                // material from m_sharedMaterial -- for a label that has NEVER been active (its
+                // Awake/material setup never ran, true for buttons inside a still-hidden modal,
+                // which this class deliberately discovers via FindObjectsInactive.Include), that
+                // state isn't populated yet and the setter throws a NullReferenceException.
+                // Uncaught, that exception aborted ApplyThemeToAllManagedButtons' entire for loop
+                // -- every button ordered after the failing one (including the bottom bar and
+                // God Shop rows) silently never got themed at all. isActiveAndEnabled skips the
+                // known case; the try/catch is a hard backstop so no future/unknown TMP edge
+                // case can ever again take the whole batch down over a purely decorative outline.
+                // Accepted limitation: a label inside a still-hidden modal won't get the outline
+                // until something re-applies the theme to it later -- there's no rescan today.
+                if (!label.isActiveAndEnabled) { continue; }
+
+                try
                 {
-                    if (theme.labelFontMaterial != null) { label.fontSharedMaterial = theme.labelFontMaterial; }
-                    if (theme.overrideTextColor) { label.color = theme.labelTextColor; }
+                    label.outlineWidth = 0.2f;
+                    label.outlineColor = Color.black;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[UniversalButtonBorderApplier] Failed to set label outline on '{label.name}': {ex.Message}", label);
                 }
             }
         }
