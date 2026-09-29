@@ -14,6 +14,11 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class ConvertUIController : MonoBehaviour
     {
+        /// <summary>Minimum Brain Power before either BP->Cash conversion button does anything.
+        /// Public so MainUIController's bottom-bar CONVERT button can reuse this exact threshold
+        /// for its own actionable/dim label state instead of duplicating the magic number.</summary>
+        public const double MinBrainPowerToConvert = 1000d;
+
         [Header("UI Panels")]
         [SerializeField] private GameObject convertPanel;
 
@@ -147,7 +152,7 @@ namespace BrainDrain.UI
 
             if (convertBPAmountButton != null)
             {
-                convertBPAmountButton.interactable = bp >= 1000d;
+                convertBPAmountButton.interactable = bp >= MinBrainPowerToConvert;
                 var text = convertBPAmountButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (text != null)
                 {
@@ -158,7 +163,7 @@ namespace BrainDrain.UI
 
             if (convertAllBPButton != null)
             {
-                convertAllBPButton.interactable = bp >= 1000d;
+                convertAllBPButton.interactable = bp >= MinBrainPowerToConvert;
                 var text = convertAllBPButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (text != null)
                 {

@@ -94,6 +94,8 @@ namespace BrainDrain.UI
                 cachedCurrency.OnBrainPowerChanged += HandleCurrencyChanged;
                 cachedCurrency.OnPointsChanged.RemoveListener(HandlePointsChangedUnity);
                 cachedCurrency.OnPointsChanged.AddListener(HandlePointsChangedUnity);
+                cachedCurrency.OnCashChanged.RemoveListener(HandleCashChangedUnity);
+                cachedCurrency.OnCashChanged.AddListener(HandleCashChangedUnity);
             }
 
             cachedUpgradeManager = UpgradeManager.Instance;
@@ -132,6 +134,7 @@ namespace BrainDrain.UI
             {
                 cachedCurrency.OnBrainPowerChanged -= HandleCurrencyChanged;
                 cachedCurrency.OnPointsChanged.RemoveListener(HandlePointsChangedUnity);
+                cachedCurrency.OnCashChanged.RemoveListener(HandleCashChangedUnity);
             }
 
             if (cachedUpgradeManager != null)
@@ -328,6 +331,7 @@ namespace BrainDrain.UI
 
         private void HandleCurrencyChanged(double _) => RefreshButtonFaces();
         private void HandlePointsChangedUnity(double _) => RefreshButtonFaces();
+        private void HandleCashChangedUnity(double _) => RefreshButtonFaces();
         private void HandleBuildingsChanged() => RefreshButtonFaces();
 
         /// <summary>
@@ -370,6 +374,13 @@ namespace BrainDrain.UI
                 {
                     double previewCash = cachedCurrency.BrainPower / 1000d;
                     text.text = $"CONVERT\n+${NumberFormatter.Format(previewCash)}";
+
+                    // Actionable = either conversion this button's panel offers has something to
+                    // do -- reuses ConvertUIController's own BP threshold and its cash > 0d check
+                    // rather than duplicating separate logic here.
+                    bool anyConvertible = cachedCurrency.BrainPower >= ConvertUIController.MinBrainPowerToConvert
+                        || cachedCurrency.CurrentCash > 0d;
+                    text.color = anyConvertible ? BrightLabelColor : DimLabelColor;
                 }
             }
 
