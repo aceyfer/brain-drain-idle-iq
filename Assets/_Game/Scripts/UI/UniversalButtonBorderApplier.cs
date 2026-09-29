@@ -99,6 +99,34 @@ namespace BrainDrain.UI
             return ownImage == null || ownImage.color.a > 0f;
         }
 
+        /// <summary>
+        /// Regression fix (God Shop buy buttons losing their border): a plain `rect.height` read
+        /// is invalid while the button's hierarchy is inactive (the God Shop tab starts hidden,
+        /// so its buttons' own RectTransforms still hold their prefab-authored placeholder size
+        /// -- BuyButton's own sizeDelta is a fixed 180x80 -- until a real layout pass runs, which
+        /// requires being active). Neither BuyButton nor its immediate parent BuyColumn has a
+        /// usable height (BuyButton has no LayoutElement at all; BuyColumn's own MinHeight/
+        /// PreferredHeight are both -1/unset, only its width is constrained) -- the row's actual
+        /// intended height (210) only exists as a LayoutElement several levels up, on the row
+        /// root object. Walks up the hierarchy for the first LayoutElement with a real
+        /// (non-negative) preferredHeight or minHeight; falls back to the button's own rect
+        /// height only if nothing in the chain has one (true for simple utility buttons like
+        /// Dia-Log/close-X, which have no LayoutElement anywhere in their ancestry and whose own
+        /// sizeDelta already is the truth).
+        /// </summary>
+        private static float ResolveEffectiveHeight(RectTransform buttonRect)
+        {
+            for (Transform t = buttonRect; t != null; t = t.parent)
+            {
+                LayoutElement layoutElement = t.GetComponent<LayoutElement>();
+                if (layoutElement == null) { continue; }
+                if (layoutElement.preferredHeight >= 0f) { return layoutElement.preferredHeight; }
+                if (layoutElement.minHeight >= 0f) { return layoutElement.minHeight; }
+            }
+
+            return buttonRect.rect.height;
+        }
+
         /// <summary>Idempotent: finds the existing generated border child if this button already has one instead of duplicating it. Border-only -- see ApplyThemeToButton for the full border+fill+text application.</summary>
         public Image EnsureBorderOn(Button button)
         {
@@ -110,7 +138,7 @@ namespace BrainDrain.UI
             // exceed a 140x50 button's entire size on every stage, so the border art dominates
             // the whole face and swallows the label instead of framing it. Below this height,
             // skip the border child entirely rather than draw one that can only look broken.
-            if (buttonRect.rect.height < MinBorderableHeight) { return null; }
+            if (ResolveEffectiveHeight(buttonRect) < MinBorderableHeight) { return null; }
 
             Transform existing = buttonRect.Find(BorderChildName);
             GameObject borderObject = existing != null ? existing.gameObject : null;
