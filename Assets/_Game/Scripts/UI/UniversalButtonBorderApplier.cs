@@ -69,6 +69,19 @@ namespace BrainDrain.UI
         /// themselves at runtime with no defined Start() ordering against this class's own scan.</summary>
         public static UniversalButtonBorderApplier Instance => FindAnyObjectByType<UniversalButtonBorderApplier>();
 
+        /// <summary>
+        /// Fires once after every full managed-button theme pass (initial Start(), a World
+        /// Restoration stage change, or ApplyOverrideTheme/ClearOverrideTheme) -- after
+        /// ApplyThemeToAllManagedButtons has finished resetting every label to the static
+        /// BaseLabelColor baseline. Static so a subscriber can wire up in its own Awake() (which
+        /// always completes before ANY object's Start(), including this class's) rather than
+        /// racing this class's own Start() the same way the late-built-button problem did --
+        /// MainUIController/RebirthUIController subscribe here and re-run their own
+        /// actionable/dim-vs-bright refresh, fixing labels that otherwise started white on
+        /// startup and only corrected on the first currency event.
+        /// </summary>
+        public static event Action OnThemeApplied;
+
         /// <summary>Whichever theme is currently being applied -- the override if one is set, otherwise whatever the current World Restoration stage resolves to.</summary>
         public ButtonTheme ActiveTheme => overrideTheme != null ? overrideTheme : ResolveThemeForStage(ResolveCurrentStageIndex());
 
@@ -377,6 +390,8 @@ namespace BrainDrain.UI
             {
                 ApplyThemeToButton(managedButtons[i], theme);
             }
+
+            OnThemeApplied?.Invoke();
         }
 
         private void SubscribeToRestorationEvents()

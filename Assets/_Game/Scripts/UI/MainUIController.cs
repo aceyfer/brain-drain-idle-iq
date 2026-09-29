@@ -84,6 +84,15 @@ namespace BrainDrain.UI
                 shopUIController.ShopClosed -= HandleShopClosed;
                 shopUIController.ShopClosed += HandleShopClosed;
             }
+
+            // Static, subscribed here rather than in Start(): ALL objects' Awake() finish before
+            // ANY object's Start() begins, so this is guaranteed to be wired before
+            // UniversalButtonBorderApplier's own Start() runs and fires it -- unlike a Start()-vs-
+            // Start() subscription, which would race the same way the late-built-button problem
+            // did. Without this, every label reset to BaseLabelColor (white) on that initial theme
+            // pass and stayed white until the first currency event happened to fire.
+            UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
+            UniversalButtonBorderApplier.OnThemeApplied += HandleThemeApplied;
         }
 
         private void Start()
@@ -111,6 +120,8 @@ namespace BrainDrain.UI
 
         private void OnDestroy()
         {
+            UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
+
             if (shopButton != null) shopButton.onClick.RemoveListener(OnShopClicked);
             if (convertButton != null) convertButton.onClick.RemoveListener(OnConvertClicked);
             if (restoreButton != null) restoreButton.onClick.RemoveListener(OnRestoreClicked);
@@ -333,6 +344,7 @@ namespace BrainDrain.UI
         private void HandlePointsChangedUnity(double _) => RefreshButtonFaces();
         private void HandleCashChangedUnity(double _) => RefreshButtonFaces();
         private void HandleBuildingsChanged() => RefreshButtonFaces();
+        private void HandleThemeApplied() => RefreshButtonFaces();
 
         /// <summary>
         /// Live preview text on CONVERT/RESTORE. CONVERT previews the BP-&gt;$ yield at the same
@@ -386,13 +398,16 @@ namespace BrainDrain.UI
 
             if (restoreButton != null)
             {
+                bool anyPoints = cachedCurrency.CurrentPoints > 0d;
+
                 var text = restoreButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (text != null)
                 {
                     double points = cachedCurrency.CurrentPoints;
                     text.text = $"RESTORE\n-{NumberFormatter.Format(points)} PTS";
+                    text.color = anyPoints ? BrightLabelColor : DimLabelColor;
                 }
-                restoreButton.interactable = cachedCurrency.CurrentPoints > 0d;
+                restoreButton.interactable = anyPoints;
             }
         }
     }
