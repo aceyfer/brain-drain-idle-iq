@@ -51,6 +51,17 @@ namespace BrainDrain.UI
 
         private const string BorderChildName = "UniversalBorder (Generated)";
 
+        // 2026-09-29 color pass (genre convention -- Egg Inc/AdVenture Capitalist/Idle Miner all
+        // use one fixed fill across every button; only STATE (actionable vs not) changes label
+        // brightness, never per-button hue). Only the stage border FRAME art still varies by
+        // World Restoration stage -- fill and base label color are now constant everywhere.
+        // Actionable/dim states and THE SNOTTING's cyan hero highlight are applied by each
+        // button's own owning controller (MainUIController, RebirthUIController, etc.), not here
+        // -- this class only ever sets the static baseline every bordered/themed button starts
+        // from, since it has no idea which buttons are stateful.
+        private static readonly Color BaseFillColor = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
+        private static readonly Color BaseLabelColor = Color.white;
+
         private readonly List<Button> managedButtons = new List<Button>();
         private ButtonTheme overrideTheme;
 
@@ -203,17 +214,25 @@ namespace BrainDrain.UI
                 border.sprite = theme.borderSprite;
             }
 
+            // Genre-convention fill (2026-09-29): every managed button, bordered or not (small
+            // utility buttons skip the border child above but still reach this point), gets the
+            // same dark base fill -- theme.overrideFillColor/fillColor/fillSprite are no longer
+            // consulted for fill. Only the border sprite above still varies per stage theme.
             Image ownImage = button.GetComponent<Image>();
             if (ownImage != null)
             {
-                if (theme.overrideFillColor) { ownImage.color = theme.fillColor; }
-                if (theme.fillSprite != null) { ownImage.sprite = theme.fillSprite; }
+                ownImage.color = BaseFillColor;
             }
 
             foreach (TextMeshProUGUI label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
                 if (theme.labelFontMaterial != null) { label.fontSharedMaterial = theme.labelFontMaterial; }
-                if (theme.overrideTextColor) { label.color = theme.labelTextColor; }
+
+                // Baseline is always bright white -- the owning controller (MainUIController,
+                // RebirthUIController, GodTierStoreSlotUI) dims this to grey on its own
+                // actionable-state refresh, applied after this baseline runs. theme.labelTextColor
+                // is no longer consulted; label hue is state-driven now, not stage-driven.
+                label.color = BaseLabelColor;
 
                 // Item 7: dark outline for label contrast on busy frames (Stage 5's gold filigree
                 // especially). outlineWidth/outlineColor create a per-label MATERIAL INSTANCE
