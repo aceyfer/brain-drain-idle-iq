@@ -16,7 +16,10 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class GodTierStoreSlotUI : MonoBehaviour
     {
-        private static readonly Color AvailableColor = new Color32(0xFF, 0xD7, 0x00, 0xFF);
+        // 2026-09-29 color pass: gold -> white, matching the bottom bar's bright-label-when-
+        // actionable convention (God Shop rows have no separate fill state to touch here -- see
+        // ApplyAccent below, which still only recolors label text/background tint, never fill).
+        private static readonly Color AvailableColor = Color.white;
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
         private static readonly Color UnavailableColor = new Color32(0x80, 0x80, 0x80, 0xFF);
 
