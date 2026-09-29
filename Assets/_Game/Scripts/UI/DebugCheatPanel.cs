@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using TMPro;
 using UnityEditor;
 using BrainDrain.Core;
@@ -27,8 +28,15 @@ namespace BrainDrain.UI
         private const int TripleTapCount = 3;
 
         private static readonly Color HotPink = new Color32(0xFF, 0x14, 0x93, 0xFF);
-        private static readonly Color BackgroundColor = new Color(0.05f, 0.05f, 0.05f, 0.92f);
-        private static readonly Color ButtonFill = new Color(1f, 0.078f, 0.576f, 0.22f);
+        private static readonly Color BackgroundColor = new Color(0.05f, 0.05f, 0.05f, 1f);
+        private static readonly Color ButtonFill = new Color(0.35f, 0.03f, 0.2f, 1f);
+
+        // Guaranteed above every other Canvas in the scene -- confirmed via grep that nothing
+        // else in SampleScene.unity sets an explicit sortingOrder, so everything else relies on
+        // sibling order alone (the actual root cause of this panel rendering under the bottom
+        // bar: SetAsLastSibling only wins within the SAME canvas, and bottom-bar buttons/borders
+        // get built/reordered by several different systems after this panel does).
+        private const int OverrideSortingOrder = 32000;
 
         private static DebugCheatPanel instance;
 
@@ -144,6 +152,11 @@ namespace BrainDrain.UI
 
         private void Update()
         {
+            if (Keyboard.current != null && Keyboard.current.backquoteKey.wasPressedThisFrame)
+            {
+                TogglePanel();
+            }
+
             if (panelObject != null && panelObject.activeSelf && dailyCapReadoutText != null)
             {
                 RefreshDailyCapReadout();
@@ -189,6 +202,14 @@ namespace BrainDrain.UI
 
             Image background = panelObject.AddComponent<Image>();
             background.color = BackgroundColor;
+
+            // Own override-sorting Canvas (see OverrideSortingOrder's own comment) + its own
+            // GraphicRaycaster -- required once this becomes a nested canvas boundary, same
+            // precedent as RewardedAdRecoveryUIController's ChaosPopUpCanvas.
+            Canvas overrideCanvas = panelObject.AddComponent<Canvas>();
+            overrideCanvas.overrideSorting = true;
+            overrideCanvas.sortingOrder = OverrideSortingOrder;
+            panelObject.AddComponent<GraphicRaycaster>();
 
             // Hot pink border: a slightly larger sibling Image placed behind the background.
             GameObject borderObject = new GameObject("Border", typeof(RectTransform));
