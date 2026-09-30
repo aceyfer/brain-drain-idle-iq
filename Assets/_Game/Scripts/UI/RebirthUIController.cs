@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using BrainDrain.Systems;
 using BrainDrain.Core;
@@ -71,6 +72,10 @@ namespace BrainDrain.UI
         private static readonly Color ReadyLabelColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
         private static readonly Color LockedLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
 
+        /// <summary>Light cyan tint the ready-state border glow pulses toward, from white -- see
+        /// ApplyTriggerButtonVisibility's hero-highlight block.</summary>
+        private static readonly Color ReadyGlowColor = new Color32(0x80, 0xF4, 0xFF, 0xFF);
+
         /// <summary>Guards PlayAffordablePulse so it only (re)starts on the actual locked-&gt;ready
         /// transition -- ApplyTriggerButtonVisibility can run many times while already unlocked
         /// (every OnRestorationProgressChanged tick), and re-calling PlayAffordablePulse each time
@@ -109,6 +114,24 @@ namespace BrainDrain.UI
                 {
                     tmp.raycastTarget = false;
                 }
+
+                // Button exposes no public press/release events of its own (only onClick, which
+                // fires on release-inside) -- EventTrigger is the standard way to get PointerDown/
+                // PointerUp so the ready-glow coroutine can hand off sole control of border.color
+                // to Button.Transition.ColorTint for the press's duration (see
+                // PauseReadyGlowForPress's doc comment). Wired once here rather than in
+                // ApplyTriggerButtonVisibility, which runs repeatedly.
+                EventTrigger trigger = rebirthTriggerButton.GetComponent<EventTrigger>();
+                if (trigger == null) { trigger = rebirthTriggerButton.AddComponent<EventTrigger>(); }
+                trigger.triggers.Clear();
+
+                EventTrigger.Entry pointerDownEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+                pointerDownEntry.callback.AddListener(_ => PauseReadyGlowForPress());
+                trigger.triggers.Add(pointerDownEntry);
+
+                EventTrigger.Entry pointerUpEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
+                pointerUpEntry.callback.AddListener(_ => ResumeReadyGlowAfterPress());
+                trigger.triggers.Add(pointerUpEntry);
             }
 
             // Static, subscribed here rather than in Start(): ALL objects' Awake() finish before
@@ -265,18 +288,71 @@ namespace BrainDrain.UI
                 }
             }
 
-            // Hero highlight: a gentle breathing pulse only while ready, guarded so it (re)starts
-            // exactly once on the locked->ready transition rather than every visibility refresh.
-            RectTransform triggerRect = rebirthTriggerButton.GetComponent<RectTransform>();
+            // Hero highlight: a gentle color glow on the BORDER (which now carries the baked
+            // purple fill -- see UniversalButtonBorderApplier), not the root Image, so the glow
+            // follows the frame's actual pill shape instead of the root's plain rectangle. Guarded
+            // so it (re)starts exactly once on the locked->ready transition rather than every
+            // visibility refresh. The border Image is resolved lazily each call (ResolveBorderImage)
+            // rather than cached, since the border child may not exist yet the very first time
+            // this runs.
+            Image border = ResolveBorderImage();
             if (unlocked && !isReadyPulsing)
             {
-                AnimationController.PlayAffordablePulse(triggerRect, img);
+                if (border != null)
+                {
+                    AnimationController.PlayColorGlowPulse(border, Color.white, ReadyGlowColor);
+                }
                 isReadyPulsing = true;
             }
             else if (!unlocked && isReadyPulsing)
             {
-                AnimationController.StopAffordablePulse(triggerRect);
+                if (border != null)
+                {
+                    AnimationController.StopColorGlowPulse(border, Color.white);
+                }
                 isReadyPulsing = false;
+            }
+        }
+
+        /// <summary>
+        /// EnsureBorderOn is idempotent (finds-or-creates the same child every call), so this is
+        /// cheap to call every refresh rather than caching a field that could go stale if the
+        /// button's border child were ever rebuilt. Returns null before UniversalButtonBorderApplier
+        /// exists in the scene -- callers already null-check.
+        /// </summary>
+        private Image ResolveBorderImage()
+        {
+            if (rebirthTriggerButton == null) { return null; }
+            Button btn = rebirthTriggerButton.GetComponent<Button>();
+            if (btn == null) { return null; }
+            return UniversalButtonBorderApplier.Instance?.EnsureBorderOn(btn);
+        }
+
+        /// <summary>
+        /// Button.Transition.ColorTint (targetGraphic = the border Image, see
+        /// UniversalButtonBorderApplier) and the ready-state glow coroutine would otherwise both
+        /// write border.color every frame during a press, racing each other. Pausing the glow for
+        /// the press's duration (wired via EventTrigger in Awake, since Button exposes no public
+        /// press/release events of its own) hands ColorTint sole control until release, when the
+        /// glow resumes from wherever its own phase has reached -- a possible small color snap on
+        /// resume, acceptable for a press that immediately opens the modal anyway.
+        /// </summary>
+        private void PauseReadyGlowForPress()
+        {
+            Image border = ResolveBorderImage();
+            if (border != null)
+            {
+                AnimationController.PauseColorGlowPulse(border);
+            }
+        }
+
+        private void ResumeReadyGlowAfterPress()
+        {
+            if (!isReadyPulsing) { return; }
+            Image border = ResolveBorderImage();
+            if (border != null)
+            {
+                AnimationController.PlayColorGlowPulse(border, Color.white, ReadyGlowColor);
             }
         }
 

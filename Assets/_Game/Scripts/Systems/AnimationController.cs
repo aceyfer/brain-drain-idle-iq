@@ -38,6 +38,7 @@ namespace BrainDrain.Systems
         private readonly Dictionary<Transform, Coroutine> excitedBounceCoroutines = new();
         private readonly Dictionary<Transform, Tween> buttonPunchTweens = new();
         private readonly Dictionary<RectTransform, Coroutine> affordablePulseCoroutines = new();
+        private readonly Dictionary<Graphic, Coroutine> colorGlowCoroutines = new();
         private readonly Dictionary<RectTransform, Coroutine> denialShakeCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Coroutine> textFlashCoroutines = new();
         private readonly Dictionary<TextMeshProUGUI, Color> textFlashBaseColors = new();
@@ -1149,6 +1150,78 @@ namespace BrainDrain.Systems
                     Color color = graphic.color;
                     color.a = Mathf.Lerp(0.82f, 1.0f, sine);
                     graphic.color = color;
+                }
+
+                yield return null;
+            }
+        }
+
+        // ----- Color glow pulse (single hero-highlight element) -----------------------------
+
+        /// <summary>
+        /// Starts an infinite sine lerp of graphic.color between colorA and colorB, period 1.3s.
+        /// Color-only -- unlike PlayAffordablePulse, never touches any RectTransform scale, since
+        /// the first caller (THE SNOTTING's ready-state border) already has its shape baked into
+        /// the border art and a scale pulse would distort that art. For a single "hero" highlight
+        /// element, not a list of rows (that's PlayAffordablePulse's job).
+        /// </summary>
+        public static void PlayColorGlowPulse(Graphic graphic, Color colorA, Color colorB, float period = 1.3f)
+        {
+            if (graphic == null)
+            {
+                return;
+            }
+
+            AnimationController controller = EnsureInstance();
+            controller.StopAndReplace(controller.colorGlowCoroutines, graphic, controller.ColorGlowPulseRoutine(graphic, colorA, colorB, period));
+        }
+
+        /// <summary>
+        /// Stops the coroutine without forcing a color reset -- for a momentary pause (e.g. while
+        /// Button.Transition.ColorTint needs sole control of the same graphic during a press) that
+        /// PlayColorGlowPulse will resume from cleanly. Use StopColorGlowPulse instead when the
+        /// highlight is ending for good and the graphic needs to land on a specific color.
+        /// </summary>
+        public static void PauseColorGlowPulse(Graphic graphic)
+        {
+            if (graphic == null || Instance == null)
+            {
+                return;
+            }
+
+            if (Instance.colorGlowCoroutines.TryGetValue(graphic, out Coroutine running) && running != null)
+            {
+                Instance.StopCoroutine(running);
+            }
+
+            Instance.colorGlowCoroutines.Remove(graphic);
+        }
+
+        /// <summary>Stops the pulse started by PlayColorGlowPulse and resets graphic.color to resetColor.</summary>
+        public static void StopColorGlowPulse(Graphic graphic, Color resetColor)
+        {
+            if (graphic == null)
+            {
+                return;
+            }
+
+            graphic.color = resetColor;
+            PauseColorGlowPulse(graphic);
+        }
+
+        private IEnumerator ColorGlowPulseRoutine(Graphic graphic, Color colorA, Color colorB, float period)
+        {
+            float elapsed = 0f;
+
+            while (true)
+            {
+                elapsed += Time.deltaTime;
+                float phase = (elapsed % period) / period;
+                float sine = (Mathf.Sin(phase * Mathf.PI * 2f - Mathf.PI / 2f) + 1f) / 2f;
+
+                if (graphic != null)
+                {
+                    graphic.color = Color.Lerp(colorA, colorB, sine);
                 }
 
                 yield return null;
