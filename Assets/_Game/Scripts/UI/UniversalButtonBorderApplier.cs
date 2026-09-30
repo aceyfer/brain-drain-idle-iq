@@ -164,21 +164,29 @@ namespace BrainDrain.UI
         /// sprite-presence matters: ShopButton/ConvertButton/RestoreButton are legitimately
         /// visible via a solid tint color with no sprite at all, so a sprite-based filter would
         /// wrongly exclude those too.
+        ///
+        /// 2026-09-30: no longer static -- needs managedButtons. A framed button's root Image is
+        /// deliberately driven to zero alpha (its visible fill is baked into the border art
+        /// itself, see ApplyThemeToButton) -- that's not the same "invisible full-screen
+        /// tap-catcher" case above, and those never get discovered into managedButtons or get a
+        /// border child. Checked in order: already-managed, or already has a border child from a
+        /// prior pass, are both decisive regardless of current alpha -- only a genuinely brand-new/
+        /// undiscovered button falls through to the alpha heuristic below. This also fixes a real
+        /// chicken-and-egg bug found live (THE SNOTTING): EnsureBorderOn used to call this too, so
+        /// a framed button whose alpha reached 0 BEFORE its own first border ever got created (a
+        /// genuine Start()-vs-Start() race against whichever script zeroes that alpha) could never
+        /// pass either check -- no border existed yet, and alpha was already 0 -- so EnsureBorderOn
+        /// would return null forever, confirmed via live Console output. EnsureBorderOn no longer
+        /// calls this at all (see its own comment) specifically to break that cycle.
         /// </summary>
-        private static bool IsVisualButton(Button button)
+        private bool IsVisualButton(Button button)
         {
             if (button.transform as RectTransform == null) { return false; }
-            Image ownImage = button.GetComponent<Image>();
-            if (ownImage == null || ownImage.color.a > 0f) { return true; }
+            if (managedButtons.Contains(button)) { return true; }
+            if (button.transform.Find(BorderChildName) != null) { return true; }
 
-            // 2026-09-30: a FRAMED button's root Image is deliberately driven to zero alpha by
-            // ApplyThemeToButton (its visible fill is now baked directly into the border art
-            // itself, see ButtonBorder_Stage*.png) -- that's not the same "invisible full-screen
-            // tap-catcher" case this alpha check exists to exclude, and those never get a border
-            // child. Checking for the border child it already has from a prior successful pass is
-            // what lets a framed button keep getting re-themed on later stage changes instead of
-            // this check now permanently excluding it the moment its own alpha first reaches 0.
-            return button.transform.Find(BorderChildName) != null;
+            Image ownImage = button.GetComponent<Image>();
+            return ownImage == null || ownImage.color.a > 0f;
         }
 
         /// <summary>
@@ -209,11 +217,23 @@ namespace BrainDrain.UI
             return buttonRect.rect.height;
         }
 
-        /// <summary>Idempotent: finds the existing generated border child if this button already has one instead of duplicating it. Border-only -- see ApplyThemeToButton for the full border+fill+text application.</summary>
+        /// <summary>
+        /// Idempotent: finds the existing generated border child if this button already has one
+        /// instead of duplicating it. Border-only -- see ApplyThemeToButton for the full
+        /// border+fill+text application.
+        ///
+        /// 2026-09-30: deliberately does NOT call IsVisualButton -- doing so used to create a
+        /// chicken-and-egg deadlock for any button whose root Image alpha reaches 0 before its own
+        /// first border exists yet (see IsVisualButton's own comment for the confirmed live bug).
+        /// Safe to skip here: every caller already gates on IsVisualButton itself before ever
+        /// reaching this method (ApplyThemeToButton's own top-of-method check), or is a trusted
+        /// direct resolver for a known real button (RebirthUIController.ResolveBorderImage) --
+        /// this method was never the thing standing between a tap-catcher and a border.
+        /// </summary>
         public Image EnsureBorderOn(Button button)
         {
             RectTransform buttonRect = button.transform as RectTransform;
-            if (buttonRect == null || !IsVisualButton(button)) { return null; }
+            if (buttonRect == null) { return null; }
 
             // Small utility buttons (Dia-Log, WALLET, POCKET, RECOVER IQ, every close-X) have no
             // room for the sliced border's own fixed pixel margins -- those margins already
