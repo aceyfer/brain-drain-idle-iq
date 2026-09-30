@@ -249,6 +249,7 @@ namespace BrainDrain.UI
             CreateButton(contentObject.transform, "+500 POINTS", () => DebugCheats.AddPoints(500d));
             CreateButton(contentObject.transform, "MAX ALL BUILDINGS", DebugCheats.MaxAllBuildings);
             CreateButton(contentObject.transform, "FORCE REBIRTH", DebugCheats.ForceRebirth);
+            CreateButton(contentObject.transform, "DISMISS FTUE NUDGE ARROW", DebugCheats.DismissFtueNudge);
             CreateButton(contentObject.transform, "SET IQ TO 60", () => DebugCheats.SetPlayerIQ(60f));
 
             BuildWorldRestoreRow(contentObject.transform);

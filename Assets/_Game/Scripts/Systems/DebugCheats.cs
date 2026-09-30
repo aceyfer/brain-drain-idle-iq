@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using BrainDrain.Core;
+using BrainDrain.UI;
 
 namespace BrainDrain.Systems
 {
@@ -37,6 +38,19 @@ namespace BrainDrain.Systems
         public static void ForceRebirth()
         {
             RebirthManager.Instance?.TriggerRebirth();
+        }
+
+        /// <summary>
+        /// 2026-09-29: dismisses the FTUE "first affordable building" nudge arrow (UINudgePointer)
+        /// without needing to actually purchase the building it's pointing at -- added because the
+        /// arrow can visually park itself over/near a shop tab button and intercept taps meant for
+        /// it, blocking manual testing of anything behind it (e.g. switching to the God Shop tab).
+        /// Mirrors the class's own dismiss condition (Hide(), the same call HandleAnyBuildingPurchased
+        /// already makes on a real purchase) rather than inventing new nudge-pointer state.
+        /// </summary>
+        public static void DismissFtueNudge()
+        {
+            UINudgePointer.Instance?.Hide();
         }
 
         /// <summary>

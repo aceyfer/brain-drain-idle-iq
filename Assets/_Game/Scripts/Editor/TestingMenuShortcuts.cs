@@ -25,6 +25,9 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Force Rebirth")]
         private static void ForceRebirthMenuItem() => RequirePlayMode(DebugCheats.ForceRebirth);
 
+        [MenuItem("BrainDrain/Testing/Dismiss FTUE Nudge Arrow")]
+        private static void DismissFtueNudgeMenuItem() => RequirePlayMode(DebugCheats.DismissFtueNudge);
+
         [MenuItem("BrainDrain/Testing/Trigger Random Event")]
         private static void TriggerRandomEventMenuItem() => RequirePlayMode(DebugCheats.TriggerRandomEvent);
 
