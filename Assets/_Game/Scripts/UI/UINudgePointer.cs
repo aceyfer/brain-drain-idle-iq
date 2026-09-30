@@ -85,6 +85,7 @@ namespace BrainDrain.UI
         private Image image;
         private RectTransform currentTarget;
         private RectTransform currentClampArea;
+        private RectTransform currentClampBelowArea;
         private float bobPhase;
         private bool isShowing;
 
@@ -166,7 +167,16 @@ namespace BrainDrain.UI
         /// a target sitting near the top of a scroll view can push the arrow's offset+height
         /// footprint up into whatever sits above the scroll view (a tab bar, a close button).
         /// </param>
-        public void PointAt(RectTransform target, RectTransform clampToVisibleArea = null)
+        /// <param name="clampBelowArea">
+        /// Optional, independent of clampToVisibleArea. If set, the arrow is kept clear of this
+        /// area's BOTTOM edge instead of its top -- for something the arrow should never overlap
+        /// regardless of the scroll viewport's own bounds, e.g. the HUD's "BRAIN POWER" header
+        /// (2026-09-30: this object lives on the root Canvas, unclipped by any scroll view, so a
+        /// target near the top of a tall viewport could bob the arrow up into the header even
+        /// while clampToVisibleArea's own clamp was satisfied). Both clamps apply together; the
+        /// arrow respects whichever is more restrictive.
+        /// </param>
+        public void PointAt(RectTransform target, RectTransform clampToVisibleArea = null, RectTransform clampBelowArea = null)
         {
             if (target == null)
             {
@@ -175,6 +185,7 @@ namespace BrainDrain.UI
 
             currentTarget = target;
             currentClampArea = clampToVisibleArea;
+            currentClampBelowArea = clampBelowArea;
             bobPhase = 0f;
             SetVisible(true);
             RepositionOverTarget();
@@ -184,6 +195,7 @@ namespace BrainDrain.UI
         {
             currentTarget = null;
             currentClampArea = null;
+            currentClampBelowArea = null;
             SetVisible(false);
         }
 
@@ -250,15 +262,30 @@ namespace BrainDrain.UI
             float bob = Mathf.Sin(bobPhase * (Mathf.PI * 2f) / BobPeriodSeconds) * BobAmplitudePixels;
             float desiredY = localPoint.y + VerticalOffsetPixels + bob;
 
+            // selfRect's pivot is bottom-center (0.5, 0), so anchoredPosition.y is the arrow's
+            // TIP, not its visual top -- the top edge sits a further rect.height above that.
+            // Two independent clamps can both apply (see PointAt's doc comment); the arrow
+            // respects whichever produces the lower (more restrictive) ceiling.
+            bool hasCeiling = false;
+            float ceilingY = 0f;
+
             if (currentClampArea != null && TryGetLocalTopEdge(currentClampArea, parentRect, cam, out float clampTopY))
             {
-                // selfRect's pivot is bottom-center (0.5, 0), so anchoredPosition.y is the arrow's
-                // TIP, not its visual top -- the top edge sits a further rect.height above that.
-                float maxY = clampTopY - selfRect.rect.height - ClampTopPaddingPixels;
-                if (desiredY > maxY)
-                {
-                    desiredY = maxY;
-                }
+                float candidate = clampTopY - selfRect.rect.height - ClampTopPaddingPixels;
+                ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
+                hasCeiling = true;
+            }
+
+            if (currentClampBelowArea != null && TryGetLocalBottomEdge(currentClampBelowArea, parentRect, cam, out float clampBottomY))
+            {
+                float candidate = clampBottomY - selfRect.rect.height - ClampTopPaddingPixels;
+                ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
+                hasCeiling = true;
+            }
+
+            if (hasCeiling && desiredY > ceilingY)
+            {
+                desiredY = ceilingY;
             }
 
             selfRect.anchoredPosition = new Vector2(localPoint.x, desiredY);
@@ -292,6 +319,37 @@ namespace BrainDrain.UI
             }
 
             topY = maxY;
+            return any;
+        }
+
+        /// <summary>
+        /// Mirrors TryGetLocalTopEdge but finds the LOWEST Y among `area`'s four world corners --
+        /// used to keep the arrow's own top edge from rising above e.g. the HUD header's bottom
+        /// edge (so the arrow stays clear of, not just "above the top of," a fixed HUD element it
+        /// should never overlap at all).
+        /// </summary>
+        private static bool TryGetLocalBottomEdge(RectTransform area, RectTransform parentRect, Camera cam, out float bottomY)
+        {
+            area.GetWorldCorners(WorldCornersBuffer);
+            bool any = false;
+            float minY = float.PositiveInfinity;
+
+            for (int i = 0; i < 4; i++)
+            {
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, WorldCornersBuffer[i]);
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out Vector2 localPoint))
+                {
+                    continue;
+                }
+
+                any = true;
+                if (localPoint.y < minY)
+                {
+                    minY = localPoint.y;
+                }
+            }
+
+            bottomY = minY;
             return any;
         }
     }

@@ -10,6 +10,16 @@ namespace BrainDrain.UI
 {
     public sealed class HUDController : MonoBehaviour
     {
+
+        /// <summary>Scene lookup so other systems (e.g. UINudgePointer's clamp-below-the-header
+        /// use via UpgradeSlotUI) can find the live HUD without their own Inspector reference.</summary>
+        public static HUDController Instance => FindAnyObjectByType<HUDController>();
+
+        /// <summary>The "BRAIN POWER" counter's own RectTransform -- exposed so a UI element
+        /// elsewhere on the root Canvas (the FTUE nudge arrow) can clamp itself to stay below the
+        /// HUD header instead of overlapping it. Null before this HUD is wired up.</summary>
+        public RectTransform BrainPowerHeaderRect => brainPowerCounterText != null ? brainPowerCounterText.rectTransform : null;
+
         /// <summary>PlayerIQ interval between celebration beats (every 1000 points).</summary>
         private const float IQCelebrationMilestoneInterval = 1000f;
         private const float TextFlushIntervalSeconds = 0.1f;

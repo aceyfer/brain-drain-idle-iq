@@ -396,8 +396,14 @@ namespace BrainDrain.UI
                 ? (scrollRect.viewport != null ? scrollRect.viewport : scrollRect.GetComponent<RectTransform>())
                 : null;
 
+            // 2026-09-30: clampArea alone (the scroll viewport's own top edge) wasn't enough --
+            // this pointer lives on the root Canvas, unclipped by the viewport, so a target near
+            // the top of a tall list could still bob the arrow up into the HUD's "BRAIN POWER"
+            // header even while satisfied with the viewport clamp. Passing the header's own rect
+            // as a second, independent clamp (kept BELOW its bottom edge, not just above its top)
+            // stops the arrow from ever overlapping it regardless of where the target row sits.
             hasShownFirstAffordableNudge = true;
-            UINudgePointer.Instance?.PointAt(nudgeTarget, clampArea);
+            UINudgePointer.Instance?.PointAt(nudgeTarget, clampArea, HUDController.Instance?.BrainPowerHeaderRect);
         }
 
         private void ApplyAccent(Color stateColor, Color identityColor)
