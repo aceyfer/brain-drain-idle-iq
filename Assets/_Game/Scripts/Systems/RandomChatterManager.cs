@@ -67,19 +67,19 @@ namespace BrainDrain.Systems
         private List<string> tierOneLines = new List<string>
         {
             "My corndog fell out of my pocket again",
-            "Oh no, my iguana drank my Stupaid",
+            "Oh no, my iguana drank my StupAid",
             "I don't know what this is but I'm gonna sniff it",
             "Armadillo sauce goes with everything",
             "I've still got the last bag of discontinued Cheese Dirt and I'm not sharing a speck of it",
-            "I found a Stupaid under the couch and it was still good",
+            "I found a StupAid under the couch and it was still good",
             "They discontinued my favorite flavor, Cheese Dirt",
             "My left shoe has been making decisions for me",
-            "I traded my refrigerator for a bucket of Stupaid",
+            "I traded my refrigerator for a bucket of StupAid",
             "The label says do not drink but it don't say why",
             "I been eating the same corndog since Tuesday",
-            "Stupaid Zero still has the brain taste though",
-            "My cat only responds to the Stupaid jingle",
-            "I microwaved my Stupaid for forty minutes on accident",
+            "StupAid Zero still has the brain taste though",
+            "My cat only responds to the StupAid jingle",
+            "I microwaved my StupAid for forty minutes on accident",
             "They put something in the armadillo sauce and I want more of it",
         };
 
@@ -87,7 +87,7 @@ namespace BrainDrain.Systems
         [SerializeField]
         private List<string> tierTwoLines = new List<string>
         {
-            "The Illumisnotty put something in my Stupaid",
+            "The Illumisnotty put something in my StupAid",
             "They're hiding the good corn from us",
             "I saw a shadow man near my mailbox again",
             "My microwave is reporting my thoughts to someone",
@@ -98,7 +98,7 @@ namespace BrainDrain.Systems
             "I stopped sleeping and now I can see the grid",
             "They put the mind control in the store brand not the name brand",
             "My dreams have been sponsored by someone I never agreed to",
-            "The shadow people took my good Stupaid flavor",
+            "The shadow people took my good StupAid flavor",
             "I drew a map of their plan but then I ate it",
             "Every helicopter I see is looking specifically at me",
             "The Illumisnotty are scared of armadillo sauce and that's why it's rare",
@@ -108,20 +108,20 @@ namespace BrainDrain.Systems
         [SerializeField]
         private List<string> tierThreeLines = new List<string>
         {
-            "I don't know who's putting fluoride in the Stupaid but goddamn it works, I feel great",
+            "I don't know who's putting fluoride in the StupAid but goddamn it works, I feel great",
             "My corndog fell in the damn toilet and I had to think about it",
-            "The Illumisnotty can kiss my ass, I found the good Stupaid",
+            "The Illumisnotty can kiss my ass, I found the good StupAid",
             "What the hell is armadillo sauce and why does it taste like home",
-            "I accidentally drank my iguana's Stupaid and honestly it slapped",
+            "I accidentally drank my iguana's StupAid and honestly it slapped",
             "This bastard microwave keeps reporting my thoughts",
             "I don't know what I'm sniffing but I'll be damned if I stop",
             "The shadow man showed up again and I told him to get the hell out",
             "They discontinued Cheese Dirt flavor and I am so damn mad",
             "My left shoe told me to do something and I said hell no",
-            "I traded my fridge for Stupaid and I'd do it again no question",
+            "I traded my fridge for StupAid and I'd do it again no question",
             "The Illumisnotty are hiding the good corn and that's bull",
             "I been eating this corndog for four days, damn thing won't end",
-            "My cat only responds to profanity and the Stupaid jingle",
+            "My cat only responds to profanity and the StupAid jingle",
             "I drew their whole damn plan out and then I sat on it",
         };
 

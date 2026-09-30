@@ -79,15 +79,22 @@ namespace BrainDrain.UI
             }
         }
 
+        /// <summary>Fixed bubble width (matches TextLabel's own wrap width) and minimum height floor.</summary>
+        private const float MinBubbleWidth = 300f;
+        private const float MinBubbleHeight = 90f;
+
+        /// <summary>Matches TextLabel's own stretch inset in the prefab (sizeDelta -50,-50
+        /// relative to this rect) -- 25px padding per side, both axes.</summary>
+        private const float BubblePadding = 50f;
+
         /// <summary>
         /// Sets the label text, asserts the readability floor on the font, and scales the
         /// bubble's lifetime with reading length. Presentation state is code-owned (Bible
         /// §8): the prefab serialized floatDuration 2s and TMP auto-sizing down to 14pt --
         /// unreadable, and dialogue is this game's identity. Duration: max(4s, 2s + 0.06s
         /// per character), so a typical bark holds 5-7s. Also asserts a dark background chip
-        /// (0.06, 0.06, 0.1, 0.92), white label text, a 24pt font-size floor, and a 300x90
-        /// minimum rect so text stops wrapping inside a tiny chip -- the prefab shipped with
-        /// white-on-white text and an undersized rect, both unreadable in practice.
+        /// (0.06, 0.06, 0.1, 0.92), white label text, and a 24pt font-size floor -- the prefab
+        /// shipped with white-on-white text, both unreadable in practice.
         /// </summary>
         public void SetText(string text)
         {
@@ -112,11 +119,37 @@ namespace BrainDrain.UI
 
             if (rectTransform != null)
             {
-                rectTransform.sizeDelta = Vector2.Max(rectTransform.sizeDelta, new Vector2(300f, 90f));
+                rectTransform.sizeDelta = ComputeBubbleSize(text);
             }
 
             int chars = string.IsNullOrEmpty(text) ? 0 : text.Length;
             floatDuration = Mathf.Max(4f, 2f + chars * 0.06f);
+        }
+
+        /// <summary>
+        /// Grows the bubble to actually fit its text instead of only flooring to a fixed minimum
+        /// -- the old Vector2.Max(existing, (300,90)) never grew past that floor, so anything
+        /// longer than a couple short lines spilled straight out of the background (TMP's
+        /// overflowMode on TextLabel is Overflow, not Truncate/ScrollRect, so it never clips
+        /// itself). Width stays fixed at the floor (matches TextLabel's own wrap width); only
+        /// height grows to fit. Measured at fontSizeMax (28) rather than whatever auto-sizing
+        /// last resolved the label to, so the bubble is sized for the worst case (most vertical
+        /// space needed) and is never undersized once auto-sizing picks the actual render size.
+        /// </summary>
+        private Vector2 ComputeBubbleSize(string text)
+        {
+            float width = Mathf.Max(rectTransform.sizeDelta.x, MinBubbleWidth);
+
+            float preferredHeight = 0f;
+            if (textLabel != null && !string.IsNullOrEmpty(text))
+            {
+                float measuredFontSize = textLabel.fontSize;
+                textLabel.fontSize = textLabel.fontSizeMax;
+                preferredHeight = textLabel.GetPreferredValues(text, width - BubblePadding, 0f).y;
+                textLabel.fontSize = measuredFontSize;
+            }
+
+            return new Vector2(width, Mathf.Max(MinBubbleHeight, preferredHeight + BubblePadding));
         }
 
         private void Update()
@@ -152,16 +185,22 @@ namespace BrainDrain.UI
             }
         }
 
+        /// <summary>Extra breathing room kept between the bubble's own edge and the parent
+        /// container's edge, so a clamped bubble doesn't sit flush against the screen edge --
+        /// 2026-09-30, "cut off at the left edge" report: a zero-margin clamp reads as clipped
+        /// even when technically inside bounds.</summary>
+        private const float ScreenEdgeMarginPixels = 20f;
+
         /// <summary>
         /// Keeps the bubble's horizontal position fully inside its parent container (2026-09-17
         /// legibility pass): TrackPedestrian/Update previously copied the tracked pedestrian's
         /// raw anchoredPosition.x with no bound, so a bubble spawned on a pedestrian near either
         /// edge of the street (pedestrians walk from fully off-screen inward) could render
         /// partially or entirely outside the visible safe area -- unreadable no matter how good
-        /// the font/contrast is. Uses this bubble's own current rect width (already floored to
-        /// 300px by SetText) against the parent's width, so it degrades gracefully if the parent
-        /// is ever narrower than the bubble itself (clamps to center rather than producing a
-        /// negative range).
+        /// the font/contrast is. Uses this bubble's own current rect width (now dynamically sized
+        /// by SetText/ComputeBubbleSize, never just the 300px floor) against the parent's width,
+        /// so it degrades gracefully if the parent is ever narrower than the bubble itself
+        /// (clamps to center rather than producing a negative range).
         /// </summary>
         private float ClampXToParentBounds(float desiredX)
         {
@@ -172,7 +211,7 @@ namespace BrainDrain.UI
 
             float halfBubbleWidth = rectTransform.rect.width * 0.5f;
             float halfParentWidth = parentRect.rect.width * 0.5f;
-            float maxOffset = Mathf.Max(0f, halfParentWidth - halfBubbleWidth);
+            float maxOffset = Mathf.Max(0f, halfParentWidth - halfBubbleWidth - ScreenEdgeMarginPixels);
             return Mathf.Clamp(desiredX, -maxOffset, maxOffset);
         }
     }

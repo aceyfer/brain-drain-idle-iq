@@ -380,12 +380,6 @@ namespace BrainDrain.Systems
 
             BrainDrain.UI.ChatterBubble bubble = Instantiate(chatterBubblePrefab, containerRect);
             activeChatterBubble = bubble;
-            RectTransform bubbleRt = bubble.GetComponent<RectTransform>();
-            if (bubbleRt != null)
-            {
-                bubbleRt.localScale = Vector3.one;
-                bubble.TrackPedestrian(pedestrian, pedestrianHeight * 0.55f);
-            }
 
             string line = "brains...";
             if (RandomChatterManager.Instance != null)
@@ -394,7 +388,20 @@ namespace BrainDrain.Systems
                 line = RandomChatterManager.Instance.GetLineForRank(rankIndex);
             }
 
+            // SetText BEFORE TrackPedestrian (2026-09-30 fix): SetText is what grows the bubble's
+            // rect to fit its actual text (see ChatterBubble.ComputeBubbleSize); TrackPedestrian is
+            // what does the bubble's first clamp+position assignment. Calling them in the old order
+            // clamped the very first frame's position against the bubble's smaller pre-resize
+            // width, letting it sit closer to the screen edge than the (now correctly sized)
+            // bubble actually allows -- part of the "cut off at the left edge" report.
             bubble.SetText(line);
+
+            RectTransform bubbleRt = bubble.GetComponent<RectTransform>();
+            if (bubbleRt != null)
+            {
+                bubbleRt.localScale = Vector3.one;
+                bubble.TrackPedestrian(pedestrian, pedestrianHeight * 0.55f);
+            }
 
             // Recorded here, at the point of actual speech -- not inside GetLineForRank, which
             // could be called speculatively without a bubble ever displaying the result (§24b).
