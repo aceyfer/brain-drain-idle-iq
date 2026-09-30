@@ -16,10 +16,12 @@ namespace BrainDrain.UI
         // Visual-style-guide semantic palette. The card remains carbon; these colors communicate
         // identity/state through the rail and price instead of flooding the whole row.
         private static readonly Color CardColor = new Color32(0x11, 0x15, 0x1B, 0xF5);
-        // Lightened from the original (0x18, 0x20, 0x28) -- that value sat too close to
-        // CardColor (0x11, 0x15, 0x1B) to read as a distinct control once the rounded-rect
-        // sprite bug below is fixed; see 2026-09-16 button-polish pass.
-        private static readonly Color PurchaseSurfaceColor = new Color32(0x25, 0x30, 0x3C, 0xFF);
+        // 2026-09-29 color pass: retuned to the fixed neon palette's base fill (#1B0F2E), same as
+        // every other bordered button in the game -- supersedes the 2026-09-16 button-polish
+        // pass's blue-grey value (0x25, 0x30, 0x3C), which predates that palette. State colors
+        // (AffordableColor/TooExpensiveColor/identity rail below) are untouched -- this only
+        // changes the buy button's own constant base surface, not what signals afford/deny.
+        private static readonly Color PurchaseSurfaceColor = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
         private static readonly Color LockedColor = new Color32(0x59, 0x61, 0x6A, 0xFF);
         private static readonly Color LockedPriceColor = new Color32(0xF2, 0xF0, 0xE8, 0xFF);
         private static readonly Color AffordableColor = new Color32(0x75, 0xF0, 0x4C, 0xFF);
@@ -451,7 +453,15 @@ namespace BrainDrain.UI
 
                 if (buyButton.targetGraphic != null)
                 {
-                    buyButton.targetGraphic.color = PurchaseSurfaceColor;
+                    // White, not PurchaseSurfaceColor: Transition.ColorTint MULTIPLIES
+                    // targetGraphic.color by the active ColorBlock state color above every frame.
+                    // Setting both layers to the same non-white value self-multiplied the fill
+                    // (PurchaseSurfaceColor squared component-wise), crushing #1B0F2E toward
+                    // black -- invisible with the old lighter blue-grey constant, visible once
+                    // retuned to the neon palette's darker base. White is the multiplicative
+                    // identity, so the ColorBlock above (already correctly Lerp'd per state)
+                    // renders undistorted at every state instead.
+                    buyButton.targetGraphic.color = Color.white;
                 }
 
                 EnsureBuyButtonShape();
