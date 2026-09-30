@@ -111,9 +111,27 @@ namespace BrainDrain.UI
             ApplyThemeToButton(button, ActiveTheme);
         }
 
-        private void Start()
+        /// <summary>
+        /// 2026-09-30 fix: discovery moved here from Start(). RebirthUIController.Start() (and
+        /// potentially other button-owning controllers) independently zeroes its own root Image's
+        /// alpha as part of the baked-border-art fill design -- Start() order between different
+        /// scripts is NOT guaranteed, so if that happened to run before this class's own Start(),
+        /// DiscoverButtons would see an already-zero-alpha root Image with no border child yet
+        /// existing (nothing has themed it yet), IsVisualButton would return false, and the button
+        /// would be silently excluded from managedButtons forever -- no later rescan ever runs.
+        /// Confirmed live: RebirthTriggerButton dropped out entirely ("Bordered 56 buttons", was
+        /// 57). Moving the scan to Awake() closes the race at its root rather than patching
+        /// IsVisualButton's heuristic further -- ALL objects' Awake() calls finish before ANY
+        /// object's Start() begins, a stronger guarantee than execution-order tuning between two
+        /// specific scripts' Start() methods.
+        /// </summary>
+        private void Awake()
         {
             DiscoverButtons();
+        }
+
+        private void Start()
+        {
             SubscribeToRestorationEvents();
             ApplyThemeToAllManagedButtons(ActiveTheme);
         }
