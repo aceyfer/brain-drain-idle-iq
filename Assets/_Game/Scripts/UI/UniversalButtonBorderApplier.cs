@@ -151,7 +151,16 @@ namespace BrainDrain.UI
         {
             if (button.transform as RectTransform == null) { return false; }
             Image ownImage = button.GetComponent<Image>();
-            return ownImage == null || ownImage.color.a > 0f;
+            if (ownImage == null || ownImage.color.a > 0f) { return true; }
+
+            // 2026-09-30: a FRAMED button's root Image is deliberately driven to zero alpha by
+            // ApplyThemeToButton (its visible fill is now baked directly into the border art
+            // itself, see ButtonBorder_Stage*.png) -- that's not the same "invisible full-screen
+            // tap-catcher" case this alpha check exists to exclude, and those never get a border
+            // child. Checking for the border child it already has from a prior successful pass is
+            // what lets a framed button keep getting re-themed on later stage changes instead of
+            // this check now permanently excluding it the moment its own alpha first reaches 0.
+            return button.transform.Find(BorderChildName) != null;
         }
 
         /// <summary>
@@ -257,13 +266,36 @@ namespace BrainDrain.UI
                 border.sprite = theme.borderSprite;
             }
 
-            // Genre-convention fill (2026-09-29): every managed button, bordered or not (small
-            // utility buttons skip the border child above but still reach this point), gets the
-            // same dark base fill -- theme.overrideFillColor/fillColor/fillSprite are no longer
-            // consulted for fill. Only the border sprite above still varies per stage theme.
             Image ownImage = button.GetComponent<Image>();
-            if (ownImage != null)
+
+            if (border != null)
             {
+                // 2026-09-30: the visible fill is now baked directly into each stage's border art
+                // (the frame's own hollow interior is flood-filled with the base purple -- see
+                // ButtonBorder_Stage*.png) instead of drawn separately on the root Image or a
+                // generated child. Neither a plain flat fill nor a generated inset "pill" child
+                // could reliably match the frame's own hand-authored silhouette without poking
+                // past it at the corners (a blurry oval, in the pill child's case) -- baking the
+                // fill into the art itself sidesteps that geometry mismatch entirely. The root
+                // Image becomes a pure invisible click-catcher (raycastTarget untouched, so the
+                // tap area is unchanged) and targetGraphic retargets to the border so hover/press/
+                // disabled ColorTint still visibly drives something. See IsVisualButton's border-
+                // child fallback -- required so this alpha-0 root Image doesn't get mistaken for
+                // an invisible full-screen tap-catcher on a later re-theme.
+                if (ownImage != null)
+                {
+                    Color rootColor = ownImage.color;
+                    rootColor.a = 0f;
+                    ownImage.color = rootColor;
+                }
+
+                button.targetGraphic = border;
+            }
+            else if (ownImage != null)
+            {
+                // Small utility button below MinBorderableHeight -- no frame to bake a fill into,
+                // so the flat genre-convention fill (2026-09-29) stays directly on the root Image,
+                // unchanged from before this pass.
                 ownImage.color = BaseFillColor;
 
                 // Narrowly scoped, not a blanket clear: some managed buttons use their own Image

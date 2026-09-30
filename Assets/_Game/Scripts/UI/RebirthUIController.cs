@@ -63,12 +63,11 @@ namespace BrainDrain.UI
             ApplyTriggerButtonVisibility();
         }
 
-        // 2026-09-29 color pass: fill is always the same fixed base everywhere else in the game
-        // (UniversalButtonBorderApplier.BaseFillColor) -- THE SNOTTING is the one deliberate hero
-        // highlight, but that highlight now lives entirely in the LABEL (cyan + a pulse when
-        // ready), not the fill. Previously this button's own fill swapped grey/hot-pink; it no
-        // longer varies at all.
-        private static readonly Color BaseFillColor = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
+        // 2026-09-29/30 color pass: fill is baked directly into the border art now (see
+        // ApplyTriggerButtonVisibility), same as every other framed button -- THE SNOTTING is the
+        // one deliberate hero highlight, and that highlight lives entirely in the LABEL (cyan + a
+        // pulse when ready), not the fill. Previously this button's own fill swapped grey/hot-
+        // pink; it no longer varies -- or exists as a separate color at all -- on this component.
         private static readonly Color ReadyLabelColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
         private static readonly Color LockedLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
 
@@ -209,23 +208,21 @@ namespace BrainDrain.UI
                 btn.interactable = true;
             }
 
-            // 2026-09-29 color pass: fill is always the fixed base now, same as every other
-            // managed button -- locked/ready no longer swap the button's own fill, only its
-            // label (below) and, when ready, a pulse communicate state.
-            //
-            // sprite = null is required, not optional: this button's own baked Image sprite is
-            // the same non-white gradient texture as ConvertButton's old "Gradient" overlay
-            // (guid fdb2114c...) -- tinting it produced a muddy maroon/brown instead of a clean
-            // flat fill, since BaseFillColor was multiplying against that texture's own baked
-            // pixel hues. UniversalButtonBorderApplier now clears this generically too, but this
-            // controller re-asserts img.color independently on every visibility refresh (far more
-            // often than the applier's own pass), so it must clear sprite the same way or a later
-            // refresh would have nothing left to keep it cleared.
+            // 2026-09-30: the visible fill is now baked directly into the border art itself (see
+            // UniversalButtonBorderApplier / ButtonBorder_Stage*.png), same as every other framed
+            // button -- this button's own root Image is a pure invisible click-catcher.
+            // Previously this method re-opaqued the root Image to BaseFillColor on every
+            // visibility refresh (far more often than the shared applier's own pass), which is
+            // exactly why THE SNOTTING kept showing a plain opaque square instead of the frame's
+            // actual pill shape -- this controller no longer sets a visible fill color at all,
+            // only keeps alpha at 0. Hover/press feedback lives on the border Image now
+            // (UniversalButtonBorderApplier retargets targetGraphic to it), not here.
             Image img = rebirthTriggerButton.GetComponent<Image>();
             if (img != null)
             {
-                img.color = BaseFillColor;
-                img.sprite = null;
+                Color rootColor = img.color;
+                rootColor.a = 0f;
+                img.color = rootColor;
 
                 // FIXED 2026-08-30 (found via Codex Play Mode test + temp logging, see
                 // Assets/Plans/tutorial-direction-and-cogs-trust.md): this used to be
