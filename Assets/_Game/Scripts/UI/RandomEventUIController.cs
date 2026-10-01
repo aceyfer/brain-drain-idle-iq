@@ -33,6 +33,7 @@ namespace BrainDrain.UI
         private Vector2 fakeCloseButtonOriginalPosition;
         private bool fakeCloseHasDodged;
         private BrainRotEventData activeEventData;
+        private float lastCanvasWidth;
 
         private void Awake()
         {
@@ -208,7 +209,6 @@ namespace BrainDrain.UI
             }
 
             activeEventData = eventData;
-            ResetFakeCloseButton();
 
             if (titleText != null)
             {
@@ -226,6 +226,9 @@ namespace BrainDrain.UI
             }
 
             SetCanvasState(true);
+            ApplyPaletteStyle();
+            LayoutForPortrait();
+            ResetFakeCloseButton();
 
             if (eventPopupPanel != null)
             {
@@ -265,12 +268,98 @@ namespace BrainDrain.UI
 
         private void OnActionButtonClicked()
         {
-            if (RandomEventManager.Instance != null && activeEventData != null)
-            {
-                RandomEventManager.Instance.ApplyEventEffects(activeEventData);
-            }
-
+            // Close before effect callbacks: a subscriber exception must not leave the
+            // notice covering the game, and a second click must not grant the effect twice.
+            BrainRotEventData chosenEvent = activeEventData;
             ClosePopup();
+            if (RandomEventManager.Instance != null && chosenEvent != null)
+            {
+                RandomEventManager.Instance.ApplyEventEffects(chosenEvent);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (activeEventData == null || eventPopupPanel == null) return;
+            var parent = eventPopupPanel.transform.parent as RectTransform;
+            if (parent != null && !Mathf.Approximately(parent.rect.width, lastCanvasWidth))
+                LayoutForPortrait();
+        }
+
+        private void LayoutForPortrait()
+        {
+            if (eventPopupPanel == null) return;
+            var panel = eventPopupPanel.transform as RectTransform;
+            var canvasRect = panel != null ? panel.parent as RectTransform : null;
+            if (canvasRect == null) return;
+            Canvas.ForceUpdateCanvases();
+            lastCanvasWidth = canvasRect.rect.width;
+            float width = Mathf.Min(Mathf.Max(760f, lastCanvasWidth * 0.8f), lastCanvasWidth - 32f);
+            if (width <= 0f) return;
+
+            // The scene's 350x450 panel and 55-high action were desktop-sized. Measure
+            // each label at its readable size, then grow the panel instead of shrinking type.
+            float contentWidth = width - 80f; // 8-unit rim + 32-unit padding on both sides
+            float titleHeight = MeasureLabel(titleText, 40f, contentWidth - 88f, 64f);
+            float bodyHeight = MeasureLabel(descriptionText, 30f, contentWidth, 90f);
+            float actionHeight = MeasureLabel(actionButtonText, 30f, contentWidth - 32f, 96f) + 24f;
+            float height = 80f + titleHeight + 24f + bodyHeight + 32f + actionHeight + 48f;
+            panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
+            panel.pivot = new Vector2(0.5f, 0.5f);
+            panel.localScale = Vector3.one;
+            panel.sizeDelta = new Vector2(width, height);
+
+            if (titleText != null) PlaceTop(titleText.rectTransform, 32f, 32f, contentWidth - 88f, titleHeight);
+            if (descriptionText != null) PlaceTop(descriptionText.rectTransform, 32f, 56f + titleHeight, contentWidth, bodyHeight);
+            if (actionButton != null)
+            {
+                PlaceTop(actionButton.transform as RectTransform, 32f, 88f + titleHeight + bodyHeight, contentWidth, actionHeight);
+                actionButton.interactable = true;
+                if (actionButton.targetGraphic != null) actionButton.targetGraphic.raycastTarget = true;
+            }
+            if (actionButtonText != null)
+            {
+                RectTransform labelRect = actionButtonText.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(16f, 12f);
+                labelRect.offsetMax = new Vector2(-16f, -12f);
+                actionButtonText.alignment = TextAlignmentOptions.Center;
+            }
+            if (fakeCloseButtonRect != null)
+            {
+                fakeCloseButtonRect.anchorMin = fakeCloseButtonRect.anchorMax = Vector2.one;
+                fakeCloseButtonRect.pivot = Vector2.one;
+                fakeCloseButtonRect.sizeDelta = new Vector2(72f, 72f);
+                fakeCloseButtonOriginalPosition = new Vector2(-16f, -16f);
+                if (!fakeCloseHasDodged) fakeCloseButtonRect.anchoredPosition = fakeCloseButtonOriginalPosition;
+                fakeCloseButtonRect.SetAsLastSibling();
+            }
+            if (niceTryText != null)
+            {
+                MeasureLabel(niceTryText, 24f, contentWidth, 32f);
+                PlaceTop(niceTryText.rectTransform, 32f, height - 48f, contentWidth, 32f);
+            }
+        }
+
+        private static float MeasureLabel(TextMeshProUGUI label, float size, float width, float minHeight)
+        {
+            if (label == null) return minHeight;
+            label.enableAutoSizing = false;
+            label.fontSize = size;
+            label.fontSizeMin = label.fontSizeMax = size;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.raycastTarget = false;
+            return Mathf.Max(minHeight, Mathf.Ceil(label.GetPreferredValues(label.text, width, Mathf.Infinity).y));
+        }
+
+        private static void PlaceTop(RectTransform rect, float left, float top, float width, float height)
+        {
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(left, -top);
+            rect.sizeDelta = new Vector2(width, height);
         }
 
         private void ClosePopup()
