@@ -781,6 +781,52 @@ namespace BrainDrain.UI
             }
 
             EnsureRestorationBarClipped();
+            EnforceMinimumFontSizes();
+        }
+
+        /// <summary>
+        /// 2026-10-01 (item 8): HUD font sizes are otherwise entirely scene-baked -- neither
+        /// HUDNumericFormatter nor this controller's update methods ever touch fontSize/
+        /// fontSizeMin/fontSizeMax, they only set text content and color -- so a handful of
+        /// secondary/tertiary labels shipped with autosize floors well under the visual guide's
+        /// "nothing under 20, secondary labels >= 24, primary BP/cash numbers >= 36" rule. Fixed
+        /// here (no .unity scene write) rather than in the scene file, following the same
+        /// override-at-ApplyVisualStyle-time pattern as EnsureRestorationBarClipped above. Only
+        /// the labels found to actually violate the floor are touched -- brainPowerCounterText,
+        /// playerIQText, capacityText, and pointsText were already compliant in the scene and are
+        /// left at their authored values.
+        /// </summary>
+        private void EnforceMinimumFontSizes()
+        {
+            RaiseFontFloor(rankText, 24f, 26f);
+            RaiseFontFloor(illumisnottyTitleText, 24f, 26f);
+            RaiseFixedFontSize(cumulativeBrainPowerCounterText, 24f);
+            RaiseFixedFontSize(rebirthCountText, 24f);
+            RaiseFontFloor(bppsText, 24f, 26f);
+            RaiseFontFloor(restorationProgressText, 24f, 26f);
+
+            // cashText is a primary currency number per the visual guide ("primary numbers (BP,
+            // cash) >= 36") -- its scene autosize range (14-18, base 36) meant it could never
+            // actually render at 36 in practice.
+            RaiseFontFloor(cashText, 36f, 40f);
+        }
+
+        private static void RaiseFontFloor(TextMeshProUGUI label, float minFloor, float maxFloor)
+        {
+            if (label == null || !label.enableAutoSizing) { return; }
+            if (label.fontSizeMin < minFloor) { label.fontSizeMin = minFloor; }
+            if (label.fontSizeMax < maxFloor) { label.fontSizeMax = maxFloor; }
+        }
+
+        private static void RaiseFixedFontSize(TextMeshProUGUI label, float minSize)
+        {
+            if (label == null) { return; }
+            if (label.enableAutoSizing)
+            {
+                RaiseFontFloor(label, minSize, minSize);
+                return;
+            }
+            if (label.fontSize < minSize) { label.fontSize = minSize; }
         }
 
         /// <summary>
