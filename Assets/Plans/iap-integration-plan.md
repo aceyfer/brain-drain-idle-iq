@@ -191,7 +191,7 @@ Approve all nine launch rows and the five proposed IDs before they are created i
 
 ### DECISION REQUIRED — Prices and regional pricing
 
-Approve the base prices and region strategy in Play Console. There is a specific documentation conflict to resolve: the current Bad Words Pack asset and main tasklist say **$3.99**, while an older `TASKLIST_DETAILS.md` decision record says **$5.00**. The current asset also contains unusual `.50` price points for the 24- and 48-hour consumables; confirm the intended Play Console price options rather than assuming the display strings are valid store prices.
+Approve the base prices and region strategy in Play Console. The approved Bad Words Pack price is **$5.00**, consistent with the main tasklist and the `TASKLIST_DETAILS.md` decision record. Confirm the intended Play Console price options for all consumables rather than assuming the display strings are valid store prices.
 
 ### DECISION REQUIRED — Pre-IAP save migration
 
