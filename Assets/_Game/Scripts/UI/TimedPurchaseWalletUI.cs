@@ -499,7 +499,7 @@ namespace BrainDrain.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 22f;
             label.fontSizeMax = 28f;
-            label.enableWordWrapping = true;
+            label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
         }
 

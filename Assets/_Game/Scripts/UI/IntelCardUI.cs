@@ -129,7 +129,7 @@ namespace BrainDrain.UI
             label.fontSizeMin = Mathf.Max(22f, fontSize * 0.5f);
             label.fontSizeMax = fontSize;
             label.alignment = TextAlignmentOptions.TopLeft;
-            label.enableWordWrapping = true;
+            label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
 
             return label;

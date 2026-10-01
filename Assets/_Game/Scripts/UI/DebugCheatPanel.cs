@@ -409,7 +409,7 @@ namespace BrainDrain.UI
             label.color = Color.white;
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = 13f;
-            label.enableWordWrapping = true;
+            label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
 
             return label;

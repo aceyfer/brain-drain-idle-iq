@@ -77,7 +77,7 @@ namespace BrainDrain.EditorTools
 
         private static void RemoveDuplicateRandomEventManagers()
         {
-            RandomEventManager[] all = Object.FindObjectsByType<RandomEventManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            RandomEventManager[] all = Object.FindObjectsByType<RandomEventManager>(FindObjectsInactive.Include);
             if (all.Length <= 1)
             {
                 return;

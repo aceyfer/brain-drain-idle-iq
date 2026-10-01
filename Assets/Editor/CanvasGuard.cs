@@ -64,7 +64,7 @@ namespace BrainDrain.EditorTools
                 return;
             }
 
-            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
             bool revertedAny = false;
 
             foreach (Canvas canvas in canvases)

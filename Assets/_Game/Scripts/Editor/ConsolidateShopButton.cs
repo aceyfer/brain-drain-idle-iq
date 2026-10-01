@@ -109,7 +109,7 @@ namespace BrainDrain.EditorTools
             GameObject found = GameObject.Find(name);
             if (found != null) return found;
 
-            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
             {
                 if (go.name == name) return go;
             }
