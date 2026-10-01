@@ -164,6 +164,39 @@ namespace BrainDrain.Systems
 
             profanityUnlocked = PlayerPrefs.GetInt(ProfanityUnlockedPrefsKey, 0) == 1;
             profanityEnabled = PlayerPrefs.GetInt(ProfanityEnabledPrefsKey, 0) == 1;
+
+            NormalizeStaleLineCasing();
+        }
+
+        /// <summary>
+        /// 2026-09-30: tierOneLines/tierTwoLines/tierThreeLines are [SerializeField] -- this
+        /// component's live instance in SampleScene.unity carries its own serialized snapshot of
+        /// these lists from whenever the scene was last saved with this component present, and
+        /// that snapshot OVERRIDES the C# field initializer above on load (field initializers only
+        /// run for a fresh, never-serialized instance). The scene's snapshot predates the
+        /// "StupAid" casing fix (confirmed: SampleScene.unity still has "Stupaid" baked into its
+        /// own tierOneLines data), so the code-side fix alone would not have changed anything the
+        /// player actually sees at runtime. No .unity scene writes are permitted, so this
+        /// normalizes the casing on whatever data actually loaded instead -- code-only fix for a
+        /// scene-serialized data problem, run once here rather than an ongoing cost.
+        /// </summary>
+        private void NormalizeStaleLineCasing()
+        {
+            NormalizeStaleLineCasing(tierOneLines);
+            NormalizeStaleLineCasing(tierTwoLines);
+            NormalizeStaleLineCasing(tierThreeLines);
+        }
+
+        private static void NormalizeStaleLineCasing(List<string> lines)
+        {
+            if (lines == null) { return; }
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i] != null && lines[i].Contains("Stupaid"))
+                {
+                    lines[i] = lines[i].Replace("Stupaid", "StupAid");
+                }
+            }
         }
 
         private void OnApplicationQuit()

@@ -105,6 +105,25 @@ namespace BrainDrain.UI
                 textLabel.fontSizeMin = 24f;
                 textLabel.fontSizeMax = 28f;
                 textLabel.color = Color.white;
+
+                // 2026-09-30 fix: explicit combined alignment (Center = horizontal Center +
+                // vertical Middle in one enum) overrides whatever ambiguous legacy
+                // m_textAlignment the prefab shipped with (serialized as 65535, not a valid
+                // single TextAlignmentOptions value -- likely why text rendered top-anchored
+                // instead of centered, eating into the bottom padding budget).
+                textLabel.alignment = TextAlignmentOptions.Center;
+
+                // Force a perfectly symmetric inset on all 4 sides via anchors/offsets directly,
+                // rather than trusting the prefab's own sizeDelta/anchoredPosition (which carried
+                // a +5 Y anchoredPosition bias -- "pivot/anchor offsets push the text down" per
+                // the reported bug). BubblePadding is the same constant ComputeBubbleSize uses
+                // for the outer bubble's height budget, so the two stay in lockstep.
+                RectTransform labelRect = textLabel.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                float halfPadding = BubblePadding * 0.5f;
+                labelRect.offsetMin = new Vector2(halfPadding, halfPadding);
+                labelRect.offsetMax = new Vector2(-halfPadding, -halfPadding);
             }
 
             if (backgroundImage != null)
