@@ -16,6 +16,8 @@ Brain Drain: Idle IQ — a satirical idle-clicker Unity game (AdVenture Capitali
 
 This is a Unity project opened/built through the Unity Editor, not a CLI-driven codebase — there is no command-line build/lint/test workflow set up. Changes to scene/prefab/asset wiring (`.unity`, `.prefab`, `.asset` YAML files) generally need to be made or verified inside the Unity Editor; hand-editing the YAML is error-prone for anything beyond tuning serialized numeric fields (see "Editing ScriptableObject data" below). C# script changes under `Assets/_Game/Scripts` can be edited directly.
 
+Never swap, stash, or restore working-tree files to isolate a commit. For mixed files use `git add -p`, or stop and ask Aceyfer. One change per commit; stage by file name only; no scene writes; don't push until verified.
+
 ## Architecture
 
 All gameplay code lives under `Assets/_Game/Scripts`, split into `BrainDrain.Core` (simulation/state) and `BrainDrain.UI` (presentation). Everything is wired together through Unity Inspector references and runtime `FindAnyObjectByType` fallbacks rather than dependency injection — when adding a new system, follow the existing pattern of a serialized field that falls back to `GameManager.Instance` lookups.
