@@ -439,14 +439,30 @@ namespace BrainDrain.UI
                     Vector4 insets = theme.labelHoleInsets;
                     labelRect.anchorMin = new Vector2(insets.x, insets.y);
                     labelRect.anchorMax = new Vector2(1f - insets.z, 1f - insets.w);
+
+                    // 2026-10-01 (B2): two-line labels (CONVERT/$23, THE/SNOTTING,
+                    // RESTORE/-500 PTS) were shrinking to near-illegible sizes -- the measured
+                    // hole insets leave barely enough vertical room for ONE line at the 18pt
+                    // autosize floor, let alone two. Expand the vertical span by 20%, centered
+                    // on the hole's own midpoint (so it eats evenly into the inner rim above and
+                    // below rather than drifting off-center), clamped to [0,1] so it can never
+                    // cross the outer frame edge.
+                    float verticalCenter = (labelRect.anchorMin.y + labelRect.anchorMax.y) * 0.5f;
+                    float expandedHalfSpan = (labelRect.anchorMax.y - labelRect.anchorMin.y) * 0.5f * 1.2f;
+                    labelRect.anchorMin = new Vector2(labelRect.anchorMin.x, Mathf.Clamp01(verticalCenter - expandedHalfSpan));
+                    labelRect.anchorMax = new Vector2(labelRect.anchorMax.x, Mathf.Clamp01(verticalCenter + expandedHalfSpan));
+
                     labelRect.offsetMin = Vector2.zero;
                     labelRect.offsetMax = Vector2.zero;
 
                     label.alignment = TextAlignmentOptions.Center;
+                    // Tightens two stacked lines together instead of leaving TMP's default line
+                    // gap to eat into the same vertical budget the expansion above just won.
+                    label.lineSpacing = -20f;
 
                     float previousMax = label.enableAutoSizing ? label.fontSizeMax : label.fontSize;
                     label.enableAutoSizing = true;
-                    label.fontSizeMin = 18f;
+                    label.fontSizeMin = 22f;
                     label.fontSizeMax = previousMax;
                 }
             }

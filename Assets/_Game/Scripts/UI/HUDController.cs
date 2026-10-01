@@ -800,7 +800,14 @@ namespace BrainDrain.UI
             RaiseFontFloor(illumisnottyTitleText, 24f, 26f);
             RaiseFixedFontSize(cumulativeBrainPowerCounterText, 24f);
             RaiseFixedFontSize(rebirthCountText, 24f);
-            RaiseFontFloor(bppsText, 24f, 26f);
+            // 2026-10-01 (B1): was RaiseFontFloor, a no-op here -- bppsText.enableAutoSizing is
+            // scene-baked false (fixed m_fontSize: 18), so RaiseFontFloor's own autosize guard
+            // bailed out immediately every time, silently leaving the font untouched. Its
+            // HorizontalLayoutGroup parent (ChildControlWidth/Height + ChildForceExpandWidth/
+            // Height all 1) already reserves a generous, non-content-driven half-row slot, so no
+            // LayoutElement/sizeDelta widening is needed -- confirmed by reading the scene's own
+            // layout group settings, not assumed.
+            RaiseFixedFontSize(bppsText, 24f);
             RaiseFontFloor(restorationProgressText, 24f, 26f);
 
             // cashText is a primary currency number per the visual guide ("primary numbers (BP,
