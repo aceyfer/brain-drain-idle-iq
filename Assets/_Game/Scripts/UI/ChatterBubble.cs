@@ -88,6 +88,31 @@ namespace BrainDrain.UI
         private const float BubblePadding = 50f;
 
         /// <summary>
+        /// 2026-10-01: root cause of "last line still touches the bottom edge" surviving the
+        /// symmetric-offset fix in 6d458d2 -- that fix inset TextLabel symmetrically from the
+        /// BUBBLE ROOT's rect, which was already correct, but Background (the visible shape) is
+        /// Image.Type.Sliced using Speechbubble_0001.png, whose import border is asymmetric:
+        /// {left: 84, bottom: 112, right: 112, top: 84} texture px (see the sprite's own .meta).
+        /// Direct pixel analysis of that texture (256x256) shows WHY: the top-84 border is almost
+        /// entirely the solid rounded body (opaque data starts ~row 24 of 84, i.e. ~20px of
+        /// genuinely empty margin), while the bottom-112 border is roughly HALF solid body and
+        /// half a tapering tail/pointer shape (opaque pixel count collapses from ~230 to ~20
+        /// around row 198 of that 112px span) -- a chat-bubble pointer baked into the art, not a
+        /// defect in the sprite itself. A flat symmetric RectTransform inset has no awareness of
+        /// this, so the same 25px looked fine against the top's mostly-solid border but nowhere
+        /// near enough against the bottom's tail-eaten one.
+        /// Converted to this project's actual UI-pixel space (sprite pixelsPerUnit 128, Canvas
+        /// reference pixelsPerUnit 100, per Image's own border-scaling formula
+        /// texturePx / (spritePPU / canvasRefPPU)): top border = 84 / 1.28 = 65.6px on screen,
+        /// bottom border = 112 / 1.28 = 87.5px -- a 21.9px raw size difference before even
+        /// accounting for the extra tail-taper space inside the bottom border. This constant
+        /// closes that gap (plus a small safety margin for the taper) by adding extra inset on
+        /// the bottom only, leaving the top's existing halfPadding alone. No live Editor session
+        /// was available to visually tune this further -- flagged for Play-test confirmation.
+        /// </summary>
+        private const float BubbleBottomExtraInset = 24f;
+
+        /// <summary>
         /// Sets the label text, asserts the readability floor on the font, and scales the
         /// bubble's lifetime with reading length. Presentation state is code-owned (Bible
         /// §8): the prefab serialized floatDuration 2s and TMP auto-sizing down to 14pt --
@@ -122,7 +147,10 @@ namespace BrainDrain.UI
                 labelRect.anchorMin = Vector2.zero;
                 labelRect.anchorMax = Vector2.one;
                 float halfPadding = BubblePadding * 0.5f;
-                labelRect.offsetMin = new Vector2(halfPadding, halfPadding);
+                // Bottom gets extra inset to offset Background's sliced sprite tail -- see
+                // BubbleBottomExtraInset's doc comment. Top is untouched (already clears its own,
+                // much smaller, border dead-zone with the plain halfPadding).
+                labelRect.offsetMin = new Vector2(halfPadding, halfPadding + BubbleBottomExtraInset);
                 labelRect.offsetMax = new Vector2(-halfPadding, -halfPadding);
             }
 
@@ -168,7 +196,10 @@ namespace BrainDrain.UI
                 textLabel.fontSize = measuredFontSize;
             }
 
-            return new Vector2(width, Mathf.Max(MinBubbleHeight, preferredHeight + BubblePadding));
+            // + BubbleBottomExtraInset: the outer rect's height budget must grow by the same
+            // amount the bottom inset grew, or the extra inset just eats into the text's
+            // available height instead of the bubble actually growing to clear the tail.
+            return new Vector2(width, Mathf.Max(MinBubbleHeight, preferredHeight + BubblePadding + BubbleBottomExtraInset));
         }
 
         private void Update()
