@@ -273,8 +273,8 @@ namespace BrainDrain.UI
                     // BP figure, and a "$" in front of a BP number is misleading regardless of
                     // the item's own costType. $ formatting is reserved for an actual Cash price
                     // on an unlocked, purchasable row (see below).
-                    costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP REQUIRED";
-                    costText.fontSize = 30f; // unified with the unlocked-state cost text below (was 24 vs 26 -- same field, two sizes)
+                    costText.text = $"{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP\nREQUIRED";
+                    ConfigureCostTypography(true);
                 }
                 // The global stage theme gives BuyButton a saturated fill. Keep the locked rail
                 // ash, but use bone white for the requirement so it remains readable over that
@@ -292,11 +292,11 @@ namespace BrainDrain.UI
             if (costText != null)
             {
                 costText.text = !pastPurchaseGate
-                    ? $"REACH {NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP"
+                    ? $"REACH\n{NumberFormatter.Format(boundData.unlockCumulativeBrainPower)} BP"
                     : isCash
                         ? $"${NumberFormatter.Format(cost)}"
                         : $"{NumberFormatter.Format(cost)} BP";
-                costText.fontSize = 30f; // unified with the locked-state cost text above (was 24 vs 26 -- same field, two sizes)
+                ConfigureCostTypography(!pastPurchaseGate);
             }
 
             Color identityColor = isCash ? CashIdentityColor : BrainPowerIdentityColor;
@@ -304,6 +304,16 @@ namespace BrainDrain.UI
 
             // Keep interactable so the player can attempt purchase; manager silently rejects if unaffordable.
             if (buyButton != null) buyButton.interactable = true;
+        }
+
+        private void ConfigureCostTypography(bool requirement)
+        {
+            costText.enableAutoSizing = true;
+            costText.fontSizeMin = 18f;
+            costText.fontSizeMax = requirement ? 24f : 30f;
+            costText.fontSize = costText.fontSizeMax;
+            costText.textWrappingMode = requirement ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+            costText.alignment = TextAlignmentOptions.Center;
         }
 
         private void OnDestroy()
