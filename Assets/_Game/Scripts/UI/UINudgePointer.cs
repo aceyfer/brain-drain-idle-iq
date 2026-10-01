@@ -7,7 +7,7 @@ namespace BrainDrain.UI
     /// <summary>
     /// Generic "look here" pointer overlay -- Assets/Plans/tutorial-direction-and-cogs-trust.md's
     /// Option B, procedural-art route (B.1): a single reusable arrow that can be aimed at any
-    /// RectTransform in the scene, bobbing gently just above it until dismissed. Deliberately
+    /// RectTransform in the scene, bobbing gently to its left until dismissed. Deliberately
     /// singular and general-purpose (PointAt(target) / Hide()) rather than a bespoke pointer per
     /// feature -- the first caller is UpgradeSlotUI's first-affordable-building nudge, but nothing
     /// about this class is specific to the shop.
@@ -30,8 +30,8 @@ namespace BrainDrain.UI
         private const float BobAmplitudePixels = 10f;
         private const float BobPeriodSeconds = 1.1f;
 
-        /// <summary>How far above the target's top edge the arrow's tip hovers, before the bob offset is added.</summary>
-        private const float VerticalOffsetPixels = 56f;
+        /// <summary>How far left of the target edge the arrow's tip hovers, before the bob offset is added.</summary>
+        private const float HorizontalGapPixels = 56f;
 
         /// <summary>
         /// Extra breathing room kept between the arrow's own visual top edge and a
@@ -157,10 +157,10 @@ namespace BrainDrain.UI
         }
 
         /// <summary>
-        /// Aims the pointer at `target` and shows it, bobbing above it until Hide() is called or
+        /// Aims the pointer at `target` and shows it, bobbing to its left until Hide() is called or
         /// any building purchase fires.
         /// </summary>
-        /// <param name="target">The RectTransform to hover above.</param>
+        /// <param name="target">The RectTransform to point toward.</param>
         /// <param name="clampToVisibleArea">
         /// Optional. If set, the arrow's vertical position is clamped so its own visual top edge
         /// never rises above this area's top edge (e.g. a ScrollRect's viewport) -- without this,
@@ -204,7 +204,8 @@ namespace BrainDrain.UI
             isShowing = visible;
             if (image != null)
             {
-                image.enabled = visible;
+                image.enabled = visible && !NudgeModalScope.AnyOpen
+                    && currentTarget != null && currentTarget.gameObject.activeInHierarchy;
             }
         }
 
@@ -215,22 +216,18 @@ namespace BrainDrain.UI
                 return;
             }
 
-            // activeSelf (not activeInHierarchy) deliberately -- 2026-08-31 testing found the
-            // nudge can legitimately fire while the shop panel itself is closed (RefreshState
-            // runs continuously in the background, the same way UpdateAffordablePulse already
-            // does, regardless of whether the player has the shop open). In that case every
-            // ancestor up to the closed panel is inactive, so activeInHierarchy was false on the
-            // very next frame and this hid the arrow permanently before the player ever got to
-            // see it. activeSelf only reflects the row's OWN toggle, so a row that's genuinely
-            // gone (recycled/removed by the shop's own pooling) still correctly hides the pointer,
-            // while a row that's merely inside a currently-closed panel does not. The target's
-            // RectTransform layout stays valid to query while inactive, so this keeps repositioning
-            // correctly the moment the player opens the shop.
+            // Keep the pending target, but never draw over its hidden/stale screen position.
+            // The first-affordable nudge targets a shop buy column, not POCKET; rendering
+            // its inactive row's coordinates was what put it over the right-side HUD.
             if (currentTarget == null || !currentTarget.gameObject.activeSelf)
             {
                 Hide();
                 return;
             }
+
+            bool canRender = currentTarget.gameObject.activeInHierarchy && !NudgeModalScope.AnyOpen;
+            if (image != null) image.enabled = canRender;
+            if (!canRender) return;
 
             bobPhase += Time.unscaledDeltaTime;
             RepositionOverTarget();
@@ -252,7 +249,8 @@ namespace BrainDrain.UI
                 cam = canvas.worldCamera;
             }
 
-            Vector3 worldTop = currentTarget.TransformPoint(new Vector3(0f, currentTarget.rect.yMax, 0f));
+            // Point right from the left edge, keeping the arrow's body outside the target.
+            Vector3 worldTop = currentTarget.TransformPoint(new Vector3(currentTarget.rect.xMin, currentTarget.rect.center.y, 0f));
             Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, worldTop);
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out Vector2 localPoint))
             {
@@ -260,10 +258,11 @@ namespace BrainDrain.UI
             }
 
             float bob = Mathf.Sin(bobPhase * (Mathf.PI * 2f) / BobPeriodSeconds) * BobAmplitudePixels;
-            float desiredY = localPoint.y + VerticalOffsetPixels + bob;
+            float desiredY = localPoint.y;
+            selfRect.localRotation = Quaternion.Euler(0f, 0f, 90f);
 
-            // selfRect's pivot is bottom-center (0.5, 0), so anchoredPosition.y is the arrow's
-            // TIP, not its visual top -- the top edge sits a further rect.height above that.
+            // Rotating the bottom-center tip 90 degrees makes half the original width
+            // the vertical extent above/below the tip.
             // Two independent clamps can both apply (see PointAt's doc comment); the arrow
             // respects whichever produces the lower (more restrictive) ceiling.
             bool hasCeiling = false;
@@ -271,7 +270,7 @@ namespace BrainDrain.UI
 
             if (currentClampArea != null && TryGetLocalTopEdge(currentClampArea, parentRect, cam, out float clampTopY))
             {
-                float candidate = clampTopY - selfRect.rect.height - ClampTopPaddingPixels;
+                float candidate = clampTopY - selfRect.rect.width * 0.5f - ClampTopPaddingPixels;
                 ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
                 hasCeiling = true;
             }
@@ -286,7 +285,7 @@ namespace BrainDrain.UI
 
                 if (TryGetLocalBottomEdge(currentClampBelowArea, parentRect, cam, out float clampBottomY))
                 {
-                    float candidate = clampBottomY - selfRect.rect.height - ClampTopPaddingPixels;
+                    float candidate = clampBottomY - selfRect.rect.width * 0.5f - ClampTopPaddingPixels;
                     ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
                     hasCeiling = true;
                 }
@@ -297,7 +296,7 @@ namespace BrainDrain.UI
                 desiredY = ceilingY;
             }
 
-            selfRect.anchoredPosition = new Vector2(localPoint.x, desiredY);
+            selfRect.anchoredPosition = new Vector2(localPoint.x - HorizontalGapPixels - bob, desiredY);
         }
 
         /// <summary>

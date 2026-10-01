@@ -198,6 +198,7 @@ namespace BrainDrain.UI
             }
 
             shopPanel.SetActive(true);
+            NudgeModalScope.SetOpen(shopPanel, true);
             if (shopRoot != null)
             {
                 shopRoot.SetActive(true);

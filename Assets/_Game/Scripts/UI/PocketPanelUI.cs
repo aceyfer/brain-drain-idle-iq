@@ -407,6 +407,7 @@ namespace BrainDrain.UI
         private void SetPanelHidden(bool hidden)
         {
             if (panelGroup == null) return;
+            NudgeModalScope.SetOpen(panelGroup.gameObject, !hidden);
             panelGroup.alpha = hidden ? 0f : 1f;
             panelGroup.blocksRaycasts = !hidden;
             panelGroup.interactable = !hidden;

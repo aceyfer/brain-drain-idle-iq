@@ -50,6 +50,7 @@ namespace BrainDrain.UI
             bool isCogs = skin == IntelCardSkin.COGSTerminal;
 
             GameObject overlayObject = new GameObject("IntelCardUI_Overlay", typeof(RectTransform));
+            NudgeModalScope.SetOpen(overlayObject, true);
             Canvas canvas = overlayObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = OverlaySortingOrder;
