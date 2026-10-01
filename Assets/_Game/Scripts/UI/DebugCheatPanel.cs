@@ -92,8 +92,15 @@ namespace BrainDrain.UI
             RectTransform canvasRect = hud.PlayerIQText.canvas != null ? hud.PlayerIQText.canvas.transform as RectTransform : null;
             BuildPanel(canvasRect);
 
-            bool wasOpen = EditorPrefs.GetBool(PanelOpenEditorPrefsKey, false);
-            SetPanelVisible(wasOpen);
+            // 2026-09-30 (item 5): always start closed -- this used to restore whatever open/
+            // closed state was last persisted via EditorPrefs, which meant leaving the panel open
+            // once (e.g. to verify a fix) made it default OPEN on every subsequent Play session
+            // from then on, confirmed live. DeleteKey is one-time cleanup for the stale value
+            // already sitting in this machine's EditorPrefs from before this fix; harmless no-op
+            // once it's gone. SetPanelVisible no longer persists to EditorPrefs at all (see its
+            // own comment) since nothing reads that value back anymore.
+            EditorPrefs.DeleteKey(PanelOpenEditorPrefsKey);
+            SetPanelVisible(false);
         }
 
         private void HookTripleTap(TextMeshProUGUI text)
@@ -140,8 +147,9 @@ namespace BrainDrain.UI
                 return;
             }
 
+            // 2026-09-30: no longer persists to EditorPrefs -- the panel always starts closed
+            // now (see Start()), so there's nothing left that reads this value back.
             panelObject.SetActive(visible);
-            EditorPrefs.SetBool(PanelOpenEditorPrefsKey, visible);
         }
 
         /// <summary>
