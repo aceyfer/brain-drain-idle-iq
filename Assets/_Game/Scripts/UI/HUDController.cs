@@ -48,6 +48,12 @@ namespace BrainDrain.UI
         private static readonly Color SecondaryColor = new Color32(155, 168, 181, 255);
         private static readonly Color LockedColor = new Color32(89, 97, 106, 190);
 
+        /// <summary>2026-09-30 (item 6): the restoration bar's glow uses the strict palette lime
+        /// (#39FF14) rather than RestorationColor (#75F04C, a different green used for text/fill
+        /// elsewhere) -- ground rule 6 reserves #39FF14 specifically for this "positive/gain"
+        /// role.</summary>
+        private static readonly Color RestorationGlowColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
+
         [Header("UI Text Fields")]
         [SerializeField] private TextMeshProUGUI capacityText;
         [FormerlySerializedAs("iqText")]
@@ -665,8 +671,12 @@ namespace BrainDrain.UI
                 if (restorationGlowImage != null)
                 {
                     restorationGlowImage.fillAmount = fraction;
-                    Color glowColor = restorationFillImage.color;
-                    glowColor.a = Mathf.Lerp(0.35f, 0.85f, fraction);
+                    // 2026-09-30: palette lime (RestorationGlowColor), capped at <=40% alpha per
+                    // ground rule 6 -- was lerping up to 0.85 (near-opaque) using the fill's own
+                    // color, which is why a fully-grown glow read as a solid blob rather than a
+                    // soft "restoring" glow.
+                    Color glowColor = RestorationGlowColor;
+                    glowColor.a = Mathf.Lerp(0.15f, 0.4f, fraction);
                     restorationGlowImage.color = glowColor;
                 }
 
@@ -760,7 +770,7 @@ namespace BrainDrain.UI
 
             if (restorationGlowImage != null)
             {
-                Color glowColor = RestorationColor;
+                Color glowColor = RestorationGlowColor;
                 glowColor.a = 0.35f;
                 restorationGlowImage.color = glowColor;
             }
@@ -768,6 +778,35 @@ namespace BrainDrain.UI
             if (restorationPlungerImage != null)
             {
                 restorationPlungerImage.color = RestorationColor;
+            }
+
+            EnsureRestorationBarClipped();
+        }
+
+        /// <summary>
+        /// 2026-09-30 (item 6): "green blob over the restoration bar at Stage 5" -- traced live:
+        /// restorationGlowImage is unwired in the current scene (RestorationBarGlow, the object
+        /// RestorationBarWireFix.cs would build, does not exist there either), so the actual
+        /// on-screen culprit is restorationFillImage itself. Its parent (RestorationBarTrack) has
+        /// no RectMask2D, so nothing stops a Type.Filled Image's own rect from rendering outside
+        /// the track's visual bounds if its geometry doesn't match exactly -- at high fill
+        /// fraction (Stage 5) with alpha lerped up to 1.0 (UpdateRestorationProgressText), a fully
+        /// opaque bright-green rect poking past the track reads as a smudge/blob rather than a
+        /// clean bar edge. Adding a RectMask2D to the track clips the fill (and restorationGlowImage
+        /// or the plunger, if either is ever added as a sibling child) to the track's own rect,
+        /// guaranteed, regardless of the fill Image's own sprite/geometry. Idempotent -- checked
+        /// every ApplyVisualStyle() call, safe to call repeatedly.
+        /// </summary>
+        private void EnsureRestorationBarClipped()
+        {
+            if (restorationFillImage == null) { return; }
+
+            Transform track = restorationFillImage.transform.parent;
+            if (track == null) { return; }
+
+            if (track.GetComponent<RectMask2D>() == null)
+            {
+                track.gameObject.AddComponent<RectMask2D>();
             }
         }
 
