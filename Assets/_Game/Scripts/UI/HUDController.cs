@@ -800,14 +800,22 @@ namespace BrainDrain.UI
             RaiseFontFloor(illumisnottyTitleText, 24f, 26f);
             RaiseFixedFontSize(cumulativeBrainPowerCounterText, 24f);
             RaiseFixedFontSize(rebirthCountText, 24f);
-            // 2026-10-01 (B1): was RaiseFontFloor, a no-op here -- bppsText.enableAutoSizing is
-            // scene-baked false (fixed m_fontSize: 18), so RaiseFontFloor's own autosize guard
-            // bailed out immediately every time, silently leaving the font untouched. Its
-            // HorizontalLayoutGroup parent (ChildControlWidth/Height + ChildForceExpandWidth/
-            // Height all 1) already reserves a generous, non-content-driven half-row slot, so no
-            // LayoutElement/sizeDelta widening is needed -- confirmed by reading the scene's own
-            // layout group settings, not assumed.
-            RaiseFixedFontSize(bppsText, 24f);
+            // BPPS used a different font and a 24pt floor beside the IQ label's 34pt bold
+            // type. Match the IQ typography, not merely the minimum readability threshold.
+            // Both share the header's scale; the BPPS row is 42 units high (IQ is 40).
+            if (bppsText != null && playerIQText != null)
+            {
+                bppsText.font = playerIQText.font;
+                bppsText.fontStyle = playerIQText.fontStyle;
+                bppsText.enableAutoSizing = false;
+                bppsText.fontSize = Mathf.Max(24f, playerIQText.enableAutoSizing
+                    ? playerIQText.fontSizeMax : playerIQText.fontSize);
+                bppsText.textWrappingMode = TextWrappingModes.NoWrap;
+            }
+            else
+            {
+                RaiseFixedFontSize(bppsText, 34f);
+            }
             RaiseFontFloor(restorationProgressText, 24f, 26f);
 
             // cashText is a primary currency number per the visual guide ("primary numbers (BP,
