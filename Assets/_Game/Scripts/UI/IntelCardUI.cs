@@ -11,7 +11,7 @@ namespace BrainDrain.UI
         /// <summary>Illumisnotty propaganda terminal: near-black background, terminal green text. Capped at exactly 2 uses total (FTUEManager owns the cap).</summary>
         COGSTerminal,
 
-        /// <summary>THE LITERATES resistance dead-drop card: aged-paper background, dark text, italic body. The default channel for every other FTUE beat.</summary>
+        /// <summary>THE LITERATES resistance dead-drop card: aged-paper background and dark ink. The default channel for every other FTUE beat.</summary>
         LiteratesCard
     }
 
@@ -37,6 +37,7 @@ namespace BrainDrain.UI
         private static readonly Color CardBackdropColor = new Color(0f, 0f, 0f, 0.7f);
         private static readonly Color CardPaperColor = new Color(0.90f, 0.85f, 0.72f, 1f);
         private static readonly Color CardTextColor = new Color(0.18f, 0.14f, 0.08f, 1f);
+        private static readonly Color CardBodyInk = new Color32(0x1B, 0x0F, 0x2E, 217);
         private static readonly Color CardConfirmFillColor = new Color(0.18f, 0.14f, 0.08f, 0.14f);
 
         /// <summary>
@@ -103,8 +104,10 @@ namespace BrainDrain.UI
             TextMeshProUGUI header = CreateText(cardObject.transform, headerText, 40f, textColor, FontStyles.Bold);
             header.gameObject.AddComponent<LayoutElement>().preferredHeight = 160f;
 
-            TextMeshProUGUI body = CreateText(cardObject.transform, bodyText, 30f, textColor,
-                isCogs ? FontStyles.Normal : FontStyles.Italic);
+            // Signatures are part of the supplied body string, not separate elements.
+            // Preserve that copy; use normal dark ink on paper and bright terminal text on dark.
+            TextMeshProUGUI body = CreateText(cardObject.transform, bodyText, 30f,
+                isCogs ? CogsTextColor : CardBodyInk, FontStyles.Normal);
             body.gameObject.AddComponent<LayoutElement>().flexibleHeight = 1f;
 
             Button confirmButton = CreateConfirmButton(cardObject.transform, confirmText,
