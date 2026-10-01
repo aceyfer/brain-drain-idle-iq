@@ -57,6 +57,84 @@ namespace BrainDrain.UI
 
             // Initialize canvas state to false on startup (inactive/click-through)
             SetCanvasState(false);
+
+            ApplyPaletteStyle();
+        }
+
+        /// <summary>
+        /// 2026-09-30 polish pass: the popup shipped with off-palette scene-baked colors --
+        /// AdwareEventPopup (the outer object, == eventPopupPanel) carried a cyan fill acting as
+        /// a border, its inset child PopupInnerBody carried a magenta fill as the actual panel,
+        /// the title was green and bold, and the body was black and ITALIC -- unreadable against
+        /// the magenta panel, confirmed directly in the scene data (m_fontColor {0,0,0,1},
+        /// m_fontStyle 2 == Italic). No .unity scene writes are permitted, so this asserts the
+        /// palette once here instead -- code-owns-presentation (Bible §8), same convention as
+        /// ChatterBubble.SetText. Applied once at Awake() rather than per-event, since nothing
+        /// here varies per BrainRotEventData asset -- every event shares this one style pass.
+        /// </summary>
+        private void ApplyPaletteStyle()
+        {
+            Color baseFill = new Color32(0x1B, 0x0F, 0x2E, 242); // ~95% alpha (242/255)
+            Color magenta = new Color32(0xFF, 0x14, 0x93, 0xFF);
+            Color cyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
+
+            if (eventPopupPanel != null)
+            {
+                // eventPopupPanel (AdwareEventPopup) is the OUTER object -- its own Image becomes
+                // the alert-colored border/frame, since this event popup is inherently an alert.
+                Image borderImage = eventPopupPanel.GetComponent<Image>();
+                if (borderImage != null)
+                {
+                    borderImage.color = magenta;
+                }
+
+                // PopupInnerBody is the 8px-inset child that carries the actual panel fill.
+                Transform innerBody = eventPopupPanel.transform.Find("PopupInnerBody");
+                Image panelFillImage = innerBody != null ? innerBody.GetComponent<Image>() : null;
+                if (panelFillImage != null)
+                {
+                    panelFillImage.color = baseFill;
+                }
+            }
+
+            if (titleText != null)
+            {
+                titleText.color = cyan;
+                titleText.fontStyle = FontStyles.Bold;
+            }
+
+            if (descriptionText != null)
+            {
+                descriptionText.color = Color.white;
+                descriptionText.fontStyle = FontStyles.Normal; // clears the scene-baked Italic flag
+
+                // Body must read at least 60% of the title's size -- both labels auto-size, so
+                // enforce the ratio on both ends of their range rather than a single fontSize
+                // snapshot. Mathf.Max so this only ever raises the floor, never shrinks an
+                // already-larger authored value.
+                if (titleText != null)
+                {
+                    descriptionText.fontSizeMin = Mathf.Max(descriptionText.fontSizeMin, titleText.fontSizeMin * 0.6f);
+                    descriptionText.fontSizeMax = Mathf.Max(descriptionText.fontSizeMax, titleText.fontSizeMax * 0.6f);
+                }
+            }
+
+            if (actionButtonText != null)
+            {
+                actionButtonText.color = cyan;
+            }
+
+            if (fakeCloseButton != null)
+            {
+                // The "X" glyph is a TMP child under FakeCloseButton, not a serialized field of
+                // its own -- resolved by component search rather than a new Inspector reference,
+                // since adding one would need a scene write to wire it.
+                TextMeshProUGUI glyph = fakeCloseButton.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (glyph != null)
+                {
+                    glyph.color = Color.white;
+                }
+            }
         }
 
         private void SetCanvasState(bool active)
