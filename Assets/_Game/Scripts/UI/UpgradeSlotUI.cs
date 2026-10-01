@@ -78,6 +78,14 @@ namespace BrainDrain.UI
         private bool isPulsing;
 
         /// <summary>Binds this slot to a building template and wires the buy button.</summary>
+        /// <summary>2026-09-30 (item 7): fixed buy-button width at the 1080x1920 reference
+        /// resolution, matching the widest this button was already observed rendering at (a live
+        /// size audit earlier this project found BP-tab buy buttons at 491px, the widest of the
+        /// two tabs sharing this prefab -- Cash-tab rows ran narrower at 451px before this fix).
+        /// Using the larger value for both keeps BP rows unchanged and only widens Cash rows to
+        /// match, rather than risking a squeeze on the wider tab.</summary>
+        private const float BuyButtonWidth = 491f;
+
         public void Bind(BuildingData data, UpgradeManager manager)
         {
             boundData = data;
@@ -89,6 +97,25 @@ namespace BrainDrain.UI
                 buyButton.onClick.RemoveListener(HandleBuyClicked);
                 buyButton.onClick.AddListener(HandleBuyClicked);
                 buyButtonImage = buyButton.targetGraphic as UnityEngine.UI.Image;
+
+                UnityEngine.UI.LayoutElement buyButtonLayout = buyButton.GetComponent<UnityEngine.UI.LayoutElement>();
+                if (buyButtonLayout == null) { buyButtonLayout = buyButton.gameObject.AddComponent<UnityEngine.UI.LayoutElement>(); }
+                buyButtonLayout.minWidth = BuyButtonWidth;
+                buyButtonLayout.preferredWidth = BuyButtonWidth;
+            }
+
+            if (costText != null)
+            {
+                // 2026-09-30 (item 7): no-wrap + autosize floor 18, centered, so price/requirement
+                // text always fits the now-fixed-width button instead of wrapping to two lines.
+                costText.alignment = TextAlignmentOptions.Center;
+                costText.enableWordWrapping = false;
+                costText.enableAutoSizing = true;
+                costText.fontSizeMin = 18f;
+                // Ceiling matches the original fixed fontSize (30, set below per-state) so short
+                // strings don't autosize LARGER than this row's established typography -- only
+                // long "X BP REQUIRED"-style strings shrink to fit the now fixed-width button.
+                costText.fontSizeMax = 30f;
             }
         }
 

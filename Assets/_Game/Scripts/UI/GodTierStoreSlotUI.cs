@@ -23,6 +23,15 @@ namespace BrainDrain.UI
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
         private static readonly Color UnavailableColor = new Color32(0x80, 0x80, 0x80, 0xFF);
 
+        /// <summary>2026-09-30 (item 7): fixed buy-button width at the 1080x1920 reference
+        /// resolution, matching the widest this button was already observed rendering at
+        /// (a live size audit earlier this project found God Shop buy buttons varying 180-240px
+        /// wide, inversely tied to each row's description length -- the row's own
+        /// HorizontalLayoutGroup was letting the description's preferred width squeeze this
+        /// button). Fixing both min and preferred width stops that squeeze regardless of
+        /// description length.</summary>
+        private const float BuyButtonWidth = 240f;
+
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;
@@ -79,6 +88,20 @@ namespace BrainDrain.UI
             {
                 priceText.alignment = TextAlignmentOptions.Center;
                 priceText.margin = new Vector4(16f, 4f, 16f, 4f);
+
+                // 2026-09-30 (item 7): no-wrap + autosize floor 18 so price text always fits the
+                // now-fixed-width button instead of wrapping to two lines or going illegibly small.
+                priceText.enableWordWrapping = false;
+                priceText.enableAutoSizing = true;
+                priceText.fontSizeMin = 18f;
+            }
+
+            if (buyButton != null)
+            {
+                LayoutElement buyButtonLayout = buyButton.GetComponent<LayoutElement>();
+                if (buyButtonLayout == null) { buyButtonLayout = buyButton.gameObject.AddComponent<LayoutElement>(); }
+                buyButtonLayout.minWidth = BuyButtonWidth;
+                buyButtonLayout.preferredWidth = BuyButtonWidth;
             }
 
             // Touching .Instance here is fine (self-bootstraps if needed) -- GodTierStoreManager's
