@@ -225,7 +225,7 @@ namespace BrainDrain.UI
             button.targetGraphic = image;
             button.onClick.AddListener(ToggleOpen);
 
-            CreateStretchedLabel(buttonObject.transform, "WALLET", Color.white, 26f, 14f, FontStyles.Bold);
+            CreateStretchedLabel(buttonObject.transform, "WALLET", Color.white, 26f, 20f, FontStyles.Bold);
 
             // Built inside Start(), same as UniversalButtonBorderApplier's own scan -- a
             // same-frame race with no ordering guarantee, so this button was never in
@@ -374,7 +374,7 @@ namespace BrainDrain.UI
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 30f;
             text.enableAutoSizing = true;
-            text.fontSizeMin = 18f;
+            text.fontSizeMin = 22f;
             text.fontSizeMax = 30f;
             text.raycastTarget = false;
 
@@ -497,7 +497,7 @@ namespace BrainDrain.UI
             label.alignment = TextAlignmentOptions.Left;
             label.fontSize = 28f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 16f;
+            label.fontSizeMin = 22f;
             label.fontSizeMax = 28f;
             label.enableWordWrapping = true;
             label.raycastTarget = false;

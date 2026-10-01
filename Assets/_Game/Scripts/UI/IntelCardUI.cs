@@ -80,6 +80,11 @@ namespace BrainDrain.UI
             cardRect.pivot = new Vector2(0.5f, 0.5f);
             cardRect.sizeDelta = new Vector2(880f, 1200f);
             cardRect.anchoredPosition = Vector2.zero;
+            // Give the larger body floor more line width without changing modal coverage.
+            LayoutElement cardSize = cardObject.AddComponent<LayoutElement>();
+            cardSize.preferredWidth = 940f;
+            ContentSizeFitter cardFitter = cardObject.AddComponent<ContentSizeFitter>();
+            cardFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             Image cardImage = cardObject.AddComponent<Image>();
             cardImage.color = isCogs ? CogsCardColor : CardPaperColor;
 
@@ -121,7 +126,7 @@ namespace BrainDrain.UI
             label.fontStyle = style;
             label.fontSize = fontSize;
             label.enableAutoSizing = true;
-            label.fontSizeMin = fontSize * 0.5f;
+            label.fontSizeMin = Mathf.Max(22f, fontSize * 0.5f);
             label.fontSizeMax = fontSize;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.enableWordWrapping = true;
@@ -156,7 +161,7 @@ namespace BrainDrain.UI
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 28f;
             text.enableAutoSizing = true;
-            text.fontSizeMin = 16f;
+            text.fontSizeMin = 20f;
             text.fontSizeMax = 28f;
             text.raycastTarget = false;
 

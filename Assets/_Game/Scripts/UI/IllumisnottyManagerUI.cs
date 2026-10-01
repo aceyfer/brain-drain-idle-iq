@@ -80,6 +80,10 @@ namespace BrainDrain.UI
             rt.anchorMax = new Vector2(0f, 1f);
             rt.pivot = new Vector2(0f, 1f);
             rt.sizeDelta = new Vector2(340f, 100f);
+            LayoutElement badgeSize = badgeGo.AddComponent<LayoutElement>();
+            badgeSize.preferredWidth = 400f;
+            ContentSizeFitter badgeFitter = badgeGo.AddComponent<ContentSizeFitter>();
+            badgeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             rt.anchoredPosition = new Vector2(30f, -220f); // Positioned nicely below the CurrencyHeader to prevent overlap
 
             // Add background Image
@@ -154,7 +158,7 @@ namespace BrainDrain.UI
             badgeText.color = HexColor("#FF1493"); // Hot pink
             badgeText.alignment = TextAlignmentOptions.Left;
             badgeText.enableAutoSizing = true;
-            badgeText.fontSizeMin = 14f;
+            badgeText.fontSizeMin = 20f;
             badgeText.fontSizeMax = 22f;
             badgeText.raycastTarget = false;
 

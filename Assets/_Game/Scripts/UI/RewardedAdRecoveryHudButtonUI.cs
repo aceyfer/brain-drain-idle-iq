@@ -198,7 +198,7 @@ namespace BrainDrain.UI
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = 24f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 12f;
+            label.fontSizeMin = 20f;
             label.fontSizeMax = 24f;
             label.enableWordWrapping = true;
             label.raycastTarget = false;
