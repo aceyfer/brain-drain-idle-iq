@@ -196,10 +196,13 @@ namespace BrainDrain.UI
             label.color = Color.white;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.Center;
-            label.fontSize = 24f;
+            // All four side buttons copy LogOpenButton's 140x50 rect. Give this
+            // two-line label its own compact range rather than a 20pt hard floor.
+            label.fontSize = 20f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 20f;
-            label.fontSizeMax = 24f;
+            label.fontSizeMin = 16f;
+            label.fontSizeMax = 20f;
+            label.lineSpacing = -20f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
 
@@ -235,7 +238,7 @@ namespace BrainDrain.UI
 
             if (visible && label != null)
             {
-                label.text = $"RECOVER IQ  {manager.AdsWatchedThisEvent}/{manager.MaxAdsForEvent}";
+                label.text = $"RECOVER IQ\n{manager.AdsWatchedThisEvent}/{manager.MaxAdsForEvent}";
             }
         }
     }
