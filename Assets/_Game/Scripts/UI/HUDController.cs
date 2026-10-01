@@ -48,12 +48,6 @@ namespace BrainDrain.UI
         private static readonly Color SecondaryColor = new Color32(155, 168, 181, 255);
         private static readonly Color LockedColor = new Color32(89, 97, 106, 190);
 
-        /// <summary>2026-09-30 (item 6): the restoration bar's glow uses the strict palette lime
-        /// (#39FF14) rather than RestorationColor (#75F04C, a different green used for text/fill
-        /// elsewhere) -- ground rule 6 reserves #39FF14 specifically for this "positive/gain"
-        /// role.</summary>
-        private static readonly Color RestorationGlowColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
-
         [Header("UI Text Fields")]
         [SerializeField] private TextMeshProUGUI capacityText;
         [FormerlySerializedAs("iqText")]
@@ -86,6 +80,35 @@ namespace BrainDrain.UI
         [SerializeField] private Image restorationPlungerImage;
         [Tooltip("Non-uniform X scale applied to the plunger so its ellipse matches the 3/4-angle vessel's tube-opening ellipse. Tune live in the Inspector; reapplied on every InitializeHUD.")]
         [SerializeField] private float plungerEllipseScaleX = 0.35f;
+
+        // 2026-10-01 restoration-bar redesign ("paint bucket" method) -- built/reused entirely at
+        // runtime by BuildRestorationBar, never Inspector-serialized, so adding these fields is
+        // not a scene write. See BuildRestorationBar's doc comment for the Step-0 root-cause
+        // diagnosis (restorationFillImage's old built-in-UISprite sprite, not anything a mask
+        // could clip away) and what the bar's fraction actually measures.
+        private Image restorationTrackImage;
+        private Image restorationFrameOverlayImage;
+        private RectTransform restorationSheenMaskRect;
+        private Image restorationSheenImage;
+        private RectTransform restorationSproutRect;
+        private Image restorationSproutImage;
+        private bool restorationBarBuilt;
+        private float restorationDisplayedFraction;
+        private float restorationTargetFraction;
+        private float nextRestorationSheenTime;
+        private bool restorationSheenActive;
+        private float restorationSheenStartTime;
+        private float restorationFlashStartTime = -1f;
+
+        private const float RestorationFillGlideRate = 1.5f; // fraction/sec, Mathf.MoveTowards
+        private const float RestorationFlashDuration = 0.15f;
+        private const float RestorationSheenInterval = 4f;
+        private const float RestorationSheenSweepDuration = 0.8f;
+        private const float RestorationSproutBobAmplitude = 2f;
+        private const float RestorationSproutBobPeriod = 2f;
+
+        private static readonly Color RestorationLime = new Color32(0x39, 0xFF, 0x14, 0xFF);
+        private static readonly Color RestorationFlashColor = new Color32(0x80, 0xF4, 0xFF, 0xFF);
 
         [Header("High-IQ Celebration")]
         [Tooltip("Optional. CanvasGroup on the root HUD canvas, pulsed during the celebration beat.")]
@@ -305,8 +328,12 @@ namespace BrainDrain.UI
                 worldRestoration.OnRestorationProgressChanged += UpdateRestorationProgressText;
                 worldRestoration.OnRestorationStageChanged -= HandleStageChangedForRank;
                 worldRestoration.OnRestorationStageChanged += HandleStageChangedForRank;
-                worldRestoration.OnRestorationStageChanged -= HandleRestorationMilestone;
-                worldRestoration.OnRestorationStageChanged += HandleRestorationMilestone;
+                // 2026-10-01: HandleRestorationMilestone's plunger/vessel "surge to full, jolt,
+                // settle" animation is retired along with the rest of the old vessel-era bar --
+                // it drove restorationFillImage.fillAmount/color directly via DOTween, which would
+                // fight TickRestorationBarAnimation's own per-frame MoveTowards smoothing. Left
+                // unsubscribed rather than deleted (method body + ComputePlungerTargetX untouched)
+                // in case a future pass wants a stage-crossing beat on the new bar.
                 worldRestoration.OnRestorationStageChanged -= HandleRestorationStageChangedForLabel;
                 worldRestoration.OnRestorationStageChanged += HandleRestorationStageChangedForLabel;
             }
@@ -326,6 +353,10 @@ namespace BrainDrain.UI
 
         private void LateUpdate()
         {
+            // Unconditional, every frame -- the restoration bar's glide/sheen/sprout/flash need
+            // real per-frame granularity, unlike the throttled numeric-text flush below.
+            TickRestorationBarAnimation();
+
             if (!HasDirtyNumericText())
             {
                 return;
@@ -664,37 +695,17 @@ namespace BrainDrain.UI
 
             if (restorationFillImage != null)
             {
+                // 2026-10-01: no longer touches fillAmount/color directly -- TickRestorationBarAnimation
+                // owns the actual glide toward this target every frame (Mathf.MoveTowards). This
+                // only records the new target and triggers the fixed-color gain flash on increase.
                 float fraction = worldRestoration != null ? worldRestoration.StageProgressFraction : 0f;
-                float previousFraction = restorationFillImage.fillAmount;
-                restorationFillImage.fillAmount = fraction;
 
-                if (restorationGlowImage != null)
+                if (fraction > restorationTargetFraction)
                 {
-                    restorationGlowImage.fillAmount = fraction;
-                    // 2026-09-30: palette lime (RestorationGlowColor), capped at <=40% alpha per
-                    // ground rule 6 -- was lerping up to 0.85 (near-opaque) using the fill's own
-                    // color, which is why a fully-grown glow read as a solid blob rather than a
-                    // soft "restoring" glow.
-                    Color glowColor = RestorationGlowColor;
-                    glowColor.a = Mathf.Lerp(0.15f, 0.4f, fraction);
-                    restorationGlowImage.color = glowColor;
+                    restorationFlashStartTime = Time.unscaledTime;
                 }
 
-                // Glow scales with fill level -- plain alpha lerp, same technique as
-                // AnimationController.AffordablePulseRoutine's color.a = Mathf.Lerp(...). No shader.
-                Color fillColor = restorationFillImage.color;
-                fillColor.a = Mathf.Lerp(0.75f, 1f, fraction);
-                restorationFillImage.color = fillColor;
-
-                if (restorationPlungerImage != null)
-                {
-                    AnimationController.PlayPlungerMove(restorationPlungerImage.rectTransform, ComputePlungerTargetX(fraction));
-                }
-
-                if (fraction > previousFraction && previousFraction > 0f)
-                {
-                    AnimationController.PlayRestorationGainPulse(restorationFillImage, restorationGlowImage, restorationPlungerImage != null ? restorationPlungerImage.rectTransform : null);
-                }
+                restorationTargetFraction = fraction;
             }
 
             RefreshRestorationProgressLabel(cumulativePointsSpent);
@@ -763,24 +774,11 @@ namespace BrainDrain.UI
             SetTextColor(pointsText, RestorationColor);
             SetTextColor(restorationProgressText, BoneWhite);
 
-            if (restorationFillImage != null)
-            {
-                restorationFillImage.color = RestorationColor;
-            }
-
-            if (restorationGlowImage != null)
-            {
-                Color glowColor = RestorationGlowColor;
-                glowColor.a = 0.35f;
-                restorationGlowImage.color = glowColor;
-            }
-
-            if (restorationPlungerImage != null)
-            {
-                restorationPlungerImage.color = RestorationColor;
-            }
-
-            EnsureRestorationBarClipped();
+            // 2026-10-01: the old direct fill/glow/plunger color assignments here are retired
+            // along with the rest of the vessel-era bar -- BuildRestorationBar owns all of the
+            // new bar's one-time setup (sprites, child layers, colors), and internally calls
+            // EnsureRestorationBarClipped itself.
+            BuildRestorationBar();
             EnforceMinimumFontSizes();
         }
 
@@ -827,6 +825,276 @@ namespace BrainDrain.UI
                 return;
             }
             if (label.fontSize < minSize) { label.fontSize = minSize; }
+        }
+
+        /// <summary>
+        /// 2026-10-01 restoration-bar redesign ("paint bucket" method, Aceyfer's explicit spec).
+        ///
+        /// STEP 0 ROOT CAUSE: restorationFillImage's scene-authored sprite was Unity's built-in
+        /// "UISprite" (fileID 10905, guid 0000000000000000f000000000000000 -- confirmed by
+        /// reading the live scene YAML directly) under Image.Type.Filled. That sprite carries
+        /// 9-slice border metadata meant for Simple/Sliced buttons; a bordered sprite's Filled
+        /// mesh generator can leave a soft sliver of its own border/corner geometry visible
+        /// regardless of fillAmount -- exactly the "spills past its edges, even at 0 points"
+        /// symptom, and a sprite-shape defect rendering INSIDE the track's own rect, which is
+        /// why EnsureRestorationBarClipped's RectMask2D (commit c8a30eb, kept below) never
+        /// changed what actually rendered. Compounding it: the Track GameObject's own background
+        /// Image was scene-authored disabled (m_Enabled: 0), so there was no crisp rectangular
+        /// frame to visually contain the fill -- it read as a free-floating blob rather than a
+        /// bar. restorationGlowImage/restorationPlungerImage are both already unwired in the live
+        /// scene (fileID: 0 on HUDController's own serialized fields) and play no part in this;
+        /// both are defensively disabled below anyway in case a future wiring pass reintroduces
+        /// either.
+        ///
+        /// STEP 0, what the bar measures: fillAmount tracks WorldRestorationManager.
+        /// StageProgressFraction -- PER-STAGE progress (0-1 within the current World Restoration
+        /// stage segment: (cumulativePointsSpent - currentStage.pointsRequired) / (nextStage.
+        /// pointsRequired - currentStage.pointsRequired)). This is a DIFFERENT number from
+        /// restorationProgressText's "(NN.N%)", which is RestorationPercent -- TOTAL cumulative
+        /// progress toward the FINAL stage's threshold. The bar resets to empty every time a new
+        /// stage begins; the percent in the text keeps climbing toward 100 exactly once, at the
+        /// very end.
+        ///
+        /// FIX: restorationFillImage's sprite is replaced with a purpose-built capsule Fill
+        /// sprite (Assets/Resources/UI/RestorationBar/RestorationBar_Fill.png, see
+        /// RestorationBarArtGenerator) that is pixel-identical to the matching Frame sprite's
+        /// hole BY CONSTRUCTION -- flood-filled from the frame texture itself, not re-derived from
+        /// a separate formula -- so it is geometrically incapable of drawing outside the frame's
+        /// own hole shape. Layers, in sibling order under the Track: Fill (reused
+        /// restorationFillImage, untouched RectTransform) / Sheen (RectMask2D'd to the live fill
+        /// width) / FrameOverlay (FrameOutlineOnly redraws the rim on top, transparent center) /
+        /// Sprout (last, rides the leading edge, drawn above everything). Built/reused here
+        /// entirely at runtime via Resources.Load -- no .unity write, no new Inspector fields.
+        /// Idempotent (Transform.Find before creating), safe to call repeatedly from
+        /// ApplyVisualStyle.
+        /// </summary>
+        private void BuildRestorationBar()
+        {
+            if (restorationFillImage == null) { return; }
+
+            Transform track = restorationFillImage.transform.parent;
+            if (track == null) { return; }
+
+            Sprite frameSprite = Resources.Load<Sprite>("UI/RestorationBar/RestorationBar_Frame");
+            Sprite frameOutlineSprite = Resources.Load<Sprite>("UI/RestorationBar/RestorationBar_FrameOutlineOnly");
+            Sprite fillSprite = Resources.Load<Sprite>("UI/RestorationBar/RestorationBar_Fill");
+            Sprite sheenSprite = Resources.Load<Sprite>("UI/RestorationBar/RestorationBar_Sheen");
+            Sprite sproutSprite = Resources.Load<Sprite>("UI/RestorationBar/RestorationBar_Sprout");
+
+            if (frameSprite == null || frameOutlineSprite == null || fillSprite == null)
+            {
+                Debug.LogWarning("[HUDController] Restoration bar art missing from Resources/UI/RestorationBar -- run BrainDrain > Tools > Generate Restoration Bar Art.");
+                return;
+            }
+
+            RectTransform trackRect = track.GetComponent<RectTransform>();
+            LayoutElement trackLayout = track.GetComponent<LayoutElement>();
+            // trackRect.rect.height can read 0 before the first layout pass settles (same
+            // zero-size-on-first-frame gotcha as UpgradeSlotUI's header clamp) -- the serialized
+            // LayoutElement.preferredHeight is available immediately and doesn't depend on a live
+            // layout rebuild, so prefer it whenever it's actually set.
+            float barHeight = trackLayout != null && trackLayout.preferredHeight > 0f
+                ? trackLayout.preferredHeight
+                : Mathf.Max(1f, trackRect != null ? trackRect.rect.height : 96f);
+
+            // Reuse the scene's existing (previously disabled, spriteless) track Image as Frame.
+            restorationTrackImage = track.GetComponent<Image>();
+            if (restorationTrackImage != null)
+            {
+                restorationTrackImage.enabled = true;
+                restorationTrackImage.sprite = frameSprite;
+                restorationTrackImage.type = Image.Type.Simple;
+                restorationTrackImage.preserveAspect = false;
+                restorationTrackImage.color = Color.white; // art is pre-colored; no tint
+                restorationTrackImage.raycastTarget = false;
+            }
+
+            // Fill reuses the existing restorationFillImage GameObject/RectTransform as-is -- only
+            // its sprite/type/color change here. fillAmount itself is driven every frame by
+            // TickRestorationBarAnimation, never set directly in this one-time setup.
+            restorationFillImage.sprite = fillSprite;
+            restorationFillImage.type = Image.Type.Filled;
+            restorationFillImage.fillMethod = Image.FillMethod.Horizontal;
+            restorationFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+            restorationFillImage.fillClockwise = true;
+            restorationFillImage.preserveAspect = false;
+            restorationFillImage.color = RestorationLime;
+            restorationFillImage.raycastTarget = false;
+            restorationDisplayedFraction = restorationFillImage.fillAmount;
+            restorationTargetFraction = restorationDisplayedFraction;
+
+            // Sheen: a RectMask2D'd child whose width is kept equal to the live fill width every
+            // frame (TickRestorationBarAnimation), with a small sweeping highlight Image inside
+            // it so the sweep can never show past the real fill edge.
+            Transform sheenMaskTransform = track.Find("RestorationSheenMask");
+            GameObject sheenMaskObject = sheenMaskTransform != null
+                ? sheenMaskTransform.gameObject
+                : new GameObject("RestorationSheenMask", typeof(RectTransform));
+            sheenMaskObject.transform.SetParent(track, false);
+            restorationSheenMaskRect = sheenMaskObject.GetComponent<RectTransform>();
+            restorationSheenMaskRect.anchorMin = new Vector2(0f, 0f);
+            restorationSheenMaskRect.anchorMax = new Vector2(0f, 1f);
+            restorationSheenMaskRect.pivot = new Vector2(0f, 0.5f);
+            restorationSheenMaskRect.anchoredPosition = Vector2.zero;
+            restorationSheenMaskRect.sizeDelta = new Vector2(0f, 0f);
+            if (sheenMaskObject.GetComponent<RectMask2D>() == null) { sheenMaskObject.AddComponent<RectMask2D>(); }
+
+            Transform sheenTransform = sheenMaskObject.transform.Find("RestorationSheen");
+            GameObject sheenObject = sheenTransform != null
+                ? sheenTransform.gameObject
+                : new GameObject("RestorationSheen", typeof(RectTransform), typeof(Image));
+            sheenObject.transform.SetParent(sheenMaskObject.transform, false);
+            restorationSheenImage = sheenObject.GetComponent<Image>();
+            restorationSheenImage.sprite = sheenSprite;
+            restorationSheenImage.type = Image.Type.Simple;
+            restorationSheenImage.preserveAspect = false;
+            restorationSheenImage.raycastTarget = false;
+            restorationSheenImage.color = Color.white;
+            restorationSheenImage.enabled = false;
+            RectTransform sheenRect = restorationSheenImage.rectTransform;
+            sheenRect.anchorMin = new Vector2(0f, 0.5f);
+            sheenRect.anchorMax = new Vector2(0f, 0.5f);
+            sheenRect.pivot = new Vector2(0.5f, 0.5f);
+            sheenRect.sizeDelta = new Vector2(160f, barHeight);
+
+            // Frame overlay: FrameOutlineOnly redraws the rim on top of Fill/Sheen (transparent
+            // center) so the fill edge looks tucked under it without covering the fill itself.
+            Transform overlayTransform = track.Find("RestorationFrameOverlay");
+            GameObject overlayObject = overlayTransform != null
+                ? overlayTransform.gameObject
+                : new GameObject("RestorationFrameOverlay", typeof(RectTransform), typeof(Image));
+            overlayObject.transform.SetParent(track, false);
+            restorationFrameOverlayImage = overlayObject.GetComponent<Image>();
+            restorationFrameOverlayImage.sprite = frameOutlineSprite;
+            restorationFrameOverlayImage.type = Image.Type.Simple;
+            restorationFrameOverlayImage.preserveAspect = false;
+            restorationFrameOverlayImage.raycastTarget = false;
+            restorationFrameOverlayImage.color = Color.white;
+            RectTransform overlayRect = restorationFrameOverlayImage.rectTransform;
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+
+            // Sprout: rides the leading edge of the fill, drawn above everything else (last sibling).
+            Transform sproutTransform = track.Find("RestorationSprout");
+            GameObject sproutObject = sproutTransform != null
+                ? sproutTransform.gameObject
+                : new GameObject("RestorationSprout", typeof(RectTransform), typeof(Image));
+            sproutObject.transform.SetParent(track, false);
+            restorationSproutImage = sproutObject.GetComponent<Image>();
+            restorationSproutImage.sprite = sproutSprite;
+            restorationSproutImage.type = Image.Type.Simple;
+            restorationSproutImage.preserveAspect = true;
+            restorationSproutImage.raycastTarget = false;
+            restorationSproutImage.color = Color.white;
+            restorationSproutRect = restorationSproutImage.rectTransform;
+            float sproutSize = barHeight * 1.2f;
+            restorationSproutRect.anchorMin = new Vector2(0f, 0.5f);
+            restorationSproutRect.anchorMax = new Vector2(0f, 0.5f);
+            restorationSproutRect.pivot = new Vector2(0.5f, 0.5f);
+            restorationSproutRect.sizeDelta = new Vector2(sproutSize, sproutSize);
+
+            sheenMaskObject.transform.SetSiblingIndex(1);
+            overlayObject.transform.SetSiblingIndex(2);
+            sproutObject.transform.SetSiblingIndex(3);
+
+            // Defensively retire the old vessel-era graphics (see diagnosis above) -- both are
+            // already unwired/null in the live scene; this only matters if a future wiring pass
+            // reintroduces either.
+            if (restorationGlowImage != null) { restorationGlowImage.enabled = false; }
+            if (restorationPlungerImage != null) { restorationPlungerImage.enabled = false; }
+
+            EnsureRestorationBarClipped();
+
+            restorationBarBuilt = true;
+        }
+
+        /// <summary>
+        /// Every-frame glide/sheen/sprout/flash driver for the new bar, called unconditionally
+        /// from LateUpdate (not gated by the throttled numeric-text flush -- these need real
+        /// per-frame granularity to read as a glide/sweep rather than a series of steps).
+        /// </summary>
+        private void TickRestorationBarAnimation()
+        {
+            if (!restorationBarBuilt || restorationFillImage == null) { return; }
+
+            float dt = Time.unscaledDeltaTime;
+            float previousDisplayed = restorationDisplayedFraction;
+            restorationDisplayedFraction = Mathf.MoveTowards(restorationDisplayedFraction, restorationTargetFraction, RestorationFillGlideRate * dt);
+            restorationFillImage.fillAmount = restorationDisplayedFraction;
+
+            float trackWidth = restorationFillImage.rectTransform.rect.width;
+            float fillWidthPixels = trackWidth * restorationDisplayedFraction;
+
+            // Gain flash: fixed palette flash (#80F4FF -> lime), triggered once per target
+            // increase in UpdateRestorationProgressText, not re-triggered every glide frame.
+            if (restorationFlashStartTime >= 0f)
+            {
+                float flashT = Mathf.Clamp01((Time.unscaledTime - restorationFlashStartTime) / RestorationFlashDuration);
+                restorationFillImage.color = Color.Lerp(RestorationFlashColor, RestorationLime, flashT);
+                if (flashT >= 1f) { restorationFlashStartTime = -1f; }
+            }
+
+            if (restorationSheenMaskRect != null)
+            {
+                restorationSheenMaskRect.sizeDelta = new Vector2(fillWidthPixels, 0f);
+            }
+
+            if (restorationDisplayedFraction <= 0.0001f)
+            {
+                restorationSheenActive = false;
+                if (restorationSheenImage != null) { restorationSheenImage.enabled = false; }
+            }
+            else
+            {
+                if (!restorationSheenActive && Time.unscaledTime >= nextRestorationSheenTime)
+                {
+                    restorationSheenActive = true;
+                    restorationSheenStartTime = Time.unscaledTime;
+                    nextRestorationSheenTime = restorationSheenStartTime + RestorationSheenInterval;
+                    if (restorationSheenImage != null) { restorationSheenImage.enabled = true; }
+                }
+
+                if (restorationSheenActive)
+                {
+                    float sweepT = Mathf.Clamp01((Time.unscaledTime - restorationSheenStartTime) / RestorationSheenSweepDuration);
+                    if (restorationSheenImage != null)
+                    {
+                        RectTransform sheenRect = restorationSheenImage.rectTransform;
+                        Vector2 pos = sheenRect.anchoredPosition;
+                        pos.x = Mathf.Lerp(0f, fillWidthPixels, sweepT);
+                        sheenRect.anchoredPosition = pos;
+                    }
+
+                    if (sweepT >= 1f)
+                    {
+                        restorationSheenActive = false;
+                        if (restorationSheenImage != null) { restorationSheenImage.enabled = false; }
+                    }
+                }
+            }
+
+            // Sprout rides the leading edge; hidden at the extremes, bobbing gently in between.
+            bool sproutVisible = restorationDisplayedFraction > 0.001f && restorationDisplayedFraction < 0.999f;
+            if (restorationSproutImage != null)
+            {
+                restorationSproutImage.enabled = sproutVisible;
+                if (sproutVisible && restorationSproutRect != null)
+                {
+                    float sproutHalf = restorationSproutRect.sizeDelta.x * 0.5f;
+                    float clampedX = Mathf.Clamp(fillWidthPixels, sproutHalf, Mathf.Max(sproutHalf, trackWidth - sproutHalf));
+                    float bobY = Mathf.Sin(Time.unscaledTime * (2f * Mathf.PI / RestorationSproutBobPeriod)) * RestorationSproutBobAmplitude;
+                    restorationSproutRect.anchoredPosition = new Vector2(clampedX, bobY);
+                }
+            }
+
+            // At 100% the sprout hands off to a one-shot brightness pulse on the fill instead
+            // (reuses the existing gain-pulse tween -- "gentle brightness pulse" per spec).
+            if (previousDisplayed < 0.999f && restorationDisplayedFraction >= 0.999f)
+            {
+                AnimationController.PlayRestorationGainPulse(restorationFillImage, null, null);
+            }
         }
 
         /// <summary>
