@@ -276,11 +276,20 @@ namespace BrainDrain.UI
                 hasCeiling = true;
             }
 
-            if (currentClampBelowArea != null && TryGetLocalBottomEdge(currentClampBelowArea, parentRect, cam, out float clampBottomY))
+            if (currentClampBelowArea != null)
             {
-                float candidate = clampBottomY - selfRect.rect.height - ClampTopPaddingPixels;
-                ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
-                hasCeiling = true;
+                // 2026-09-30: the HUD header panel is always active in practice, but defensively
+                // force its layout current before reading world corners -- a header that hasn't
+                // had a layout pass yet (e.g. first frame after a resolution/safe-area change)
+                // would otherwise report a stale or zero rect, silently disabling this clamp.
+                LayoutRebuilder.ForceRebuildLayoutImmediate(currentClampBelowArea);
+
+                if (TryGetLocalBottomEdge(currentClampBelowArea, parentRect, cam, out float clampBottomY))
+                {
+                    float candidate = clampBottomY - selfRect.rect.height - ClampTopPaddingPixels;
+                    ceilingY = hasCeiling ? Mathf.Min(ceilingY, candidate) : candidate;
+                    hasCeiling = true;
+                }
             }
 
             if (hasCeiling && desiredY > ceilingY)

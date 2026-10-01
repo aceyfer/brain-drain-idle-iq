@@ -15,10 +15,15 @@ namespace BrainDrain.UI
         /// use via UpgradeSlotUI) can find the live HUD without their own Inspector reference.</summary>
         public static HUDController Instance => FindAnyObjectByType<HUDController>();
 
-        /// <summary>The "BRAIN POWER" counter's own RectTransform -- exposed so a UI element
-        /// elsewhere on the root Canvas (the FTUE nudge arrow) can clamp itself to stay below the
-        /// HUD header instead of overlapping it. Null before this HUD is wired up.</summary>
-        public RectTransform BrainPowerHeaderRect => brainPowerCounterText != null ? brainPowerCounterText.rectTransform : null;
+        /// <summary>
+        /// 2026-09-30: the WHOLE header panel (CurrencyHeader -- holds BRAIN POWER, cash, and the
+        /// World Restoration stage-progress line), not just the BRAIN POWER text's own rect.
+        /// Clamping the FTUE nudge arrow against only the first line left the stage-progress line
+        /// below it unprotected -- confirmed live ("UTOPIA ACHIEVED - 250.00M" still got covered).
+        /// Derived from brainPowerCounterText's own parent rather than a new serialized field, so
+        /// this needs no scene wiring. Null before this HUD is wired up.
+        /// </summary>
+        public RectTransform HeaderPanelRect => brainPowerCounterText != null ? brainPowerCounterText.rectTransform.parent as RectTransform : null;
 
         /// <summary>PlayerIQ interval between celebration beats (every 1000 points).</summary>
         private const float IQCelebrationMilestoneInterval = 1000f;

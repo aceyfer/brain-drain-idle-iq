@@ -398,12 +398,15 @@ namespace BrainDrain.UI
 
             // 2026-09-30: clampArea alone (the scroll viewport's own top edge) wasn't enough --
             // this pointer lives on the root Canvas, unclipped by the viewport, so a target near
-            // the top of a tall list could still bob the arrow up into the HUD's "BRAIN POWER"
-            // header even while satisfied with the viewport clamp. Passing the header's own rect
-            // as a second, independent clamp (kept BELOW its bottom edge, not just above its top)
-            // stops the arrow from ever overlapping it regardless of where the target row sits.
+            // the top of a tall list could still bob the arrow up into the HUD header even while
+            // satisfied with the viewport clamp. Passing the WHOLE header panel's rect (not just
+            // the BRAIN POWER line) as a second, independent clamp (kept BELOW its bottom edge,
+            // not just above its top) stops the arrow from ever overlapping ANY line in the
+            // header -- cash, BRAIN POWER, or the stage-progress line below both -- regardless of
+            // where the target row sits. Previously this only passed the BRAIN POWER text's own
+            // rect, which left the stage-progress line unprotected (confirmed live).
             hasShownFirstAffordableNudge = true;
-            UINudgePointer.Instance?.PointAt(nudgeTarget, clampArea, HUDController.Instance?.BrainPowerHeaderRect);
+            UINudgePointer.Instance?.PointAt(nudgeTarget, clampArea, HUDController.Instance?.HeaderPanelRect);
         }
 
         private void ApplyAccent(Color stateColor, Color identityColor)
