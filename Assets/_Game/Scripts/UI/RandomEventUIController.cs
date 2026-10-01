@@ -315,6 +315,14 @@ namespace BrainDrain.UI
             {
                 PlaceTop(actionButton.transform as RectTransform, 32f, 88f + titleHeight + bodyHeight, contentWidth, actionHeight);
                 actionButton.interactable = true;
+                // A transparent/cullable Image is skipped by GraphicRaycaster even when
+                // raycastTarget is true. Keep the whole action rect available for clicks.
+                Graphic hitSurface = actionButton.GetComponent<Graphic>();
+                if (hitSurface != null)
+                {
+                    hitSurface.raycastTarget = true;
+                    hitSurface.canvasRenderer.cullTransparentMesh = false;
+                }
                 if (actionButton.targetGraphic != null) actionButton.targetGraphic.raycastTarget = true;
             }
             if (actionButtonText != null)
