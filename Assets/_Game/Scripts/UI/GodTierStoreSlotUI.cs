@@ -62,6 +62,8 @@ namespace BrainDrain.UI
             boundManager = manager;
             purchaseInFlight = false;
 
+            ShopBuyButtonLayout.Register(transform, buyButton, priceText, descriptionText);
+
             if (buyButton != null)
             {
                 buyButton.onClick.RemoveListener(HandleBuyClicked);

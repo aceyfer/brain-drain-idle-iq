@@ -83,6 +83,8 @@ namespace BrainDrain.UI
             boundData = data;
             boundManager = manager;
 
+            ShopBuyButtonLayout.Register(transform, buyButton, costText, descriptionText);
+
             if (buyButton != null)
             {
                 PresentationOwnedButtons.Add(buyButton);
