@@ -19,3 +19,4 @@ MonoBehaviour:
   labelFontMaterial: {fileID: 0}
   overrideTextColor: 0
   labelTextColor: {r: 1, g: 1, b: 1, a: 1}
+  labelHoleInsets: {x: 0.051, y: 0.2704, z: 0.0587, w: 0.1741}

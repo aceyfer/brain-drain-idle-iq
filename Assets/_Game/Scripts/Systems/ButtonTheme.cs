@@ -36,5 +36,15 @@ namespace BrainDrain.Systems
         [Tooltip("If true, overwrites every button label's text color with labelTextColor below.")]
         public bool overrideTextColor;
         public Color labelTextColor = Color.white;
+
+        [Header("Label Hole Insets (framed buttons only)")]
+        [Tooltip("2026-09-30: normalized (0-1) insets of this stage's borderSprite's own baked " +
+            "fill hole, measured from the sprite's edges -- (x=left, y=bottom, z=right, w=top), " +
+            "matching Unity's own Sprite.border component order. Produced by " +
+            "Assets/Editor/ButtonHoleMeasurer.cs (BrainDrain/Tools/Measure Button Hole Insets). " +
+            "UniversalButtonBorderApplier uses this to stretch a framed button's label within the " +
+            "frame's actual hole instead of the button's own (often asymmetric relative to the " +
+            "hole) flat rect -- see the Stage 5 label-sits-high bug this fixes.")]
+        public Vector4 labelHoleInsets = new Vector4(0.1f, 0.1f, 0.1f, 0.1f);
     }
 }

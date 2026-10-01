@@ -424,6 +424,31 @@ namespace BrainDrain.UI
                 {
                     Debug.LogWarning($"[UniversalButtonBorderApplier] Failed to set label outline on '{label.name}': {ex.Message}", label);
                 }
+
+                // 2026-09-30 (item 4): a framed button's label is anchored to the button's own
+                // flat rect, but the frame's actual hole (visually, where the label should sit)
+                // is NOT always centered within that rect -- measured directly from the art
+                // (ButtonHoleMeasurer): Stage 5's hole sits ~28% down from the top vs. ~12% up
+                // from the bottom, a real asymmetry, not a rounding error. Stretching the label
+                // within theme.labelHoleInsets instead of the button's full bounds re-centers it
+                // on the hole per stage. Root Image alpha, targetGraphic, and border placement
+                // are untouched -- this only repositions/resizes the label RectTransform.
+                if (border != null)
+                {
+                    RectTransform labelRect = label.rectTransform;
+                    Vector4 insets = theme.labelHoleInsets;
+                    labelRect.anchorMin = new Vector2(insets.x, insets.y);
+                    labelRect.anchorMax = new Vector2(1f - insets.z, 1f - insets.w);
+                    labelRect.offsetMin = Vector2.zero;
+                    labelRect.offsetMax = Vector2.zero;
+
+                    label.alignment = TextAlignmentOptions.Center;
+
+                    float previousMax = label.enableAutoSizing ? label.fontSizeMax : label.fontSize;
+                    label.enableAutoSizing = true;
+                    label.fontSizeMin = 18f;
+                    label.fontSizeMax = previousMax;
+                }
             }
         }
 
