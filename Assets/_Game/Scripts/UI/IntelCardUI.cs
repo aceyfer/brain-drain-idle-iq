@@ -202,16 +202,19 @@ namespace BrainDrain.UI
             flipRect.offsetMin = Vector2.zero;
             flipRect.offsetMax = Vector2.zero;
 
-            // ---- FRONT: same business-card design as PocketPanelUI's restyled cards, scaled up.
+            // ---- FRONT: same business-card design as PocketPanelUI's restyled cards, but now
+            // stretched to the SAME full card area as the back (2026-10-04 fix -- it previously
+            // kept its original list-card-scale fixed size, 820x460 centered in an 880x1200 card,
+            // which read as "wrong size floating in the middle" rather than a full-size front).
             // No tilt here (unlike the Pocket list) -- a single centered modal card reads as a
             // mistake when tilted, where a stack of tilted list rows reads as a deliberate pile.
             GameObject frontFace = new GameObject("FrontFace", typeof(RectTransform));
             frontFace.transform.SetParent(flipTargetObject.transform, false);
             RectTransform frontRect = frontFace.GetComponent<RectTransform>();
-            frontRect.anchorMin = frontRect.anchorMax = new Vector2(0.5f, 0.5f);
-            frontRect.pivot = new Vector2(0.5f, 0.5f);
-            frontRect.sizeDelta = new Vector2(820f, 460f); // scaled-up BizCard_Paper (512x288) aspect
-            frontRect.anchoredPosition = Vector2.zero;
+            frontRect.anchorMin = Vector2.zero;
+            frontRect.anchorMax = Vector2.one;
+            frontRect.offsetMin = Vector2.zero;
+            frontRect.offsetMax = Vector2.zero;
 
             if (shadowSprite != null)
             {
@@ -240,40 +243,35 @@ namespace BrainDrain.UI
             else { paperImage.color = CardPaperColor; }
             paperImage.raycastTarget = false;
 
-            const float ringSize = 128f;
+            // Ring/name/tagline cluster scaled up (~1.5x linear) and anchored to the top of the
+            // now much-taller card -- a top-left identity band, matching the back's own header
+            // band so the flip reads as the same card, not two unrelated layouts.
+            const float ringSize = 200f;
+            const float pad = 48f;
             GameObject ringObject = new GameObject("Ring", typeof(RectTransform));
             ringObject.transform.SetParent(frontFace.transform, false);
             RectTransform ringRect = ringObject.GetComponent<RectTransform>();
-            ringRect.anchorMin = new Vector2(0f, 0.5f);
-            ringRect.anchorMax = new Vector2(0f, 0.5f);
-            ringRect.pivot = new Vector2(0f, 0.5f);
-            ringRect.sizeDelta = new Vector2(ringSize, ringSize);
-            ringRect.anchoredPosition = new Vector2(32f, 0f);
+            PlaceTopLeft(ringRect, pad, pad, ringSize, ringSize);
             Image ringImage = ringObject.AddComponent<Image>();
             ringImage.sprite = monogramRingSprite;
             ringImage.raycastTarget = false;
-            TextMeshProUGUI initials = CreateInkLabel(ringObject.transform, GetInitials(businessName), 40f, 24f, FontStyles.Bold, false);
+            TextMeshProUGUI initials = CreateInkLabel(ringObject.transform, GetInitials(businessName), 64f, 36f, FontStyles.Bold, false);
             initials.alignment = TextAlignmentOptions.Center;
 
-            float textLeft = 32f + ringSize + 24f;
+            float textLeft = pad + ringSize + 32f;
+            float textWidth = 880f - textLeft - pad;
             GameObject nameObject = new GameObject("NameText", typeof(RectTransform));
             nameObject.transform.SetParent(frontFace.transform, false);
             RectTransform nameRect = nameObject.GetComponent<RectTransform>();
-            nameRect.anchorMin = new Vector2(0f, 0.5f);
-            nameRect.anchorMax = new Vector2(1f, 1f);
-            nameRect.offsetMin = new Vector2(textLeft, 0f);
-            nameRect.offsetMax = new Vector2(-24f, -16f);
-            TextMeshProUGUI nameLabel = CreateInkLabel(nameObject.transform, businessName.ToUpperInvariant(), 34f, 26f, FontStyles.Bold, false);
-            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
+            PlaceTopLeft(nameRect, textLeft, pad, textWidth, 100f);
+            TextMeshProUGUI nameLabel = CreateInkLabel(nameObject.transform, businessName.ToUpperInvariant(), 48f, 36f, FontStyles.Bold, false);
+            nameLabel.alignment = TextAlignmentOptions.TopLeft;
 
             GameObject taglineObject = new GameObject("TaglineText", typeof(RectTransform));
             taglineObject.transform.SetParent(frontFace.transform, false);
             RectTransform taglineRect = taglineObject.GetComponent<RectTransform>();
-            taglineRect.anchorMin = Vector2.zero;
-            taglineRect.anchorMax = new Vector2(1f, 0.5f);
-            taglineRect.offsetMin = new Vector2(textLeft, 16f);
-            taglineRect.offsetMax = new Vector2(-24f, 0f);
-            TextMeshProUGUI taglineLabel = CreateInkLabel(taglineObject.transform, tagline, 26f, 22f, FontStyles.Italic, true);
+            PlaceTopLeft(taglineRect, textLeft, pad + 100f + 8f, textWidth, 140f);
+            TextMeshProUGUI taglineLabel = CreateInkLabel(taglineObject.transform, tagline, 32f, 24f, FontStyles.Italic, true);
             taglineLabel.alignment = TextAlignmentOptions.TopLeft;
 
             // ---- BACK: intel message on paper, ink #1B0F2E @85%, non-italic. Sign-off is already
