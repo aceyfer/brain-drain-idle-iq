@@ -323,7 +323,10 @@ namespace BrainDrain.EditorTools
                 for (int x = 0; x < w; x++)
                 {
                     if (!outer[y, x]) { pixels[y * w + x] = Transparent; continue; }
-                    pixels[y * w + x] = inner[y, x] ? new Color32(Base.r, Base.g, Base.b, 242) : new Color32(Magenta.r, Magenta.g, Magenta.b, 242);
+                    // 2026-10-04 fix: was baked at 242 (~95%) -- Claude's play-test reported the
+                    // background city clearly visible through the panel, well past what a mere
+                    // 5% gap should allow. Full opacity removes any ambiguity.
+                    pixels[y * w + x] = inner[y, x] ? new Color32(Base.r, Base.g, Base.b, 255) : new Color32(Magenta.r, Magenta.g, Magenta.b, 255);
                 }
             }
 
