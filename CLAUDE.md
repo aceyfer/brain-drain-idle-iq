@@ -18,6 +18,8 @@ This is a Unity project opened/built through the Unity Editor, not a CLI-driven 
 
 Never swap, stash, or restore working-tree files to isolate a commit. For mixed files use `git add -p`, or stop and ask Aceyfer. One change per commit; stage by file name only; no scene writes; don't push until verified.
 
+Never run `rm -rf` or delete directories; delete only specific files you created this session, by exact path.
+
 ## Architecture
 
 All gameplay code lives under `Assets/_Game/Scripts`, split into `BrainDrain.Core` (simulation/state) and `BrainDrain.UI` (presentation). Everything is wired together through Unity Inspector references and runtime `FindAnyObjectByType` fallbacks rather than dependency injection — when adding a new system, follow the existing pattern of a serialized field that falls back to `GameManager.Instance` lookups.
