@@ -591,7 +591,7 @@ namespace BrainDrain.UI
             taglineRect.anchorMax = new Vector2(1f, 0.5f);
             taglineRect.offsetMin = new Vector2(textLeft, 8f);
             taglineRect.offsetMax = new Vector2(-16f, 0f);
-            TextMeshProUGUI taglineLabel = CreateInkLabel(taglineObject.transform, tagline, 22f, 18f, FontStyles.Italic, true);
+            TextMeshProUGUI taglineLabel = CreateInkLabel(taglineObject.transform, tagline, 22f, 20f, FontStyles.Italic, true);
             taglineLabel.alignment = TextAlignmentOptions.TopLeft;
 
             // "Unread" has no backing flag anywhere in this codebase -- FTUEManager.
@@ -678,7 +678,9 @@ namespace BrainDrain.UI
 
             TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
             label.text = text;
-            label.color = fadedInk ? new Color(CardInk.r / 255f, CardInk.g / 255f, CardInk.b / 255f, 0.7f) : (Color)CardInk;
+            // 2026-10-04 fix: 0.7 -> 0.75 per play-test ("taglines are nearly invisible"); names
+            // (fadedInk=false) were already full ink #1B0F2E at alpha 1.0 -- unchanged.
+            label.color = fadedInk ? new Color(CardInk.r / 255f, CardInk.g / 255f, CardInk.b / 255f, 0.75f) : (Color)CardInk;
             label.fontStyle = style;
             label.fontSize = maxSize;
             label.enableAutoSizing = true;
