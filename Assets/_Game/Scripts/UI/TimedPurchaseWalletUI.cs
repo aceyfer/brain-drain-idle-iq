@@ -43,6 +43,15 @@ namespace BrainDrain.UI
         private static readonly Color ButtonFillColor = new Color(1f, 0.84f, 0f, 0.22f);
         private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
+        // 2026-10-04 art pass (D): membership-card restyle palette.
+        private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
+        private static readonly Color32 PillMagenta = new Color32(0xFF, 0x14, 0x93, 0xFF);
+        private static Sprite cardSprite;
+        private static Sprite shadowSprite;
+        private static Sprite sheenSprite;
+        private static Sprite pillSprite;
+        private static bool spritesLoaded;
+
         private static TimedPurchaseWalletUI instance;
         private static bool isShuttingDown;
 
@@ -464,44 +473,189 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>One active purchase, shown as its display name (resolved fresh from the
-        /// matching GodTierStoreItemData -- see ActiveTimedPurchase's own doc comment for why)
-        /// plus a live "time remaining" readout. Non-interactive -- there is nothing to tap here,
-        /// unlike THE POCKET's re-openable cards.</summary>
+        private static void EnsureSpritesLoaded()
+        {
+            if (spritesLoaded) { return; }
+            cardSprite = Resources.Load<Sprite>("UI/Generated/Wallet_Card");
+            shadowSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Shadow");
+            sheenSprite = Resources.Load<Sprite>("UI/Generated/Wallet_Sheen");
+            pillSprite = Resources.Load<Sprite>("UI/Generated/Alert_Button");
+            spritesLoaded = true;
+        }
+
+        /// <summary>One active purchase, shown as a membership card: Wallet_Card background
+        /// (BizCard_Shadow behind it, reused rather than a second shadow sprite -- a soft blurred
+        /// drop shadow doesn't need to be card-shaped specifically), the display name (resolved
+        /// fresh from the matching GodTierStoreItemData -- see ActiveTimedPurchase's own doc
+        /// comment for why) and a countdown pill. Non-interactive -- there is nothing to tap here,
+        /// unlike THE POCKET's re-openable cards. Rebuilt fresh every second along with the rest
+        /// of the list (RebuildList's own doc comment), so the sheen sweep and low-time pulse are
+        /// driven by WalletRowAnimator off Time.unscaledTime rather than a DOTween tween -- a
+        /// tween living on this row would be killed and restarted every single second along with
+        /// the GameObject itself, never completing a sweep.</summary>
         private void BuildRow(ActiveTimedPurchase purchase, GodTierStoreManager manager, long now)
         {
+            EnsureSpritesLoaded();
+
             GameObject rowObject = new GameObject("WalletRow", typeof(RectTransform));
             rowObject.transform.SetParent(contentRoot, false);
 
-            Image image = rowObject.AddComponent<Image>();
-            image.color = RowColor;
-            image.raycastTarget = false;
-
             LayoutElement layoutElement = rowObject.AddComponent<LayoutElement>();
-            layoutElement.minHeight = 120f;
+            layoutElement.minHeight = 180f;
 
-            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
-            labelObject.transform.SetParent(rowObject.transform, false);
-            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(20f, 12f);
-            labelRect.offsetMax = new Vector2(-20f, -12f);
+            if (shadowSprite != null)
+            {
+                GameObject shadowObject = new GameObject("Shadow", typeof(RectTransform));
+                shadowObject.transform.SetParent(rowObject.transform, false);
+                RectTransform shadowRect = shadowObject.GetComponent<RectTransform>();
+                shadowRect.anchorMin = Vector2.zero;
+                shadowRect.anchorMax = Vector2.one;
+                shadowRect.offsetMin = new Vector2(6f, -6f);
+                shadowRect.offsetMax = new Vector2(6f, -6f);
+                Image shadowImage = shadowObject.AddComponent<Image>();
+                shadowImage.sprite = shadowSprite;
+                shadowImage.type = Image.Type.Sliced;
+                shadowImage.raycastTarget = false;
+            }
+
+            GameObject cardObject = new GameObject("Card", typeof(RectTransform));
+            cardObject.transform.SetParent(rowObject.transform, false);
+            RectTransform cardRect = cardObject.GetComponent<RectTransform>();
+            cardRect.anchorMin = Vector2.zero;
+            cardRect.anchorMax = Vector2.one;
+            cardRect.offsetMin = Vector2.zero;
+            cardRect.offsetMax = Vector2.zero;
+            Image cardImage = cardObject.AddComponent<Image>();
+            if (cardSprite != null) { cardImage.sprite = cardSprite; cardImage.type = Image.Type.Sliced; }
+            else { cardImage.color = RowColor; }
+            cardImage.raycastTarget = false;
+
+            GameObject sheenMaskObject = new GameObject("SheenMask", typeof(RectTransform));
+            sheenMaskObject.transform.SetParent(cardObject.transform, false);
+            RectTransform sheenMaskRect = sheenMaskObject.GetComponent<RectTransform>();
+            sheenMaskRect.anchorMin = Vector2.zero;
+            sheenMaskRect.anchorMax = Vector2.one;
+            sheenMaskRect.offsetMin = Vector2.zero;
+            sheenMaskRect.offsetMax = Vector2.zero;
+            sheenMaskObject.AddComponent<RectMask2D>();
+
+            Image sheenImage = null;
+            RectTransform sheenRect = null;
+            if (sheenSprite != null)
+            {
+                GameObject sheenObject = new GameObject("Sheen", typeof(RectTransform));
+                sheenObject.transform.SetParent(sheenMaskObject.transform, false);
+                sheenRect = sheenObject.GetComponent<RectTransform>();
+                sheenRect.anchorMin = new Vector2(0f, 0f);
+                sheenRect.anchorMax = new Vector2(0f, 1f);
+                sheenRect.pivot = new Vector2(0.5f, 0.5f);
+                sheenRect.sizeDelta = new Vector2(80f, 0f);
+                sheenImage = sheenObject.AddComponent<Image>();
+                sheenImage.sprite = sheenSprite;
+                sheenImage.type = Image.Type.Simple;
+                sheenImage.preserveAspect = false;
+                sheenImage.raycastTarget = false;
+                sheenImage.color = Color.white;
+            }
 
             string displayName = ResolveDisplayName(manager, purchase.itemId);
             long secondsRemaining = Math.Max(0L, purchase.expiryUnixSeconds - now);
+            float totalDurationSeconds = ResolveDurationSeconds(manager, purchase.itemId);
+            bool isLowTime = totalDurationSeconds > 0f && secondsRemaining < totalDurationSeconds * 0.1f;
 
-            TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
-            label.text = $"{displayName}\n<color=#FFD700><font-weight=bold>{FormatRemaining(secondsRemaining)} remaining</font-weight></color>";
-            label.color = Color.white;
-            label.fontStyle = FontStyles.Bold;
-            label.alignment = TextAlignmentOptions.Left;
-            label.fontSize = 28f;
-            label.enableAutoSizing = true;
-            label.fontSizeMin = 22f;
-            label.fontSizeMax = 28f;
-            label.textWrappingMode = TextWrappingModes.Normal;
-            label.raycastTarget = false;
+            GameObject nameObject = new GameObject("NameText", typeof(RectTransform));
+            nameObject.transform.SetParent(cardObject.transform, false);
+            RectTransform nameRect = nameObject.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 0.5f);
+            nameRect.anchorMax = new Vector2(1f, 1f);
+            nameRect.offsetMin = new Vector2(24f, 0f);
+            nameRect.offsetMax = new Vector2(-24f, -16f);
+            TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
+            nameLabel.text = displayName;
+            nameLabel.color = Color.white;
+            nameLabel.fontStyle = FontStyles.Bold;
+            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
+            nameLabel.fontSize = 28f;
+            nameLabel.enableAutoSizing = true;
+            nameLabel.fontSizeMin = 22f;
+            nameLabel.fontSizeMax = 28f;
+            nameLabel.textWrappingMode = TextWrappingModes.Normal;
+            nameLabel.raycastTarget = false;
+
+            GameObject pillObject = new GameObject("CountdownPill", typeof(RectTransform));
+            pillObject.transform.SetParent(cardObject.transform, false);
+            RectTransform pillRect = pillObject.GetComponent<RectTransform>();
+            pillRect.anchorMin = new Vector2(0f, 0f);
+            pillRect.anchorMax = new Vector2(0f, 0f);
+            pillRect.pivot = new Vector2(0f, 0f);
+            pillRect.anchoredPosition = new Vector2(24f, 20f);
+            pillRect.sizeDelta = new Vector2(228f, 52f);
+            Image pillImage = pillObject.AddComponent<Image>();
+            if (pillSprite != null) { pillImage.sprite = pillSprite; pillImage.type = Image.Type.Sliced; }
+            pillImage.color = isLowTime ? (Color)PillMagenta : (Color)PillCyan;
+            pillImage.raycastTarget = false;
+
+            GameObject pillLabelObject = new GameObject("Label", typeof(RectTransform));
+            pillLabelObject.transform.SetParent(pillObject.transform, false);
+            RectTransform pillLabelRect = pillLabelObject.GetComponent<RectTransform>();
+            pillLabelRect.anchorMin = Vector2.zero;
+            pillLabelRect.anchorMax = Vector2.one;
+            pillLabelRect.offsetMin = new Vector2(8f, 4f);
+            pillLabelRect.offsetMax = new Vector2(-8f, -4f);
+            TextMeshProUGUI pillLabel = pillLabelObject.AddComponent<TextMeshProUGUI>();
+            pillLabel.text = FormatPillCountdown(secondsRemaining);
+            pillLabel.color = Color.white;
+            pillLabel.fontStyle = FontStyles.Bold;
+            pillLabel.alignment = TextAlignmentOptions.Center;
+            // "Monospace-style": no dedicated monospace font asset exists in this project (none
+            // generated this pass either -- out of scope, a real SDF font asset is a much bigger
+            // undertaking than this restyle). Approximated with fixed zero-padded fields
+            // (FormatPillCountdown) and a touch of extra character spacing so digits read evenly.
+            pillLabel.characterSpacing = 2f;
+            pillLabel.fontSize = 26f;
+            pillLabel.enableAutoSizing = true;
+            pillLabel.fontSizeMin = 20f;
+            pillLabel.fontSizeMax = 26f;
+            pillLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            pillLabel.raycastTarget = false;
+
+            WalletRowAnimator animator = rowObject.AddComponent<WalletRowAnimator>();
+            animator.Configure(sheenImage, sheenRect, cardRect, pillImage, isLowTime, PillMagenta);
+        }
+
+        /// <summary>Resolves an itemId back to its configured total timed duration (hours ->
+        /// seconds), used only to decide the low-time pulse threshold (under 10% remaining).
+        /// Returns 0 if the item can't be found or isn't configured with a duration -- callers
+        /// treat 0 as "never pulse" rather than guessing.</summary>
+        private static float ResolveDurationSeconds(GodTierStoreManager manager, string itemId)
+        {
+            if (manager != null)
+            {
+                IReadOnlyList<GodTierStoreItemData> items = manager.Items;
+                for (int i = 0; i < items.Count; i++)
+                {
+                    if (items[i] != null && items[i].itemId == itemId)
+                    {
+                        return items[i].freezeDurationHours * 3600f;
+                    }
+                }
+            }
+
+            return 0f;
+        }
+
+        /// <summary>Fixed-width countdown for the pill: "Nd HH:MM" past a day, else "HH:MM:SS" --
+        /// deliberately a constant-width shape (not a variable "2d 4h 12m" layout), which would
+        /// look uneven inside a small fixed pill.</summary>
+        private static string FormatPillCountdown(long totalSeconds)
+        {
+            TimeSpan span = TimeSpan.FromSeconds(totalSeconds);
+            if (span.TotalDays >= 1d)
+            {
+                return $"{(int)span.TotalDays}d {span.Hours:00}:{span.Minutes:00}";
+            }
+
+            return $"{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}";
         }
 
         /// <summary>Resolves an itemId back to its configured displayName. Falls back to the raw
@@ -525,25 +679,6 @@ namespace BrainDrain.UI
             return itemId;
         }
 
-        /// <summary>"2d 04h 12m", "04h 12m", or "12m 03s" depending on magnitude -- always two
-        /// units, never more precision than the player needs for a multi-hour/day countdown.</summary>
-        private static string FormatRemaining(long totalSeconds)
-        {
-            TimeSpan span = TimeSpan.FromSeconds(totalSeconds);
-
-            if (span.TotalDays >= 1d)
-            {
-                return $"{(int)span.TotalDays}d {span.Hours:00}h {span.Minutes:00}m";
-            }
-
-            if (span.TotalHours >= 1d)
-            {
-                return $"{(int)span.TotalHours}h {span.Minutes:00}m";
-            }
-
-            return $"{span.Minutes}m {span.Seconds:00}s";
-        }
-
         private static void CreateStretchedLabel(Transform parent, string text, Color color, float maxSize, float minSize, FontStyles style)
         {
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -563,6 +698,66 @@ namespace BrainDrain.UI
             label.fontSizeMin = minSize;
             label.fontSizeMax = maxSize;
             label.raycastTarget = false;
+        }
+    }
+
+    /// <summary>
+    /// 2026-10-04 art pass (D): drives a wallet row's sheen sweep and low-time pill pulse purely
+    /// from Time.unscaledTime rather than a DOTween tween with internal state -- TimedPurchase
+    /// WalletUI.RebuildList() destroys and rebuilds every row once a second (its own doc comment
+    /// explains why: simplicity, and it's what drops an expired row), which would kill and
+    /// restart any stateful tween before it ever completed. Because every value here is computed
+    /// fresh from the clock rather than carried over from the previous frame, a freshly-built row
+    /// picks up exactly where the sweep/pulse cycle should be "right now" with no visible seam.
+    /// </summary>
+    internal sealed class WalletRowAnimator : MonoBehaviour
+    {
+        private const float SheenIntervalSeconds = 5f;
+        private const float SheenSweepDuration = 0.8f;
+        private const float PulsePeriodSeconds = 1f;
+
+        private UnityEngine.UI.Image sheenImage;
+        private RectTransform sheenRect;
+        private RectTransform cardRect;
+        private UnityEngine.UI.Image pillImage;
+        private bool isPulsing;
+        private Color pulseColor;
+
+        public void Configure(UnityEngine.UI.Image sheenImage, RectTransform sheenRect, RectTransform cardRect, UnityEngine.UI.Image pillImage, bool isPulsing, Color pulseColor)
+        {
+            this.sheenImage = sheenImage;
+            this.sheenRect = sheenRect;
+            this.cardRect = cardRect;
+            this.pillImage = pillImage;
+            this.isPulsing = isPulsing;
+            this.pulseColor = pulseColor;
+        }
+
+        private void Update()
+        {
+            if (sheenImage != null && sheenRect != null && cardRect != null)
+            {
+                float cycle = Time.unscaledTime % SheenIntervalSeconds;
+                bool sweeping = cycle <= SheenSweepDuration;
+                sheenImage.enabled = sweeping;
+                if (sweeping)
+                {
+                    float t = cycle / SheenSweepDuration;
+                    float cardWidth = cardRect.rect.width;
+                    float sheenHalfWidth = sheenRect.sizeDelta.x * 0.5f;
+                    Vector2 pos = sheenRect.anchoredPosition;
+                    pos.x = Mathf.Lerp(-sheenHalfWidth, cardWidth + sheenHalfWidth, t);
+                    sheenRect.anchoredPosition = pos;
+                }
+            }
+
+            if (isPulsing && pillImage != null)
+            {
+                float alpha = Mathf.Lerp(0.6f, 1f, (Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f / PulsePeriodSeconds) + 1f) * 0.5f);
+                Color c = pulseColor;
+                c.a = alpha;
+                pillImage.color = c;
+            }
         }
     }
 }
