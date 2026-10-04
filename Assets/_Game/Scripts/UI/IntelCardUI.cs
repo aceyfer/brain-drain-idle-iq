@@ -299,13 +299,26 @@ namespace BrainDrain.UI
             else { backPaperImage.color = CardPaperColor; }
             backPaperImage.raycastTarget = false;
 
+            // 2026-10-04 fix: small business-name header at the top of the back, so the flip
+            // doesn't lose the sender's identity once the front's ring/name are gone.
+            GameObject backHeaderObject = new GameObject("HeaderText", typeof(RectTransform));
+            backHeaderObject.transform.SetParent(backFace.transform, false);
+            RectTransform backHeaderRect = backHeaderObject.GetComponent<RectTransform>();
+            PlaceTopLeft(backHeaderRect, 48f, 40f, 784f, 56f); // 784 = 880 card width - 48px padding each side
+            TextMeshProUGUI backHeaderLabel = CreateInkLabel(backHeaderObject.transform, businessName.ToUpperInvariant(), 30f, 24f, FontStyles.Bold, false);
+            backHeaderLabel.alignment = TextAlignmentOptions.TopLeft;
+            backHeaderLabel.textWrappingMode = TextWrappingModes.NoWrap;
+
+            // Body: stretches to the card width minus 48px padding each side (anchorMin/Max.x
+            // already span 0-1 -- offsetMin/Max.x is what actually applies the 48px margin), top
+            // cleared below the new header, bottom cleared above the confirm button.
             GameObject backBodyObject = new GameObject("BodyText", typeof(RectTransform));
             backBodyObject.transform.SetParent(backFace.transform, false);
             RectTransform backBodyRect = backBodyObject.GetComponent<RectTransform>();
             backBodyRect.anchorMin = Vector2.zero;
             backBodyRect.anchorMax = Vector2.one;
             backBodyRect.offsetMin = new Vector2(48f, 160f);
-            backBodyRect.offsetMax = new Vector2(-48f, -56f);
+            backBodyRect.offsetMax = new Vector2(-48f, -112f);
             TextMeshProUGUI backBody = CreateText(backBodyObject.transform, bodyText, 30f, CardBodyInk, FontStyles.Normal);
 
             // Confirm button -- hidden until the flip completes. "Alert_Button recolored to
@@ -405,6 +418,17 @@ namespace BrainDrain.UI
             DOVirtual.DelayedCall(AutoFlipDelay, DoFlip, true).SetId(flipTargetObject);
         }
 
+        /// <summary>Point-anchored top-left placement (same convention as RandomEventUIController's
+        /// PlaceTop) -- used for front/back elements that need an explicit pixel position/size
+        /// rather than a fractional stretch.</summary>
+        private static void PlaceTopLeft(RectTransform rect, float left, float top, float width, float height)
+        {
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(left, -top);
+            rect.sizeDelta = new Vector2(width, height);
+        }
+
         /// <summary>Splits "BUSINESS NAME — \"tagline\"" the way every IntelCardCatalog.Front
         /// string is already formatted -- same split PocketPanelUI uses for the same cards.</summary>
         private static void SplitFrontTitle(string front, out string name, out string tagline)
@@ -472,6 +496,18 @@ namespace BrainDrain.UI
             GameObject textObject = new GameObject("Text", typeof(RectTransform));
             textObject.transform.SetParent(parent, false);
 
+            // 2026-10-04 fix: this child's RectTransform was never stretched, so it kept Unity's
+            // AddComponent default -- a 100x100 rect centered on its parent. BuildCogsCard's own
+            // callers never noticed because their parent is a VerticalLayoutGroup with
+            // childControlWidth/Height=true, which forcibly resizes every child regardless of its
+            // own rect -- but BuildLiteratesFlipCard's back body isn't layout-group-driven, so the
+            // bug surfaced there as a 100px-wide column of text overflowing past the card.
+            RectTransform textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
             TextMeshProUGUI label = textObject.AddComponent<TextMeshProUGUI>();
             label.text = text;
             label.color = color;
@@ -482,6 +518,7 @@ namespace BrainDrain.UI
             label.fontSizeMax = fontSize;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.textWrappingMode = TextWrappingModes.Normal;
+            label.overflowMode = TextOverflowModes.Truncate;
             label.raycastTarget = false;
 
             return label;
