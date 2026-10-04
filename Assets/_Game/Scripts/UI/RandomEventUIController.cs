@@ -277,10 +277,6 @@ namespace BrainDrain.UI
 
         private void OnActionButtonClicked()
         {
-            // TEMPORARY (2026-10-04): proves whether the click arrives at all. Remove once
-            // Claude's next Play-test confirms the dismiss actually fires.
-            Debug.Log("[RandomEventUIController] OnActionButtonClicked FIRED.");
-
             // Close before effect callbacks: a subscriber exception must not leave the
             // notice covering the game, and a second click must not grant the effect twice.
             BrainRotEventData chosenEvent = activeEventData;
@@ -361,41 +357,6 @@ namespace BrainDrain.UI
                 MeasureLabel(niceTryText, 24f, contentWidth, 32f);
                 PlaceTop(niceTryText.rectTransform, 32f, height - 48f, contentWidth, 32f);
             }
-
-            LogActionButtonDiagnostics();
-        }
-
-        /// <summary>
-        /// TEMPORARY (2026-10-04): dumps every piece of state this investigation's checklist
-        /// calls out -- Button.interactable, the CanvasGroup governing raycasts, whether a
-        /// UniversalButtonBorderApplier border child exists and where it sits in sibling order
-        /// relative to ActionButton (a later sibling renders/raycasts on top), and the live rect
-        /// a click would actually need to land inside. Remove alongside the click-arrival log in
-        /// OnActionButtonClicked once the next Play-test confirms the dismiss fires.
-        /// </summary>
-        private void LogActionButtonDiagnostics()
-        {
-            if (actionButton == null) return;
-
-            RectTransform rect = actionButton.transform as RectTransform;
-            Transform borderChild = actionButton.transform.Find("UniversalBorder (Generated)");
-            CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
-            if (canvasGroup == null) canvasGroup = GetComponentInParent<CanvasGroup>();
-            Canvas canvas = GetComponent<Canvas>();
-            if (canvas == null) canvas = GetComponentInParent<Canvas>();
-            Graphic hitSurface = actionButton.GetComponent<Graphic>();
-
-            Debug.Log(
-                $"[RandomEventUIController] ActionButton diagnostics -- " +
-                $"interactable={actionButton.interactable}, " +
-                $"siblingIndex={actionButton.transform.GetSiblingIndex()}/{(actionButton.transform.parent != null ? actionButton.transform.parent.childCount - 1 : -1)}, " +
-                $"rect(size={rect.rect.size}, anchoredPos={rect.anchoredPosition}), " +
-                $"hitSurface.raycastTarget={(hitSurface != null ? hitSurface.raycastTarget.ToString() : "null")}, " +
-                $"cullTransparentMesh={(hitSurface != null ? hitSurface.canvasRenderer.cullTransparentMesh.ToString() : "null")}, " +
-                $"borderChild={(borderChild != null ? $"present(siblingIndex={borderChild.GetSiblingIndex()})" : "none")}, " +
-                $"canvasGroup.interactable={(canvasGroup != null ? canvasGroup.interactable.ToString() : "null")}, " +
-                $"canvasGroup.blocksRaycasts={(canvasGroup != null ? canvasGroup.blocksRaycasts.ToString() : "null")}, " +
-                $"canvas.enabled={(canvas != null ? canvas.enabled.ToString() : "null")}");
         }
 
         private static float MeasureLabel(TextMeshProUGUI label, float size, float width, float minHeight)
