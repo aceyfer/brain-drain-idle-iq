@@ -666,6 +666,57 @@ namespace BrainDrain.UI
             }
         }
 
+        private static TMP_FontAsset cardBoldFontAsset;
+        private static TMP_FontAsset cardRegularFontAsset;
+        private static bool cardFontsLoaded;
+
+        private static void EnsureCardFontsLoaded()
+        {
+            if (cardFontsLoaded) { return; }
+            cardFontsLoaded = true;
+            cardBoldFontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF");
+            cardRegularFontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        }
+
+        /// <summary>
+        /// 2026-10-04 fix: runtime diagnostics (logged once per label, now removed) showed
+        /// NameText rendering via LiberationSans SDF's FAUX bold (boldStyle 0.75 -- a synthetic
+        /// weight-boost on a font asset with no real bold face) at zero face dilate, which reads
+        /// thin/grey against the business-card paper's grain. Oswald Bold SDF is a real bold
+        /// face already used project-wide (Oswald_CyanGlow.mat/Oswald_GoldUnderlay.mat), so no
+        /// faux-bold simulation is needed once assigned -- the Bold style flag is cleared to
+        /// avoid double-thickening an already-bold glyph. Explicit assignment either way (never
+        /// touches TMP_Settings.defaultFontAsset or the shared LiberationSans SDF material).
+        /// </summary>
+        private static void AssignCardInkFont(TextMeshProUGUI label, bool bold)
+        {
+            EnsureCardFontsLoaded();
+            TMP_FontAsset font = bold ? cardBoldFontAsset : cardRegularFontAsset;
+            if (font == null) { return; }
+            label.font = font;
+            if (bold) { label.fontStyle &= ~FontStyles.Bold; }
+        }
+
+        /// <summary>
+        /// label.fontMaterial (not fontSharedMaterial) clones a per-instance material the first
+        /// time it's accessed -- bumping _FaceDilate there thickens this one label's ink without
+        /// touching the shared default material or any other text in the project. Guarded by
+        /// isActiveAndEnabled: TMP_Text's lazy material/clone setup only runs once a label has
+        /// actually been active, matching the same guard UniversalButtonBorderApplier already
+        /// uses for its own per-label material touch (confirmed live NullReferenceException risk
+        /// otherwise). Every Pocket card label is active at creation (the panel hides via
+        /// CanvasGroup alpha, never SetActive), so this always applies immediately here.
+        /// </summary>
+        private static void ApplyCardInkFaceDilate(TextMeshProUGUI label)
+        {
+            if (label == null || !label.isActiveAndEnabled) { return; }
+            Material instanceMaterial = label.fontMaterial;
+            if (instanceMaterial != null && instanceMaterial.HasProperty("_FaceDilate"))
+            {
+                instanceMaterial.SetFloat("_FaceDilate", 0.15f);
+            }
+        }
+
         private static TextMeshProUGUI CreateInkLabel(Transform parent, string text, float maxSize, float minSize, FontStyles style, bool fadedInk)
         {
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -688,6 +739,11 @@ namespace BrainDrain.UI
             label.fontSizeMax = maxSize;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
+
+            bool isBold = (style & FontStyles.Bold) != 0;
+            AssignCardInkFont(label, isBold);
+            ApplyCardInkFaceDilate(label);
+
             return label;
         }
 

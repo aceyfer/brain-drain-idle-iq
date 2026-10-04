@@ -318,6 +318,8 @@ namespace BrainDrain.UI
             backBodyRect.offsetMin = new Vector2(48f, 160f);
             backBodyRect.offsetMax = new Vector2(-48f, -112f);
             TextMeshProUGUI backBody = CreateText(backBodyObject.transform, bodyText, 30f, CardBodyInk, FontStyles.Normal);
+            AssignCardInkFont(backBody, false);
+            ApplyCardInkFaceDilate(backBody);
 
             // Confirm button -- hidden until the flip completes. "Alert_Button recolored to
             // ink-on-paper": Alert_Button.png bakes its cyan border/glow as solid RGB with uniform
@@ -404,6 +406,11 @@ namespace BrainDrain.UI
                     {
                         frontFace.SetActive(false);
                         backFace.SetActive(true);
+                        // backHeaderLabel/backBody were built while backFace was still inactive --
+                        // ApplyCardInkFaceDilate's isActiveAndEnabled guard skipped them then, so
+                        // re-apply now that the flip has actually activated this hierarchy.
+                        ApplyCardInkFaceDilate(backHeaderLabel);
+                        ApplyCardInkFaceDilate(backBody);
                         flipTargetObject.transform.DOScaleX(1f, FlipHalfDuration)
                             .SetEase(Ease.InOutQuad)
                             .SetUpdate(true)
@@ -466,6 +473,60 @@ namespace BrainDrain.UI
             return acronym.ToString();
         }
 
+        private static TMP_FontAsset cardBoldFontAsset;
+        private static TMP_FontAsset cardRegularFontAsset;
+        private static bool cardFontsLoaded;
+
+        private static void EnsureCardFontsLoaded()
+        {
+            if (cardFontsLoaded) { return; }
+            cardFontsLoaded = true;
+            cardBoldFontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF");
+            cardRegularFontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        }
+
+        /// <summary>
+        /// 2026-10-04 fix: runtime diagnostics (logged once per label, now removed) showed the
+        /// back-body label had NO font asset at all at construction time -- TMP's own lazy
+        /// default-font assignment runs in Awake/OnEnable, which hadn't fired yet because
+        /// backFace starts SetActive(false). Explicit assignment sidesteps that timing entirely
+        /// and guarantees a real font+material reference regardless of active state. Oswald Bold
+        /// SDF is a real bold face already used project-wide (Oswald_CyanGlow.mat/
+        /// Oswald_GoldUnderlay.mat), so the Bold style flag is cleared once assigned -- no
+        /// faux-bold double-thickening. Scoped to the Literates paper-card path only (never
+        /// called from BuildCogsCard's own CreateText calls) -- the COGSTerminal skin's green
+        /// terminal text is untouched.
+        /// </summary>
+        private static void AssignCardInkFont(TextMeshProUGUI label, bool bold)
+        {
+            EnsureCardFontsLoaded();
+            TMP_FontAsset font = bold ? cardBoldFontAsset : cardRegularFontAsset;
+            if (font == null) { return; }
+            label.font = font;
+            if (bold) { label.fontStyle &= ~FontStyles.Bold; }
+        }
+
+        /// <summary>
+        /// label.fontMaterial (not fontSharedMaterial) clones a per-instance material the first
+        /// time it's accessed -- bumping _FaceDilate there thickens this one label's ink without
+        /// touching the shared default material or any other text in the project. Guarded by
+        /// isActiveAndEnabled: TMP_Text's lazy material/clone setup only runs once a label has
+        /// actually been active (confirmed live NullReferenceException risk otherwise --
+        /// UniversalButtonBorderApplier hit the exact same thing for its own per-label material
+        /// touch). backHeaderLabel/backBody are built while backFace is still SetActive(false),
+        /// so this no-ops for them at construction time; BuildLiteratesFlipCard's own flip
+        /// OnComplete re-calls this once backFace actually activates.
+        /// </summary>
+        private static void ApplyCardInkFaceDilate(TextMeshProUGUI label)
+        {
+            if (label == null || !label.isActiveAndEnabled) { return; }
+            Material instanceMaterial = label.fontMaterial;
+            if (instanceMaterial != null && instanceMaterial.HasProperty("_FaceDilate"))
+            {
+                instanceMaterial.SetFloat("_FaceDilate", 0.15f);
+            }
+        }
+
         private static TextMeshProUGUI CreateInkLabel(Transform parent, string text, float maxSize, float minSize, FontStyles style, bool fadedInk)
         {
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -486,6 +547,11 @@ namespace BrainDrain.UI
             label.fontSizeMax = maxSize;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
+
+            bool isBold = (style & FontStyles.Bold) != 0;
+            AssignCardInkFont(label, isBold);
+            ApplyCardInkFaceDilate(label);
+
             return label;
         }
 
