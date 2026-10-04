@@ -40,6 +40,17 @@ namespace BrainDrain.UI
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
         private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
+        // 2026-10-04 art pass (B): business-card restyle. Ink matches IntelCardUI's own
+        // CardBodyInk (#1B0F2E) rather than the lighter PaperTextColor above, since the tagline
+        // needs real contrast at 70% alpha against cream paper.
+        private static readonly Color32 CardInk = new Color32(0x1B, 0x0F, 0x2E, 255);
+        private static Sprite paperSprite;
+        private static Sprite shadowSprite;
+        private static Sprite monogramRingSprite;
+        private static Sprite stampNewSprite;
+        private static bool spritesLoaded;
+        private static bool loggedMissingReadFlag;
+
         private static PocketPanelUI instance;
         private static bool isShuttingDown;
 
@@ -333,7 +344,7 @@ namespace BrainDrain.UI
             contentRect.sizeDelta = Vector2.zero;
 
             VerticalLayoutGroup layout = contentObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 16f;
+            layout.spacing = 18f; // 2026-10-04 art pass (B): business-card spacing
             layout.padding = new RectOffset(8, 8, 8, 8);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
@@ -452,44 +463,230 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>One collected card, shown as its aged-paper front; tapping re-opens the full
-        /// card verbatim through IntelCardUI (its own sortingOrder-500 overlay floats above this
-        /// panel). onConfirmed is null: re-reading only closes, it never re-fires FTUE state.</summary>
+        /// <summary>
+        /// 2026-10-04 art pass (B): loads the 4 business-card sprites once (Resources/UI/Generated,
+        /// see CardAndEventArtGenerator) rather than per-card -- cards rebuild every Open() and
+        /// every live collection event, so a per-card Resources.Load would repeat needlessly.
+        /// Static + a loaded flag since every PocketPanelUI instance (there's only ever one, but
+        /// nothing enforces that at the type level) shares the same art.
+        /// </summary>
+        private static void EnsureSpritesLoaded()
+        {
+            if (spritesLoaded) { return; }
+            paperSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Paper");
+            shadowSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Shadow");
+            monogramRingSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Monogram_Ring");
+            stampNewSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Stamp_New");
+            spritesLoaded = true;
+        }
+
+        /// <summary>One collected card, shown as a tilted business card (front text split into
+        /// name + tagline, same as the full IntelCardUI flip's front per item C); tapping re-opens
+        /// the full card verbatim through IntelCardUI (its own sortingOrder-500 overlay floats
+        /// above this panel). onConfirmed is null: re-reading only closes, it never re-fires FTUE
+        /// state.</summary>
         private void BuildSpine(IntelCardCatalog.LiteratesCard card)
         {
+            EnsureSpritesLoaded();
+            SplitFrontTitle(card.Front, out string businessName, out string tagline);
+
             GameObject spineObject = new GameObject("CardSpine", typeof(RectTransform));
             spineObject.transform.SetParent(contentRoot, false);
 
-            Image image = spineObject.AddComponent<Image>();
-            image.color = PaperColor;
+            // Hit area lives on the unrotated root so the click rect stays a plain rectangle
+            // regardless of the visual tilt applied to TiltGroup below.
+            Image hitArea = spineObject.AddComponent<Image>();
+            hitArea.color = new Color(0f, 0f, 0f, 0f);
 
             Button button = spineObject.AddComponent<Button>();
-            button.targetGraphic = image;
+            button.targetGraphic = hitArea;
             button.onClick.AddListener(() =>
                 IntelCardUI.Show(IntelCardSkin.LiteratesCard, card.Front, card.Back, card.Confirm, null));
 
             LayoutElement layoutElement = spineObject.AddComponent<LayoutElement>();
-            layoutElement.minHeight = 120f;
+            layoutElement.minHeight = 160f;
 
+            GameObject tiltObject = new GameObject("TiltGroup", typeof(RectTransform));
+            tiltObject.transform.SetParent(spineObject.transform, false);
+            RectTransform tiltRect = tiltObject.GetComponent<RectTransform>();
+            tiltRect.anchorMin = Vector2.zero;
+            tiltRect.anchorMax = Vector2.one;
+            tiltRect.offsetMin = new Vector2(10f, 10f);
+            tiltRect.offsetMax = new Vector2(-10f, -10f);
+            // Deterministic +/-1.5 degree tilt from a stable hash of the card id -- never changes
+            // between opens (card ids are save/derivation keys, never renumbered, per
+            // IntelCardCatalog's own doc comment), unlike System.String.GetHashCode() which isn't
+            // guaranteed stable across runtimes/processes.
+            float tiltDegrees = (StableHash01(card.Id) * 2f - 1f) * 1.5f;
+            tiltRect.localRotation = Quaternion.Euler(0f, 0f, tiltDegrees);
+
+            if (shadowSprite != null)
+            {
+                GameObject shadowObject = new GameObject("Shadow", typeof(RectTransform));
+                shadowObject.transform.SetParent(tiltObject.transform, false);
+                RectTransform shadowRect = shadowObject.GetComponent<RectTransform>();
+                shadowRect.anchorMin = Vector2.zero;
+                shadowRect.anchorMax = Vector2.one;
+                // Shifts the whole stretched rect by (6,-6) without changing its size -- offsetMin
+                // and offsetMax both move by the same delta.
+                shadowRect.offsetMin = new Vector2(6f, -6f);
+                shadowRect.offsetMax = new Vector2(6f, -6f);
+                Image shadowImage = shadowObject.AddComponent<Image>();
+                shadowImage.sprite = shadowSprite;
+                shadowImage.type = Image.Type.Sliced;
+                shadowImage.raycastTarget = false;
+            }
+
+            GameObject paperObject = new GameObject("Paper", typeof(RectTransform));
+            paperObject.transform.SetParent(tiltObject.transform, false);
+            RectTransform paperRect = paperObject.GetComponent<RectTransform>();
+            paperRect.anchorMin = Vector2.zero;
+            paperRect.anchorMax = Vector2.one;
+            paperRect.offsetMin = Vector2.zero;
+            paperRect.offsetMax = Vector2.zero;
+            Image paperImage = paperObject.AddComponent<Image>();
+            if (paperSprite != null)
+            {
+                paperImage.sprite = paperSprite;
+                paperImage.type = Image.Type.Sliced;
+            }
+            else
+            {
+                paperImage.color = PaperColor; // fallback if the generator hasn't been run
+            }
+            paperImage.raycastTarget = false;
+
+            const float ringSize = 84f;
+            GameObject ringObject = new GameObject("Ring", typeof(RectTransform));
+            ringObject.transform.SetParent(tiltObject.transform, false);
+            RectTransform ringRect = ringObject.GetComponent<RectTransform>();
+            ringRect.anchorMin = new Vector2(0f, 0.5f);
+            ringRect.anchorMax = new Vector2(0f, 0.5f);
+            ringRect.pivot = new Vector2(0f, 0.5f);
+            ringRect.sizeDelta = new Vector2(ringSize, ringSize);
+            ringRect.anchoredPosition = new Vector2(20f, 0f);
+            Image ringImage = ringObject.AddComponent<Image>();
+            ringImage.sprite = monogramRingSprite;
+            ringImage.raycastTarget = false;
+
+            TextMeshProUGUI initials = CreateInkLabel(ringObject.transform, GetInitials(businessName), 28f, 18f, FontStyles.Bold, false);
+            initials.alignment = TextAlignmentOptions.Center;
+
+            float textLeft = 20f + ringSize + 16f;
+
+            GameObject nameObject = new GameObject("NameText", typeof(RectTransform));
+            nameObject.transform.SetParent(tiltObject.transform, false);
+            RectTransform nameRect = nameObject.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 0.5f);
+            nameRect.anchorMax = new Vector2(1f, 1f);
+            nameRect.offsetMin = new Vector2(textLeft, 0f);
+            nameRect.offsetMax = new Vector2(-16f, -8f);
+            TextMeshProUGUI nameLabel = CreateInkLabel(nameObject.transform, businessName.ToUpperInvariant(), 26f, 20f, FontStyles.Bold, false);
+            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
+
+            GameObject taglineObject = new GameObject("TaglineText", typeof(RectTransform));
+            taglineObject.transform.SetParent(tiltObject.transform, false);
+            RectTransform taglineRect = taglineObject.GetComponent<RectTransform>();
+            taglineRect.anchorMin = Vector2.zero;
+            taglineRect.anchorMax = new Vector2(1f, 0.5f);
+            taglineRect.offsetMin = new Vector2(textLeft, 8f);
+            taglineRect.offsetMax = new Vector2(-16f, 0f);
+            TextMeshProUGUI taglineLabel = CreateInkLabel(taglineObject.transform, tagline, 22f, 18f, FontStyles.Italic, true);
+            taglineLabel.alignment = TextAlignmentOptions.TopLeft;
+
+            // "Unread" has no backing flag anywhere in this codebase -- FTUEManager.
+            // CollectedLiteratesCardIds IS the seen-flag set, so every card reaching this method
+            // was by definition already shown once as a modal. Per the brief's own fallback:
+            // skip the stamp and log once (not per-card) rather than fabricate a flag.
+            if (!loggedMissingReadFlag)
+            {
+                loggedMissingReadFlag = true;
+                Debug.Log("[PocketPanelUI] No unread/read flag exists for Pocket cards (CollectedLiteratesCardIds is the seen-flag set itself) -- BizCard_Stamp_New is not applied to any card.");
+            }
+        }
+
+        /// <summary>Splits "BUSINESS NAME — \"tagline\"" the way every IntelCardCatalog.Front
+        /// string is already formatted. Falls back to the whole string as the name with an empty
+        /// tagline if the separator isn't present (defensive; every current entry has it).</summary>
+        private static void SplitFrontTitle(string front, out string name, out string tagline)
+        {
+            const string separator = " — ";
+            int index = front != null ? front.IndexOf(separator, System.StringComparison.Ordinal) : -1;
+            if (index < 0)
+            {
+                name = front ?? string.Empty;
+                tagline = string.Empty;
+                return;
+            }
+            name = front.Substring(0, index).Trim();
+            tagline = front.Substring(index + separator.Length).Trim();
+        }
+
+        /// <summary>1-2 letter monogram from a business name's word-initials, e.g. "GARY'S
+        /// DISCOUNT MATTRESS EMPORIUM" -> per-word initials "GDME" -> first two -> "GD". Skips
+        /// words with no alphabetic character at all (e.g. "#2").</summary>
+        private static string GetInitials(string name)
+        {
+            if (string.IsNullOrEmpty(name)) { return string.Empty; }
+
+            var acronym = new System.Text.StringBuilder();
+            foreach (string word in name.Split(' '))
+            {
+                foreach (char c in word)
+                {
+                    if (char.IsLetter(c))
+                    {
+                        acronym.Append(char.ToUpperInvariant(c));
+                        break;
+                    }
+                }
+                if (acronym.Length >= 2) { break; }
+            }
+
+            return acronym.ToString();
+        }
+
+        /// <summary>Stable (process/runtime-independent) [0,1) hash -- FNV-1a over the string's
+        /// chars. System.String.GetHashCode() is explicitly documented as not guaranteed stable
+        /// across .NET versions/processes, which would violate "never changes between opens."</summary>
+        private static float StableHash01(string s)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                if (s != null)
+                {
+                    foreach (char c in s)
+                    {
+                        hash ^= c;
+                        hash *= 16777619u;
+                    }
+                }
+                return (hash & 0xFFFFFFu) / (float)0x1000000u;
+            }
+        }
+
+        private static TextMeshProUGUI CreateInkLabel(Transform parent, string text, float maxSize, float minSize, FontStyles style, bool fadedInk)
+        {
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
-            labelObject.transform.SetParent(spineObject.transform, false);
+            labelObject.transform.SetParent(parent, false);
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(20f, 12f);
-            labelRect.offsetMax = new Vector2(-20f, -12f);
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
 
             TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
-            label.text = card.Front;
-            label.color = PaperTextColor;
-            label.fontStyle = FontStyles.Bold;
-            label.alignment = TextAlignmentOptions.Left;
-            label.fontSize = 28f;
+            label.text = text;
+            label.color = fadedInk ? new Color(CardInk.r / 255f, CardInk.g / 255f, CardInk.b / 255f, 0.7f) : (Color)CardInk;
+            label.fontStyle = style;
+            label.fontSize = maxSize;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 22f;
-            label.fontSizeMax = 28f;
+            label.fontSizeMin = minSize;
+            label.fontSizeMax = maxSize;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
+            return label;
         }
 
         private static void CreateStretchedLabel(Transform parent, string text, Color color, float maxSize, float minSize, FontStyles style)
