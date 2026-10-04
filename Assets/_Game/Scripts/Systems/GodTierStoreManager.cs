@@ -570,9 +570,12 @@ namespace BrainDrain.Systems
         /// its transactionId specifically so repeat clicks stack (matching real repeat purchases)
         /// rather than being deduped as replays of the same transaction. Compiles out of any
         /// build, matching DailyEngagementCapManager's DebugBurnFullRateAllowance precedent.
+        /// 2026-10-04: made public (was private) so DebugCheats.GrantTestTimedItem can reach it
+        /// from a BrainDrain > Testing menu item too, not just the Inspector's context menu --
+        /// same underlying call either way, no new logic duplicated.
         /// </summary>
         [ContextMenu("DEBUG: Buy Brain Freeze (24h)")]
-        private void DebugBuyBrainFreeze()
+        public void DebugBuyBrainFreeze()
         {
             for (int i = 0; i < items.Count; i++)
             {

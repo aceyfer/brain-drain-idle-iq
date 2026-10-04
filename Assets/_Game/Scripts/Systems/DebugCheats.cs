@@ -436,6 +436,23 @@ namespace BrainDrain.Systems
                 Debug.Log("[DebugCheats] Save cleared.");
             }
         }
+
+        /// <summary>
+        /// 2026-10-04 art-pass follow-up: lets Claude/Aceyfer verify THE WALLET's membership-card
+        /// restyle without a real store purchase -- delegates to GodTierStoreManager's own
+        /// existing Inspector-only [ContextMenu] debug hook (now public) rather than duplicating
+        /// its item lookup/grant logic. No-ops with a warning if the manager hasn't bootstrapped.
+        /// </summary>
+        public static void GrantTestTimedItem()
+        {
+            if (GodTierStoreManager.Instance == null)
+            {
+                Debug.LogWarning("[DebugCheats] GodTierStoreManager not found; cannot grant a test timed item.");
+                return;
+            }
+
+            GodTierStoreManager.Instance.DebugBuyBrainFreeze();
+        }
     }
 }
 #endif

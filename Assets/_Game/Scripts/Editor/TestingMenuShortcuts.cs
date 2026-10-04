@@ -34,6 +34,9 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Force Random Event Cooldown Elapsed")]
         private static void ForceRandomEventCooldownElapsedMenuItem() => RequirePlayMode(DebugCheats.ForceRandomEventCooldownElapsed);
 
+        [MenuItem("BrainDrain/Testing/Grant Test Timed Item")]
+        private static void GrantTestTimedItemMenuItem() => RequirePlayMode(DebugCheats.GrantTestTimedItem);
+
         [MenuItem("BrainDrain/Testing/Snotting Cycle Test")]
         private static void SnottingCycleTestMenuItem() => RequirePlayMode(DebugCheats.RunSnottingCycleTest);
 
