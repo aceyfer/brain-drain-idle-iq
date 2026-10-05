@@ -27,6 +27,7 @@ namespace BrainDrain.UI
             "PocketOpenButton",
             "WalletOpenButton",
             "RecoverIQButton",
+            "RestorePurchasesButton",
         };
 
         private static Sprite alertFrameSprite;

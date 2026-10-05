@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using BrainDrain.Systems;
+using BrainDrain.Systems.Commerce;
 
 namespace BrainDrain.UI
 {
@@ -42,6 +43,12 @@ namespace BrainDrain.UI
         private static readonly Color CurrentTrackColor = Palette.Cyan;
         private static readonly Color OtherTrackColor = Color.white;
 
+        // IAP RULES item 2: Bad Words Pack must be restorable even when the automatic boot-time
+        // fetch misses it (iOS/edge cases). Built in code, not scene-wired, same "own it in code"
+        // pattern as every other runtime-built button in this project.
+        private TextMeshProUGUI restoreButtonLabel;
+        private IapCommerceService subscribedCommerceService;
+
         private void Awake()
         {
             // 2026-10-05 ART PASS 2 (item 3, consistency sweep): settingsPanel's own background
@@ -80,9 +87,101 @@ namespace BrainDrain.UI
                 trackButtons[i].onClick.AddListener(() => HandleTrackSelected(index));
             }
 
+            BuildRestoreButton();
+
             // Hidden by default -- deliberately after wiring, not via a scene-authored inactive
             // GameObject (see class doc comment).
             gameObject.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (subscribedCommerceService != null)
+            {
+                subscribedCommerceService.OnRestoreCompleted -= HandleRestoreCompleted;
+                subscribedCommerceService = null;
+            }
+        }
+
+        /// <summary>
+        /// IAP RULES item 2: code-built, same "own it in code" pattern as every other runtime
+        /// button in this project -- no scene write. Anchored bottom-center of the panel.
+        /// Restoring is a real store round-trip (FetchPurchases), so the label gives feedback
+        /// rather than looking like a dead click.
+        /// </summary>
+        private void BuildRestoreButton()
+        {
+            if (settingsPanel == null) { return; }
+
+            GameObject buttonObject = new GameObject("RestorePurchasesButton", typeof(RectTransform));
+            buttonObject.transform.SetParent(settingsPanel.transform, false);
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(360f, 64f);
+            rect.anchoredPosition = new Vector2(0f, 24f);
+
+            Image image = buttonObject.AddComponent<Image>();
+            image.color = Color.white;
+
+            Button button = buttonObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(HandleRestoreClicked);
+
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
+            labelObject.transform.SetParent(buttonObject.transform, false);
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+
+            restoreButtonLabel = labelObject.AddComponent<TextMeshProUGUI>();
+            restoreButtonLabel.text = "RESTORE PURCHASES";
+            restoreButtonLabel.fontStyle = FontStyles.Bold;
+            restoreButtonLabel.alignment = TextAlignmentOptions.Center;
+            restoreButtonLabel.fontSize = 22f;
+            restoreButtonLabel.enableAutoSizing = true;
+            restoreButtonLabel.fontSizeMin = 16f;
+            restoreButtonLabel.fontSizeMax = 22f;
+            restoreButtonLabel.raycastTarget = false;
+
+            // Same static Alert_Frame look as the other side panels/buttons from the art passes
+            // (Base fill + Glow border baked into the sprite, Cyan label) -- excluded from
+            // UniversalButtonBorderApplier by name (AlertFrameButtonStyle.ManagedButtonNames) so
+            // a later World Restoration stage change can't re-theme it back toward the ornate
+            // ButtonBorder_Stage art.
+            AlertFrameButtonStyle.Apply(button);
+        }
+
+        private void HandleRestoreClicked()
+        {
+            IapCommerceService commerce = IapCommerceService.Instance;
+            if (commerce == null)
+            {
+                return;
+            }
+
+            if (commerce != subscribedCommerceService)
+            {
+                if (subscribedCommerceService != null)
+                {
+                    subscribedCommerceService.OnRestoreCompleted -= HandleRestoreCompleted;
+                }
+
+                subscribedCommerceService = commerce;
+                subscribedCommerceService.OnRestoreCompleted += HandleRestoreCompleted;
+            }
+
+            if (restoreButtonLabel != null) { restoreButtonLabel.text = "RESTORING…"; }
+            commerce.RestorePurchases();
+        }
+
+        private void HandleRestoreCompleted(bool success)
+        {
+            if (restoreButtonLabel == null) { return; }
+            restoreButtonLabel.text = success ? "RESTORED" : "RESTORE FAILED — TRY AGAIN";
         }
 
         public void OpenPanel()
@@ -140,6 +239,10 @@ namespace BrainDrain.UI
 
         private void RefreshVisuals()
         {
+            // Reset any stale "RESTORING…"/"RESTORED" feedback from a prior session with this
+            // panel open -- a fresh open always starts from the same label.
+            if (restoreButtonLabel != null) { restoreButtonLabel.text = "RESTORE PURCHASES"; }
+
             BackgroundMusicManager musicManager = BackgroundMusicManager.Instance;
 
             if (muteToggle != null && musicManager != null)

@@ -315,6 +315,40 @@ namespace BrainDrain.Systems.Commerce
             storeController.PurchaseProduct(productId);
         }
 
+        private bool restoreInFlight;
+
+        /// <summary>Fired once a manually-triggered RestorePurchases() call resolves (success or
+        /// failure) -- Settings' Restore Purchases button uses this purely for transient "restoring..."
+        /// UI feedback, never a grant signal (OnExistingEntitlementFound/OnPurchaseApproved already
+        /// own that). Not fired for the automatic boot-time fetch.</summary>
+        public event Action<bool> OnRestoreCompleted;
+
+        /// <summary>
+        /// IAP RULES item 2 / Settings' visible "Restore Purchases" button -- the explicit,
+        /// player-triggered re-fetch for iOS/edge cases where the automatic boot-time
+        /// FetchPurchases (InitializeCommerce -> HandleProductsFetched) didn't catch an owned
+        /// non-consumable (e.g. restored on a new device after the store's own silent-restore
+        /// window already passed). Reuses the exact same FetchPurchases -> OnExistingEntitlementFound
+        /// -> GodTierStoreManager.ReconcileExistingEntitlement path boot already uses -- idempotent,
+        /// so re-running it is always safe, never double-grants.
+        /// </summary>
+        public void RestorePurchases()
+        {
+            if (readiness != CommerceReadiness.Ready || storeController == null)
+            {
+                OnRestoreCompleted?.Invoke(false);
+                return;
+            }
+
+            if (restoreInFlight)
+            {
+                return; // same double-tap-guard spirit as BeginPurchase
+            }
+
+            restoreInFlight = true;
+            storeController.FetchPurchases();
+        }
+
         public string GetLocalizedPrice(string productId)
         {
             if (!string.IsNullOrWhiteSpace(productId)
@@ -386,11 +420,23 @@ namespace BrainDrain.Systems.Commerce
 
                 OnExistingEntitlementFound?.Invoke(cartItem.Product.definition.id);
             }
+
+            if (restoreInFlight)
+            {
+                restoreInFlight = false;
+                OnRestoreCompleted?.Invoke(true);
+            }
         }
 
         private void HandlePurchasesFetchFailed(PurchasesFetchFailureDescription failure)
         {
             Debug.LogWarning($"[IapCommerceService] Purchases fetch failed -- offline-owned-item reconciliation may be incomplete this session: {failure}", this);
+
+            if (restoreInFlight)
+            {
+                restoreInFlight = false;
+                OnRestoreCompleted?.Invoke(false);
+            }
         }
 
         private void HandlePurchasePending(PendingOrder order)
