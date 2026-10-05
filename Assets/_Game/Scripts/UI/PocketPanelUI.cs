@@ -39,7 +39,9 @@ namespace BrainDrain.UI
         // 2026-10-04 PALETTE LOCKDOWN: was near-cyan, not the exact token.
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
-        private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+        // 2026-10-04 PALETTE LOCKDOWN audit follow-up: was flat grey 153 -- now White at 70%
+        // alpha (empty-state copy, not a locked/unaffordable state, so Dim's role doesn't fit).
+        private static readonly Color MutedTextColor = new Color(Palette.White.r, Palette.White.g, Palette.White.b, 0.7f);
 
         // 2026-10-04 art pass (B): business-card restyle. Ink matches IntelCardUI's own
         // CardBodyInk (#1B0F2E) rather than the lighter PaperTextColor above, since the tagline

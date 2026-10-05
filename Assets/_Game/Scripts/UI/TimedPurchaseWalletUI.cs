@@ -43,7 +43,9 @@ namespace BrainDrain.UI
         private static readonly Color AccentColor = Palette.Cyan;
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
-        private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+        // 2026-10-04 PALETTE LOCKDOWN audit follow-up: was flat grey 153 -- now White at 70%
+        // alpha (empty-state copy, not a locked/unaffordable state, so Dim's role doesn't fit).
+        private static readonly Color MutedTextColor = new Color(Palette.White.r, Palette.White.g, Palette.White.b, 0.7f);
 
         // 2026-10-04 art pass (D): membership-card restyle palette.
         private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
