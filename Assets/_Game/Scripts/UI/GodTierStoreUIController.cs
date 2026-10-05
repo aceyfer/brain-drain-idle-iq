@@ -55,6 +55,13 @@ namespace BrainDrain.UI
                 GameManager.Instance.OnGameInitialized += BuildStore;
             }
 
+            if (FTUEManager.Instance != null)
+            {
+                FTUEManager.Instance.OnLiteratesCardCollected -= RefreshOpenButtonAvailability;
+                FTUEManager.Instance.OnLiteratesCardCollected += RefreshOpenButtonAvailability;
+            }
+
+            RefreshOpenButtonAvailability();
             BuildStore();
         }
 
@@ -69,10 +76,45 @@ namespace BrainDrain.UI
             {
                 GameManager.Instance.OnGameInitialized -= BuildStore;
             }
+
+            if (FTUEManager.Instance != null)
+            {
+                FTUEManager.Instance.OnLiteratesCardCollected -= RefreshOpenButtonAvailability;
+            }
+        }
+
+        /// <summary>
+        /// IAP RULES: "no purchase popups during the FTUE, and never auto-open the shop on first
+        /// launch." The second half was already true (OpenShop has no caller except openButton's
+        /// own onClick) -- this covers the first half. "FTUE" here means the full §23 FTUE card
+        /// sequence, not just whichever single card is on screen at a given instant: gated on the
+        /// two latest-landing beats (NameRevealSeen, GaryCardSeen) both being true rather than any
+        /// single earlier flag, so the shop can't open mid-sequence between cards either. A null
+        /// FTUEManager.Instance fails OPEN (don't block), matching this codebase's convention for
+        /// a missing dependency rather than permanently hiding the shop over it.
+        /// </summary>
+        private static bool IsFtueComplete()
+        {
+            FTUEManager ftue = FTUEManager.Instance;
+            return ftue == null || (ftue.NameRevealSeen && ftue.GaryCardSeen);
+        }
+
+        private void RefreshOpenButtonAvailability()
+        {
+            if (openButton != null) { openButton.interactable = IsFtueComplete(); }
         }
 
         public void OpenShop()
         {
+            // Belt-and-suspenders on top of RefreshOpenButtonAvailability disabling the button --
+            // also blocks an active FTUE modal (IsModalShowing) specifically, since that can be
+            // true even once NameRevealSeen/GaryCardSeen have both landed if some other card is
+            // mid-display for an unrelated reason.
+            if (!IsFtueComplete() || (FTUEManager.Instance != null && FTUEManager.Instance.IsModalShowing))
+            {
+                return;
+            }
+
             if (shopPanel != null)
             {
                 shopPanel.SetActive(true);
