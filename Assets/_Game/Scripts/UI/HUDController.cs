@@ -40,13 +40,16 @@ namespace BrainDrain.UI
         /// </summary>
         private const float IQSwirlCooldownSeconds = 1.2f;
 
-        private static readonly Color BoneWhite = new Color32(242, 240, 232, 255);
-        private static readonly Color BrainPowerColor = new Color32(0, 221, 235, 255);
-        private static readonly Color CashColor = new Color32(245, 197, 66, 255);
-        private static readonly Color RestorationColor = new Color32(117, 240, 76, 255);
-        private static readonly Color IllumisnottyColor = new Color32(201, 154, 56, 255);
-        private static readonly Color SecondaryColor = new Color32(155, 168, 181, 255);
-        private static readonly Color LockedColor = new Color32(89, 97, 106, 190);
+        // 2026-10-04 PALETTE LOCKDOWN: every HUD text/icon color now resolves through Palette's
+        // 7 tokens -- these locally-named fields stay (readability at each SetTextColor call
+        // site below) but their values are no longer independently authored.
+        private static readonly Color BoneWhite = Palette.White;
+        private static readonly Color BrainPowerColor = Palette.Cyan;
+        private static readonly Color CashColor = Palette.Cyan;
+        private static readonly Color RestorationColor = Palette.Cyan;
+        private static readonly Color IllumisnottyColor = Palette.Cyan;
+        private static readonly Color SecondaryColor = Palette.White;
+        private static readonly Color LockedColor = Palette.Dim;
 
         [Header("UI Text Fields")]
         [SerializeField] private TextMeshProUGUI capacityText;
