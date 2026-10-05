@@ -467,11 +467,26 @@ namespace BrainDrain.Systems.Commerce
                     RaiseStateChanged(productId, PurchaseRequestState.Granted);
                     OnPurchaseApproved?.Invoke(new PurchaseGrantEventArgs(productId, result.GrantTransactionId));
 
-                    // Confirm only AFTER the grant is reported -- GodTierStoreManager's own
-                    // GrantVerifiedEntitlement call (from its OnPurchaseApproved handler) has
-                    // already run synchronously by this point, so the local save reflects the
-                    // grant before Unity IAP is told the order is finalized. Do not reorder this.
-                    storeController.ConfirmPurchase(order);
+                    // Confirm only AFTER the grant is reported AND actually reached disk --
+                    // GodTierStoreManager's own GrantVerifiedEntitlement call (from its
+                    // OnPurchaseApproved handler) has already run synchronously by this point and
+                    // requested an immediate save, so SaveManager.LastSaveSucceeded reflects THIS
+                    // grant's own write, not a stale prior one. IAP RULES: "consume/acknowledge
+                    // only after the grant is saved to disk" -- if the synchronous write failed
+                    // (disk full, permissions), do NOT confirm. The order stays unconfirmed and
+                    // safely replays via OnPurchasePending/OnPurchasesFetched on a later connect,
+                    // same as an outright ValidationRejected -- for a non-consumable that's a free
+                    // re-grant; for a consumable, ConfirmPurchase is what would have told Google to
+                    // consume it, so skipping it here is what keeps the purchase recoverable rather
+                    // than silently lost. Do not reorder any of this.
+                    if (SaveManager.Instance != null && !SaveManager.Instance.LastSaveSucceeded)
+                    {
+                        Debug.LogError($"[IapCommerceService] Grant for '{productId}' succeeded but the local save failed -- NOT confirming the order so it can safely retry.", this);
+                    }
+                    else
+                    {
+                        storeController.ConfirmPurchase(order);
+                    }
                 }
                 else
                 {

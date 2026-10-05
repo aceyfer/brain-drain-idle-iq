@@ -259,6 +259,16 @@ namespace BrainDrain.Systems
         /// </summary>
         public static string SaveFilePath => Path.Combine(Application.persistentDataPath, SaveFileName);
 
+        /// <summary>
+        /// IAP RULES: "consume/acknowledge only after the grant is saved to disk" -- SaveGame()'s
+        /// own File.WriteAllText is wrapped in a try/catch that only logs on failure (a write
+        /// failure must never crash the game), so this is the one place a caller that NEEDS to
+        /// know whether the write actually landed (IapCommerceService, before it tells the store
+        /// to consume/acknowledge a purchase) can check. True by default -- no save attempted yet
+        /// is not a known failure.
+        /// </summary>
+        public bool LastSaveSucceeded { get; private set; } = true;
+
         private void Awake()
         {
             isShuttingDown = false;
@@ -606,9 +616,11 @@ namespace BrainDrain.Systems
             {
                 string json = JsonUtility.ToJson(data, true);
                 File.WriteAllText(SaveFilePath, json);
+                LastSaveSucceeded = true;
             }
             catch (Exception exception)
             {
+                LastSaveSucceeded = false;
                 Debug.LogError($"[SaveManager] Failed to write save file: {exception.Message}", this);
             }
 
