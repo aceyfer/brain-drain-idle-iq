@@ -48,6 +48,16 @@ namespace BrainDrain.UI
             {
                 restingPosition = panelRect.anchoredPosition;
 
+                // 2026-10-04 PALETTE LOCKDOWN audit follow-up: the magenta the audit was still
+                // catching on COGS_Narrator_Panel is this panel's own root Image (a flat
+                // RoundedRect8-sprite fill, m_Color {1, 0.078, 0.576} baked directly in
+                // SampleScene.unity) -- a completely different component from glowOutline below.
+                // The previous pass's "outline reuse bug" theory was wrong: the scene's actual
+                // Outline is baked black, so that fix's else-branch never even runs; this is the
+                // real fix. Fill role -> Surface.
+                Image panelFillImage = panelRect.GetComponent<Image>();
+                if (panelFillImage != null) { panelFillImage.color = Palette.Surface; }
+
                 // Find or add a dedicated Outline for the border glow
                 Outline[] outlines = panelRect.GetComponents<Outline>();
                 foreach (Outline o in outlines)
