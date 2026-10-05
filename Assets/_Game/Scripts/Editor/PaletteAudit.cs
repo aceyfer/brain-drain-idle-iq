@@ -74,6 +74,12 @@ namespace BrainDrain.EditorTools
             {
                 Image image = images[i];
                 if (!image.isActiveAndEnabled) { continue; }
+                // 2026-10-05 audit follow-up: fully-transparent hit-area Images (ConvertButton,
+                // RestoreButton, ShopButton, RebirthTriggerButton/InnerFill, PopupInnerBody,
+                // CelebrationFlashOverlay, etc.) have an off-palette baked/transitional color that
+                // never actually renders -- alpha 0 means the hue is moot, so these are false
+                // violations, not real ones.
+                if (image.color.a <= 0f) { skippedCount++; continue; }
                 if (ShouldSkip(image)) { skippedCount++; continue; }
 
                 checkedCount++;
@@ -89,6 +95,7 @@ namespace BrainDrain.EditorTools
             {
                 TMP_Text label = labels[i];
                 if (!label.isActiveAndEnabled) { continue; }
+                if (label.color.a <= 0f) { skippedCount++; continue; }
 
                 checkedCount++;
                 string closest = ClosestTokenOrNull(label.color);
