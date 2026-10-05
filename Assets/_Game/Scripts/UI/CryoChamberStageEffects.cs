@@ -16,7 +16,9 @@ namespace BrainDrain.UI
     /// matching this project's convention that text always comes from a TMP component. All three
     /// are only ever visible while World Restoration is actually at stage 0 (gated the same way
     /// BackgroundStageView itself reacts to OnRestorationStageChanged), since the glow/labels
-    /// would otherwise float over whatever backdrop a later stage swaps in.
+    /// would otherwise float over whatever backdrop a later stage swaps in. The room art itself is
+    /// swappable: dropping a PNG named CryoChamber_Backdrop.png into Assets/Resources/UI/Generated/
+    /// is picked up automatically instead of the generated room sprite -- see Start().
     /// </summary>
     public sealed class CryoChamberStageEffects : MonoBehaviour
     {
@@ -53,7 +55,14 @@ namespace BrainDrain.UI
             Image backgroundImage = backgroundView != null ? backgroundView.GetComponent<Image>() : null;
             if (backgroundView == null || backgroundImage == null) { return; }
 
-            Sprite roomSprite = Resources.Load<Sprite>("UI/Generated/Stage0_CryoChamber");
+            // 2026-10-05 play-test fix: a hand-painted replacement is swapped in automatically if
+            // Aceyfer drops one into Assets/Resources/UI/Generated/CryoChamber_Backdrop.png -- same
+            // folder the generated art already lives in (Resources.Load can't see outside a
+            // Resources folder at runtime, so this is the one location a drop-in file can live for
+            // this to work in an actual build, not just the Editor). Falls back to the generated
+            // room art when no override file is present.
+            Sprite roomSprite = Resources.Load<Sprite>("UI/Generated/CryoChamber_Backdrop")
+                ?? Resources.Load<Sprite>("UI/Generated/Stage0_CryoChamber");
             if (roomSprite != null) { backgroundView.OverrideStageSprite(0, roomSprite); }
 
             BuildOverlay(backgroundImage.transform);
