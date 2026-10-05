@@ -38,6 +38,13 @@ namespace BrainDrain.UI
         private GodTierStoreManager boundManager;
         private IapCommerceService subscribedCommerceService;
         private bool purchaseInFlight;
+        // IAP RULES: "PENDING purchases (cash/slow cards): show 'Purchase pending', grant nothing
+        // until it completes." Separate from purchaseInFlight -- IapCommerceService.
+        // HandlePurchaseDeferred removes the product from its own pendingProductIds (so a later
+        // real completion can reach OnPurchasePending again), which previously meant this row's
+        // purchaseInFlight reset to false and the button silently went back to fully buyable
+        // while an external payment was still outstanding.
+        private bool purchaseDeferred;
 
         /// <summary>
         /// Populates the private serialized references for runtime-created instances (the
@@ -63,6 +70,7 @@ namespace BrainDrain.UI
             boundData = data;
             boundManager = manager;
             purchaseInFlight = false;
+            purchaseDeferred = false;
 
             ShopBuyButtonLayout.Register(transform, buyButton, priceText, descriptionText);
 
@@ -125,6 +133,7 @@ namespace BrainDrain.UI
                 return;
             }
 
+            purchaseDeferred = state == PurchaseRequestState.Deferred;
             purchaseInFlight = state == PurchaseRequestState.Pending || state == PurchaseRequestState.ValidatingWithBackend;
             RefreshState();
         }
@@ -156,7 +165,7 @@ namespace BrainDrain.UI
                 return;
             }
 
-            if (purchaseInFlight)
+            if (purchaseInFlight || purchaseDeferred)
             {
                 return; // extra guard on top of IapCommerceService's own double-tap protection
             }
@@ -196,7 +205,7 @@ namespace BrainDrain.UI
 
             // §12 decision 8: show owned items regardless of connectivity, only disable NEW
             // purchases while offline -- ownership/ApplyAccent below never depends on offline.
-            bool canPurchase = !owned && !offline && storeReady && !purchaseInFlight;
+            bool canPurchase = !owned && !offline && storeReady && !purchaseInFlight && !purchaseDeferred;
 
             if (priceText != null)
             {
@@ -213,6 +222,13 @@ namespace BrainDrain.UI
                 else if (offline)
                 {
                     priceText.text = "OFFLINE";
+                }
+                else if (purchaseDeferred)
+                {
+                    // IAP RULES: pending external payment (cash/slow card) -- not granted, not
+                    // failed, just not done yet. Stays here (and buyButton stays disabled below)
+                    // until a real OnPurchasePending/OnPurchaseFailed arrives for this product.
+                    priceText.text = "PURCHASE PENDING";
                 }
                 else if (purchaseInFlight)
                 {
@@ -240,7 +256,7 @@ namespace BrainDrain.UI
                 }
             }
 
-            Color accent = owned ? OwnedColor : (offline || !storeReady) ? UnavailableColor : AvailableColor;
+            Color accent = owned ? OwnedColor : (offline || !storeReady || purchaseDeferred) ? UnavailableColor : AvailableColor;
             ApplyAccent(accent);
             if (buyButton != null) buyButton.interactable = profanityToggle || canPurchase;
         }
