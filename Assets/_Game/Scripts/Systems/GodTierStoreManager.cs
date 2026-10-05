@@ -158,6 +158,8 @@ namespace BrainDrain.Systems
                 subscribedCommerceService.OnPurchaseApproved += HandlePurchaseApproved;
                 subscribedCommerceService.OnExistingEntitlementFound -= ReconcileExistingEntitlement;
                 subscribedCommerceService.OnExistingEntitlementFound += ReconcileExistingEntitlement;
+                subscribedCommerceService.OnOwnedNonConsumablesReported -= HandleOwnedNonConsumablesReported;
+                subscribedCommerceService.OnOwnedNonConsumablesReported += HandleOwnedNonConsumablesReported;
             }
         }
 
@@ -172,6 +174,7 @@ namespace BrainDrain.Systems
             {
                 subscribedCommerceService.OnPurchaseApproved -= HandlePurchaseApproved;
                 subscribedCommerceService.OnExistingEntitlementFound -= ReconcileExistingEntitlement;
+                subscribedCommerceService.OnOwnedNonConsumablesReported -= HandleOwnedNonConsumablesReported;
                 subscribedCommerceService = null;
             }
 
@@ -396,6 +399,88 @@ namespace BrainDrain.Systems
             else if (item.effectType == GodTierStoreEffectType.UnlockProfanityPack)
             {
                 RandomChatterManager.Instance?.UnlockProfanity();
+            }
+        }
+
+        /// <summary>
+        /// IAP RULES: "refunded/voided purchases: on next init, revoke the non-consumable if the
+        /// store no longer reports it." reportedProductIds is the COMPLETE current owned set per
+        /// IapCommerceService's own doc comment on OnOwnedNonConsumablesReported (only ever fired
+        /// from a successful fetch, never a failed/partial one) -- so anything locally owned whose
+        /// productId is missing from it has been refunded, charged back, or otherwise voided by
+        /// the store. Items with no productId configured are never touched here (they were never
+        /// purchasable through the store in the first place, so "the store doesn't report it" is
+        /// meaningless for them -- can't distinguish a real revocation from a catalog gap).
+        /// </summary>
+        private void HandleOwnedNonConsumablesReported(IReadOnlyList<string> reportedProductIds)
+        {
+            var reportedSet = new HashSet<string>(reportedProductIds);
+            List<GodTierStoreItemData> toRevoke = null;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                GodTierStoreItemData item = items[i];
+                if (item == null || item.isConsumable || string.IsNullOrWhiteSpace(item.productId)) { continue; }
+                if (!ownedItemIds.Contains(item.itemId)) { continue; }
+                if (reportedSet.Contains(item.productId)) { continue; }
+
+                (toRevoke ??= new List<GodTierStoreItemData>()).Add(item);
+            }
+
+            if (toRevoke == null) { return; }
+
+            for (int i = 0; i < toRevoke.Count; i++)
+            {
+                RevokeEntitlement(toRevoke[i]);
+            }
+
+            OnItemsChanged?.Invoke();
+            GameManager.Instance?.RequestSave();
+        }
+
+        /// <summary>The inverse of ApplyItemEffect -- only ever called from
+        /// HandleOwnedNonConsumablesReported. Never player-reachable.</summary>
+        private void RevokeEntitlement(GodTierStoreItemData item)
+        {
+            ownedItemIds.Remove(item.itemId);
+            Debug.LogWarning($"[GodTierStoreManager] Revoking '{item.itemId}' -- the store no longer reports this purchase (refund/void).", this);
+
+            switch (item.effectType)
+            {
+                case GodTierStoreEffectType.VoicepackDisdain:
+                    CogsVoicepackDisdainOwned = false;
+                    break;
+
+                case GodTierStoreEffectType.UIThemeGlitchSlum:
+                    Y2KGlitchSlumThemeOwned = false;
+                    break;
+
+                case GodTierStoreEffectType.OfflineProgressionExtension:
+                    // Cumulative across (in practice, exactly one) purchases of this item -- only
+                    // subtract what THIS item granted, never reset the whole accumulator, in case
+                    // a future catalog ever has more than one OfflineProgressionExtension item.
+                    // No corresponding "un-extend" on PlayerIQManager -- bonusOfflineDecayMaxHours
+                    // is a convenience window, not something that can be cleanly rolled back
+                    // mid-session without risking a harsher decay than the player ever saw coming.
+                    offlineExtensionHoursGranted = Mathf.Max(0f, offlineExtensionHoursGranted - item.offlineExtensionHours);
+                    break;
+
+                case GodTierStoreEffectType.MembershipCardCosmetic:
+                    IllumisnottyMembershipCardOwned = false;
+                    break;
+
+                case GodTierStoreEffectType.TrashCanFlexCosmetic:
+                    HolographicTrashCanFlexOwned = false;
+                    break;
+
+                case GodTierStoreEffectType.UnlockProfanityPack:
+                    RandomChatterManager.Instance?.LockProfanity();
+                    break;
+
+                case GodTierStoreEffectType.BrainFreezeIQImmunity:
+                    // Consumable -- never reaches here, filtered out in
+                    // HandleOwnedNonConsumablesReported's own isConsumable check.
+                    break;
             }
         }
 

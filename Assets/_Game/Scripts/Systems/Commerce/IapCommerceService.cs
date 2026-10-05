@@ -156,6 +156,18 @@ namespace BrainDrain.Systems.Commerce
         /// </summary>
         public event Action<string> OnExistingEntitlementFound;
 
+        /// <summary>
+        /// Fired once per successful FetchPurchases with the FULL set of non-consumable
+        /// productIds the store currently confirms owned (possibly empty) -- unlike
+        /// OnExistingEntitlementFound's incremental per-item "found" events, this is the
+        /// authoritative complete list for IAP RULES' refund/void revocation check
+        /// (GodTierStoreManager compares it against its own locally-saved owned set and revokes
+        /// anything no longer present). Only ever fired from the SUCCESS path
+        /// (HandlePurchasesFetched) -- a failed/partial fetch (HandlePurchasesFetchFailed) must
+        /// never be read as "nothing owned", so it deliberately does not fire this at all.
+        /// </summary>
+        public event Action<IReadOnlyList<string>> OnOwnedNonConsumablesReported;
+
         private void Awake()
         {
             isShuttingDown = false;
@@ -398,13 +410,17 @@ namespace BrainDrain.Systems.Commerce
         }
 
         /// <summary>
-        /// App boot/resume reconciliation for non-consumables. An empty or partial fetch here
-        /// (e.g. while offline) must never be read as "ownership revoked" -- this method only
-        /// ever adds confirmations, it never removes anything, so that invariant holds by
-        /// construction rather than needing a special case.
+        /// App boot/resume reconciliation for non-consumables. This method itself still only ever
+        /// ADDS confirmations via OnExistingEntitlementFound, never removes anything directly --
+        /// that invariant holds by construction. The actual revocation check (IAP RULES' refund/
+        /// void rule) lives entirely in GodTierStoreManager, driven by OnOwnedNonConsumablesReported
+        /// below, fired ONLY from this success path -- never from HandlePurchasesFetchFailed, so a
+        /// failed/offline fetch is never misread as "nothing owned, revoke everything".
         /// </summary>
         private void HandlePurchasesFetched(Orders orders)
         {
+            var ownedProductIds = new List<string>();
+
             foreach (var confirmedOrder in orders.ConfirmedOrders)
             {
                 var cartItem = confirmedOrder.CartOrdered.Items().FirstOrDefault();
@@ -418,8 +434,11 @@ namespace BrainDrain.Systems.Commerce
                     continue; // consumables are never re-granted from a fetch replay -- see GodTierStoreManager.ReconcileExistingEntitlement
                 }
 
+                ownedProductIds.Add(cartItem.Product.definition.id);
                 OnExistingEntitlementFound?.Invoke(cartItem.Product.definition.id);
             }
+
+            OnOwnedNonConsumablesReported?.Invoke(ownedProductIds);
 
             if (restoreInFlight)
             {

@@ -302,6 +302,27 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
+        /// IAP RULES: "refunded/voided purchases: revoke the non-consumable if the store no
+        /// longer reports it." The inverse of UnlockProfanity -- only ever called by
+        /// GodTierStoreManager when a refund/void is detected on a store fetch, never by any
+        /// player-facing UI (there's no in-game way to "re-lock" your own purchase). Also force-
+        /// disables the Tier 3 toggle, same reasoning as ApplyItemEffect's own "force-enable only
+        /// on purchase" comment in reverse -- a revoked unlock can't leave lines turned on.
+        /// </summary>
+        public void LockProfanity()
+        {
+            if (profanityUnlocked)
+            {
+                profanityUnlocked = false;
+                PlayerPrefs.SetInt(ProfanityUnlockedPrefsKey, 0);
+                PlayerPrefs.Save();
+            }
+
+            ToggleProfanity(false);
+            OnProfanitySettingsChanged?.Invoke();
+        }
+
+        /// <summary>
         /// Turns Tier 3 lines on/off independent of unlock status, and persists the choice to
         /// PlayerPrefs separately from profanityUnlocked.
         /// </summary>
