@@ -48,7 +48,7 @@ namespace BrainDrain.UI
             {
                 restingPosition = panelRect.anchoredPosition;
 
-                // Find or add a dedicated Outline for the Hot Pink glow
+                // Find or add a dedicated Outline for the border glow
                 Outline[] outlines = panelRect.GetComponents<Outline>();
                 foreach (Outline o in outlines)
                 {
@@ -60,8 +60,27 @@ namespace BrainDrain.UI
                 if (glowOutline == null)
                 {
                     glowOutline = panelRect.gameObject.AddComponent<Outline>();
-                    glowOutline.effectColor = new Color(1f, 0.078f, 0.576f, 0f); // Hot Pink, transparent initially
+                    // 2026-10-04 PALETTE LOCKDOWN: was Hot Pink -- now Palette.Glow, alpha starts
+                    // transparent same as before (every other glowOutline touch in this file only
+                    // animates .a, never RGB).
+                    glowOutline.effectColor = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, 0f);
                     glowOutline.effectDistance = Vector2.zero;
+                }
+
+                // 2026-10-04 PALETTE LOCKDOWN: COGS_Narrator_Panel's "Header" child and its
+                // "TitleText" are both scene-baked (bright green fill {0.22,1,0.08}, hand-authored
+                // directly in SampleScene.unity, never touched by any controller) -- no .unity
+                // write allowed, so this overrides them at runtime instead, the same pattern
+                // EnforceMinimumFontSizes uses elsewhere. Header -> Surface, title text -> Cyan.
+                Transform headerTransform = panelRect.Find("Header");
+                if (headerTransform != null)
+                {
+                    Image headerImage = headerTransform.GetComponent<Image>();
+                    if (headerImage != null) { headerImage.color = Palette.Surface; }
+
+                    Transform titleTransform = headerTransform.Find("TitleText");
+                    TextMeshProUGUI titleLabel = titleTransform != null ? titleTransform.GetComponent<TextMeshProUGUI>() : null;
+                    if (titleLabel != null) { titleLabel.color = Palette.Cyan; }
                 }
 
                 // The GameObject stays ACTIVE: it is shared with COGSPortraitController, and
