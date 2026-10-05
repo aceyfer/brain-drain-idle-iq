@@ -30,6 +30,14 @@ namespace BrainDrain.UI
             "RestorePurchasesButton",
         };
 
+        // 2026-10-05 play-test fix: labels were stretched edge-to-edge with zero inset (each
+        // caller's own CreateStretchedLabel-style helper, or LogOpenButton's scene-authored label,
+        // all anchored 0,0-1,1 with no offset) so the text touched the Alert_Frame border. Fixed
+        // centrally here, once, rather than in each of the four builder call sites.
+        private const float HorizontalPadding = 12f;
+        private const float VerticalPadding = 6f;
+        private const float AutoSizeMinFloor = 16f;
+
         private static Sprite alertFrameSprite;
         private static bool spriteLoaded;
 
@@ -47,7 +55,18 @@ namespace BrainDrain.UI
             }
 
             TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
-            if (label != null) { label.color = Palette.Cyan; }
+            if (label != null)
+            {
+                label.color = Palette.Cyan;
+
+                RectTransform labelRect = label.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(HorizontalPadding, VerticalPadding);
+                labelRect.offsetMax = new Vector2(-HorizontalPadding, -VerticalPadding);
+
+                if (label.enableAutoSizing) { label.fontSizeMin = AutoSizeMinFloor; }
+            }
         }
 
         private static void EnsureSpriteLoaded()
