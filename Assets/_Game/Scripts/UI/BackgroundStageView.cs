@@ -30,6 +30,40 @@ namespace BrainDrain.UI
         private Coroutine transitionRoutine;
         private bool hasResolvedInitialStage;
 
+        /// <summary>
+        /// 2026-10-05 ART PASS 2: lets a self-bootstrapping component (CryoChamberStageEffects)
+        /// swap a stage's backdrop sprite at runtime without a scene write -- stageSprites[] is
+        /// otherwise only ever authored in the Inspector. Grows the array if the requested index
+        /// is out of range (Stage 0's slot may not exist yet in an older scene save). If the
+        /// sprite currently on screen IS the one being replaced (or no sprite has resolved yet),
+        /// re-applies immediately so callers running after this component's own Awake still take
+        /// effect -- RuntimeInitializeOnLoadMethod(AfterSceneLoad) fires after every scene
+        /// object's own Awake/OnEnable, so without this the override would only apply starting
+        /// from the NEXT stage transition, never the current one.
+        /// </summary>
+        public void OverrideStageSprite(int index, Sprite sprite)
+        {
+            if (sprite == null || index < 0) { return; }
+
+            if (stageSprites == null) { stageSprites = new Sprite[index + 1]; }
+            else if (stageSprites.Length <= index)
+            {
+                var grown = new Sprite[index + 1];
+                stageSprites.CopyTo(grown, 0);
+                stageSprites = grown;
+            }
+
+            Sprite previous = stageSprites[index];
+            stageSprites[index] = sprite;
+
+            if (backgroundImage != null && (backgroundImage.sprite == previous || backgroundImage.sprite == null)
+                && ResolveCurrentStageIndex() == index)
+            {
+                backgroundImage.sprite = sprite;
+                SetAlpha(1f);
+            }
+        }
+
         private void Awake()
         {
             backgroundImage = GetComponent<Image>();
