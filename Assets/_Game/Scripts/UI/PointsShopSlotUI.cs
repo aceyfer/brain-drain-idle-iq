@@ -14,8 +14,10 @@ namespace BrainDrain.UI
     public sealed class PointsShopSlotUI : MonoBehaviour
     {
         private static readonly Color LockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
-        private static readonly Color TooExpensiveColor = new Color32(0xFF, 0x00, 0x7F, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: AffordableColor was near-cyan (not the exact token);
+        // TooExpensiveColor was hot pink/red -- now Cyan and Dim (locked/unaffordable role).
+        private static readonly Color AffordableColor = Palette.Cyan;
+        private static readonly Color TooExpensiveColor = Palette.Dim;
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
 
         [Header("Text")]
@@ -135,7 +137,7 @@ namespace BrainDrain.UI
         {
             if (background != null) background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
             if (nameText != null) nameText.color = Color.white; // Stable white for readability
-            if (costText != null) costText.color = new Color(1f, 0.92f, 0.016f, 1f); // Warm stable gold for cost
+            if (costText != null) costText.color = Palette.Cyan; // 2026-10-04 PALETTE LOCKDOWN: was warm gold
         }
     }
 }

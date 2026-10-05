@@ -24,8 +24,10 @@ namespace BrainDrain.UI
     public sealed class CashShopSlotUI : MonoBehaviour
     {
         private static readonly Color LockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
-        private static readonly Color TooExpensiveColor = new Color32(0xFF, 0x00, 0x7F, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: AffordableColor was near-cyan (not the exact token);
+        // TooExpensiveColor was hot pink/red -- now Cyan and Dim (locked/unaffordable role).
+        private static readonly Color AffordableColor = Palette.Cyan;
+        private static readonly Color TooExpensiveColor = Palette.Dim;
         private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
 
         [Header("Text")]
@@ -111,8 +113,8 @@ namespace BrainDrain.UI
                 if (nameText != null)
                 {
                     string ownedPrefix = boundData.itemId == "profanity_pack"
-                        ? "<size=18><color=#00F0FF>ONE-TIME UNLOCK</color></size>"
-                        : "<size=18><color=#39FF14>ONE-TIME UPGRADE</color></size>";
+                        ? "<size=18><color=#00DDEB>ONE-TIME UNLOCK</color></size>"
+                        : "<size=18><color=#00DDEB>ONE-TIME UPGRADE</color></size>";
                     nameText.text = $"{ownedPrefix}\n{boundData.displayName}";
                     nameText.fontSize = 32f;
                 }
@@ -197,7 +199,7 @@ namespace BrainDrain.UI
         {
             if (background != null) background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
             if (nameText != null) nameText.color = Color.white; // Stable white for readability
-            if (costText != null) costText.color = new Color(1f, 0.92f, 0.016f, 1f); // Warm stable gold for cost
+            if (costText != null) costText.color = Palette.Cyan; // 2026-10-04 PALETTE LOCKDOWN: was warm gold
         }
     }
 }

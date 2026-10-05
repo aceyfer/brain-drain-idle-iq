@@ -23,11 +23,14 @@ namespace BrainDrain.UI
         // changes the buy button's own constant base surface, not what signals afford/deny.
         private static readonly Color PurchaseSurfaceColor = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
         private static readonly Color LockedColor = new Color32(0x59, 0x61, 0x6A, 0xFF);
-        private static readonly Color LockedPriceColor = new Color32(0xF2, 0xF0, 0xE8, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0x75, 0xF0, 0x4C, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: LockedPriceColor/AffordableColor/CashIdentityColor were
+        // off-white/lime-green/gold -- now White/Cyan/Deep Cyan. CashIdentityColor uses Deep Cyan
+        // rather than Cyan so the BP and Cash accent rails still read as two distinct identities.
+        private static readonly Color LockedPriceColor = Palette.White;
+        private static readonly Color AffordableColor = Palette.Cyan;
         private static readonly Color TooExpensiveColor = new Color32(0x9B, 0xA8, 0xB5, 0xFF);
-        private static readonly Color BrainPowerIdentityColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
-        private static readonly Color CashIdentityColor = new Color32(0xF5, 0xC5, 0x42, 0xFF);
+        private static readonly Color BrainPowerIdentityColor = Palette.Cyan;
+        private static readonly Color CashIdentityColor = Palette.DeepCyan;
         private static readonly HashSet<UnityEngine.UI.Button> PresentationOwnedButtons = new();
 
         [Header("Text")]
@@ -245,10 +248,10 @@ namespace BrainDrain.UI
                         if (totalBP.Length > 0) totalParts = totalBP;
                         if (totalC.Length > 0) totalParts += (totalParts.Length > 0 ? "  " : "") + totalC;
                         if (totalTap.Length > 0) totalParts += (totalParts.Length > 0 ? "  " : "") + totalTap;
-                        totalLine = $"\n<color=#FFD700>TOTAL ({level}×): {totalParts}</color>";
+                        totalLine = $"\n<color=#00DDEB>TOTAL ({level}×): {totalParts}</color>";
                     }
 
-                    descriptionText.text = $"{boundData.GetDescription(worldStageIndex)}\n<color=#00F0FF><b>Per level: {perLevel}</b></color>{totalLine}";
+                    descriptionText.text = $"{boundData.GetDescription(worldStageIndex)}\n<color=#00DDEB><b>Per level: {perLevel}</b></color>{totalLine}";
                 }
                 else
                 {

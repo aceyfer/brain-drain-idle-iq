@@ -253,8 +253,8 @@ namespace BrainDrain.UI
                 if (companionQuoteText != null)
                 {
                     companionQuoteText.text = owned != null
-                        ? $"{owned.displayName}\n{owned.quote}\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>"
-                        : "THEY ARE THE ILLUMISNOTTY NOW.\n<color=#39FF14><font-weight=bold>Effect: Maxed</font-weight></color>";
+                        ? $"{owned.displayName}\n{owned.quote}\n<color=#00DDEB><font-weight=bold>Effect: Maxed</font-weight></color>"
+                        : "THEY ARE THE ILLUMISNOTTY NOW.\n<color=#00DDEB><font-weight=bold>Effect: Maxed</font-weight></color>";
                 }
                 if (companionCostText != null) companionCostText.text = "MAXED";
                 if (companionTierText != null) companionTierText.text = $"TIER {companionManager.CurrentTier}/6";

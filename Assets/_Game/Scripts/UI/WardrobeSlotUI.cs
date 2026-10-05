@@ -12,9 +12,11 @@ namespace BrainDrain.UI
     public sealed class WardrobeSlotUI : MonoBehaviour
     {
         // Neon, high-contrast palette (bloom-ready) -- matches UpgradeSlotUI's accent scheme.
-        private static readonly Color LockedColor = new Color32(0x4A, 0x4E, 0x5D, 0xFF);
-        private static readonly Color EquippedColor = new Color32(0x00, 0xF0, 0xFF, 0xFF);
-        private static readonly Color UnlockedColor = new Color32(0xFF, 0x00, 0x7F, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: EquippedColor was near-cyan (not the exact token);
+        // UnlockedColor was hot pink -- now Glow (unlocked-but-not-equipped reads as "available").
+        private static readonly Color LockedColor = Palette.Dim;
+        private static readonly Color EquippedColor = Palette.Cyan;
+        private static readonly Color UnlockedColor = Palette.Glow;
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;

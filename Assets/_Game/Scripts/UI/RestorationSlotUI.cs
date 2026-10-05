@@ -11,10 +11,13 @@ namespace BrainDrain.UI
     /// </summary>
     public sealed class RestorationSlotUI : MonoBehaviour
     {
-        private static readonly Color CompleteColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
-        private static readonly Color AffordableColor = new Color32(0xFF, 0x3D, 0xB4, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN (dead-code tab, see class doc -- fixed anyway per the
+        // project-wide sweep). CompleteColor was lime, AffordableColor was hot pink; LockedColor
+        // now uses the Dim role token.
+        private static readonly Color CompleteColor = Palette.Cyan;
+        private static readonly Color AffordableColor = Palette.Cyan;
         private static readonly Color TooExpensiveColor = new Color32(0x7F, 0x8C, 0x8D, 0xFF);
-        private static readonly Color LockedColor = new Color32(0x8A, 0x8D, 0x9B, 0xFF);
+        private static readonly Color LockedColor = Palette.Dim;
 
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;

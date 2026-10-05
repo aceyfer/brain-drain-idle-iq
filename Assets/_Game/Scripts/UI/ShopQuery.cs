@@ -215,10 +215,10 @@ namespace BrainDrain.UI
                 string totalParts = totalBp.Length > 0 && totalCashLabel.Length > 0
                     ? $"{totalBp}  {totalCashLabel}"
                     : $"{totalBp}{totalCashLabel}";
-                totalLine = $"\n<color=#FFD700>TOTAL ({level}×): {totalParts}</color>";
+                totalLine = $"\n<color=#00DDEB>TOTAL ({level}×): {totalParts}</color>";
             }
 
-            return $"{data.description}\n<color=#00F0FF><b>Per level: {perLevel}</b></color>{totalLine}";
+            return $"{data.description}\n<color=#00DDEB><b>Per level: {perLevel}</b></color>{totalLine}";
         }
 
         private static string FormatBuildingCost(BuildingData data, double cost)

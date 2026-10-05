@@ -20,8 +20,10 @@ namespace BrainDrain.UI
         // actionable convention (God Shop rows have no separate fill state to touch here -- see
         // ApplyAccent below, which still only recolors label text/background tint, never fill).
         private static readonly Color AvailableColor = Color.white;
-        private static readonly Color OwnedColor = new Color32(0x39, 0xFF, 0x14, 0xFF);
-        private static readonly Color UnavailableColor = new Color32(0x80, 0x80, 0x80, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: OwnedColor was lime -- now Cyan; UnavailableColor now
+        // shares the Dim locked/unaffordable role token.
+        private static readonly Color OwnedColor = Palette.Cyan;
+        private static readonly Color UnavailableColor = Palette.Dim;
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
