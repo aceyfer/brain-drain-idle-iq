@@ -219,9 +219,14 @@ namespace BrainDrain.UI
                 {
                     priceText.text = "OWNED";
                 }
-                else if (offline)
+                else if (offline || !storeReady)
                 {
-                    priceText.text = "OFFLINE";
+                    // IAP RULES exact wording: "the buy buttons show 'Store unavailable'". Was
+                    // "OFFLINE" and only checked the offline case -- a store-side failure with
+                    // internet up (readiness == Unavailable, e.g. connect failed) fell through to
+                    // the price-text branch below, showing a stale/absent price on a button that
+                    // was already correctly disabled but didn't SAY why.
+                    priceText.text = "STORE UNAVAILABLE";
                 }
                 else if (purchaseDeferred)
                 {
