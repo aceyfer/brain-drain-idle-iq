@@ -47,7 +47,9 @@ namespace BrainDrain.UI
         private static readonly Color CardBackdropColor = new Color(0f, 0f, 0f, 0.7f);
         private static readonly Color CardPaperColor = new Color(0.90f, 0.85f, 0.72f, 1f);
         private static readonly Color32 CardInk = new Color32(0x1B, 0x0F, 0x2E, 255);
-        private static readonly Color CardBodyInk = new Color32(0x1B, 0x0F, 0x2E, 217);
+        // 2026-10-05 ART PASS 2: back body was 85% alpha -- now full-opacity Palette.Base, same
+        // as every other ink on the card.
+        private static readonly Color CardBodyInk = new Color32(0x1B, 0x0F, 0x2E, 255);
 
         private static Sprite paperSprite;
         private static Sprite shadowSprite;
@@ -320,7 +322,14 @@ namespace BrainDrain.UI
             backBodyRect.offsetMax = new Vector2(-48f, -112f);
             TextMeshProUGUI backBody = CreateText(backBodyObject.transform, bodyText, 30f, CardBodyInk, FontStyles.Normal);
             AssignCardInkFont(backBody, false);
-            ApplyCardInkFaceDilate(backBody);
+            // 2026-10-05 ART PASS 2: explicit 28/40 autosize range (CreateText's own generic
+            // default was 22/30); vertically centered in its box (between the header above and
+            // the confirm button below) rather than pinned to the top -- TextAlignmentOptions.Left
+            // is horizontal-left + vertical-middle in TMP's unified enum, Center is horizontal too.
+            backBody.fontSizeMin = 28f;
+            backBody.fontSizeMax = 40f;
+            backBody.alignment = TextAlignmentOptions.Left;
+            ApplyCardInkFaceDilate(backBody, 0.2f);
 
             // Confirm button -- hidden until the flip completes. "Alert_Button recolored to
             // ink-on-paper": Alert_Button.png bakes its cyan border/glow as solid RGB with uniform
@@ -411,7 +420,7 @@ namespace BrainDrain.UI
                         // ApplyCardInkFaceDilate's isActiveAndEnabled guard skipped them then, so
                         // re-apply now that the flip has actually activated this hierarchy.
                         ApplyCardInkFaceDilate(backHeaderLabel);
-                        ApplyCardInkFaceDilate(backBody);
+                        ApplyCardInkFaceDilate(backBody, 0.2f);
                         flipTargetObject.transform.DOScaleX(1f, FlipHalfDuration)
                             .SetEase(Ease.InOutQuad)
                             .SetUpdate(true)
@@ -518,13 +527,13 @@ namespace BrainDrain.UI
         /// so this no-ops for them at construction time; BuildLiteratesFlipCard's own flip
         /// OnComplete re-calls this once backFace actually activates.
         /// </summary>
-        private static void ApplyCardInkFaceDilate(TextMeshProUGUI label)
+        private static void ApplyCardInkFaceDilate(TextMeshProUGUI label, float dilate = 0.15f)
         {
             if (label == null || !label.isActiveAndEnabled) { return; }
             Material instanceMaterial = label.fontMaterial;
             if (instanceMaterial != null && instanceMaterial.HasProperty("_FaceDilate"))
             {
-                instanceMaterial.SetFloat("_FaceDilate", 0.15f);
+                instanceMaterial.SetFloat("_FaceDilate", dilate);
             }
         }
 
