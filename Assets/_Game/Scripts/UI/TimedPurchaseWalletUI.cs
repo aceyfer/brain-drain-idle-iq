@@ -38,7 +38,9 @@ namespace BrainDrain.UI
         // gold accent (GodTierStoreSlotUI.AvailableColor) marking this one as the paid-store tie-in.
         // 2026-10-04 PALETTE LOCKDOWN: RowColor/AccentColor/ButtonFillColor were a gold family
         // (dark gold row tint, gold title, gold button fill) -- now Surface/Cyan/Cyan.
-        private static readonly Color PanelChipColor = new Color(0.06f, 0.06f, 0.1f, 0.94f);
+        // 2026-10-05 PALETTE LOCKDOWN audit follow-up: was a near-black non-token grey -- snapped
+        // to the exact Base token, alpha unchanged.
+        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.94f);
         private static readonly Color RowColor = Palette.Surface;
         private static readonly Color AccentColor = Palette.Cyan;
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);

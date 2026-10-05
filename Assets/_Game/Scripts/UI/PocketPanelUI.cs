@@ -35,7 +35,9 @@ namespace BrainDrain.UI
         // drift, IntelCardUI (card colors) and DialogueLogPanelUI (chip/cyan) are the references.
         private static readonly Color PaperColor = new Color(0.90f, 0.85f, 0.72f, 1f);
         private static readonly Color PaperTextColor = new Color(0.18f, 0.14f, 0.08f, 1f);
-        private static readonly Color PanelChipColor = new Color(0.06f, 0.06f, 0.1f, 0.94f);
+        // 2026-10-05 PALETTE LOCKDOWN audit follow-up: was a near-black non-token grey -- snapped
+        // to the exact Base token, alpha unchanged.
+        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.94f);
         // 2026-10-04 PALETTE LOCKDOWN: was near-cyan, not the exact token.
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);

@@ -101,6 +101,28 @@ namespace BrainDrain.UI
                     if (titleLabel != null) { titleLabel.color = Palette.Cyan; }
                 }
 
+                // 2026-10-05 PALETTE LOCKDOWN audit follow-up: ContentArea (direct child, fill)
+                // and its nested AvatarFrame are both scene-baked near-black non-token greys,
+                // never touched by any controller (FixCOGSDialogueLayout.cs only lays them out).
+                Transform contentAreaTransform = panelRect.Find("ContentArea");
+                if (contentAreaTransform != null)
+                {
+                    Image contentAreaImage = contentAreaTransform.GetComponent<Image>();
+                    if (contentAreaImage != null)
+                    {
+                        Color current = contentAreaImage.color;
+                        contentAreaImage.color = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, current.a);
+                    }
+
+                    Transform avatarFrameTransform = FindChildRecursive(contentAreaTransform, "AvatarFrame");
+                    Image avatarFrameImage = avatarFrameTransform != null ? avatarFrameTransform.GetComponent<Image>() : null;
+                    if (avatarFrameImage != null)
+                    {
+                        Color current = avatarFrameImage.color;
+                        avatarFrameImage.color = new Color(Palette.Surface.r, Palette.Surface.g, Palette.Surface.b, current.a);
+                    }
+                }
+
                 // The GameObject stays ACTIVE: it is shared with COGSPortraitController, and
                 // deactivating it froze that controller's Start and hid it from active-only
                 // Instance lookups, spawning the (Auto) impostor (§17). Hidden state is gated
@@ -355,6 +377,19 @@ namespace BrainDrain.UI
             }
 
             panelRect.anchoredPosition = to;
+        }
+
+        /// <summary>Same lookup FixCOGSDialogueLayout.cs's own editor-only helper does, needed
+        /// here too since AvatarFrame isn't a direct child of ContentArea.</summary>
+        private static Transform FindChildRecursive(Transform parent, string name)
+        {
+            if (parent.name == name) { return parent; }
+            foreach (Transform child in parent)
+            {
+                Transform found = FindChildRecursive(child, name);
+                if (found != null) { return found; }
+            }
+            return null;
         }
     }
 }

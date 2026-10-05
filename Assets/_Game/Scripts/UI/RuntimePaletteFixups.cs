@@ -19,19 +19,26 @@ namespace BrainDrain.UI
     /// </summary>
     public static class RuntimePaletteFixups
     {
-        private static readonly string[] GlowImageTargetNames =
+        // Each name confirmed unique scene-wide before being added here (a generic name like
+        // "ContentArea" would risk retinting an unrelated object -- those are handled by their
+        // owning controller directly instead, e.g. DialogueDisplayUI's own ContentArea/
+        // AvatarFrame overrides).
+        private static readonly (string Name, Color Target)[] ImageFixes =
         {
-            "HeaderSeparator",
-            "PulseRing",
-            "TapGlow",
-            "PinkTopBorder",
+            ("HeaderSeparator", Palette.Glow),
+            ("PulseRing", Palette.Glow),
+            ("TapGlow", Palette.Glow),
+            ("PinkTopBorder", Palette.Glow),
+            // Economy bar's background chip -- scene-baked near-black non-token grey, never
+            // touched by any controller.
+            ("CurrencyHeader", Palette.Base),
         };
 
-        private static readonly string[] WhiteLabelTargetNames =
+        private static readonly (string Name, Color Target)[] LabelFixes =
         {
             // Orphaned "vessel"-era restoration label (RestorationBarWireFix.cs) -- the live
             // "paint bucket" bar (HUDController.BuildRestorationBar) never touches this object.
-            "RestorationLabel",
+            ("RestorationLabel", Palette.White),
         };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -41,32 +48,38 @@ namespace BrainDrain.UI
             for (int i = 0; i < images.Length; i++)
             {
                 Image image = images[i];
-                if (image == null || !Matches(image.gameObject.name, GlowImageTargetNames)) { continue; }
+                if (image == null) { continue; }
+                Color? target = FindTarget(image.gameObject.name, ImageFixes);
+                if (target == null) { continue; }
 
                 // Preserve whatever alpha the scene (or any future animation) has set -- only the
                 // hue was ever off-palette.
+                Color t = target.Value;
                 Color current = image.color;
-                image.color = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, current.a);
+                image.color = new Color(t.r, t.g, t.b, current.a);
             }
 
             TMP_Text[] labels = Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (int i = 0; i < labels.Length; i++)
             {
                 TMP_Text label = labels[i];
-                if (label == null || !Matches(label.gameObject.name, WhiteLabelTargetNames)) { continue; }
+                if (label == null) { continue; }
+                Color? target = FindTarget(label.gameObject.name, LabelFixes);
+                if (target == null) { continue; }
 
+                Color t = target.Value;
                 Color current = label.color;
-                label.color = new Color(Palette.White.r, Palette.White.g, Palette.White.b, current.a);
+                label.color = new Color(t.r, t.g, t.b, current.a);
             }
         }
 
-        private static bool Matches(string name, string[] targets)
+        private static Color? FindTarget(string name, (string Name, Color Target)[] fixes)
         {
-            for (int i = 0; i < targets.Length; i++)
+            for (int i = 0; i < fixes.Length; i++)
             {
-                if (name == targets[i]) { return true; }
+                if (name == fixes[i].Name) { return fixes[i].Target; }
             }
-            return false;
+            return null;
         }
     }
 }

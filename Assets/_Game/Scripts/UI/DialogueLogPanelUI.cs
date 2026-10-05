@@ -52,6 +52,16 @@ namespace BrainDrain.UI
         {
             if (panelRoot != null)
             {
+                // 2026-10-05 PALETTE LOCKDOWN audit follow-up: panelRoot's background Image is
+                // scene-baked (near-black non-token grey, hand-authored in SampleScene.unity) --
+                // no code anywhere sets it. No .unity write allowed, so override at runtime here.
+                Image panelImage = panelRoot.GetComponent<Image>();
+                if (panelImage != null)
+                {
+                    Color current = panelImage.color;
+                    panelImage.color = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, current.a);
+                }
+
                 panelGroup = panelRoot.GetComponent<CanvasGroup>();
                 if (panelGroup == null)
                 {
