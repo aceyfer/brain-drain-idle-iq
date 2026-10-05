@@ -60,11 +60,19 @@ namespace BrainDrain.UI
                 if (glowOutline == null)
                 {
                     glowOutline = panelRect.gameObject.AddComponent<Outline>();
-                    // 2026-10-04 PALETTE LOCKDOWN: was Hot Pink -- now Palette.Glow, alpha starts
-                    // transparent same as before (every other glowOutline touch in this file only
-                    // animates .a, never RGB).
                     glowOutline.effectColor = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, 0f);
                     glowOutline.effectDistance = Vector2.zero;
+                }
+                else
+                {
+                    // 2026-10-04 PALETTE LOCKDOWN bugfix: the scene already had this Outline
+                    // baked with Hot Pink effectColor ({1, 0.078, 0.576}) -- the search loop
+                    // above just reused that EXISTING component by reference, so the
+                    // newly-created-only branch above never ran and the magenta RGB survived.
+                    // Force the RGB here too, preserving whatever alpha is currently set (every
+                    // other glowOutline touch in this file only animates .a, never RGB).
+                    Color existing = glowOutline.effectColor;
+                    glowOutline.effectColor = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, existing.a);
                 }
 
                 // 2026-10-04 PALETTE LOCKDOWN: COGS_Narrator_Panel's "Header" child and its
