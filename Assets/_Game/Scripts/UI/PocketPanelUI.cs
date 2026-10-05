@@ -36,7 +36,8 @@ namespace BrainDrain.UI
         private static readonly Color PaperColor = new Color(0.90f, 0.85f, 0.72f, 1f);
         private static readonly Color PaperTextColor = new Color(0.18f, 0.14f, 0.08f, 1f);
         private static readonly Color PanelChipColor = new Color(0.06f, 0.06f, 0.1f, 0.94f);
-        private static readonly Color ButtonFillColor = new Color(0f, 0.94f, 1f, 0.22f);
+        // 2026-10-04 PALETTE LOCKDOWN: was near-cyan, not the exact token.
+        private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
         private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 

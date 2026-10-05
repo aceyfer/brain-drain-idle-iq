@@ -40,8 +40,9 @@ namespace BrainDrain.UI
 
         private static readonly Color CogsBackdropColor = new Color(0f, 0f, 0f, 0.85f);
         private static readonly Color CogsCardColor = new Color(0.03f, 0.03f, 0.03f, 0.97f);
-        private static readonly Color CogsTextColor = new Color(0.15f, 1f, 0.35f, 1f);
-        private static readonly Color CogsConfirmFillColor = new Color(0.15f, 1f, 0.35f, 0.18f);
+        // 2026-10-04 PALETTE LOCKDOWN: terminal green -> Cyan (same role: primary terminal text).
+        private static readonly Color CogsTextColor = Palette.Cyan;
+        private static readonly Color CogsConfirmFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.18f);
 
         private static readonly Color CardBackdropColor = new Color(0f, 0f, 0f, 0.7f);
         private static readonly Color CardPaperColor = new Color(0.90f, 0.85f, 0.72f, 1f);
