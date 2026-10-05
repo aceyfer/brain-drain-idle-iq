@@ -33,8 +33,10 @@ namespace BrainDrain.UI
         // 2026-09-29 color pass: actionable = bright label, not-actionable = dimmed grey. Fill
         // stays the fixed base everywhere (UniversalButtonBorderApplier) -- only label
         // brightness communicates state, per the genre-convention decision (no per-button hue).
-        private static readonly Color DimLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
-        private static readonly Color BrightLabelColor = Color.white;
+        // 2026-10-05 PALETTE LOCKDOWN audit follow-up: now references Palette.Dim/Palette.White
+        // directly instead of its own duplicate literal, so the two can never drift apart again.
+        private static readonly Color DimLabelColor = Palette.Dim;
+        private static readonly Color BrightLabelColor = Palette.White;
 
         private RebirthUIController cachedRebirthUI;
         private CurrencyManager cachedCurrency;

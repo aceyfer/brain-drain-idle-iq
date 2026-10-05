@@ -29,7 +29,13 @@ namespace BrainDrain.UI
         /// <summary>Body text.</summary>
         public static readonly Color White = Color.white;
 
-        /// <summary>Locked/unaffordable -- grey at 45% alpha.</summary>
-        public static readonly Color Dim = new Color(0.5f, 0.5f, 0.5f, 0.45f);
+        /// <summary>
+        /// Locked/unaffordable -- grey at 45% alpha. 2026-10-05 audit follow-up: retuned from
+        /// 0.5 to 0.6 (byte 153) to exactly match the grey already established and widely used
+        /// for locked-state labels before this token existed (MainUIController.DimLabelColor,
+        /// RebirthUIController.LockedLabelColor) -- the old 0.5 value was a fresh guess that
+        /// landed just outside the audit's +/-12 tolerance of the real convention.
+        /// </summary>
+        public static readonly Color Dim = new Color(0.6f, 0.6f, 0.6f, 0.45f);
     }
 }

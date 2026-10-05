@@ -69,8 +69,10 @@ namespace BrainDrain.UI
         // one deliberate hero highlight, and that highlight lives entirely in the LABEL (cyan + a
         // pulse when ready), not the fill. Previously this button's own fill swapped grey/hot-
         // pink; it no longer varies -- or exists as a separate color at all -- on this component.
-        private static readonly Color ReadyLabelColor = new Color32(0x00, 0xDD, 0xEB, 0xFF);
-        private static readonly Color LockedLabelColor = new Color(0.6f, 0.6f, 0.6f, 0.45f);
+        // 2026-10-05 PALETTE LOCKDOWN audit follow-up: now reference Palette directly instead of
+        // their own duplicate literals, so the two can never drift apart again.
+        private static readonly Color ReadyLabelColor = Palette.Cyan;
+        private static readonly Color LockedLabelColor = Palette.Dim;
 
         /// <summary>Light cyan tint the ready-state border glow pulses toward, from white -- see
         /// ApplyTriggerButtonVisibility's hero-highlight block.</summary>
