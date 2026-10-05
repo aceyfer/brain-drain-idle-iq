@@ -244,7 +244,9 @@ namespace BrainDrain.UI
             // (TASKLIST #30, U+2794 right-arrow rendered as a box), so U+26A0 is assumed missing
             // too rather than risking the same regression to verify it live.
             headerLabel.text = "!! BROADCAST INTERRUPT !!";
-            headerLabel.color = Color.white;
+            // 2026-10-05 PALETTE LOCKDOWN audit follow-up: was white, unreadable against the
+            // stripe -- Cyan bold reads clearly against the now-dark Surface/Deep Cyan stripes.
+            headerLabel.color = Palette.Cyan;
             headerLabel.fontStyle = FontStyles.Bold;
             headerLabel.alignment = TextAlignmentOptions.Center;
             headerLabel.fontSize = 24f;

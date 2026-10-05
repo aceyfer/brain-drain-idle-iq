@@ -29,9 +29,13 @@ namespace BrainDrain.EditorTools
         // 2026-10-04 PALETTE LOCKDOWN: Magenta retired project-wide -- Alert_Frame's border,
         // Alert_HeaderStrip's stripes, and BizCard_Stamp_New's ink all used it below; now Glow
         // (frame/stripe) or Cyan (stamp ink). Surface added for the header strip's dark stripe.
+        // 2026-10-05 audit follow-up: Alert_HeaderStrip's Glow stripe was too light for the
+        // white "!! BROADCAST INTERRUPT !!" label sitting on top -- swapped to Deep Cyan (still
+        // dark) so Cyan bold text reads clearly; DeepCyan added for that one sprite.
         private static readonly Color32 Base = new Color32(0x1B, 0x0F, 0x2E, 255);
         private static readonly Color32 Surface = new Color32(0x2A, 0x1A, 0x45, 255);
         private static readonly Color32 Cyan = new Color32(0x00, 0xDD, 0xEB, 255);
+        private static readonly Color32 DeepCyan = new Color32(0x00, 0x83, 0x8C, 255);
         private static readonly Color32 Glow = new Color32(0x80, 0xF4, 0xFF, 255);
         private static readonly Color32 Cream = new Color32(230, 217, 184, 255);
         private static readonly Color32 Ink = new Color32(0x1B, 0x0F, 0x2E, 255);
@@ -367,7 +371,7 @@ namespace BrainDrain.EditorTools
                 for (int x = 0; x < w; x++)
                 {
                     int v = (x + y) % period;
-                    pixels[y * w + x] = v < band ? Glow : Surface;
+                    pixels[y * w + x] = v < band ? DeepCyan : Surface;
                 }
             }
 
