@@ -114,28 +114,48 @@ namespace BrainDrain.UI
 
             for (int i = 0; i < DeceasedTagAnchors.Length; i++)
             {
-                BuildDeceasedLabel(overlayRoot.transform, DeceasedTagAnchors[i]);
+                BuildDeceasedTag(overlayRoot.transform, DeceasedTagAnchors[i]);
             }
         }
 
-        private void BuildDeceasedLabel(Transform parent, Vector2 normalizedAnchor)
+        /// <summary>
+        /// 2026-10-05 play-test fix: was 80x24 at 10-14pt dark-on-Dim (the generator's own baked
+        /// Dim rectangle) -- unreadable at actual screen size. ~2x larger, and a real Base plate
+        /// Image drawn on top of the baked rectangle (opaque, so it fully overrides it) with Cyan
+        /// text, per Aceyfer's play-test note. Still a placeholder -- CryoChamberBackdropGenerator
+        /// keeps baking the plain Dim rect underneath for whenever this gets replaced with painted
+        /// art and this runtime overlay goes away.
+        /// </summary>
+        private void BuildDeceasedTag(Transform parent, Vector2 normalizedAnchor)
         {
-            GameObject labelObject = new GameObject("DeceasedTag", typeof(RectTransform));
-            labelObject.transform.SetParent(parent, false);
-            RectTransform rect = labelObject.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = normalizedAnchor;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(80f, 24f);
+            GameObject plateObject = new GameObject("DeceasedTagPlate", typeof(RectTransform), typeof(Image));
+            plateObject.transform.SetParent(parent, false);
+            RectTransform plateRect = plateObject.GetComponent<RectTransform>();
+            plateRect.anchorMin = plateRect.anchorMax = normalizedAnchor;
+            plateRect.pivot = new Vector2(0.5f, 0.5f);
+            plateRect.sizeDelta = new Vector2(160f, 48f);
+
+            Image plateImage = plateObject.GetComponent<Image>();
+            plateImage.color = Palette.Base;
+            plateImage.raycastTarget = false;
+
+            GameObject labelObject = new GameObject("DeceasedTagLabel", typeof(RectTransform));
+            labelObject.transform.SetParent(plateObject.transform, false);
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
 
             TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
             label.text = "DECEASED";
-            label.color = Palette.Base;
+            label.color = Palette.Cyan;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.Center;
-            label.fontSize = 14f;
+            label.fontSize = 28f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 10f;
-            label.fontSizeMax = 14f;
+            label.fontSizeMin = 20f;
+            label.fontSizeMax = 28f;
             label.raycastTarget = false;
         }
 
