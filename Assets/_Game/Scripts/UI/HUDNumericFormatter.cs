@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using TMPro;
+using BrainDrain.UI;
 
 namespace BrainDrain.Core
 {
@@ -10,8 +11,11 @@ namespace BrainDrain.Core
     public static class HUDNumericFormatter
     {
         private static readonly StringBuilder SharedBuilder = new StringBuilder(64);
-        private static readonly UnityEngine.Color RestorationColor = new UnityEngine.Color32(117, 240, 76, 255);
-        private static readonly UnityEngine.Color LockedRestorationColor = new UnityEngine.Color32(201, 154, 56, 255);
+        // 2026-10-04 PALETTE LOCKDOWN: RestorationColor was bright green, LockedRestorationColor
+        // was gold/brown -- the "0 POINTS"/"RESTORATION PTS" label now reads Cyan when active,
+        // Dim (locked/unaffordable role) otherwise.
+        private static readonly UnityEngine.Color RestorationColor = Palette.Cyan;
+        private static readonly UnityEngine.Color LockedRestorationColor = Palette.Dim;
 
         public static void SetBrainPowerCounter(TextMeshProUGUI label, double brainPower)
         {

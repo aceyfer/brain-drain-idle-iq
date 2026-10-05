@@ -36,16 +36,19 @@ namespace BrainDrain.UI
 
         // Mirrors PocketPanelUI's chip/text palette so the two panels read as siblings, with a
         // gold accent (GodTierStoreSlotUI.AvailableColor) marking this one as the paid-store tie-in.
+        // 2026-10-04 PALETTE LOCKDOWN: RowColor/AccentColor/ButtonFillColor were a gold family
+        // (dark gold row tint, gold title, gold button fill) -- now Surface/Cyan/Cyan.
         private static readonly Color PanelChipColor = new Color(0.06f, 0.06f, 0.1f, 0.94f);
-        private static readonly Color RowColor = new Color(0.14f, 0.12f, 0.05f, 1f);
-        private static readonly Color AccentColor = new Color32(0xFF, 0xD7, 0x00, 0xFF);
+        private static readonly Color RowColor = Palette.Surface;
+        private static readonly Color AccentColor = Palette.Cyan;
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
-        private static readonly Color ButtonFillColor = new Color(1f, 0.84f, 0f, 0.22f);
+        private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color MutedTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
         // 2026-10-04 art pass (D): membership-card restyle palette.
         private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
-        private static readonly Color32 PillMagenta = new Color32(0xFF, 0x14, 0x93, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: countdown warning pill was magenta -- now Glow.
+        private static readonly Color32 PillWarning = new Color32(0x80, 0xF4, 0xFF, 0xFF);
         private static Sprite cardSprite;
         private static Sprite shadowSprite;
         private static Sprite sheenSprite;
@@ -592,7 +595,7 @@ namespace BrainDrain.UI
             pillRect.sizeDelta = new Vector2(228f, 52f);
             Image pillImage = pillObject.AddComponent<Image>();
             if (pillSprite != null) { pillImage.sprite = pillSprite; pillImage.type = Image.Type.Sliced; }
-            pillImage.color = isLowTime ? (Color)PillMagenta : (Color)PillCyan;
+            pillImage.color = isLowTime ? (Color)PillWarning : (Color)PillCyan;
             pillImage.raycastTarget = false;
 
             GameObject pillLabelObject = new GameObject("Label", typeof(RectTransform));
@@ -620,7 +623,7 @@ namespace BrainDrain.UI
             pillLabel.raycastTarget = false;
 
             WalletRowAnimator animator = rowObject.AddComponent<WalletRowAnimator>();
-            animator.Configure(sheenImage, sheenRect, cardRect, pillImage, isLowTime, PillMagenta);
+            animator.Configure(sheenImage, sheenRect, cardRect, pillImage, isLowTime, PillWarning);
         }
 
         /// <summary>Resolves an itemId back to its configured total timed duration (hours ->
