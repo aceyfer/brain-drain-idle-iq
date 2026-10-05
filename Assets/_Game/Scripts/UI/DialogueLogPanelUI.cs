@@ -70,6 +70,11 @@ namespace BrainDrain.UI
                 SetPanelHidden(true);
             }
 
+            // 2026-10-05 ART PASS 2: Dia-Log's own open button (openButton, scene-authored,
+            // GameObject name "LogOpenButton") was still a flat scene-baked fill -- give it the
+            // same Alert_Frame look as Pocket/Wallet/Recover's side buttons.
+            AlertFrameButtonStyle.Apply(openButton);
+
             // Unity's default Scroll View ships opaque light-gray Images (on the ScrollRect's
             // own GameObject and its Viewport child) that cover the panel's dark chip laid down
             // in the §20b layout tune, washing the log out (§24a, found 2026-07-22). Code-owned

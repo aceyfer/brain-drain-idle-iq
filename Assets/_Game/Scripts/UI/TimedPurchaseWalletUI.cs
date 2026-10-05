@@ -243,11 +243,10 @@ namespace BrainDrain.UI
 
             CreateStretchedLabel(buttonObject.transform, "WALLET", Color.white, 26f, 20f, FontStyles.Bold);
 
-            // Built inside Start(), same as UniversalButtonBorderApplier's own scan -- a
-            // same-frame race with no ordering guarantee, so this button was never in
-            // managedButtons. ApplyToButton themes it immediately and registers it for future
-            // stage-change re-theming instead of relying on the initial scan finding it.
-            UniversalButtonBorderApplier.Instance?.ApplyToButton(button);
+            // 2026-10-05 ART PASS 2: was UniversalButtonBorderApplier.Instance?.ApplyToButton --
+            // this button now owns its own static Alert_Frame look instead (see
+            // AlertFrameButtonStyle's doc comment for why it's excluded from that system).
+            AlertFrameButtonStyle.Apply(button);
         }
 
         private void BuildPanel()

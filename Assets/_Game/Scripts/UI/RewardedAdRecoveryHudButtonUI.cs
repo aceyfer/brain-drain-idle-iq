@@ -181,12 +181,6 @@ namespace BrainDrain.UI
             button.targetGraphic = image;
             button.onClick.AddListener(OnClicked);
 
-            // Built inside Start(), same as UniversalButtonBorderApplier's own scan -- a
-            // same-frame race with no ordering guarantee, so this button was never in
-            // managedButtons. ApplyToButton themes it immediately and registers it for future
-            // stage-change re-theming instead of relying on the initial scan finding it.
-            UniversalButtonBorderApplier.Instance?.ApplyToButton(button);
-
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
             labelObject.transform.SetParent(buttonObject.transform, false);
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
@@ -207,6 +201,12 @@ namespace BrainDrain.UI
             label.lineSpacing = -20f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
+
+            // 2026-10-05 ART PASS 2: was UniversalButtonBorderApplier.Instance?.ApplyToButton --
+            // this button now owns its own static Alert_Frame look instead (see
+            // AlertFrameButtonStyle's doc comment for why it's excluded from that system). Moved
+            // here (after the label exists) since Apply() colors the label too.
+            AlertFrameButtonStyle.Apply(button);
 
             built = true;
         }

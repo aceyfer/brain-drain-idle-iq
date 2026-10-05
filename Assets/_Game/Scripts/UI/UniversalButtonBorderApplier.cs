@@ -298,6 +298,13 @@ namespace BrainDrain.UI
             bool rowOwnsPresentation = IsUpgradeSlotBuyButton(button);
             if (rowOwnsPresentation) { return; }
 
+            // 2026-10-05 ART PASS 2: the Dia-Log/Pocket/Wallet/Recover side buttons own their own
+            // Alert_Frame-styled presentation now (AlertFrameButtonStyle.Apply) -- this system
+            // re-themes every managed button on every stage change, which would stomp that static
+            // look right back to the ornate ButtonBorder_Stage art this pass deliberately moved
+            // away from for these four.
+            if (System.Array.IndexOf(AlertFrameButtonStyle.ManagedButtonNames, button.name) >= 0) { return; }
+
             Image border = EnsureBorderOn(button);
             if (border != null && theme.borderSprite != null)
             {
