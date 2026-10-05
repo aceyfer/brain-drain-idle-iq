@@ -38,11 +38,27 @@ namespace BrainDrain.UI
             "T.SUM-12",
         };
 
-        private static readonly Color CurrentTrackColor = new(0f, 0.941f, 1f, 1f); // cyan, matches the project's existing #00F0FF accent
+        // 2026-10-05 ART PASS 2: was a near-cyan guess (#00F0FF) -- normalized to the exact token.
+        private static readonly Color CurrentTrackColor = Palette.Cyan;
         private static readonly Color OtherTrackColor = Color.white;
 
         private void Awake()
         {
+            // 2026-10-05 ART PASS 2 (item 3, consistency sweep): settingsPanel's own background
+            // was still a flat scene-baked fill with no border -- same Surface-fill-plus-Glow-
+            // outline treatment DialogueDisplayUI already applies to COGS_Narrator_Panel, so the
+            // two modal-style panels read as the same family instead of Settings looking flatter.
+            if (settingsPanel != null)
+            {
+                Image panelImage = settingsPanel.GetComponent<Image>();
+                if (panelImage != null) { panelImage.color = Palette.Surface; }
+
+                Outline panelOutline = settingsPanel.GetComponent<Outline>();
+                if (panelOutline == null) { panelOutline = settingsPanel.AddComponent<Outline>(); }
+                panelOutline.effectColor = Palette.Glow;
+                panelOutline.effectDistance = new Vector2(3f, -3f);
+            }
+
             if (closeButton != null)
             {
                 closeButton.onClick.AddListener(ClosePanel);
