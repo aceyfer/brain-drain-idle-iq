@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
+using BrainDrain.UI;
 
 namespace BrainDrain.Systems
 {
@@ -372,9 +373,10 @@ namespace BrainDrain.Systems
 
         // ----- Text color flash (e.g. HUDController's IQ readout on tap) --------------------
 
-        private static readonly Color TextFlashYellow = Color.yellow;
+        // 2026-10-04 PALETTE LOCKDOWN: was Color.yellow -- now Palette.Glow.
+        private static readonly Color TextFlashYellow = Palette.Glow;
 
-        /// <summary>Briefly flashes text.color to yellow and back (0.1s in, 0.2s out), then restores its original color exactly.</summary>
+        /// <summary>Briefly flashes text.color to Glow and back (0.1s in, 0.2s out), then restores its original color exactly.</summary>
         public static void PlayIQFlash(TextMeshProUGUI text)
         {
             if (text == null)
@@ -1062,7 +1064,8 @@ namespace BrainDrain.Systems
 
             const int size = 16;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            Color pink = new Color(1f, 0.42f, 0.71f, 1f);
+            // 2026-10-04 PALETTE LOCKDOWN: was pink -- now Cyan (positive/gain role).
+            Color splatColor = Palette.Cyan;
             Vector2 center = new Vector2(size / 2f, size / 2f);
             float radius = size / 2f;
 
@@ -1071,7 +1074,7 @@ namespace BrainDrain.Systems
                 for (int x = 0; x < size; x++)
                 {
                     float dist = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
-                    texture.SetPixel(x, y, new Color(pink.r, pink.g, pink.b, dist <= radius ? 1f : 0f));
+                    texture.SetPixel(x, y, new Color(splatColor.r, splatColor.g, splatColor.b, dist <= radius ? 1f : 0f));
                 }
             }
 

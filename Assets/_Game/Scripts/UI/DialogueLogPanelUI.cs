@@ -24,7 +24,8 @@ namespace BrainDrain.UI
         }
 
         private const float TabBarHeight = 80f;
-        private static readonly Color ActiveTabColor = new Color(0f, 0.94f, 1f, 0.35f);
+        // 2026-10-04 PALETTE LOCKDOWN: was near-cyan, not the exact token.
+        private static readonly Color ActiveTabColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.35f);
         private static readonly Color InactiveTabColor = new Color(1f, 1f, 1f, 0.08f);
         private static readonly Color ActiveTabTextColor = Color.white;
         private static readonly Color InactiveTabTextColor = new Color(0.6f, 0.6f, 0.6f, 1f);

@@ -27,7 +27,9 @@ namespace BrainDrain.UI
         private const float ButtonGap = 12f;
         private const int SlotIndex = 3; // 1 = Pocket, 2 = Wallet, 3 = this button
 
-        private static readonly Color ButtonFillColor = new Color(1f, 0.84f, 0f, 0.22f);
+        // 2026-10-04 PALETTE LOCKDOWN: was gold -- now Cyan, same 0.22 alpha as the other
+        // bottom-row open buttons (Pocket/Wallet).
+        private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
 
         private static RewardedAdRecoveryHudButtonUI instance;
         private static bool isShuttingDown;

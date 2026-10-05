@@ -27,9 +27,11 @@ namespace BrainDrain.UI
         private const float TripleTapWindowSeconds = 0.6f;
         private const int TripleTapCount = 3;
 
-        private static readonly Color HotPink = new Color32(0xFF, 0x14, 0x93, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN: HotPink -> Glow (border/highlight role); ButtonFill
+        // (dark maroon) -> Surface (raised-panel-on-dark role).
+        private static readonly Color HotPink = Palette.Glow;
         private static readonly Color BackgroundColor = new Color(0.05f, 0.05f, 0.05f, 1f);
-        private static readonly Color ButtonFill = new Color(0.35f, 0.03f, 0.2f, 1f);
+        private static readonly Color ButtonFill = Palette.Surface;
 
         // Guaranteed above every other Canvas in the scene -- confirmed via grep that nothing
         // else in SampleScene.unity sets an explicit sortingOrder, so everything else relies on

@@ -221,7 +221,8 @@ namespace BrainDrain.EditorTools
 
         private const string NudgeArtFolder = "Assets/_Game/Art/UI";
         private const string NudgePointerObjectName = "UINudgePointer (Generated)";
-        private static readonly Color NudgeArrowColor = HexColor("#FFD700"); // same gold already used for UpgradeSlotUI's "TOTAL" highlight -- reads as a player-facing hint, distinct from COGS's own cyan/pink neon palette.
+        // 2026-10-04 PALETTE LOCKDOWN: was gold -- now Glow (highlight/pulse/"look here" role).
+        private static readonly Color NudgeArrowColor = Palette.Glow;
 
         /// <summary>
         /// Generates the single "look here" arrow sprite UINudgePointer.cs uses and wires an

@@ -93,9 +93,9 @@ namespace BrainDrain.UI
             bgImg.pixelsPerUnitMultiplier = 2f;
             bgImg.color = HexColor("#0A0714"); // Dark background
 
-            // Add gold/yellow border via Outline component
+            // 2026-10-04 PALETTE LOCKDOWN: border was yellow/gold -- now Glow.
             var outline = badgeGo.AddComponent<Outline>();
-            outline.effectColor = HexColor("#FFCC00"); // Yellow/Gold
+            outline.effectColor = HexColor("#80F4FF");
             outline.effectDistance = new Vector2(3f, -3f);
 
             // 2. Create small crown icon from UI primitives
@@ -115,7 +115,7 @@ namespace BrainDrain.UI
             lsRT.sizeDelta = new Vector2(8f, 18f);
             lsRT.anchoredPosition = new Vector2(-10f, 4f);
             lsRT.localRotation = Quaternion.Euler(0f, 0f, 25f);
-            leftSpike.GetComponent<Image>().color = HexColor("#FFCC00");
+            leftSpike.GetComponent<Image>().color = HexColor("#00DDEB");
 
             // Right spike (rotated square)
             var rightSpike = new GameObject("RightSpike", typeof(RectTransform), typeof(Image));
@@ -124,7 +124,7 @@ namespace BrainDrain.UI
             rsRT.sizeDelta = new Vector2(8f, 18f);
             rsRT.anchoredPosition = new Vector2(10f, 4f);
             rsRT.localRotation = Quaternion.Euler(0f, 0f, -25f);
-            rightSpike.GetComponent<Image>().color = HexColor("#FFCC00");
+            rightSpike.GetComponent<Image>().color = HexColor("#00DDEB");
 
             // Center spike (tall vertical)
             var centerSpike = new GameObject("CenterSpike", typeof(RectTransform), typeof(Image));
@@ -132,7 +132,7 @@ namespace BrainDrain.UI
             var csRT = centerSpike.GetComponent<RectTransform>();
             csRT.sizeDelta = new Vector2(10f, 24f);
             csRT.anchoredPosition = new Vector2(0f, 8f);
-            centerSpike.GetComponent<Image>().color = HexColor("#FFCC00");
+            centerSpike.GetComponent<Image>().color = HexColor("#00DDEB");
 
             // Base bar
             var baseBar = new GameObject("BaseBar", typeof(RectTransform), typeof(Image));
@@ -140,7 +140,7 @@ namespace BrainDrain.UI
             var bbRT = baseBar.GetComponent<RectTransform>();
             bbRT.sizeDelta = new Vector2(28f, 6f);
             bbRT.anchoredPosition = new Vector2(0f, -10f);
-            baseBar.GetComponent<Image>().color = HexColor("#FFCC00");
+            baseBar.GetComponent<Image>().color = HexColor("#00DDEB");
 
             // 3. Create TextMeshPro Rank text
             var textGo = new GameObject("RankText", typeof(RectTransform));
@@ -155,7 +155,7 @@ namespace BrainDrain.UI
             badgeText = textGo.AddComponent<TextMeshProUGUI>();
             badgeText.font = fontAsset;
             badgeText.fontSize = 20f;
-            badgeText.color = HexColor("#FF1493"); // Hot pink
+            badgeText.color = HexColor("#00DDEB"); // 2026-10-04 PALETTE LOCKDOWN: was hot pink
             badgeText.alignment = TextAlignmentOptions.Left;
             badgeText.enableAutoSizing = true;
             badgeText.fontSizeMin = 20f;
@@ -184,7 +184,7 @@ namespace BrainDrain.UI
 
             vignetteImg = vigGo.AddComponent<Image>();
             vignetteImg.sprite = vignetteSprite;
-            vignetteImg.color = new Color(1f, 0f, 0f, 0f); // Transparent Red
+            vignetteImg.color = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, 0f); // 2026-10-04 PALETTE LOCKDOWN: was red -- now Glow, transparent initially
             vignetteImg.raycastTarget = false;
 
             // 2. Watermark Text (Centered inside vignette)
@@ -260,7 +260,7 @@ namespace BrainDrain.UI
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / 0.15f;
-                vignetteImg.color = new Color(1f, 0f, 0f, Mathf.Lerp(0f, 0.75f, t));
+                vignetteImg.color = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, Mathf.Lerp(0f, 0.75f, t));
                 watermarkText.color = new Color(1f, 1f, 1f, Mathf.Lerp(0f, 1f, t));
                 yield return null;
             }
@@ -279,10 +279,10 @@ namespace BrainDrain.UI
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / 0.5f;
-                vignetteImg.color = new Color(1f, 0f, 0f, Mathf.Lerp(0.75f, 0f, t));
+                vignetteImg.color = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, Mathf.Lerp(0.75f, 0f, t));
                 yield return null;
             }
-            vignetteImg.color = new Color(1f, 0f, 0f, 0f);
+            vignetteImg.color = new Color(Palette.Glow.r, Palette.Glow.g, Palette.Glow.b, 0f);
 
             // Phase 3: Watermark text holds longer and fades out over 2.0 seconds total
             elapsed = 0f;
