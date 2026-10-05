@@ -583,5 +583,73 @@ namespace BrainDrain.Systems.Commerce
             RaiseStateChanged(productId, PurchaseRequestState.Failed);
             OnPurchaseRejected?.Invoke(new PurchaseFailureEventArgs(productId, outcome, message));
         }
+
+#if UNITY_EDITOR
+        // ---- BrainDrain > Testing > IAP debug hooks -----------------------------------------
+        // Editor-only, compiled out of every build. Unity IAP's Order/StoreController types
+        // (PendingOrder, DeferredOrder, etc.) aren't constructible from outside the SDK, so these
+        // don't simulate the real purchase pipeline end to end -- they exercise exactly the
+        // manager/UI-level logic the IAP safety audit's fixes touched (grant/save/confirm
+        // ordering, Deferred-state UI, refund revocation, offline/unavailable UI), which is what
+        // actually needed test coverage. See Assets/_Game/Scripts/Editor/IapTestingMenu.cs for
+        // the menu items that call these.
+
+        /// <summary>Simulates a fully backend-approved grant without a real store round-trip --
+        /// the exact same OnPurchaseApproved path HandlePurchasePending's validation callback
+        /// takes on success, just without a real Order to confirm (there isn't one), so
+        /// ConfirmPurchase is deliberately not called here.</summary>
+        public void DebugSimulateApprovedGrant(string productId)
+        {
+            RaiseStateChanged(productId, PurchaseRequestState.Granted);
+            OnPurchaseApproved?.Invoke(new PurchaseGrantEventArgs(productId, "debug-" + Guid.NewGuid()));
+        }
+
+        /// <summary>Fires the exact state transition HandlePurchaseDeferred raises, for UI testing
+        /// (GodTierStoreSlotUI's "PURCHASE PENDING" / re-buy-blocked behavior) without a real
+        /// external pending payment.</summary>
+        public void DebugSimulateDeferred(string productId)
+        {
+            RaiseStateChanged(productId, PurchaseRequestState.Deferred);
+        }
+
+        /// <summary>Deferred -> Granted after a short delay, so "Simulate Pending -> Complete" can
+        /// be watched end to end from one menu click: PURCHASE PENDING appears, then resolves.</summary>
+        public void DebugSimulatePendingThenComplete(string productId, float delaySeconds = 2f)
+        {
+            StartCoroutine(DebugPendingThenCompleteRoutine(productId, delaySeconds));
+        }
+
+        private System.Collections.IEnumerator DebugPendingThenCompleteRoutine(string productId, float delaySeconds)
+        {
+            DebugSimulateDeferred(productId);
+            yield return new WaitForSecondsRealtime(delaySeconds);
+            DebugSimulateApprovedGrant(productId);
+        }
+
+        /// <summary>Forces readiness to Unavailable (same state HandleStoreDisconnected/
+        /// HandleProductsFetchFailed set on a real failure), for testing GodTierStoreSlotUI's
+        /// "STORE UNAVAILABLE" text/button-disable without actually disconnecting anything.</summary>
+        public void DebugSimulateOffline()
+        {
+            readiness = CommerceReadiness.Unavailable;
+            OnReadinessChanged?.Invoke(readiness);
+        }
+
+        /// <summary>Restores readiness to Ready after DebugSimulateOffline, so testing doesn't
+        /// require a full re-init to get the store buyable again.</summary>
+        public void DebugClearSimulatedOffline()
+        {
+            readiness = CommerceReadiness.Ready;
+            OnReadinessChanged?.Invoke(readiness);
+        }
+
+        /// <summary>Exercises GodTierStoreManager's refund/void revocation path directly -- pass
+        /// an empty list to simulate "the store now reports nothing owned" (revokes every locally-
+        /// owned non-consumable), or a partial list to revoke just the ones missing from it.</summary>
+        public void DebugSimulateOwnedReport(IReadOnlyList<string> reportedProductIds)
+        {
+            OnOwnedNonConsumablesReported?.Invoke(reportedProductIds ?? new List<string>());
+        }
+#endif
     }
 }

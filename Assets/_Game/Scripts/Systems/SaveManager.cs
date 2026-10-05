@@ -269,6 +269,12 @@ namespace BrainDrain.Systems
         /// </summary>
         public bool LastSaveSucceeded { get; private set; } = true;
 
+#if UNITY_EDITOR
+        /// <summary>Editor-only test hook: when true, the NEXT SaveGame() call throws instead of
+        /// writing, then clears itself. Compiled out of every build.</summary>
+        public bool DebugForceSaveFailureOnce;
+#endif
+
         private void Awake()
         {
             isShuttingDown = false;
@@ -614,6 +620,16 @@ namespace BrainDrain.Systems
 
             try
             {
+#if UNITY_EDITOR
+                // BrainDrain > Testing > IAP > Simulate Crash Before Grant: lets that test exercise
+                // IapCommerceService's "don't confirm if the save failed" path without actually
+                // touching (or risking corrupting) the real save file on disk.
+                if (DebugForceSaveFailureOnce)
+                {
+                    DebugForceSaveFailureOnce = false;
+                    throw new Exception("[DEBUG] Simulated save failure (BrainDrain > Testing > IAP > Simulate Crash Before Grant).");
+                }
+#endif
                 string json = JsonUtility.ToJson(data, true);
                 File.WriteAllText(SaveFilePath, json);
                 LastSaveSucceeded = true;
