@@ -46,10 +46,13 @@ namespace BrainDrain.EditorTools
         private const float OutlineThickness = 6f;
         private const float InnerRadius = OuterRadius - OutlineThickness;
 
+        // 2026-10-04 PALETTE LOCKDOWN: CyanOutline/DarkInterior already matched Palette.Cyan/
+        // Palette.Base exactly (confirmed byte-for-byte before this pass), so the rim and track
+        // interior needed no change. Glow replaces the retired Lime as the sprout's fill color.
         private static readonly Color32 CyanOutline = new Color32(0x00, 0xDD, 0xEB, 0xFF);
         private static readonly Color32 DarkInterior = new Color32(0x1B, 0x0F, 0x2E, 0xFF);
         private static readonly Color32 Transparent = new Color32(0, 0, 0, 0);
-        private static readonly Color32 Lime = new Color32(0x39, 0xFF, 0x14, 0xFF);
+        private static readonly Color32 Glow = new Color32(0x80, 0xF4, 0xFF, 0xFF);
 
         [MenuItem("BrainDrain/Tools/Generate Restoration Bar Art")]
         public static void Generate()
@@ -222,7 +225,9 @@ namespace BrainDrain.EditorTools
                         ? Mathf.SmoothStep(0.35f, 0f, d / bandHalfWidth)
                         : 0f;
 
-                    pixels[y * width + x] = new Color(1f, 1f, 1f, alpha);
+                    // 2026-10-04 PALETTE LOCKDOWN: was plain white -- Glow at the same 0.35 peak
+                    // alpha this curve already produced, per the "Sheen: Glow at 35%" spec.
+                    pixels[y * width + x] = new Color(Glow.r / 255f, Glow.g / 255f, Glow.b / 255f, alpha);
                 }
             }
 
@@ -261,7 +266,7 @@ namespace BrainDrain.EditorTools
                     int idx = y * size + x;
                     if (silhouette[idx])
                     {
-                        pixels[idx] = Lime;
+                        pixels[idx] = Glow;
                         continue;
                     }
 

@@ -110,8 +110,10 @@ namespace BrainDrain.UI
         private const float RestorationSproutBobAmplitude = 2f;
         private const float RestorationSproutBobPeriod = 2f;
 
-        private static readonly Color RestorationLime = new Color32(0x39, 0xFF, 0x14, 0xFF);
-        private static readonly Color RestorationFlashColor = new Color32(0x80, 0xF4, 0xFF, 0xFF);
+        // 2026-10-04 PALETTE LOCKDOWN (darker restoration bar): steady fill is now Deep Cyan
+        // (was Lime); the gain-flash still lands on it from Glow, same as before.
+        private static readonly Color RestorationFillSteady = Palette.DeepCyan;
+        private static readonly Color RestorationFlashColor = Palette.Glow;
 
         [Header("High-IQ Celebration")]
         [Tooltip("Optional. CanvasGroup on the root HUD canvas, pulsed during the celebration beat.")]
@@ -936,7 +938,7 @@ namespace BrainDrain.UI
             restorationFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
             restorationFillImage.fillClockwise = true;
             restorationFillImage.preserveAspect = false;
-            restorationFillImage.color = RestorationLime;
+            restorationFillImage.color = RestorationFillSteady;
             restorationFillImage.raycastTarget = false;
             restorationDisplayedFraction = restorationFillImage.fillAmount;
             restorationTargetFraction = restorationDisplayedFraction;
@@ -1045,12 +1047,12 @@ namespace BrainDrain.UI
             float trackWidth = restorationFillImage.rectTransform.rect.width;
             float fillWidthPixels = trackWidth * restorationDisplayedFraction;
 
-            // Gain flash: fixed palette flash (#80F4FF -> lime), triggered once per target
+            // Gain flash: fixed palette flash (Glow -> Deep Cyan), triggered once per target
             // increase in UpdateRestorationProgressText, not re-triggered every glide frame.
             if (restorationFlashStartTime >= 0f)
             {
                 float flashT = Mathf.Clamp01((Time.unscaledTime - restorationFlashStartTime) / RestorationFlashDuration);
-                restorationFillImage.color = Color.Lerp(RestorationFlashColor, RestorationLime, flashT);
+                restorationFillImage.color = Color.Lerp(RestorationFlashColor, RestorationFillSteady, flashT);
                 if (flashT >= 1f) { restorationFlashStartTime = -1f; }
             }
 
