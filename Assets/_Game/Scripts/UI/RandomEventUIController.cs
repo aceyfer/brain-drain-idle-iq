@@ -435,7 +435,8 @@ namespace BrainDrain.UI
             ghost.fontSize = titleText.fontSize;
             ghost.fontStyle = titleText.fontStyle;
             ghost.alignment = titleText.alignment;
-            ghost.color = new Color(1f, 0.08f, 0.58f, 0.6f); // magenta, semi-transparent
+            // 2026-10-04 PALETTE LOCKDOWN: was magenta (retired) -- Cyan at the same 0.6 alpha.
+            ghost.color = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.6f);
             ghost.raycastTarget = false;
             yield return null; // exactly one frame
             Destroy(ghostObject);

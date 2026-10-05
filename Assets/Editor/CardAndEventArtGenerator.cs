@@ -26,9 +26,12 @@ namespace BrainDrain.EditorTools
         // Generator's own Resources/UI/RestorationBar output folder.
         private const string OutputFolder = "Assets/Resources/UI/Generated";
 
+        // 2026-10-04 PALETTE LOCKDOWN: Magenta retired project-wide -- Alert_Frame's border,
+        // Alert_HeaderStrip's stripes, and BizCard_Stamp_New's ink all used it below; now Glow
+        // (frame/stripe) or Cyan (stamp ink). Surface added for the header strip's dark stripe.
         private static readonly Color32 Base = new Color32(0x1B, 0x0F, 0x2E, 255);
+        private static readonly Color32 Surface = new Color32(0x2A, 0x1A, 0x45, 255);
         private static readonly Color32 Cyan = new Color32(0x00, 0xDD, 0xEB, 255);
-        private static readonly Color32 Magenta = new Color32(0xFF, 0x14, 0x93, 255);
         private static readonly Color32 Glow = new Color32(0x80, 0xF4, 0xFF, 255);
         private static readonly Color32 Cream = new Color32(230, 217, 184, 255);
         private static readonly Color32 Ink = new Color32(0x1B, 0x0F, 0x2E, 255);
@@ -183,7 +186,7 @@ namespace BrainDrain.EditorTools
                         if (DistToSegment(px, py, seg.Item1, seg.Item2, seg.Item3, seg.Item4) <= thick * 0.5f) { onLetter = true; break; }
                     }
                     bool on = border[y, x] || onLetter;
-                    pixels[y * w + x] = on ? Magenta : Transparent;
+                    pixels[y * w + x] = on ? Cyan : Transparent;
                 }
             }
 
@@ -326,7 +329,7 @@ namespace BrainDrain.EditorTools
                     // 2026-10-04 fix: was baked at 242 (~95%) -- Claude's play-test reported the
                     // background city clearly visible through the panel, well past what a mere
                     // 5% gap should allow. Full opacity removes any ambiguity.
-                    pixels[y * w + x] = inner[y, x] ? new Color32(Base.r, Base.g, Base.b, 255) : new Color32(Magenta.r, Magenta.g, Magenta.b, 255);
+                    pixels[y * w + x] = inner[y, x] ? new Color32(Base.r, Base.g, Base.b, 255) : new Color32(Glow.r, Glow.g, Glow.b, 255);
                 }
             }
 
@@ -364,7 +367,7 @@ namespace BrainDrain.EditorTools
                 for (int x = 0; x < w; x++)
                 {
                     int v = (x + y) % period;
-                    pixels[y * w + x] = v < band ? Magenta : Base;
+                    pixels[y * w + x] = v < band ? Glow : Surface;
                 }
             }
 
