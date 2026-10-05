@@ -40,6 +40,9 @@ namespace BrainDrain.EditorTools
         [MenuItem("BrainDrain/Testing/Snotting Cycle Test")]
         private static void SnottingCycleTestMenuItem() => RequirePlayMode(DebugCheats.RunSnottingCycleTest);
 
+        [MenuItem("BrainDrain/Testing/Trigger Pending IQ Recovery")]
+        private static void TriggerPendingIQRecoveryMenuItem() => RequirePlayMode(DebugCheats.TriggerPendingIQRecovery);
+
         // ── Checkpoints ─────────────────────────────────────────────────────────────
         // Reproducible test states. Each sets exact manager values without touching the
         // save file. All gated behind RequirePlayMode like the other testing shortcuts.

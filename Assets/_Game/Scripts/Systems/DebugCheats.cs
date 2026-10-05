@@ -77,6 +77,25 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
+        /// 2026-10-05 play-test fix: fires RewardedAdRecoveryManager's existing
+        /// DebugFakePendingRecovery hook (was a ContextMenu-only private method -- easy to miss
+        /// without digging through the Inspector) so the RECOVER IQ HUD button, which is only
+        /// ever visible while HasPendingRecovery is true, can be verified on demand without
+        /// waiting for a real offline-decay gap. No-ops with a warning if the manager hasn't
+        /// bootstrapped yet.
+        /// </summary>
+        public static void TriggerPendingIQRecovery()
+        {
+            if (RewardedAdRecoveryManager.Instance == null)
+            {
+                Debug.LogWarning("[DebugCheats] RewardedAdRecoveryManager not found in the scene.");
+                return;
+            }
+
+            RewardedAdRecoveryManager.Instance.DebugFakePendingRecovery();
+        }
+
+        /// <summary>
         /// Sets up a known non-trivial pre-Snotting state (max buildings, large cash/points
         /// balance, restoration just over the 50k unlock threshold), fires one Snotting cycle,
         /// then logs PASS/FAIL assertions to the Console for checks 3-6:

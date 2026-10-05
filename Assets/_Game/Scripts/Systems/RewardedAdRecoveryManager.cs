@@ -230,9 +230,15 @@ namespace BrainDrain.Systems
         /// waiting for a real offline-decay event. Uses a fixed test amount rather than a real
         /// decay calculation -- this is a trigger, not a decay simulator. Compiles out of any
         /// build, matching GodTierStoreManager.DebugBuyBrainFreeze's precedent.
+        ///
+        /// 2026-10-05 play-test fix: made public (was private) so
+        /// TestingMenuShortcuts/DebugCheats can reach it too -- a ContextMenu alone (right-click
+        /// the component in the Inspector) is easy to miss, which is almost certainly why the
+        /// RECOVER IQ HUD button "didn't appear" in a play-test with no real offline gap:
+        /// HasPendingRecovery correctly starts/stays false until this fires for real, by design.
         /// </summary>
         [ContextMenu("DEBUG: Fake Pending Recovery")]
-        private void DebugFakePendingRecovery()
+        public void DebugFakePendingRecovery()
         {
             HandleOfflineDecayApplied(25f);
             Debug.Log($"[RewardedAdRecoveryManager] DEBUG fake pending recovery -> HasPendingRecovery={HasPendingRecovery}, AdsWatchedThisEvent={AdsWatchedThisEvent}/{MaxAdsForEvent}.");
