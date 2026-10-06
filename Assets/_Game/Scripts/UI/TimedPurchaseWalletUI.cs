@@ -409,7 +409,24 @@ namespace BrainDrain.UI
         /// <summary>Small auto-fading banner, pinned to the top of the main Canvas (not inside
         /// THE WALLET panel -- the player may not have it open when a freeze ends). Built once,
         /// reused for every expiry -- ShowToast restarts its fade coroutine rather than building a
-        /// new GameObject each time.</summary>
+        /// new GameObject each time.
+        ///
+        /// 2026-10-07 play-test fix: was a flat anchoredPosition (-140) that overlapped the HUD
+        /// "BRAIN POWER" header on real device/safe-area heights. Now positioned dynamically just
+        /// below HUDController.HeaderPanelRect's own bottom edge every time it's shown (ShowToast
+        /// calls PositionBelowHeader) -- same world-corner-to-local-space technique
+        /// UINudgePointer already uses to clear the same header, so this can never drift out of
+        /// sync with that logic again. Falls back to the original fixed offset if the header
+        /// can't be resolved (e.g. a test scene with no HUD). Background is Surface fill + a Glow
+        /// Outline border (not a literal sprite retint -- same reasoning DialogueDisplayUI's own
+        /// Surface+Glow treatment already documents: tinting a baked Base+Glow sprite toward
+        /// Surface would darken its own border toward invisibility, since both colors share one
+        /// texture).</summary>
+        private const float ToastGapBelowHeaderPixels = 16f;
+        private const float ToastFallbackAnchoredY = -220f;
+
+        private RectTransform toastRect;
+
         private void BuildToast()
         {
             Canvas rootCanvas = canvasRect.GetComponentInParent<Canvas>();
@@ -419,16 +436,21 @@ namespace BrainDrain.UI
             toastObject.transform.SetParent(toastParent, false);
             toastObject.transform.SetAsLastSibling();
 
-            RectTransform rect = toastObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -140f);
-            rect.sizeDelta = new Vector2(620f, 96f);
+            toastRect = toastObject.GetComponent<RectTransform>();
+            toastRect.anchorMin = new Vector2(0.5f, 1f);
+            toastRect.anchorMax = new Vector2(0.5f, 1f);
+            toastRect.pivot = new Vector2(0.5f, 1f);
+            toastRect.anchoredPosition = new Vector2(0f, ToastFallbackAnchoredY);
+            toastRect.sizeDelta = new Vector2(620f, 96f);
 
             Image image = toastObject.AddComponent<Image>();
-            image.color = PanelChipColor;
+            image.color = Palette.Surface;
             image.raycastTarget = false;
+
+            Outline glowOutline = toastObject.AddComponent<Outline>();
+            glowOutline.effectColor = Palette.Glow;
+            glowOutline.effectDistance = new Vector2(2f, 2f);
+            glowOutline.useGraphicAlpha = false;
 
             toastGroup = toastObject.AddComponent<CanvasGroup>();
             toastGroup.alpha = 0f;
@@ -457,10 +479,63 @@ namespace BrainDrain.UI
             toastObject.SetActive(false);
         }
 
+        /// <summary>Computes the HUD header's bottom edge in the toast's own parent-local space
+        /// (the same world-corner -> screen-point -> local-point pipeline UINudgePointer.
+        /// TryGetLocalBottomEdge already uses successfully against this exact header) and docks
+        /// the toast's top edge ToastGapBelowHeaderPixels below it. anchorY below is the anchor
+        /// reference point expressed in that same local-rect frame (Lerp between parentRect's own
+        /// rect.yMin/yMax) -- subtracting it from the measured header edge converts the result
+        /// into a valid anchoredPosition for a pivot/anchor of (0.5, 1), independent of whatever
+        /// pivot the parent Canvas RectTransform itself happens to use.</summary>
+        private void PositionToastBelowHeader()
+        {
+            if (toastRect == null) { return; }
+
+            RectTransform headerRect = HUDController.Instance != null ? HUDController.Instance.HeaderPanelRect : null;
+            RectTransform parentRect = toastRect.parent as RectTransform;
+            if (headerRect == null || parentRect == null)
+            {
+                toastRect.anchoredPosition = new Vector2(0f, ToastFallbackAnchoredY);
+                return;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(headerRect);
+
+            Canvas canvas = parentRect.GetComponentInParent<Canvas>();
+            Camera cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+
+            Vector3[] corners = new Vector3[4];
+            headerRect.GetWorldCorners(corners);
+
+            bool any = false;
+            float minLocalY = float.PositiveInfinity;
+            for (int i = 0; i < 4; i++)
+            {
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, corners[i]);
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out Vector2 localPoint))
+                {
+                    any = true;
+                    if (localPoint.y < minLocalY) { minLocalY = localPoint.y; }
+                }
+            }
+
+            if (!any)
+            {
+                toastRect.anchoredPosition = new Vector2(0f, ToastFallbackAnchoredY);
+                return;
+            }
+
+            float anchorY = Mathf.Lerp(parentRect.rect.yMin, parentRect.rect.yMax, toastRect.anchorMin.y);
+            Vector2 pos = toastRect.anchoredPosition;
+            pos.y = minLocalY - anchorY - ToastGapBelowHeaderPixels;
+            toastRect.anchoredPosition = pos;
+        }
+
         private void ShowToast(string message)
         {
             if (toastObject == null) { return; }
             toastLabel.text = message;
+            PositionToastBelowHeader();
             toastObject.SetActive(true);
             if (toastCoroutine != null) { StopCoroutine(toastCoroutine); }
             toastCoroutine = StartCoroutine(ToastRoutine());
