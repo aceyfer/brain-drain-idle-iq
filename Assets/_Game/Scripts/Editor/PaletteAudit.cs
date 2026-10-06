@@ -40,6 +40,23 @@ namespace BrainDrain.EditorTools
             ("Dim", Palette.Dim),
         };
 
+        /// <summary>2026-10-06 FREEZE INVENTORY: the 3 rarity tokens are valid ONLY on objects
+        /// identifiable as rarity UI by name -- everywhere else they're still violations like any
+        /// other off-palette color. Checked by GameObject/ancestor name, same mechanism as
+        /// SkipNameContains below, but these still count toward checkedCount (they're being
+        /// actively verified against a real token, just a wider one) rather than skippedCount.</summary>
+        private static readonly (string Name, Color Value)[] RarityTokens =
+        {
+            ("RarityUncommon", Palette.RarityUncommon),
+            ("RarityRare", Palette.RarityRare),
+            ("RarityEpic", Palette.RarityEpic),
+        };
+
+        private static readonly string[] RarityAllowedNameContains =
+        {
+            "RarityTier",
+        };
+
         private static readonly string[] SkipSpriteNames =
         {
             "BizCard_Paper",
@@ -83,7 +100,7 @@ namespace BrainDrain.EditorTools
                 if (ShouldSkip(image)) { skippedCount++; continue; }
 
                 checkedCount++;
-                string closest = ClosestTokenOrNull(image.color);
+                string closest = ClosestTokenOrNull(image.color, image.transform);
                 if (closest == null)
                 {
                     violations.Add($"Image '{Path(image.transform)}' color={image.color} (RGB {ToByteString(image.color)})");
@@ -98,7 +115,7 @@ namespace BrainDrain.EditorTools
                 if (label.color.a <= 0f) { skippedCount++; continue; }
 
                 checkedCount++;
-                string closest = ClosestTokenOrNull(label.color);
+                string closest = ClosestTokenOrNull(label.color, label.transform);
                 if (closest == null)
                 {
                     violations.Add($"TMP '{Path(label.transform)}' color={label.color} (RGB {ToByteString(label.color)})");
@@ -142,7 +159,7 @@ namespace BrainDrain.EditorTools
             return false;
         }
 
-        private static string ClosestTokenOrNull(Color color)
+        private static string ClosestTokenOrNull(Color color, Transform context)
         {
             for (int i = 0; i < Tokens.Length; i++)
             {
@@ -155,7 +172,33 @@ namespace BrainDrain.EditorTools
                 }
             }
 
+            if (IsRarityTaggedName(context))
+            {
+                for (int i = 0; i < RarityTokens.Length; i++)
+                {
+                    Color t = RarityTokens[i].Value;
+                    if (Mathf.Abs(color.r - t.r) * 255f <= ToleranceByte
+                        && Mathf.Abs(color.g - t.g) * 255f <= ToleranceByte
+                        && Mathf.Abs(color.b - t.b) * 255f <= ToleranceByte)
+                    {
+                        return RarityTokens[i].Name;
+                    }
+                }
+            }
+
             return null;
+        }
+
+        private static bool IsRarityTaggedName(Transform t)
+        {
+            for (Transform current = t; current != null; current = current.parent)
+            {
+                for (int i = 0; i < RarityAllowedNameContains.Length; i++)
+                {
+                    if (current.name.Contains(RarityAllowedNameContains[i])) { return true; }
+                }
+            }
+            return false;
         }
 
         private static string ToByteString(Color c)

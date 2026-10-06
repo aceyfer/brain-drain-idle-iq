@@ -37,5 +37,17 @@ namespace BrainDrain.UI
         /// landed just outside the audit's +/-12 tolerance of the real convention.
         /// </summary>
         public static readonly Color Dim = new Color(0.6f, 0.6f, 0.6f, 0.45f);
+
+        /// <summary>
+        /// 2026-10-06 FREEZE INVENTORY rarity tiers (Aceyfer's explicit color spec, standard
+        /// MMO-loot-rarity hues) -- Brain Freeze family tier icons/names ONLY. Deliberately NOT
+        /// general-purpose UI colors like the 7 tokens above: PaletteAudit only allows these on
+        /// objects it can identify as rarity UI (name-tagged "RarityTier" -- see that file's
+        /// RarityAllowedNameContains), everywhere else they're still violations same as any other
+        /// off-palette color. Do not reach for these outside the freeze-tier icon/name system.
+        /// </summary>
+        public static readonly Color RarityUncommon = new Color32(0x1E, 0xFF, 0x00, 0xFF);
+        public static readonly Color RarityRare = new Color32(0x00, 0x70, 0xDD, 0xFF);
+        public static readonly Color RarityEpic = new Color32(0xA3, 0x35, 0xEE, 0xFF);
     }
 }
