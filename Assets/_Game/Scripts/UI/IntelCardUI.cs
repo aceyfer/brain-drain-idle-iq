@@ -606,9 +606,13 @@ namespace BrainDrain.UI
         /// 2026-10-06 FTUE ART AUDIT: was a plain flat-fill rectangle, the one remaining "no
         /// frame at all" button in the FTUE flow -- every other confirm action (the event popup,
         /// THE WALLET's Use button, the LiteratesCard flip-back confirm) uses the Alert_Button
-        /// pill. Now does too, tinted with fillColor (CogsConfirmFillColor, already Cyan-based)
-        /// the same pass-through way AlertFrameButtonStyle/GodTierStoreSlotUI tint it elsewhere --
-        /// falls back to the flat fill only if the sprite somehow fails to load.
+        /// pill. Now does too. White pass-through tint, matching every OTHER Alert_Button
+        /// consumer in this codebase (AlertFrameButtonStyle, GodTierStoreSlotUI, RandomEventUI
+        /// Controller's action button) -- NOT fillColor: that's a deliberately translucent
+        /// 18%-alpha color authored for a plain untextured Image, and Unity's Image.color tint is
+        /// multiplicative including alpha, so reusing it here would fade the whole pill (border
+        /// and all) to near-invisibility instead of just recoloring it. Falls back to the
+        /// original flat fillColor fill only if the sprite somehow fails to load.
         /// </summary>
         private static Button CreateConfirmButton(Transform parent, string confirmText, Color fillColor, Color textColor)
         {
@@ -621,7 +625,7 @@ namespace BrainDrain.UI
             {
                 image.sprite = alertButtonSprite;
                 image.type = Image.Type.Sliced;
-                image.color = fillColor;
+                image.color = Color.white;
             }
             else
             {
