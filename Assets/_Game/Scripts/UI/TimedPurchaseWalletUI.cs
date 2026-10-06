@@ -274,6 +274,19 @@ namespace BrainDrain.UI
             AlertFrameButtonStyle.Apply(button);
         }
 
+        /// <summary>2026-10-08 play-test fix: the close X visually overlaps the HUD's own
+        /// top-right side buttons (LogOpenButton/PocketOpenButton/WalletOpenButton), which share
+        /// this panel's exact same parent (canvasRect). Plain SetAsLastSibling() (still called on
+        /// every Open(), kept as a no-op-safe belt-and-suspenders) only wins the raycast within
+        /// that one shared parent's own sibling order -- it does NOT protect against an ancestor
+        /// (or a sibling further up) carrying its own overrideSorting Canvas, which always wins
+        /// over plain sibling position regardless of SetAsLastSibling (same root cause
+        /// UINudgePointer's own OverrideSortingOrder fix already documents for this exact HUD).
+        /// Giving the panel its own overrideSorting Canvas makes it immune to that class of bug
+        /// the same way, comfortably above the HUD's own buttons and UINudgePointer's own 10, but
+        /// below every true modal overlay (IntelCardUI 500, FreezeTutorialPopupUI 480).</summary>
+        private const int PanelOverrideSortingOrder = 50;
+
         private void BuildPanel()
         {
             GameObject panelObject = new GameObject("WalletPanel", typeof(RectTransform));
@@ -286,6 +299,10 @@ namespace BrainDrain.UI
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.sizeDelta = new Vector2(900f, 1400f);
             panelRect.anchoredPosition = Vector2.zero;
+
+            Canvas panelCanvas = panelObject.AddComponent<Canvas>();
+            panelCanvas.overrideSorting = true;
+            panelCanvas.sortingOrder = PanelOverrideSortingOrder;
 
             Image panelImage = panelObject.AddComponent<Image>();
             panelImage.color = PanelChipColor;
@@ -606,6 +623,10 @@ namespace BrainDrain.UI
 
         public void Close()
         {
+            // 2026-10-08 play-test fix: diagnostic log so a live Play-mode test can confirm the
+            // close button's click is actually reaching this handler, independent of the
+            // overrideSorting Canvas fix above (BuildPanel's own doc comment).
+            Debug.Log("[TimedPurchaseWalletUI] WalletClose clicked");
             SetPanelHidden(true);
             isVisible = false;
         }
