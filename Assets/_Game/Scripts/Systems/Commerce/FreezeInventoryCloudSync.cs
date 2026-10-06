@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+#if BRAINDRAIN_CLOUDSAVE
 using Unity.Services.CloudSave;
+#endif
 using UnityEngine;
 using BrainDrain.Core;
 using BrainDrain.Systems;
@@ -36,14 +37,17 @@ namespace BrainDrain.Systems.Commerce
     /// consumable-count mirror; "retry later" per rule 5 is satisfied by every subsequent
     /// push/launch naturally re-attempting against current local state.
     ///
-    /// REQUIRES com.unity.services.cloudsave (added to Packages/manifest.json this same pass,
-    /// version picked WITHOUT a live Package Manager session -- same caveat
-    /// UgsCloudCodeValidationService's own doc comment raises for hand-editing manifest.json: the
-    /// version there is a best-effort guess, NOT verified against a real resolve. Confirm/update
-    /// it via Package Manager > Add package by name the next time the project is opened in the
-    /// Editor). UNVERIFIED, written blind against Unity's Cloud Save SDK documentation -- same
-    /// disclaimer as GooglePlayGamesAuthService, no live Editor/device available this session to
-    /// test the actual SaveAsync/LoadAsync call shapes against a real UGS project.
+    /// 2026-10-06 COMPILE BLOCKER FIX: com.unity.services.cloudsave is an OPTIONAL package --
+    /// this project has no .asmdef files to attach Unity's normal versionDefines mechanism to
+    /// (CLAUDE.md), so CloudSaveDefineSync.cs (Assets/Editor/) is the Assembly-CSharp-compatible
+    /// equivalent: an Editor-only watcher that keeps a BRAINDRAIN_CLOUDSAVE scripting define in
+    /// sync with whether the package actually resolved. Every method below is guarded by that
+    /// define; without it, this class falls back to a local-only no-op (see the #else branches)
+    /// and logs exactly one warning, so a missing/unresolved optional package can never again make
+    /// the whole project uncompilable. UNVERIFIED, written blind against Unity's Cloud Save SDK
+    /// documentation -- same disclaimer as GooglePlayGamesAuthService, no live Editor/device
+    /// available this session to test the actual SaveAsync/LoadAsync call shapes against a real
+    /// UGS project.
     /// </summary>
     public static class FreezeInventoryCloudSync
     {
@@ -52,7 +56,9 @@ namespace BrainDrain.Systems.Commerce
         private const string ActiveExpiryKey = "braindrain_activeFreezeExpiryUnixSeconds";
 
         private static bool reconcileInFlight;
+        private static bool warnedMissingPackageOnce;
 
+#if BRAINDRAIN_CLOUDSAVE
         /// <summary>Pushes the CURRENT local freeze inventory + active-freeze state to Cloud
         /// Save, overwriting whatever was there before. Safe to call freely -- GodTierStoreManager
         /// always calls this AFTER the local grant/activation already happened, so a failed push
@@ -141,5 +147,28 @@ namespace BrainDrain.Systems.Commerce
                 reconcileInFlight = false;
             }
         }
+#else
+        /// <summary>Fallback when com.unity.services.cloudsave hasn't resolved (see
+        /// CloudSaveDefineSync.cs) -- local-only no-op, one warning ever, never blocks the caller.
+        /// Freeze charges/activations still work and still save normally via SaveManager; they
+        /// simply don't mirror to the cloud until the package resolves.</summary>
+        public static void PushAsync(GodTierStoreManager manager)
+        {
+            WarnMissingPackageOnce();
+        }
+
+        /// <summary>Fallback counterpart to PushAsync above -- see its doc comment.</summary>
+        public static void ReconcileOnLaunchAsync(GodTierStoreManager manager)
+        {
+            WarnMissingPackageOnce();
+        }
+
+        private static void WarnMissingPackageOnce()
+        {
+            if (warnedMissingPackageOnce) { return; }
+            warnedMissingPackageOnce = true;
+            Debug.LogWarning("[FreezeInventoryCloudSync] com.unity.services.cloudsave is not installed/resolved -- freeze inventory stays local-only this session (no cross-device/reinstall restore). Charges and saves still work normally. Resolves automatically once the package is added (see CloudSaveDefineSync.cs).");
+        }
+#endif
     }
 }
