@@ -39,7 +39,11 @@ namespace BrainDrain.UI
         private const float AutoFlipDelay = 0.6f;
 
         private static readonly Color CogsBackdropColor = new Color(0f, 0f, 0f, 0.85f);
-        private static readonly Color CogsCardColor = new Color(0.03f, 0.03f, 0.03f, 0.97f);
+        // 2026-10-06 FTUE ART AUDIT: was a near-black custom (0.03,0.03,0.03) that missed every
+        // Palette token's tolerance band on R and B -- the welcome narrator's own card background
+        // was the one real off-palette surface left in the FTUE flow. Snapped to Palette.Base,
+        // still dark enough to read as a terminal screen.
+        private static readonly Color CogsCardColor = Palette.Base;
         // 2026-10-04 PALETTE LOCKDOWN: terminal green -> Cyan (same role: primary terminal text).
         private static readonly Color CogsTextColor = Palette.Cyan;
         private static readonly Color CogsConfirmFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.18f);
@@ -598,6 +602,14 @@ namespace BrainDrain.UI
             return label;
         }
 
+        /// <summary>
+        /// 2026-10-06 FTUE ART AUDIT: was a plain flat-fill rectangle, the one remaining "no
+        /// frame at all" button in the FTUE flow -- every other confirm action (the event popup,
+        /// THE WALLET's Use button, the LiteratesCard flip-back confirm) uses the Alert_Button
+        /// pill. Now does too, tinted with fillColor (CogsConfirmFillColor, already Cyan-based)
+        /// the same pass-through way AlertFrameButtonStyle/GodTierStoreSlotUI tint it elsewhere --
+        /// falls back to the flat fill only if the sprite somehow fails to load.
+        /// </summary>
         private static Button CreateConfirmButton(Transform parent, string confirmText, Color fillColor, Color textColor)
         {
             GameObject buttonObject = new GameObject("ConfirmButton", typeof(RectTransform));
@@ -605,7 +617,16 @@ namespace BrainDrain.UI
             buttonObject.AddComponent<LayoutElement>().preferredHeight = 96f;
 
             Image image = buttonObject.AddComponent<Image>();
-            image.color = fillColor;
+            if (alertButtonSprite != null)
+            {
+                image.sprite = alertButtonSprite;
+                image.type = Image.Type.Sliced;
+                image.color = fillColor;
+            }
+            else
+            {
+                image.color = fillColor;
+            }
 
             Button button = buttonObject.AddComponent<Button>();
             button.targetGraphic = image;
