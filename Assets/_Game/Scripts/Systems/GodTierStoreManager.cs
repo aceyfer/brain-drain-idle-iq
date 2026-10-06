@@ -330,7 +330,15 @@ namespace BrainDrain.Systems
         /// own expiry, decayed/checked live) and fires OnFreezeExpired exactly once for it. Simple
         /// edge detection rather than a scheduled callback -- this project's established pattern
         /// for "something that lazily expires against wall-clock time" (see
-        /// PlayerIQManager.IsBrainFreezeActive itself, or UpgradeManager's LockRandomBuildingFor).</summary>
+        /// PlayerIQManager.IsBrainFreezeActive itself, or UpgradeManager's LockRandomBuildingFor).
+        ///
+        /// 2026-10-08 play-test fix: this transition never pushed to Cloud Save -- only
+        /// GrantFreezeInventory/ActivateFreeze did. That left a stale (still-in-the-future)
+        /// expiry sitting in the cloud after every natural/forced expiry, which
+        /// AdoptCloudActiveFreezeIfLonger would then legitimately (by its own correct timestamp
+        /// comparison) re-adopt on the next reconcile, reviving a freeze that had already ended.
+        /// Pushing here closes that gap at the source -- see AdoptCloudActiveFreezeIfLonger's own
+        /// doc comment for why its comparison itself was already timestamp-correct in isolation.</summary>
         private void HandleSecondTick()
         {
             bool isActiveNow = HasActiveFreeze;
@@ -340,6 +348,7 @@ namespace BrainDrain.Systems
                 activeFreezeItemId = null;
                 OnFreezeExpired?.Invoke(expiredItemId, GetFreezeInventoryCount(expiredItemId));
                 OnItemsChanged?.Invoke();
+                FreezeInventoryCloudSync.PushAsync(this);
             }
             wasFreezeActiveLastTick = isActiveNow;
         }
@@ -590,6 +599,18 @@ namespace BrainDrain.Systems
         /// active right now) -- the same "never lose what was paid for" rule extended to active
         /// protection time, never shortens an already-longer local expiry. Called only by
         /// FreezeInventoryCloudSync's launch reconciliation.
+        ///
+        /// 2026-10-08 play-test fix note: the comparison below is, and has always been, a real
+        /// Unix-timestamp comparison (max(local, cloud) wins) -- never "the cloud is always
+        /// right." Two independent guards: (1) a cloud expiry already in the past is rejected
+        /// outright, regardless of what local has; (2) a cloud expiry is only adopted if it's
+        /// STRICTLY LATER than local's own current expiry. The bug this session (Force Expire,
+        /// then a reinstall-restore reviving the old freeze) was never this comparison being
+        /// wrong -- it was that GodTierStoreManager.HandleSecondTick's natural-expiry path never
+        /// pushed the cleared state to the cloud (fixed there), leaving cloudExpiry stale and
+        /// genuinely still in the future, which this method then correctly (by its own rule)
+        /// adopted. Fixing the push at the source was the real fix; this comment exists so nobody
+        /// "fixes" this comparison again looking for a bug that was never here.
         /// </summary>
         public void AdoptCloudActiveFreezeIfLonger(string itemId, long expiryUnixSeconds)
         {
