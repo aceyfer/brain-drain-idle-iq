@@ -15,10 +15,11 @@ MonoBehaviour:
   itemId: brain_freeze_72
   productId: com.eighthkind.braindrain.brainfreeze72
   displayName: 'Brain Freeze: 72'
-  description: Same 113 floor, same 200 start. Three days before you have to think
-    about it again.
+  description: Adds 1 to your Wallet. Activate anytime. One freeze can run at a
+    time -- this one holds your IQ at 113 for 72 hours once active.
   realMoneyPriceDisplay: $2.99
   effectType: 6
   isConsumable: 1
   offlineExtensionHours: 0
   freezeDurationHours: 72
+  rarityTier: 2

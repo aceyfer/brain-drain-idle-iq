@@ -15,10 +15,11 @@ MonoBehaviour:
   itemId: deep_freeze
   productId: com.eighthkind.braindrain.deepfreeze
   displayName: Deep Freeze
-  description: A full week where your IQ never drops below 113. The cheapest way
-    to never show up stupid.
+  description: Adds 1 to your Wallet. Activate anytime. One freeze can run at a
+    time -- this one holds your IQ at 113 for a full week once active.
   realMoneyPriceDisplay: $5.99
   effectType: 6
   isConsumable: 1
   offlineExtensionHours: 0
   freezeDurationHours: 168
+  rarityTier: 3

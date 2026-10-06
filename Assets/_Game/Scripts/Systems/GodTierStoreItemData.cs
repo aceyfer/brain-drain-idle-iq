@@ -15,6 +15,20 @@ namespace BrainDrain.Systems
     }
 
     /// <summary>
+    /// 2026-10-06 FREEZE INVENTORY: cosmetic rarity tier for the Brain Freeze family's wallet
+    /// icon/name color -- Uncommon/Rare/Epic map 1:1 to Palette.RarityUncommon/Rare/Epic. None
+    /// for every non-freeze item (cosmetics/QoL items have no tier). APPEND-ONLY, same reason as
+    /// GodTierStoreEffectType above.
+    /// </summary>
+    public enum GodTierStoreRarityTier
+    {
+        None,
+        Uncommon,
+        Rare,
+        Epic
+    }
+
+    /// <summary>
     /// Authoring data for one God Tier Store item -- real-money-only, cosmetics/QoL, never
     /// power. Real purchases route through IapCommerceService (Unity IAP) with server-side
     /// validation (§12); GodTierStoreManager.RequestPurchase starts a purchase, and only a
@@ -43,7 +57,9 @@ namespace BrainDrain.Systems
         public bool isConsumable;
         [Tooltip("Used only by OfflineProgressionExtension -- added to PlayerIQManager's offline-decay-max-hours window.")]
         public float offlineExtensionHours;
-        [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is protected at a floor of 113 (after an immediate jump to at least 200 on purchase). Stacks additively onto any currently-active freeze's duration and re-triggers the 200 jump.")]
+        [Tooltip("Used only by BrainFreezeIQImmunity -- real-time hours PlayerIQ is protected at a floor of 113 while this charge is the ACTIVE one (after an immediate jump to at least 200 on activation). 2026-10-06 FREEZE INVENTORY: purchasing no longer activates this directly -- it adds one charge to GodTierStoreManager's per-item inventory; GodTierStoreManager.ActivateFreeze is what actually applies this duration, and only when no other freeze is currently active.")]
         public float freezeDurationHours;
+        [Tooltip("Used only by BrainFreezeIQImmunity -- cosmetic rarity tier for this item's wallet icon/name color. None for every other effect type.")]
+        public GodTierStoreRarityTier rarityTier;
     }
 }
