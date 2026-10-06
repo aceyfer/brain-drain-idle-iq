@@ -231,6 +231,13 @@ namespace BrainDrain.Systems
             // net for a scene that never goes through SaveManager at all (e.g. a test scene),
             // so the very first tick never misreads pre-existing state as a fresh expiry.
             wasFreezeActiveLastTick = HasActiveFreeze;
+
+            // 2026-10-06 FREEZE INVENTORY cloud mirror: reconcile against UGS Cloud Save once per
+            // launch, after local state is already loaded (SaveManager's own Start() runs before
+            // GameManager's -100 execution order, so LoadState above has already applied by the
+            // time this Start() runs). Fire-and-forget -- see FreezeInventoryCloudSync's own doc
+            // comment for why this can't block boot on a network round trip.
+            FreezeInventoryCloudSync.ReconcileOnLaunchAsync(this);
         }
 
         private void OnApplicationQuit()
@@ -482,6 +489,66 @@ namespace BrainDrain.Systems
             if (string.IsNullOrWhiteSpace(itemId) || amount <= 0) { return; }
             freezeInventory.TryGetValue(itemId, out int current);
             freezeInventory[itemId] = current + amount;
+            FreezeInventoryCloudSync.PushAsync(this);
+        }
+
+        /// <summary>
+        /// 2026-10-06 FREEZE INVENTORY cloud mirror: merges an incoming (already-fetched) per-item
+        /// count map into the local wallet by taking the per-item MAX, never the cloud value
+        /// outright -- "never lose a paid charge, never duplicate one" means a stale/incomplete
+        /// cloud fetch can never erase a charge this device already knows about, and a charge the
+        /// cloud already knows about but this device hasn't seen yet is still picked up. Called
+        /// only by FreezeInventoryCloudSync's launch reconciliation -- never a purchase/activation
+        /// path, so this does NOT touch processedTransactionIds.
+        /// </summary>
+        public void ReconcileFreezeInventory(IReadOnlyDictionary<string, int> cloudCounts)
+        {
+            if (cloudCounts == null || cloudCounts.Count == 0) { return; }
+
+            bool changed = false;
+            foreach (KeyValuePair<string, int> kvp in cloudCounts)
+            {
+                if (string.IsNullOrWhiteSpace(kvp.Key) || kvp.Value <= 0) { continue; }
+                int current = GetFreezeInventoryCount(kvp.Key);
+                if (kvp.Value > current)
+                {
+                    freezeInventory[kvp.Key] = kvp.Value;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                OnItemsChanged?.Invoke();
+                GameManager.Instance?.RequestSave();
+            }
+        }
+
+        /// <summary>
+        /// 2026-10-06 FREEZE INVENTORY cloud mirror: adopts a cloud-reported active freeze only if
+        /// it protects LATER than whatever this device currently has (or this device has none
+        /// active right now) -- the same "never lose what was paid for" rule extended to active
+        /// protection time, never shortens an already-longer local expiry. Called only by
+        /// FreezeInventoryCloudSync's launch reconciliation.
+        /// </summary>
+        public void AdoptCloudActiveFreezeIfLonger(string itemId, long expiryUnixSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(itemId) || expiryUnixSeconds <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            {
+                return;
+            }
+
+            long localExpiry = PlayerIQManager.Instance != null ? PlayerIQManager.Instance.BrainFreezeExpiryUnixSeconds : 0L;
+            if (expiryUnixSeconds <= localExpiry)
+            {
+                return; // local protection already covers this or more
+            }
+
+            PlayerIQManager.Instance?.SetBrainFreezeExpiry(expiryUnixSeconds);
+            activeFreezeItemId = itemId;
+            wasFreezeActiveLastTick = true;
+            OnItemsChanged?.Invoke();
+            GameManager.Instance?.RequestSave();
         }
 
         /// <summary>
@@ -525,6 +592,7 @@ namespace BrainDrain.Systems
             wasFreezeActiveLastTick = true;
 
             ApplyItemEffect(item); // PlayerIQManager.ApplyBrainFreeze(item.freezeDurationHours)
+            FreezeInventoryCloudSync.PushAsync(this);
 
             OnItemsChanged?.Invoke();
             GameManager.Instance?.RequestSave();
