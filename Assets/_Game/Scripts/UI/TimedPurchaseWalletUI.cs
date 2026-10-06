@@ -57,10 +57,13 @@ namespace BrainDrain.UI
         // text role -- still visually distinct from the Cyan "USE" state, just not illegible.
         private static readonly Color UseDisabledColor = new Color(Palette.Dim.r, Palette.Dim.g, Palette.Dim.b, 0.8f);
         // Disabled pill tint: desaturates/darkens the Alert_Button sprite via a solid (alpha=1)
-        // grey multiply rather than a translucent tint -- transparency was exactly what made the
-        // old flat disabled fill hard to read, so the disabled state stays fully opaque and
-        // conveys "disabled" through hue/brightness instead.
-        private static readonly Color DisabledPillTint = new Color(0.5f, 0.5f, 0.5f, 1f);
+        // multiply rather than a translucent tint -- transparency was exactly what made the old
+        // flat disabled fill hard to read, so the disabled state stays fully opaque and conveys
+        // "disabled" through hue/brightness instead.
+        // 2026-10-08 play-test fix: was a flat (0.5,0.5,0.5) grey -- RGB 128,128,128, matching no
+        // Palette token (Palette Audit violation). Palette.Surface at full alpha instead -- still
+        // reads as a muted/inactive tint, now an actual token.
+        private static readonly Color DisabledPillTint = new Color(Palette.Surface.r, Palette.Surface.g, Palette.Surface.b, 1f);
 
         private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
         private static readonly Color32 PillWarning = new Color32(0x80, 0xF4, 0xFF, 0xFF);
