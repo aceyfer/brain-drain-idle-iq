@@ -108,6 +108,7 @@ namespace BrainDrain.UI
 
         private RectTransform canvasRect;
         private CanvasGroup panelGroup;
+        private GameObject backdropObject;
         private RectTransform contentRoot;
         private GameObject emptyState;
         private GameObject toastObject;
@@ -244,6 +245,7 @@ namespace BrainDrain.UI
             }
 
             BuildOpenButton(diaLogRect);
+            BuildBackdrop();
             BuildPanel();
             BuildToast();
             SetPanelHidden(true);
@@ -289,6 +291,35 @@ namespace BrainDrain.UI
         /// the same way, comfortably above the HUD's own buttons and UINudgePointer's own 10, but
         /// below every true modal overlay (IntelCardUI 500, FreezeTutorialPopupUI 480).</summary>
         private const int PanelOverrideSortingOrder = 50;
+
+        /// <summary>2026-10-08 play-test fix: the panel's own 900x1400 fixed-size fill never
+        /// covered the full screen, so the Cryo Chamber backdrop's pods were still visible around
+        /// its edges/margins regardless of how opaque the panel's own fill was tuned. A genuine
+        /// full-screen scrim (matching IntelCardUI's own backdrop convention) closes that gap
+        /// completely and, as a bonus, blocks input to the HUD underneath while open -- same as
+        /// every other modal in this codebase already does.</summary>
+        private void BuildBackdrop()
+        {
+            backdropObject = new GameObject("WalletBackdrop", typeof(RectTransform), typeof(Image));
+            backdropObject.transform.SetParent(canvasRect, false);
+            backdropObject.transform.SetAsLastSibling();
+
+            RectTransform backdropRect = backdropObject.GetComponent<RectTransform>();
+            backdropRect.anchorMin = Vector2.zero;
+            backdropRect.anchorMax = Vector2.one;
+            backdropRect.offsetMin = Vector2.zero;
+            backdropRect.offsetMax = Vector2.zero;
+
+            Image backdropImage = backdropObject.GetComponent<Image>();
+            backdropImage.color = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.92f);
+            backdropImage.raycastTarget = true; // blocks taps to the HUD behind while open
+
+            Canvas backdropCanvas = backdropObject.AddComponent<Canvas>();
+            backdropCanvas.overrideSorting = true;
+            backdropCanvas.sortingOrder = PanelOverrideSortingOrder - 1; // just behind the panel
+
+            backdropObject.SetActive(false);
+        }
 
         private void BuildPanel()
         {
@@ -518,10 +549,22 @@ namespace BrainDrain.UI
         /// reference point expressed in that same local-rect frame (Lerp between parentRect's own
         /// rect.yMin/yMax) -- subtracting it from the measured header edge converts the result
         /// into a valid anchoredPosition for a pivot/anchor of (0.5, 1), independent of whatever
-        /// pivot the parent Canvas RectTransform itself happens to use.</summary>
+        /// pivot the parent Canvas RectTransform itself happens to use.
+        ///
+        /// Used only while THE WALLET is CLOSED -- reparents the toast back under the root canvas
+        /// first in case a prior toast was shown while the panel was open (see
+        /// PositionToastInsidePanel's own doc comment).</summary>
         private void PositionToastBelowHeader()
         {
             if (toastRect == null) { return; }
+
+            Canvas rootCanvas = canvasRect.GetComponentInParent<Canvas>();
+            Transform rootParent = rootCanvas != null ? rootCanvas.transform : canvasRect;
+            if (toastRect.parent != rootParent)
+            {
+                toastRect.SetParent(rootParent, false);
+            }
+            toastRect.SetAsLastSibling();
 
             RectTransform headerRect = HUDController.Instance != null ? HUDController.Instance.HeaderPanelRect : null;
             RectTransform parentRect = toastRect.parent as RectTransform;
@@ -563,11 +606,38 @@ namespace BrainDrain.UI
             toastRect.anchoredPosition = pos;
         }
 
+        /// <summary>2026-10-08 play-test fix: while THE WALLET is open, docking the toast below
+        /// the HUD header (as PositionToastBelowHeader does) lands it over the panel's own "THE
+        /// WALLET" title, since the panel is also centered near the top of the screen. Reparents
+        /// the toast under the panel itself instead -- it then automatically inherits the panel's
+        /// own overrideSorting Canvas (so it renders correctly above the panel's content) and
+        /// stays correctly positioned regardless of where the panel sits on screen. A flat offset
+        /// below the title band is fine here (unlike the HUD header) since the panel's own layout
+        /// is fixed/authored, not safe-area-dependent.</summary>
+        private void PositionToastInsidePanel()
+        {
+            if (toastRect == null || panelGroup == null) { return; }
+
+            RectTransform panelRect = panelGroup.transform as RectTransform;
+            if (panelRect == null) { return; }
+
+            if (toastRect.parent != panelRect)
+            {
+                toastRect.SetParent(panelRect, false);
+            }
+            toastRect.SetAsLastSibling();
+
+            toastRect.anchorMin = new Vector2(0.5f, 1f);
+            toastRect.anchorMax = new Vector2(0.5f, 1f);
+            toastRect.pivot = new Vector2(0.5f, 1f);
+            toastRect.anchoredPosition = new Vector2(0f, -112f); // clears Title's own -24/72 band
+        }
+
         private void ShowToast(string message)
         {
             if (toastObject == null) { return; }
             toastLabel.text = message;
-            PositionToastBelowHeader();
+            if (isVisible) { PositionToastInsidePanel(); } else { PositionToastBelowHeader(); }
             toastObject.SetActive(true);
             if (toastCoroutine != null) { StopCoroutine(toastCoroutine); }
             toastCoroutine = StartCoroutine(ToastRoutine());
@@ -644,6 +714,7 @@ namespace BrainDrain.UI
             panelGroup.alpha = hidden ? 0f : 1f;
             panelGroup.blocksRaycasts = !hidden;
             panelGroup.interactable = !hidden;
+            if (backdropObject != null) { backdropObject.SetActive(!hidden); }
         }
 
         /// <summary>Rebuilds the row list from GodTierStoreManager's live inventory + active-freeze
@@ -928,10 +999,11 @@ namespace BrainDrain.UI
                 badgeRect.anchorMin = new Vector2(1f, 0f);
                 badgeRect.anchorMax = new Vector2(1f, 0f);
                 badgeRect.pivot = new Vector2(0.5f, 0.5f);
-                badgeRect.anchoredPosition = new Vector2(-4f, 4f);
-                // 2026-10-07 play-test fix: was 44x32, too small to comfortably fit >=22pt bold
-                // text -- enlarged to fit the new floor with real padding.
-                badgeRect.sizeDelta = new Vector2(56f, 40f);
+                badgeRect.anchoredPosition = new Vector2(-6f, 6f);
+                // 2026-10-07 play-test fix bumped this 44x32 -> 56x40; 2026-10-08 play-test
+                // feedback: still "tiny," asked for at least 2x the ORIGINAL 44x32. 96x64 is
+                // exactly 2x on both axes.
+                badgeRect.sizeDelta = new Vector2(96f, 64f);
                 Image badgeImage = badgeObject.AddComponent<Image>();
                 badgeImage.color = Palette.Base;
                 badgeImage.raycastTarget = false;
@@ -948,11 +1020,12 @@ namespace BrainDrain.UI
                 badgeLabel.color = Palette.White;
                 badgeLabel.fontStyle = FontStyles.Bold;
                 badgeLabel.alignment = TextAlignmentOptions.Center;
-                // "count badge: >=22pt bold White" -- floor set at exactly that.
-                badgeLabel.fontSize = 26f;
+                // 2026-10-08 play-test fix: 2x the original 20pt floor to match the badge's own
+                // 2x resize above.
+                badgeLabel.fontSize = 40f;
                 badgeLabel.enableAutoSizing = true;
-                badgeLabel.fontSizeMin = 22f;
-                badgeLabel.fontSizeMax = 26f;
+                badgeLabel.fontSizeMin = 34f;
+                badgeLabel.fontSizeMax = 40f;
                 badgeLabel.raycastTarget = false;
             }
         }
