@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using BrainDrain.Core;
 using BrainDrain.Systems;
 using BrainDrain.Systems.Commerce;
 
@@ -23,13 +25,16 @@ namespace BrainDrain.EditorTools
         // default targets for these menu items so a single click has a sensible, known-good item
         // to act on without needing a selection first.
         private const string BrainFreeze24ProductId = "com.eighthkind.braindrain.brainfreeze";
+        // GodTierStoreItemData.itemId (not productId) -- what GetFreezeInventoryCount/
+        // ActivateFreeze/DebugBuyBrainFreeze key on, see BrainFreeze.asset.
+        private const string BrainFreezeItemId = "brain_freeze";
         private const string BadWordsPackProductId = "com.eighthkind.braindrain.badwordspack";
 
         [MenuItem("BrainDrain/Testing/IAP/Simulate Success (Brain Freeze 24h)")]
         private static void SimulateSuccess() => RequirePlayMode(() =>
         {
             IapCommerceService.Instance?.DebugSimulateApprovedGrant(BrainFreeze24ProductId);
-            Debug.Log("[IapTestingMenu] Simulated an approved grant for Brain Freeze 24h -- check THE WALLET for the new countdown and the God Shop row for '+24h'.");
+            Debug.Log("[IapTestingMenu] Simulated an approved grant for Brain Freeze 24h -- 2026-10-06: a grant now only adds a Wallet charge, it doesn't activate -- check THE WALLET for the new row ('x1'), then use 'Activate Brain Freeze' below to actually start it.");
         });
 
         [MenuItem("BrainDrain/Testing/IAP/Simulate Pending -> Complete (Bad Words Pack)")]
@@ -51,9 +56,10 @@ namespace BrainDrain.EditorTools
             IapCommerceService.Instance.DebugSimulateApprovedGrant(BrainFreeze24ProductId);
             Debug.Log("[IapTestingMenu] Granted Brain Freeze 24h with the next save forced to fail -- check the Console for "
                 + "'[SaveManager] Failed to write save file' followed by '[IapCommerceService] Grant for ... succeeded but the local save failed -- "
-                + "NOT confirming the order'. The item IS active in memory right now (THE WALLET shows it), same as a real app that crashes "
-                + "in the gap between grant and save -- the next real connect/relaunch replays the unconfirmed order instead of losing it. "
-                + "Run 'Add 10K Brain Power' or any other action that calls RequestSave() again afterward to confirm a later successful save recovers normally.");
+                + "NOT confirming the order'. The charge IS in the wallet's in-memory inventory right now (THE WALLET shows 'x1'), same as a real "
+                + "app that crashes in the gap between grant and save -- the next real connect/relaunch replays the unconfirmed order instead of "
+                + "losing it. Run 'Add 10K Brain Power' or any other action that calls RequestSave() again afterward to confirm a later successful "
+                + "save recovers normally.");
         });
 
         [MenuItem("BrainDrain/Testing/IAP/Simulate Refund (revoke Bad Words Pack)")]
@@ -97,6 +103,71 @@ namespace BrainDrain.EditorTools
         {
             IapCommerceService.Instance?.DebugClearSimulatedOffline();
             Debug.Log("[IapTestingMenu] Restored commerce readiness to Ready.");
+        });
+
+        // ── Freeze Inventory (2026-10-06 amendment) ────────────────────────────────────
+        // Exercises the charge-based wallet model: unlimited purchases just add charges,
+        // only one freeze can ever be active, expiry fires a toast nudge (never
+        // auto-consumes), and the Cloud Save mirror survives a simulated reinstall.
+
+        [MenuItem("BrainDrain/Testing/IAP/Freeze Inventory/Buy Brain Freeze x3")]
+        private static void SimulateBuyFreezeX3() => RequirePlayMode(() =>
+        {
+            GodTierStoreManager godShop = GodTierStoreManager.Instance;
+            if (godShop == null) { return; }
+
+            godShop.DebugBuyBrainFreeze();
+            godShop.DebugBuyBrainFreeze();
+            godShop.DebugBuyBrainFreeze();
+            Debug.Log($"[IapTestingMenu] Bought Brain Freeze x3 -- wallet now has {godShop.GetFreezeInventoryCount(BrainFreezeItemId)} charge(s) (expect 3, or +3 if the wallet already had charges).");
+        });
+
+        [MenuItem("BrainDrain/Testing/IAP/Freeze Inventory/Activate Brain Freeze (locks others)")]
+        private static void SimulateActivateFreeze() => RequirePlayMode(() =>
+        {
+            GodTierStoreManager godShop = GodTierStoreManager.Instance;
+            if (godShop == null) { return; }
+
+            int before = godShop.GetFreezeInventoryCount(BrainFreezeItemId);
+            godShop.DebugActivateBrainFreeze();
+            int after = godShop.GetFreezeInventoryCount(BrainFreezeItemId);
+            Debug.Log($"[IapTestingMenu] Activated Brain Freeze -- inventory {before} -> {after}. Open THE WALLET: every row's Use button should now read 'Active — ...' and be disabled, and an active card with a countdown pill should be pinned above the rows.");
+        });
+
+        [MenuItem("BrainDrain/Testing/IAP/Freeze Inventory/Force Expire Active Freeze (nudge test)")]
+        private static void SimulateForceExpireFreeze() => RequirePlayMode(() =>
+        {
+            if (PlayerIQManager.Instance == null) { return; }
+            if (!PlayerIQManager.Instance.IsBrainFreezeActive)
+            {
+                Debug.LogWarning("[IapTestingMenu] No freeze is currently active -- run 'Activate Brain Freeze' first.");
+                return;
+            }
+
+            PlayerIQManager.Instance.SetBrainFreezeExpiry(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 1);
+            Debug.Log("[IapTestingMenu] Forced the active freeze's expiry into the past -- the 'Freeze ended. Use another? (xN left)' toast should appear within ~1s, on the next GameManager.OnSecondTick (silent if the item has 0 charges left).");
+        });
+
+        [MenuItem("BrainDrain/Testing/IAP/Freeze Inventory/Simulate Reinstall Restore From Cloud")]
+        private static void SimulateReinstallRestore() => RequirePlayMode(() =>
+        {
+            GodTierStoreManager godShop = GodTierStoreManager.Instance;
+            if (godShop == null) { return; }
+
+            if (godShop.GetFreezeInventoryCount(BrainFreezeItemId) <= 0)
+            {
+                godShop.DebugBuyBrainFreeze();
+                Debug.Log("[IapTestingMenu] Wallet was empty -- bought 1 Brain Freeze charge first so there's something to restore.");
+            }
+
+            FreezeInventoryCloudSync.PushAsync(godShop);
+            Debug.Log("[IapTestingMenu] Pushed the current wallet to Cloud Save. Wiping LOCAL inventory only (simulating a reinstall)...");
+
+            godShop.DebugWipeLocalFreezeInventory();
+            Debug.Log($"[IapTestingMenu] Local wallet wiped -- now {godShop.GetFreezeInventoryCount(BrainFreezeItemId)} charge(s) (expect 0). Reconciling from Cloud Save...");
+
+            FreezeInventoryCloudSync.ReconcileOnLaunchAsync(godShop);
+            Debug.Log("[IapTestingMenu] Reconcile requested (async, fire-and-forget) -- check the Console in a moment and THE WALLET for the charge count to come back from cloud.");
         });
 
         private static GodTierStoreItemData FindItemByProductId(GodTierStoreManager godShop, string productId)

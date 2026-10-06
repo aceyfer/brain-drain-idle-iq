@@ -947,6 +947,18 @@ namespace BrainDrain.Systems
             bool activated = ActivateFreeze("brain_freeze");
             Debug.Log($"[GodTierStoreManager] DEBUG activate brain_freeze -> {(activated ? "activated" : "refused, see warning above")}.");
         }
+
+        /// <summary>Editor-only test hook: wipes ONLY the local freeze inventory (never touches
+        /// Cloud Save or the active freeze itself) to simulate a fresh reinstall immediately
+        /// before a FreezeInventoryCloudSync.ReconcileOnLaunchAsync call -- so
+        /// IapTestingMenu's "Simulate Reinstall Restore From Cloud" has something to restore.</summary>
+        [ContextMenu("DEBUG: Wipe Local Freeze Inventory (reinstall sim)")]
+        public void DebugWipeLocalFreezeInventory()
+        {
+            freezeInventory.Clear();
+            OnItemsChanged?.Invoke();
+            Debug.Log("[GodTierStoreManager] DEBUG wiped local freeze inventory (simulating reinstall) -- Cloud Save state untouched.");
+        }
 #endif
     }
 }
