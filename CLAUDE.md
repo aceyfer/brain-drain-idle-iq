@@ -18,6 +18,8 @@ This is a Unity project opened/built through the Unity Editor, not a CLI-driven 
 
 Never swap, stash, or restore working-tree files to isolate a commit. For mixed files use `git add -p`, or stop and ask Aceyfer. One change per commit; stage by file name only; no scene writes; don't push until verified.
 
+After any `git apply --cached` commit, run `git diff HEAD -- <file>` and confirm the working tree still contains every line you committed (no "-" lines reversing your own commit). Index-only commits must also be written to disk.
+
 Never run `rm -rf` or delete directories; delete only specific files you created this session, by exact path.
 
 ## Architecture
