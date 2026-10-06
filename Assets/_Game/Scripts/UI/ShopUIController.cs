@@ -350,11 +350,11 @@ namespace BrainDrain.UI
                 tmp.color = Color.white;
                 tmp.raycastTarget = false;
                 tmp.enableAutoSizing = true;
-                // Floor raised from 10 (2026-09-17): 10pt is illegible on a phone-scale tab
-                // button and was the smallest hardcoded font anywhere in the shop UI. 14
-                // still lets "CASH INVESTMENTS" (the longest of the three tab labels) shrink
-                // to fit a narrow button without forcing every tab down to the same size.
-                tmp.fontSizeMin = 14f;
+                // Floor raised from 10 (2026-09-17) then 14 (2026-10-06 FTUE audit, matching
+                // AlertFrameButtonStyle's AutoSizeMinFloor convention established this session
+                // for interactive button labels) -- 16 still lets "CASH INVESTMENTS" (the
+                // longest of the three tab labels) shrink to fit a narrow button.
+                tmp.fontSizeMin = 16f;
                 tmp.fontSizeMax = 20f;
             }
             else
@@ -416,9 +416,12 @@ namespace BrainDrain.UI
             Image image = button.targetGraphic as Image;
             if (image != null)
             {
-                image.color = selected
-                    ? new Color(0f, 0.94f, 1f, 1f)
-                    : new Color(0.35f, 0.35f, 0.4f, 1f);
+                // 2026-10-06 FTUE AUDIT (first shop open): selected was (0,0.94,1) -- a near-cyan
+                // guess (#00F0FF) that missed Palette.Cyan's tolerance band, the same pre-lockdown
+                // pattern already fixed in SettingsUIController.CurrentTrackColor. Unselected was
+                // a flat (0.35,0.35,0.4) matching no token -- snapped to Surface, matching every
+                // other "inactive panel/row" surface in this codebase (Wallet rows, shop rows).
+                image.color = selected ? Palette.Cyan : Palette.Surface;
             }
         }
 
@@ -516,7 +519,9 @@ namespace BrainDrain.UI
             buttonGo.transform.SetParent(parent, false);
 
             Image image = buttonGo.GetComponent<Image>();
-            image.color = new Color(0.35f, 0.35f, 0.4f, 1f);
+            // 2026-10-06 FTUE AUDIT: matches SetTabButtonHighlight's unselected color (Surface) --
+            // this is the tab's own initial fill before the first highlight pass ever runs.
+            image.color = Palette.Surface;
 
             Button button = buttonGo.GetComponent<Button>();
             button.targetGraphic = image;
@@ -540,8 +545,10 @@ namespace BrainDrain.UI
             // narrow generated button could clip "CASH INVESTMENTS" outright. Same min/max as
             // the other path so a tab label reads identically regardless of which code
             // constructs the button.
+            // 2026-10-06 FTUE AUDIT: floor raised 14->16 to match AlertFrameButtonStyle's
+            // AutoSizeMinFloor convention established this session for interactive button labels.
             tmp.enableAutoSizing = true;
-            tmp.fontSizeMin = 14f;
+            tmp.fontSizeMin = 16f;
             tmp.fontSizeMax = 20f;
         }
 
