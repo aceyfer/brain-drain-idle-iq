@@ -37,7 +37,9 @@ namespace BrainDrain.UI
         private static readonly Color PaperTextColor = new Color(0.18f, 0.14f, 0.08f, 1f);
         // 2026-10-05 PALETTE LOCKDOWN audit follow-up: was a near-black non-token grey -- snapped
         // to the exact Base token, alpha unchanged.
-        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.94f);
+        // 2026-10-07 play-test fix: 94% let the Cryo Chamber backdrop's pod rim-glow bleed
+        // through visibly -- bumped to 95% per spec, matching THE WALLET's same fix.
+        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.95f);
         // 2026-10-04 PALETTE LOCKDOWN: was near-cyan, not the exact token.
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);

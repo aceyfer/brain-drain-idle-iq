@@ -41,7 +41,10 @@ namespace BrainDrain.UI
         private const float ToastVisibleSeconds = 4f;
         private const float ToastFadeSeconds = 0.4f;
 
-        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.94f);
+        // 2026-10-07 play-test fix: 94% let the Cryo Chamber backdrop's pod rim-glow (up to 0.75
+        // alpha, a near-white cyan -- bright enough that even a few percent bleed-through reads
+        // as visible) show through the panel. Bumped to 95% per spec.
+        private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.95f);
         private static readonly Color RowColor = Palette.Surface;
         private static readonly Color AccentColor = Palette.Cyan;
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
