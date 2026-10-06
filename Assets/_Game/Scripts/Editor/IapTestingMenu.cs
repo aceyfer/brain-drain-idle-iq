@@ -170,6 +170,13 @@ namespace BrainDrain.EditorTools
             Debug.Log("[IapTestingMenu] Reconcile requested (async, fire-and-forget) -- check the Console in a moment and THE WALLET for the charge count to come back from cloud.");
         });
 
+        [MenuItem("BrainDrain/Testing/IAP/Freeze Inventory/Reset Freeze Tutorial Seen Flag")]
+        private static void ResetFreezeTutorialSeen() => RequirePlayMode(() =>
+        {
+            GodTierStoreManager.Instance?.DebugResetFreezeTutorialSeen();
+            Debug.Log("[IapTestingMenu] Freeze tutorial seen-flag reset -- the next 'Buy Brain Freeze x3' (or any freeze grant/restore) will show the tutorial popup again.");
+        });
+
         private static GodTierStoreItemData FindItemByProductId(GodTierStoreManager godShop, string productId)
         {
             IReadOnlyList<GodTierStoreItemData> items = godShop.Items;

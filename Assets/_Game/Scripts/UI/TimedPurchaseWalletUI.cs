@@ -56,7 +56,6 @@ namespace BrainDrain.UI
         private static Sprite cardSprite;
         private static Sprite shadowSprite;
         private static Sprite pillSprite;
-        private static readonly Dictionary<GodTierStoreRarityTier, Sprite> TierIconSprites = new();
         private static bool spritesLoaded;
 
         private static TimedPurchaseWalletUI instance;
@@ -595,22 +594,11 @@ namespace BrainDrain.UI
             cardSprite = Resources.Load<Sprite>("UI/Generated/Wallet_Card");
             shadowSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Shadow");
             pillSprite = Resources.Load<Sprite>("UI/Generated/Alert_Button");
-            TierIconSprites[GodTierStoreRarityTier.Uncommon] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Uncommon");
-            TierIconSprites[GodTierStoreRarityTier.Rare] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Rare");
-            TierIconSprites[GodTierStoreRarityTier.Epic] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Epic");
             spritesLoaded = true;
         }
 
-        private static Color TierColor(GodTierStoreRarityTier tier) => tier switch
-        {
-            GodTierStoreRarityTier.Uncommon => Palette.RarityUncommon,
-            GodTierStoreRarityTier.Rare => Palette.RarityRare,
-            GodTierStoreRarityTier.Epic => Palette.RarityEpic,
-            _ => Palette.White,
-        };
-
-        private static Sprite TierSprite(GodTierStoreRarityTier tier) =>
-            TierIconSprites.TryGetValue(tier, out Sprite sprite) ? sprite : null;
+        // 2026-10-06: tier color/icon lookup extracted to FreezeTierVisuals (shared with the new
+        // FreezeTutorialPopupUI) -- TierColor/TierSprite below were this file's own private copies.
 
         /// <summary>The single active-freeze card, pinned above the inventory rows (rule 4: "shown
         /// on top with its countdown pill"). No Use button -- there's nothing to do with a freeze
@@ -645,7 +633,7 @@ namespace BrainDrain.UI
             nameRect.offsetMax = new Vector2(-24f, -16f);
             TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
             nameLabel.text = "ACTIVE: " + (activeItem != null ? activeItem.displayName : "FREEZE");
-            nameLabel.color = TierColor(tier);
+            nameLabel.color = FreezeTierVisuals.TierColor(tier);
             nameLabel.fontStyle = FontStyles.Bold;
             nameLabel.alignment = TextAlignmentOptions.BottomLeft;
             nameLabel.fontSize = 26f;
@@ -685,7 +673,7 @@ namespace BrainDrain.UI
             nameRect.offsetMax = new Vector2(0f, -14f);
             TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
             nameLabel.text = item.displayName;
-            nameLabel.color = TierColor(tier);
+            nameLabel.color = FreezeTierVisuals.TierColor(tier);
             nameLabel.fontStyle = FontStyles.Bold;
             nameLabel.alignment = TextAlignmentOptions.BottomLeft;
             nameLabel.fontSize = 26f;
@@ -808,7 +796,7 @@ namespace BrainDrain.UI
             iconRect.anchoredPosition = new Vector2(20f, 0f);
             iconRect.sizeDelta = new Vector2(104f, 104f);
             Image iconImage = iconObject.AddComponent<Image>();
-            Sprite sprite = TierSprite(tier);
+            Sprite sprite = FreezeTierVisuals.TierSprite(tier);
             if (sprite != null) { iconImage.sprite = sprite; iconImage.type = Image.Type.Simple; iconImage.preserveAspect = true; }
             iconImage.color = Color.white; // pass-through onto the generated sprite's own baked tint
             iconImage.raycastTarget = false;

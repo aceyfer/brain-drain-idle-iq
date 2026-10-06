@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using BrainDrain.Core;
@@ -92,6 +93,13 @@ namespace BrainDrain.Systems
         /// already-expired freeze never fires a false "just ended" toast.</summary>
         private bool wasFreezeActiveLastTick;
 
+        /// <summary>2026-10-06 FREEZE TUTORIAL: whether the one-time "your freezes are in the
+        /// Wallet" popup has already been shown. Lives here, not FTUEManager -- this is gated on
+        /// an economy event (a freeze entering the wallet), not FTUEManager's own beat sequence,
+        /// and FTUEManager's IntelCardUI skins (COGSTerminal/LiteratesCard) don't match the
+        /// Alert_Frame popup style this tutorial needs. See FreezeTutorialPopupUI.</summary>
+        private bool freezeTutorialSeen;
+
         /// <summary>productId -> item, built once per Awake/Items-change. Fails closed per-item
         /// (logs and skips) on a blank/duplicate productId rather than throwing -- one
         /// misconfigured catalog row must not take the whole store down.</summary>
@@ -178,6 +186,21 @@ namespace BrainDrain.Systems
         /// -- always PlayerIQManager's own merged expiry field, never a second source of truth.</summary>
         public bool HasActiveFreeze => PlayerIQManager.Instance != null && PlayerIQManager.Instance.IsBrainFreezeActive;
 
+        /// <summary>2026-10-06 FREEZE TUTORIAL: see freezeTutorialSeen's own doc comment.</summary>
+        public bool FreezeTutorialSeen => freezeTutorialSeen;
+
+        /// <summary>Marks the freeze tutorial as shown, permanently (idempotent -- a second call
+        /// is a no-op, never re-saves). Called once by FreezeTutorialPopupUI right before it
+        /// builds the popup, so a save failure mid-build still can't leave the flag set without
+        /// the player ever having seen it (RequestSave runs after the flag flips, same ordering
+        /// every other grant/activation in this class already uses).</summary>
+        public void MarkFreezeTutorialSeen()
+        {
+            if (freezeTutorialSeen) { return; }
+            freezeTutorialSeen = true;
+            GameManager.Instance?.RequestSave();
+        }
+
         /// <summary>Fired after an item is successfully purchased/granted/reconciled, or the owned/inventory state is restored from a save.</summary>
         public event Action OnItemsChanged;
 
@@ -188,6 +211,14 @@ namespace BrainDrain.Systems
         /// expired before this session started (see wasFreezeActiveLastTick's seeding in
         /// Start/LoadState).</summary>
         public event Action<string, int> OnFreezeExpired;
+
+        /// <summary>2026-10-06 FREEZE TUTORIAL: fired whenever a freeze itemId's wallet count goes
+        /// from not-owned-or-zero to a positive count, for ANY reason -- a real purchase
+        /// (GrantFreezeInventory) or a Cloud Save restore picking up a charge this device didn't
+        /// know about yet (ReconcileFreezeInventory). Deliberately broader than "just purchases"
+        /// per Aceyfer's explicit trigger spec ("purchase or restore"). Not fired by ActivateFreeze
+        /// (that DECREMENTS inventory, never grants) or by a no-op reconcile that changes nothing.</summary>
+        public event Action<string> OnFreezeChargeGained;
 
         private void Awake()
         {
@@ -238,6 +269,33 @@ namespace BrainDrain.Systems
             // time this Start() runs). Fire-and-forget -- see FreezeInventoryCloudSync's own doc
             // comment for why this can't block boot on a network round trip.
             FreezeInventoryCloudSync.ReconcileOnLaunchAsync(this);
+
+            // 2026-10-06 FREEZE TUTORIAL catch-up: a save that already has freeze charges but
+            // never saw the tutorial (a legacy save from before this feature existed, or a fresh
+            // QA save seeded directly via debug cheats) would otherwise never trigger it -- the
+            // real trigger (OnFreezeChargeGained) only fires on a NEW grant/restore, not on a
+            // plain load. One-frame-deferred so every other system's own Start() (including
+            // FreezeTutorialPopupUI's subscription) has definitely already run before this fires.
+            if (!freezeTutorialSeen)
+            {
+                StartCoroutine(FireCatchUpFreezeChargeGainedNextFrame());
+            }
+        }
+
+        private IEnumerator FireCatchUpFreezeChargeGainedNextFrame()
+        {
+            yield return null;
+
+            if (freezeTutorialSeen) { yield break; }
+
+            foreach (KeyValuePair<string, int> kvp in freezeInventory)
+            {
+                if (kvp.Value > 0)
+                {
+                    OnFreezeChargeGained?.Invoke(kvp.Key);
+                    yield break;
+                }
+            }
         }
 
         private void OnApplicationQuit()
@@ -490,6 +548,7 @@ namespace BrainDrain.Systems
             freezeInventory.TryGetValue(itemId, out int current);
             freezeInventory[itemId] = current + amount;
             FreezeInventoryCloudSync.PushAsync(this);
+            OnFreezeChargeGained?.Invoke(itemId);
         }
 
         /// <summary>
@@ -514,6 +573,7 @@ namespace BrainDrain.Systems
                 {
                     freezeInventory[kvp.Key] = kvp.Value;
                     changed = true;
+                    if (current <= 0) { OnFreezeChargeGained?.Invoke(kvp.Key); }
                 }
             }
 
@@ -788,7 +848,8 @@ namespace BrainDrain.Systems
             IEnumerable<FreezeInventoryEntry> restoredFreezeInventory,
             string restoredActiveFreezeItemId,
             IEnumerable<ActiveTimedPurchase> legacyActiveTimedPurchases,
-            long legacyBrainFreezeExpiryUnixSeconds)
+            long legacyBrainFreezeExpiryUnixSeconds,
+            bool restoredFreezeTutorialSeen)
         {
             ownedItemIds.Clear();
             if (restoredOwnedItemIds != null)
@@ -820,6 +881,7 @@ namespace BrainDrain.Systems
             Y2KGlitchSlumThemeOwned = restoredTheme;
             IllumisnottyMembershipCardOwned = restoredMembershipCard;
             HolographicTrashCanFlexOwned = restoredTrashCanFlex;
+            freezeTutorialSeen = restoredFreezeTutorialSeen;
 
             offlineExtensionHoursGranted = restoredOfflineExtensionHours;
             if (restoredOfflineExtensionHours > 0f)
@@ -958,6 +1020,17 @@ namespace BrainDrain.Systems
             freezeInventory.Clear();
             OnItemsChanged?.Invoke();
             Debug.Log("[GodTierStoreManager] DEBUG wiped local freeze inventory (simulating reinstall) -- Cloud Save state untouched.");
+        }
+
+        /// <summary>Editor-only test hook: resets the freeze-tutorial seen-flag so
+        /// FreezeTutorialPopupUI's one-time popup can be re-triggered by the next
+        /// OnFreezeChargeGained firing (e.g. "Buy Brain Freeze x3" in the IAP test menu) without
+        /// needing a fresh save file.</summary>
+        [ContextMenu("DEBUG: Reset Freeze Tutorial Seen Flag")]
+        public void DebugResetFreezeTutorialSeen()
+        {
+            freezeTutorialSeen = false;
+            Debug.Log("[GodTierStoreManager] DEBUG reset freezeTutorialSeen -> false. Next freeze grant/restore will show the tutorial again.");
         }
 #endif
     }

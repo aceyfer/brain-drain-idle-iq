@@ -113,6 +113,14 @@ namespace BrainDrain.Systems
         /// </summary>
         public string activeFreezeItemId;
 
+        /// <summary>
+        /// 2026-10-06 FREEZE TUTORIAL: whether the one-time "your freezes are in the Wallet"
+        /// popup has already been shown (GodTierStoreManager.freezeTutorialSeen). Zero-fills to
+        /// false for a save predating this field -- the correct default, since nobody could have
+        /// seen a popup that didn't exist yet. No migration guard needed.
+        /// </summary>
+        public bool freezeTutorialSeen;
+
         // -- Profanity Dialogue Pack persisted state --
         public bool profanityUnlocked;
         public bool profanityEnabled;
@@ -604,6 +612,7 @@ namespace BrainDrain.Systems
                 // are the new source of truth.
                 data.freezeInventory = new List<FreezeInventoryEntry>(GodTierStoreManager.Instance.FreezeInventorySnapshot);
                 data.activeFreezeItemId = GodTierStoreManager.Instance.ActiveFreezeItemId;
+                data.freezeTutorialSeen = GodTierStoreManager.Instance.FreezeTutorialSeen;
             }
 
             // Brain Freeze lives on PlayerIQManager directly, not GodTierStoreManager -- unlike
@@ -781,7 +790,8 @@ namespace BrainDrain.Systems
                 data.freezeInventory,
                 data.activeFreezeItemId,
                 data.activeTimedPurchases,
-                data.brainFreezeExpiryUnixSeconds);
+                data.brainFreezeExpiryUnixSeconds,
+                data.freezeTutorialSeen);
             GodTierStoreManager.Instance?.LoadProcessedTransactionIds(data.godTierStoreProcessedTransactionIds);
 
             // Brain Freeze expiry must be restored BEFORE LoadStateWithOfflineDecay, same ordering
@@ -907,6 +917,7 @@ namespace BrainDrain.Systems
                 activeTimedPurchases = new List<ActiveTimedPurchase>(),
                 freezeInventory = new List<FreezeInventoryEntry>(),
                 activeFreezeItemId = null,
+                freezeTutorialSeen = false,
                 godTierStoreProcessedTransactionIds = new List<string>(),
                 profanityUnlocked = false,
                 profanityEnabled = false,
