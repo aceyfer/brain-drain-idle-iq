@@ -7,14 +7,14 @@ using BrainDrain.Systems.Commerce;
 namespace BrainDrain.Systems
 {
     /// <summary>
-    /// One active timed (consumable) purchase's remaining-time record -- itemId only, no
-    /// duplicated displayName/description, so a display surface (TimedPurchaseWalletUI) always
-    /// resolves fresh text by looking itemId back up in GodTierStoreManager.Items rather than
-    /// risking stale copy baked in at purchase time. Reused directly as both the runtime ledger
-    /// entry and the SaveManager DTO -- same precedent as BuildingSaveEntry (UpgradeManager).
-    /// Multiple entries can share the same itemId: buying the same 24-hour item twice back to
-    /// back is meant to produce two independent entries/countdowns, not one merged entry, so
-    /// itemId is deliberately not a dictionary key anywhere in this system.
+    /// LEGACY, migration-read-only as of the 2026-10-06 FREEZE INVENTORY amendment. Used to be
+    /// THE WALLET's live per-purchase ledger (buy the same item twice, see two countdowns); that
+    /// model is gone -- see GodTierStoreManager's class doc. Still referenced by
+    /// SaveManager.PlayerData.activeTimedPurchases purely so a save written before this amendment
+    /// can still be read; GodTierStoreManager.LoadState consumes it once, to derive a best-effort
+    /// display itemId for whatever freeze PlayerIQManager.BrainFreezeExpiryUnixSeconds already
+    /// protects (that value itself is never touched by this migration), then never writes to or
+    /// reads from this shape again. New saves persist FreezeInventoryEntry instead.
     /// </summary>
     [Serializable]
     public struct ActiveTimedPurchase
@@ -30,6 +30,25 @@ namespace BrainDrain.Systems
     }
 
     /// <summary>
+    /// 2026-10-06 FREEZE INVENTORY: one Brain-Freeze-family itemId's unlimited-purchase charge
+    /// count. Persisted as a flat list (SaveManager.PlayerData.freezeInventory) since JsonUtility
+    /// can't serialize Dictionary directly -- same reason BuildingSaveEntry/ActiveTimedPurchase
+    /// are flat structs rather than dictionary entries.
+    /// </summary>
+    [Serializable]
+    public struct FreezeInventoryEntry
+    {
+        public string itemId;
+        public int count;
+
+        public FreezeInventoryEntry(string itemId, int count)
+        {
+            this.itemId = itemId;
+            this.count = count;
+        }
+    }
+
+    /// <summary>
     /// Owns the 9 God Shop items -- real-money-only, cosmetics/QoL, never power (class doc stale
     /// count fixed 2026-09-20, see §12). Real purchases route through IapCommerceService (the
     /// sole Unity IAP touchpoint); this class stays the catalog/effect/save owner, never talking
@@ -40,6 +59,16 @@ namespace BrainDrain.Systems
     /// ReconcileExistingEntitlement (public, called from IapCommerceService's boot/resume
     /// reconciliation for non-consumables already owned per the store). See
     /// Assets/Plans/iap-integration-plan.md for the full design.
+    ///
+    /// 2026-10-06 FREEZE INVENTORY AMENDMENT (Aceyfer): replaces the Brain Freeze family's old
+    /// "buy = activate, repeat purchases stack" model entirely. Buying a freeze item now only
+    /// adds one charge to freezeInventory -- GrantVerifiedEntitlement never touches
+    /// PlayerIQManager for a freeze purchase anymore. The player explicitly activates a charge
+    /// via ActivateFreeze(itemId), and only one freeze can ever be active at a time (enforced
+    /// here via PlayerIQManager.IsBrainFreezeActive, the same single merged-expiry field that
+    /// already existed -- this amendment changes WHEN that field gets set, not what it is or how
+    /// the IQ-floor effect itself works). Caps total active protection at whichever single item's
+    /// own duration (max 7 days, Deep Freeze), eliminating the old model's unbounded stacking.
     /// </summary>
     public sealed class GodTierStoreManager : MonoBehaviour
     {
@@ -48,6 +77,20 @@ namespace BrainDrain.Systems
 
         private readonly HashSet<string> ownedItemIds = new();
         private float offlineExtensionHoursGranted;
+
+        /// <summary>itemId -> unlimited-purchase charge count for the Brain Freeze family.
+        /// Nothing here ever caps or limits a purchase -- see GrantVerifiedEntitlement.</summary>
+        private readonly Dictionary<string, int> freezeInventory = new();
+
+        /// <summary>Which itemId the CURRENTLY active freeze (if any) came from, for display only
+        /// -- the real on/off state is PlayerIQManager.IsBrainFreezeActive, never duplicated here.
+        /// Null/empty once that expires (cleared by HandleSecondTick's transition detection).</summary>
+        private string activeFreezeItemId;
+
+        /// <summary>Tick-to-tick edge detection for "a freeze JUST expired" (see HandleSecondTick)
+        /// -- seeded from the real state on every Start/LoadState so a load into an
+        /// already-expired freeze never fires a false "just ended" toast.</summary>
+        private bool wasFreezeActiveLastTick;
 
         /// <summary>productId -> item, built once per Awake/Items-change. Fails closed per-item
         /// (logs and skips) on a blank/duplicate productId rather than throwing -- one
@@ -68,14 +111,7 @@ namespace BrainDrain.Systems
         /// never by re-resolving .Instance (which would self-bootstrap a stray host during
         /// teardown -- the same footgun already documented for DialogueDisplayUI in TASKLIST_DETAILS §19).</summary>
         private IapCommerceService subscribedCommerceService;
-
-        /// <summary>
-        /// Ledger of still-active timed consumable purchases (e.g. an owned-but-not-yet-expired
-        /// Brain Freeze family item) -- separate from ownedItemIds, which consumables never join
-        /// (see GrantVerifiedEntitlement). Backs THE WALLET's "item + time remaining" display. Access only
-        /// through the pruning ActiveTimedPurchases property below, never this field directly.
-        /// </summary>
-        private readonly List<ActiveTimedPurchase> activeTimedPurchases = new();
+        private GameManager subscribedGameManager;
 
         private static GodTierStoreManager instance;
         private static bool isShuttingDown;
@@ -114,23 +150,44 @@ namespace BrainDrain.Systems
         /// <summary>Read-only view for SaveManager -- see processedTransactionIds' own doc comment.</summary>
         public IReadOnlyCollection<string> ProcessedTransactionIds => processedTransactionIds;
 
-        /// <summary>
-        /// Every still-active timed consumable purchase, pruned of anything whose expiry has
-        /// already passed each time this is read. Multiple purchases of the same item -- even
-        /// back to back -- each get their own independent entry, so buying two 24-hour items
-        /// shows as two separate countdowns rather than being silently merged into one.
-        /// </summary>
-        public IReadOnlyList<ActiveTimedPurchase> ActiveTimedPurchases
+        /// <summary>Charges currently owned for one freeze itemId. Never negative; 0 for an
+        /// unrecognized or never-purchased itemId.</summary>
+        public int GetFreezeInventoryCount(string itemId) =>
+            !string.IsNullOrWhiteSpace(itemId) && freezeInventory.TryGetValue(itemId, out int count) ? count : 0;
+
+        /// <summary>Snapshot of every freeze itemId with a positive charge count, for SaveManager
+        /// to persist and FreezeInventoryCloudSync to mirror. Zero-count entries are never
+        /// included -- GetFreezeInventoryCount already treats a missing key as 0, so there is
+        /// nothing meaningful to persist about an item nobody owns any charges of.</summary>
+        public IEnumerable<FreezeInventoryEntry> FreezeInventorySnapshot
         {
             get
             {
-                PruneExpiredTimedPurchases();
-                return activeTimedPurchases;
+                foreach (KeyValuePair<string, int> kvp in freezeInventory)
+                {
+                    if (kvp.Value > 0) { yield return new FreezeInventoryEntry(kvp.Key, kvp.Value); }
+                }
             }
         }
 
-        /// <summary>Fired after an item is successfully purchased/granted/reconciled, or the owned set is restored from a save.</summary>
+        /// <summary>Which itemId the active freeze (if any) came from -- display only, see its
+        /// own field doc comment. Null/empty when HasActiveFreeze is false.</summary>
+        public string ActiveFreezeItemId => activeFreezeItemId;
+
+        /// <summary>The single authoritative "is a freeze currently protecting the player" check
+        /// -- always PlayerIQManager's own merged expiry field, never a second source of truth.</summary>
+        public bool HasActiveFreeze => PlayerIQManager.Instance != null && PlayerIQManager.Instance.IsBrainFreezeActive;
+
+        /// <summary>Fired after an item is successfully purchased/granted/reconciled, or the owned/inventory state is restored from a save.</summary>
         public event Action OnItemsChanged;
+
+        /// <summary>Fired the instant an active freeze's protection window ends (tick-detected,
+        /// see HandleSecondTick) -- itemId is whichever freeze just ended (display only), count is
+        /// the remaining inventory for that SAME itemId. UI (THE WALLET) uses this for the
+        /// "Freeze ended. Use another? (xN left)" nudge; never fires for a freeze that was already
+        /// expired before this session started (see wasFreezeActiveLastTick's seeding in
+        /// Start/LoadState).</summary>
+        public event Action<string, int> OnFreezeExpired;
 
         private void Awake()
         {
@@ -161,6 +218,19 @@ namespace BrainDrain.Systems
                 subscribedCommerceService.OnOwnedNonConsumablesReported -= HandleOwnedNonConsumablesReported;
                 subscribedCommerceService.OnOwnedNonConsumablesReported += HandleOwnedNonConsumablesReported;
             }
+
+            subscribedGameManager = GameManager.Instance;
+            if (subscribedGameManager != null)
+            {
+                subscribedGameManager.OnSecondTick -= HandleSecondTick;
+                subscribedGameManager.OnSecondTick += HandleSecondTick;
+            }
+
+            // Seed AFTER LoadState would already have run (SaveManager restores before any
+            // other Start()'s normal game-init ordering settles) -- but seed here too as a safety
+            // net for a scene that never goes through SaveManager at all (e.g. a test scene),
+            // so the very first tick never misreads pre-existing state as a fresh expiry.
+            wasFreezeActiveLastTick = HasActiveFreeze;
         }
 
         private void OnApplicationQuit()
@@ -178,11 +248,35 @@ namespace BrainDrain.Systems
                 subscribedCommerceService = null;
             }
 
+            if (subscribedGameManager != null)
+            {
+                subscribedGameManager.OnSecondTick -= HandleSecondTick;
+                subscribedGameManager = null;
+            }
+
             if (instance == this)
             {
                 isShuttingDown = true;
                 instance = null;
             }
+        }
+
+        /// <summary>Detects the exact tick a freeze's protection window ends (PlayerIQManager's
+        /// own expiry, decayed/checked live) and fires OnFreezeExpired exactly once for it. Simple
+        /// edge detection rather than a scheduled callback -- this project's established pattern
+        /// for "something that lazily expires against wall-clock time" (see
+        /// PlayerIQManager.IsBrainFreezeActive itself, or UpgradeManager's LockRandomBuildingFor).</summary>
+        private void HandleSecondTick()
+        {
+            bool isActiveNow = HasActiveFreeze;
+            if (wasFreezeActiveLastTick && !isActiveNow)
+            {
+                string expiredItemId = activeFreezeItemId;
+                activeFreezeItemId = null;
+                OnFreezeExpired?.Invoke(expiredItemId, GetFreezeInventoryCount(expiredItemId));
+                OnItemsChanged?.Invoke();
+            }
+            wasFreezeActiveLastTick = isActiveNow;
         }
 
         /// <summary>
@@ -229,6 +323,19 @@ namespace BrainDrain.Systems
                 : null;
         }
 
+        /// <summary>Linear scan by itemId (not productId) -- the catalog is small (9 items) and
+        /// this is only ever called from player-initiated activation/debug paths, never per-frame,
+        /// so a dictionary isn't worth the extra bookkeeping itemsByProductId already needs.</summary>
+        private GodTierStoreItemData FindItemById(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId)) { return null; }
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] != null && items[i].itemId == itemId) { return items[i]; }
+            }
+            return null;
+        }
+
         private static string Redact(string value) =>
             string.IsNullOrEmpty(value) || value.Length <= 6 ? "***" : value.Substring(0, 4) + "…" + value.Substring(value.Length - 2);
 
@@ -273,6 +380,13 @@ namespace BrainDrain.Systems
         /// The actual grant only happens later, in HandlePurchaseApproved, once a backend has
         /// verified the purchase. A displayed price is never proof of payment (per the plan's
         /// binding project rules) -- this method cannot be used to skip that.
+        ///
+        /// 2026-10-06 FREEZE INVENTORY: freeze purchases are now ALWAYS allowed regardless of
+        /// whether a freeze is currently active -- buying only adds a charge to the wallet, it
+        /// never touches the active slot, so there is no "wasted purchase" case to guard against
+        /// here (unlike the old stacking model, which never needed this guard either, just for a
+        /// different reason). The only remaining guard is the existing non-consumable
+        /// already-owned check.
         /// </summary>
         public void RequestPurchase(GodTierStoreItemData item)
         {
@@ -312,10 +426,16 @@ namespace BrainDrain.Systems
         /// unreachable from any button, production or otherwise; only HandlePurchaseApproved and
         /// the UNITY_EDITOR debug hook below call this. Idempotent per transactionId: a replayed
         /// approval (retry, app restart, duplicate event) for a transactionId already in
-        /// processedTransactionIds is a safe no-op, so a Brain Freeze purchase can't accidentally
-        /// double its duration from a callback replay -- each NEW purchase still gets its own
-        /// transactionId from the store, so genuine repeat Brain Freeze purchases keep stacking
-        /// exactly as before (the deliberate exception called out in the plan).
+        /// processedTransactionIds is a safe no-op.
+        ///
+        /// 2026-10-06 FREEZE INVENTORY: a Brain-Freeze-family purchase ONLY adds a charge to
+        /// freezeInventory now -- it never calls PlayerIQManager, never touches the active slot.
+        /// Purchases are unlimited (no cap check here or anywhere else). Grant happens, THEN
+        /// RequestSave() below (still synchronous -- SaveManager.SaveGame() runs inline off
+        /// GameManager.OnSaveRequested), and only once that's returned does control go back to
+        /// IapCommerceService.HandlePurchasePending to decide whether to ConfirmPurchase -- the
+        /// existing "grant -> save -> confirm" ordering the IAP safety audit already established
+        /// is unchanged by this rewrite, just what "grant" means for a freeze item is different.
         /// </summary>
         private void GrantVerifiedEntitlement(GodTierStoreItemData item, string transactionId)
         {
@@ -338,23 +458,12 @@ namespace BrainDrain.Systems
                 }
 
                 ownedItemIds.Add(item.itemId);
+                ApplyItemEffect(item);
             }
-
-            // Timed consumables (currently the Brain Freeze family) additionally get their own
-            // independent wallet entry -- deliberately separate from the stacking math inside
-            // ApplyItemEffect/PlayerIQManager.ApplyBrainFreeze, which stays the sole source of
-            // truth for the actual gameplay floor. This ledger only ever powers display (THE
-            // WALLET's per-item countdowns); buying the same item twice adds two entries here so
-            // both show up separately, even though the underlying IQ-floor effect still merges
-            // into one stacked expiry as it always has.
-            if (item.isConsumable && item.freezeDurationHours > 0f)
+            else if (item.effectType == GodTierStoreEffectType.BrainFreezeIQImmunity)
             {
-                PruneExpiredTimedPurchases();
-                long expiry = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (long)(item.freezeDurationHours * 3600f);
-                activeTimedPurchases.Add(new ActiveTimedPurchase(item.itemId, expiry));
+                GrantFreezeInventory(item.itemId, 1);
             }
-
-            ApplyItemEffect(item);
 
             if (!string.IsNullOrWhiteSpace(transactionId))
             {
@@ -366,6 +475,61 @@ namespace BrainDrain.Systems
             // A real-money grant must not risk being lost to the next periodic autosave --
             // request one immediately, same precedent as RebirthManager after a Snotting.
             GameManager.Instance?.RequestSave();
+        }
+
+        private void GrantFreezeInventory(string itemId, int amount)
+        {
+            if (string.IsNullOrWhiteSpace(itemId) || amount <= 0) { return; }
+            freezeInventory.TryGetValue(itemId, out int current);
+            freezeInventory[itemId] = current + amount;
+        }
+
+        /// <summary>
+        /// Player-initiated activation (THE WALLET's "Use" button) of one already-owned freeze
+        /// charge. Only ever succeeds if (a) this itemId has at least one charge, and (b) no
+        /// freeze is currently active -- enforcing "only one freeze can run at a time" at the one
+        /// place that actually starts one, so there is nothing for any caller to get wrong.
+        /// Decrements inventory, sets the active-display itemId, applies the real IQ-floor effect
+        /// via the existing ApplyItemEffect/PlayerIQManager.ApplyBrainFreeze plumbing (unchanged),
+        /// then saves immediately -- same "don't risk losing a real-money-backed state change to
+        /// the next periodic autosave" reasoning as GrantVerifiedEntitlement.
+        /// </summary>
+        public bool ActivateFreeze(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                return false;
+            }
+
+            if (HasActiveFreeze)
+            {
+                Debug.LogWarning($"[GodTierStoreManager] ActivateFreeze('{itemId}') refused -- a freeze is already active.", this);
+                return false;
+            }
+
+            if (GetFreezeInventoryCount(itemId) <= 0)
+            {
+                Debug.LogWarning($"[GodTierStoreManager] ActivateFreeze('{itemId}') refused -- no charges owned.", this);
+                return false;
+            }
+
+            GodTierStoreItemData item = FindItemById(itemId);
+            if (item == null || item.effectType != GodTierStoreEffectType.BrainFreezeIQImmunity || item.freezeDurationHours <= 0f)
+            {
+                Debug.LogWarning($"[GodTierStoreManager] ActivateFreeze('{itemId}') refused -- not a configured freeze item.", this);
+                return false;
+            }
+
+            freezeInventory[itemId] = GetFreezeInventoryCount(itemId) - 1;
+            activeFreezeItemId = itemId;
+            wasFreezeActiveLastTick = true;
+
+            ApplyItemEffect(item); // PlayerIQManager.ApplyBrainFreeze(item.freezeDurationHours)
+
+            OnItemsChanged?.Invoke();
+            GameManager.Instance?.RequestSave();
+
+            return true;
         }
 
         /// <summary>
@@ -484,21 +648,6 @@ namespace BrainDrain.Systems
             }
         }
 
-        /// <summary>Drops any ledger entry whose expiry has already passed. Called on every read
-        /// (ActiveTimedPurchases getter) and before every new entry is added, so the list never
-        /// grows unbounded and a stale entry never lingers past its own countdown reaching zero.</summary>
-        private void PruneExpiredTimedPurchases()
-        {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            for (int i = activeTimedPurchases.Count - 1; i >= 0; i--)
-            {
-                if (activeTimedPurchases[i].expiryUnixSeconds <= now)
-                {
-                    activeTimedPurchases.RemoveAt(i);
-                }
-            }
-        }
-
         private void ApplyItemEffect(GodTierStoreItemData item)
         {
             switch (item.effectType)
@@ -535,6 +684,9 @@ namespace BrainDrain.Systems
                     break;
 
                 case GodTierStoreEffectType.BrainFreezeIQImmunity:
+                    // 2026-10-06: only ever reached from ActivateFreeze now (not from a purchase
+                    // grant anymore -- see GrantVerifiedEntitlement). durationHours comes from
+                    // whichever freeze item was just activated.
                     PlayerIQManager.Instance?.ApplyBrainFreeze(item.freezeDurationHours);
                     break;
             }
@@ -546,8 +698,29 @@ namespace BrainDrain.Systems
         /// bonusOfflineDecayMaxHours is not itself separately persisted -- it starts at 0 on
         /// every fresh load, so this is the one re-application that's correct, not a double
         /// count, since restoredOfflineExtensionHours is the full accumulated total).
+        ///
+        /// 2026-10-06 FREEZE INVENTORY: restoredFreezeInventory/restoredActiveFreezeItemId are the
+        /// new-format fields (empty/null for a save written before this amendment).
+        /// legacyActiveTimedPurchases/legacyBrainFreezeExpiryUnixSeconds are ONLY consulted when
+        /// restoredActiveFreezeItemId is blank, purely to derive a display label for whatever
+        /// freeze PlayerIQManager.BrainFreezeExpiryUnixSeconds (restored separately and NEVER
+        /// touched by this method) already protects -- the migration directive is "stays active
+        /// as-is, never converted or deleted," and since that field was already the single
+        /// merged source of truth for the actual effect even under the old ledger model, there is
+        /// nothing to convert: the protection carries over automatically, only its on-screen label
+        /// needs a best-effort guess.
         /// </summary>
-        public void LoadState(IEnumerable<string> restoredOwnedItemIds, bool restoredVoicepack, bool restoredTheme, bool restoredMembershipCard, bool restoredTrashCanFlex, float restoredOfflineExtensionHours, IEnumerable<ActiveTimedPurchase> restoredActiveTimedPurchases = null)
+        public void LoadState(
+            IEnumerable<string> restoredOwnedItemIds,
+            bool restoredVoicepack,
+            bool restoredTheme,
+            bool restoredMembershipCard,
+            bool restoredTrashCanFlex,
+            float restoredOfflineExtensionHours,
+            IEnumerable<FreezeInventoryEntry> restoredFreezeInventory,
+            string restoredActiveFreezeItemId,
+            IEnumerable<ActiveTimedPurchase> legacyActiveTimedPurchases,
+            long legacyBrainFreezeExpiryUnixSeconds)
         {
             ownedItemIds.Clear();
             if (restoredOwnedItemIds != null)
@@ -586,21 +759,24 @@ namespace BrainDrain.Systems
                 PlayerIQManager.Instance?.ExtendOfflineDecayWindow(restoredOfflineExtensionHours);
             }
 
-            // Restore the wallet ledger, dropping anything that already expired while the app was
-            // closed -- matches this project's existing real-time-decay convention (e.g.
-            // DailyEngagementCapManager's day rollover) of never resurrecting stale timed state.
-            activeTimedPurchases.Clear();
-            if (restoredActiveTimedPurchases != null)
+            freezeInventory.Clear();
+            if (restoredFreezeInventory != null)
             {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                foreach (ActiveTimedPurchase purchase in restoredActiveTimedPurchases)
+                foreach (FreezeInventoryEntry entry in restoredFreezeInventory)
                 {
-                    if (!string.IsNullOrWhiteSpace(purchase.itemId) && purchase.expiryUnixSeconds > now)
-                    {
-                        activeTimedPurchases.Add(purchase);
-                    }
+                    if (string.IsNullOrWhiteSpace(entry.itemId) || entry.count <= 0) { continue; }
+                    freezeInventory[entry.itemId] = entry.count;
                 }
             }
+
+            activeFreezeItemId = !string.IsNullOrWhiteSpace(restoredActiveFreezeItemId)
+                ? restoredActiveFreezeItemId
+                : DeriveLegacyActiveFreezeItemId(legacyActiveTimedPurchases, legacyBrainFreezeExpiryUnixSeconds);
+
+            // Seed the edge-detector to the state we just loaded, not whatever it was before --
+            // otherwise a load into an already-expired freeze (common: the app was closed past
+            // the expiry) would fire a false "just ended" toast on the very next tick.
+            wasFreezeActiveLastTick = HasActiveFreeze;
 
             // Targeted re-sync for the ONE effect whose state lives outside this manager:
             // RandomChatterManager persists profanity in its own PlayerPrefs keys, which can
@@ -621,6 +797,28 @@ namespace BrainDrain.Systems
             }
 
             OnItemsChanged?.Invoke();
+        }
+
+        /// <summary>See LoadState's own doc comment for when/why this runs. Prefers an exact
+        /// expiry match (the common case: the legacy ledger's one entry IS what produced the
+        /// merged expiry); falls back to whichever legacy entry has the latest expiry otherwise.
+        /// Returns null if there's nothing currently active to label.</summary>
+        private static string DeriveLegacyActiveFreezeItemId(IEnumerable<ActiveTimedPurchase> legacyEntries, long brainFreezeExpiryUnixSeconds)
+        {
+            if (legacyEntries == null || brainFreezeExpiryUnixSeconds <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            {
+                return null;
+            }
+
+            string best = null;
+            long bestExpiry = long.MinValue;
+            foreach (ActiveTimedPurchase entry in legacyEntries)
+            {
+                if (string.IsNullOrWhiteSpace(entry.itemId)) { continue; }
+                if (entry.expiryUnixSeconds == brainFreezeExpiryUnixSeconds) { return entry.itemId; }
+                if (entry.expiryUnixSeconds > bestExpiry) { bestExpiry = entry.expiryUnixSeconds; best = entry.itemId; }
+            }
+            return best;
         }
 
         /// <summary>
@@ -648,31 +846,38 @@ namespace BrainDrain.Systems
 
 #if UNITY_EDITOR
         /// <summary>
-        /// Editor-only test hook: grants the 24-hour Brain Freeze item (itemId "brain_freeze")
-        /// exactly as a real approved purchase would, so THE WALLET's two-independent-entries
-        /// behavior (buying the same 24-hour item twice back to back) can be verified from the
-        /// Inspector without going through a real store purchase. Each call uses a fresh GUID as
-        /// its transactionId specifically so repeat clicks stack (matching real repeat purchases)
-        /// rather than being deduped as replays of the same transaction. Compiles out of any
-        /// build, matching DailyEngagementCapManager's DebugBurnFullRateAllowance precedent.
-        /// 2026-10-04: made public (was private) so DebugCheats.GrantTestTimedItem can reach it
-        /// from a BrainDrain > Testing menu item too, not just the Inspector's context menu --
-        /// same underlying call either way, no new logic duplicated.
+        /// Editor-only test hook: grants one 24-hour Brain Freeze charge to the wallet exactly as
+        /// a real approved purchase would (itemId "brain_freeze"), so the FREEZE INVENTORY system
+        /// can be verified from the Inspector without going through a real store purchase. Each
+        /// call uses a fresh GUID as its transactionId specifically so repeat clicks each grant
+        /// another charge (matching real repeat purchases) rather than being deduped as replays of
+        /// the same transaction. Compiles out of any build, matching
+        /// DailyEngagementCapManager.DebugBurnFullRateAllowance precedent.
+        /// 2026-10-06: rewritten for the freeze inventory amendment -- used to activate a freeze
+        /// directly; now grants exactly one wallet charge, matching real purchase behavior.
         /// </summary>
-        [ContextMenu("DEBUG: Buy Brain Freeze (24h)")]
+        [ContextMenu("DEBUG: Buy Brain Freeze (24h) x1")]
         public void DebugBuyBrainFreeze()
         {
-            for (int i = 0; i < items.Count; i++)
+            GodTierStoreItemData item = FindItemById("brain_freeze");
+            if (item == null)
             {
-                if (items[i] != null && items[i].itemId == "brain_freeze")
-                {
-                    GrantVerifiedEntitlement(items[i], "debug-" + Guid.NewGuid());
-                    Debug.Log($"[GodTierStoreManager] DEBUG buy brain_freeze -> granted. Active timed purchases: {ActiveTimedPurchases.Count}");
-                    return;
-                }
+                Debug.LogWarning("[GodTierStoreManager] DEBUG buy brain_freeze -- no item with itemId 'brain_freeze' found in items.");
+                return;
             }
 
-            Debug.LogWarning("[GodTierStoreManager] DEBUG buy brain_freeze -- no item with itemId 'brain_freeze' found in items.");
+            GrantVerifiedEntitlement(item, "debug-" + Guid.NewGuid());
+            Debug.Log($"[GodTierStoreManager] DEBUG buy brain_freeze -> wallet now has {GetFreezeInventoryCount("brain_freeze")} charge(s).");
+        }
+
+        /// <summary>Editor-only test hook: activates one owned brain_freeze charge via the real
+        /// ActivateFreeze path (same guards a live WALLET "Use" button would hit). Logs the
+        /// success/failure reason either way.</summary>
+        [ContextMenu("DEBUG: Activate Brain Freeze (24h)")]
+        public void DebugActivateBrainFreeze()
+        {
+            bool activated = ActivateFreeze("brain_freeze");
+            Debug.Log($"[GodTierStoreManager] DEBUG activate brain_freeze -> {(activated ? "activated" : "refused, see warning above")}.");
         }
 #endif
     }

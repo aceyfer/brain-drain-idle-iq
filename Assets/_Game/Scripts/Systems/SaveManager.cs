@@ -83,14 +83,35 @@ namespace BrainDrain.Systems
         public long brainFreezeExpiryUnixSeconds;
 
         /// <summary>
-        /// THE WALLET's ledger of still-active timed God Tier Store purchases (see the
-        /// ActiveTimedPurchase struct in GodTierStoreManager.cs) -- separate from
-        /// brainFreezeExpiryUnixSeconds above, which is PlayerIQManager's own merged/stacked
-        /// gameplay floor timer. This list exists purely so multiple purchases (even of the same
-        /// item) can each show their own independent countdown; a save predating this field
-        /// deserializes it as null, guarded by the same ??= pattern as the other owned-item lists.
+        /// LEGACY -- superseded 2026-10-06 by freezeInventory/activeFreezeItemId below. Kept ONLY
+        /// so a save written before the FREEZE INVENTORY amendment can still be read:
+        /// GodTierStoreManager.LoadState consults this once (via its DeriveLegacyActiveFreezeItemId
+        /// migration path) to label whatever freeze brainFreezeExpiryUnixSeconds already protects,
+        /// then never touches it again. SaveGame() no longer populates this for new saves.
         /// </summary>
         public List<ActiveTimedPurchase> activeTimedPurchases;
+
+        /// <summary>
+        /// 2026-10-06 FREEZE INVENTORY: itemId -> unlimited-purchase charge count for the Brain
+        /// Freeze family (GodTierStoreManager.FreezeInventorySnapshot). A save predating this
+        /// field deserializes it as null, guarded the same ??= way as the other owned-item lists
+        /// -- GodTierStoreManager.LoadState correctly treats an empty/null list as "nothing to
+        /// restore, derive the legacy label instead" rather than as "player owns zero charges"
+        /// vs. a genuine new-format empty wallet, since those two cases need no different
+        /// handling anyway (both start the player with nothing to activate).
+        /// </summary>
+        public List<FreezeInventoryEntry> freezeInventory;
+
+        /// <summary>
+        /// 2026-10-06 FREEZE INVENTORY: which itemId the currently-active freeze (if any) came
+        /// from, for THE WALLET's display only -- the real on/off state is always
+        /// PlayerIQManager.BrainFreezeExpiryUnixSeconds, persisted separately and unaffected by
+        /// this field. Blank for a save predating this field OR genuinely no active freeze;
+        /// GodTierStoreManager.LoadState tells the two apart by falling back to the legacy
+        /// derivation path whenever this is blank, which itself returns null if there's nothing
+        /// currently active to label -- so a blank value is always handled correctly either way.
+        /// </summary>
+        public string activeFreezeItemId;
 
         // -- Profanity Dialogue Pack persisted state --
         public bool profanityUnlocked;
@@ -370,6 +391,7 @@ namespace BrainDrain.Systems
                 data.godTierStoreOwnedItemIds ??= new List<string>();
                 data.activeTimedPurchases ??= new List<ActiveTimedPurchase>();
                 data.godTierStoreProcessedTransactionIds ??= new List<string>();
+                data.freezeInventory ??= new List<FreezeInventoryEntry>();
 
                 // Migration fallback for Profanity Dialogue Pack:
                 // If loaded save data doesn't have profanity unlocked, check if it was previously unlocked in PlayerPrefs.
@@ -427,6 +449,18 @@ namespace BrainDrain.Systems
                     PlayerPrefs.Save();
 
                     data.saveVersion = 6;
+                }
+
+                // v6 → v7: 2026-10-06 FREEZE INVENTORY amendment. No data transformation needed
+                // here -- freezeInventory/activeFreezeItemId already zero-fill to null/blank for
+                // any save below this version, and GodTierStoreManager.LoadState's own migration
+                // path (DeriveLegacyActiveFreezeItemId) already treats a blank activeFreezeItemId
+                // as "derive it from the legacy ledger" every time it loads one, regardless of the
+                // stamp. The version is still bumped purely to keep this struct's own convention
+                // of advancing on every field-list change.
+                if (data.saveVersion < 7)
+                {
+                    data.saveVersion = 7;
                 }
 
                 LoadedData = data;
@@ -562,8 +596,14 @@ namespace BrainDrain.Systems
                 data.illumisnottyMembershipCardOwned = GodTierStoreManager.Instance.IllumisnottyMembershipCardOwned;
                 data.holographicTrashCanFlexOwned = GodTierStoreManager.Instance.HolographicTrashCanFlexOwned;
                 data.offlineExtensionHoursGranted = GodTierStoreManager.Instance.OfflineExtensionHoursGranted;
-                data.activeTimedPurchases = new List<ActiveTimedPurchase>(GodTierStoreManager.Instance.ActiveTimedPurchases);
                 data.godTierStoreProcessedTransactionIds = new List<string>(GodTierStoreManager.Instance.ProcessedTransactionIds);
+
+                // 2026-10-06 FREEZE INVENTORY: replaces the old per-purchase ledger write above --
+                // activeTimedPurchases is no longer populated for new saves (LEGACY, read-only
+                // migration field -- see its own doc comment), freezeInventory/activeFreezeItemId
+                // are the new source of truth.
+                data.freezeInventory = new List<FreezeInventoryEntry>(GodTierStoreManager.Instance.FreezeInventorySnapshot);
+                data.activeFreezeItemId = GodTierStoreManager.Instance.ActiveFreezeItemId;
             }
 
             // Brain Freeze lives on PlayerIQManager directly, not GodTierStoreManager -- unlike
@@ -738,7 +778,10 @@ namespace BrainDrain.Systems
                 data.illumisnottyMembershipCardOwned,
                 data.holographicTrashCanFlexOwned,
                 data.offlineExtensionHoursGranted,
-                data.activeTimedPurchases);
+                data.freezeInventory,
+                data.activeFreezeItemId,
+                data.activeTimedPurchases,
+                data.brainFreezeExpiryUnixSeconds);
             GodTierStoreManager.Instance?.LoadProcessedTransactionIds(data.godTierStoreProcessedTransactionIds);
 
             // Brain Freeze expiry must be restored BEFORE LoadStateWithOfflineDecay, same ordering
@@ -862,6 +905,8 @@ namespace BrainDrain.Systems
                 offlineExtensionHoursGranted = 0f,
                 brainFreezeExpiryUnixSeconds = 0L,
                 activeTimedPurchases = new List<ActiveTimedPurchase>(),
+                freezeInventory = new List<FreezeInventoryEntry>(),
+                activeFreezeItemId = null,
                 godTierStoreProcessedTransactionIds = new List<string>(),
                 profanityUnlocked = false,
                 profanityEnabled = false,
@@ -872,7 +917,7 @@ namespace BrainDrain.Systems
                 firstLaunchUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 lastActiveUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 hotChickCount = 0,
-                saveVersion = 6,
+                saveVersion = 7,
                 ftueBootBriefingSeen = false,
                 ftueCard1Seen = false,
                 ftueCard2Seen = false,

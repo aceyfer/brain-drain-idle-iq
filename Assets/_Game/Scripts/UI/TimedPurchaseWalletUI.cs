@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,54 +10,53 @@ using BrainDrain.Systems;
 namespace BrainDrain.UI
 {
     /// <summary>
-    /// THE WALLET: a persistent, re-readable list of every still-active timed God Tier Store
-    /// purchase (currently the Brain Freeze family -- see GodTierStoreItemData.isConsumable),
-    /// each shown with its own live countdown. Fully code-built and self-bootstrapping -- no
-    /// prefab, no scene wiring (PocketPanelUI/DialogueLogPanelUI tab-bar precedent, Bible §8's
-    /// "own it in code"). Builds its own open button parented two slots below the scene's
-    /// existing "Dia-Log" button (LogOpenButton) -- computed independently from LogOpenButton's
-    /// own rect rather than by finding PocketOpenButton, since Start() order between this class
-    /// and PocketPanelUI is not guaranteed -- and its own CanvasGroup-gated panel.
+    /// THE WALLET: the Brain Freeze family's inventory + activation surface. Fully code-built and
+    /// self-bootstrapping -- no prefab, no scene wiring (PocketPanelUI/DialogueLogPanelUI tab-bar
+    /// precedent, Bible §8's "own it in code"). Builds its own open button parented two slots
+    /// below the scene's existing "Dia-Log" button (LogOpenButton) -- computed independently from
+    /// LogOpenButton's own rect rather than by finding PocketOpenButton, since Start() order
+    /// between this class and PocketPanelUI is not guaranteed -- and its own CanvasGroup-gated
+    /// panel.
     ///
-    /// Deliberately separate from PocketPanelUI ("THE POCKET"): that panel is a narrative log of
-    /// collected LITERATES cards and holds no purchase/timer state of its own. THE WALLET exists
-    /// specifically so a player who buys two 24-hour timed items (even the exact same item twice
-    /// back to back) can see both purchases and both remaining-time countdowns separately --
-    /// GodTierStoreManager.ActiveTimedPurchases already tracks each purchase as its own ledger
-    /// entry (see that class), this panel just renders it and keeps it ticking once a second
-    /// while open. The underlying gameplay effect (PlayerIQManager's IQ floor) still merges every
-    /// purchase into one stacked expiry as it always has -- this panel's per-item countdowns are
-    /// a display convenience on top of that, not a change to how the floor itself is computed.
+    /// 2026-10-06 FREEZE INVENTORY AMENDMENT (Aceyfer) -- REWRITTEN, replaces the old
+    /// "every purchase is its own independent countdown card" model entirely:
+    ///   - One row per owned freeze itemId (count > 0): tier icon ("x3" badge baked as live TMP,
+    ///     never rasterized), tier-colored name, duration, and a Use button.
+    ///   - The currently-active freeze (if any) is a separate card pinned above the rows, with a
+    ///     live countdown pill -- matches rule 4's "shown on top with its countdown pill".
+    ///   - While ANY freeze is active, every row's Use button is disabled and its label switches
+    ///     to "Active — Xd Yh left" instead of "USE" (rule 2) -- same global countdown value on
+    ///     every row, since only one freeze can ever run at a time regardless of which item it
+    ///     came from.
+    ///   - GodTierStoreManager.OnFreezeExpired drives a small auto-fading toast ("Freeze ended.
+    ///     Use another? (xN left)") -- purely a notification, it never activates anything itself
+    ///     ("never auto-consume" per rule 2). Only shown if the just-expired item still has
+    ///     charges left; silent otherwise.
     /// </summary>
     public sealed class TimedPurchaseWalletUI : MonoBehaviour
     {
         private const string SystemsParentName = "_Systems";
         private const string DiaLogButtonName = "LogOpenButton";
         private const float ButtonGap = 12f;
+        private const float ToastVisibleSeconds = 4f;
+        private const float ToastFadeSeconds = 0.4f;
 
-        // Mirrors PocketPanelUI's chip/text palette so the two panels read as siblings, with a
-        // gold accent (GodTierStoreSlotUI.AvailableColor) marking this one as the paid-store tie-in.
-        // 2026-10-04 PALETTE LOCKDOWN: RowColor/AccentColor/ButtonFillColor were a gold family
-        // (dark gold row tint, gold title, gold button fill) -- now Surface/Cyan/Cyan.
-        // 2026-10-05 PALETTE LOCKDOWN audit follow-up: was a near-black non-token grey -- snapped
-        // to the exact Base token, alpha unchanged.
         private static readonly Color PanelChipColor = new Color(Palette.Base.r, Palette.Base.g, Palette.Base.b, 0.94f);
         private static readonly Color RowColor = Palette.Surface;
         private static readonly Color AccentColor = Palette.Cyan;
         private static readonly Color CloseFillColor = new Color(1f, 1f, 1f, 0.12f);
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
-        // 2026-10-04 PALETTE LOCKDOWN audit follow-up: was flat grey 153 -- now White at 70%
-        // alpha (empty-state copy, not a locked/unaffordable state, so Dim's role doesn't fit).
         private static readonly Color MutedTextColor = new Color(Palette.White.r, Palette.White.g, Palette.White.b, 0.7f);
+        private static readonly Color UseEnabledColor = Palette.Cyan;
+        private static readonly Color UseDisabledColor = Palette.Dim;
 
-        // 2026-10-04 art pass (D): membership-card restyle palette.
         private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
-        // 2026-10-04 PALETTE LOCKDOWN: countdown warning pill was magenta -- now Glow.
         private static readonly Color32 PillWarning = new Color32(0x80, 0xF4, 0xFF, 0xFF);
+
         private static Sprite cardSprite;
         private static Sprite shadowSprite;
-        private static Sprite sheenSprite;
         private static Sprite pillSprite;
+        private static readonly Dictionary<GodTierStoreRarityTier, Sprite> TierIconSprites = new();
         private static bool spritesLoaded;
 
         private static TimedPurchaseWalletUI instance;
@@ -96,6 +96,10 @@ namespace BrainDrain.UI
         private CanvasGroup panelGroup;
         private RectTransform contentRoot;
         private GameObject emptyState;
+        private GameObject toastObject;
+        private CanvasGroup toastGroup;
+        private TextMeshProUGUI toastLabel;
+        private Coroutine toastCoroutine;
         private bool isVisible;
         private bool built;
 
@@ -145,6 +149,8 @@ namespace BrainDrain.UI
             {
                 GodTierStoreManager.Instance.OnItemsChanged -= HandleItemsChanged;
                 GodTierStoreManager.Instance.OnItemsChanged += HandleItemsChanged;
+                GodTierStoreManager.Instance.OnFreezeExpired -= HandleFreezeExpired;
+                GodTierStoreManager.Instance.OnFreezeExpired += HandleFreezeExpired;
             }
 
             if (GameManager.Instance != null)
@@ -159,6 +165,7 @@ namespace BrainDrain.UI
             if (GodTierStoreManager.Instance != null)
             {
                 GodTierStoreManager.Instance.OnItemsChanged -= HandleItemsChanged;
+                GodTierStoreManager.Instance.OnFreezeExpired -= HandleFreezeExpired;
             }
 
             if (GameManager.Instance != null)
@@ -167,22 +174,31 @@ namespace BrainDrain.UI
             }
         }
 
-        /// <summary>A purchase just happened (or the owned/ledger state was restored from a
-        /// save) -- refresh immediately so a just-bought item's row appears without waiting for
-        /// the next second tick. No-ops while closed; Open() already does a fresh RebuildList().</summary>
+        /// <summary>A purchase/activation just happened (or state was restored from a save) --
+        /// refresh immediately so it appears without waiting for the next second tick. No-ops
+        /// while closed; Open() already does a fresh RebuildList().</summary>
         private void HandleItemsChanged()
         {
             if (!isVisible) return;
             RebuildList();
         }
 
-        /// <summary>Keeps every visible countdown honest once a second. Rebuilding the whole
-        /// (always-tiny) list each tick is simpler and cheap enough here than diffing per-row
-        /// labels, and it doubles as the mechanism that drops a row the instant it hits zero.</summary>
+        /// <summary>Keeps the active-freeze countdown and every row's "Active -- Xd Yh left"
+        /// label honest once a second while the panel is open.</summary>
         private void HandleSecondTick()
         {
             if (!isVisible) return;
             RebuildList();
+        }
+
+        /// <summary>rule 2: "Freeze ended. Use another? (xN left)" -- only if charges remain,
+        /// never auto-consumes anything, fires regardless of whether THE WALLET is currently
+        /// open (the player should learn their freeze ended even if they're looking elsewhere).</summary>
+        private void HandleFreezeExpired(string expiredItemId, int remainingCount)
+        {
+            if (remainingCount <= 0) { return; }
+            ShowToast($"Freeze ended. Use another? (x{remainingCount} left)");
+            if (isVisible) { RebuildList(); }
         }
 
         /// <summary>
@@ -215,6 +231,7 @@ namespace BrainDrain.UI
 
             BuildOpenButton(diaLogRect);
             BuildPanel();
+            BuildToast();
             SetPanelHidden(true);
             built = true;
         }
@@ -243,9 +260,6 @@ namespace BrainDrain.UI
 
             CreateStretchedLabel(buttonObject.transform, "WALLET", Color.white, 26f, 20f, FontStyles.Bold);
 
-            // 2026-10-05 ART PASS 2: was UniversalButtonBorderApplier.Instance?.ApplyToButton --
-            // this button now owns its own static Alert_Frame look instead (see
-            // AlertFrameButtonStyle's doc comment for why it's excluded from that system).
             AlertFrameButtonStyle.Apply(button);
         }
 
@@ -316,8 +330,6 @@ namespace BrainDrain.UI
             button.targetGraphic = image;
             button.onClick.AddListener(Close);
 
-            // Plain ASCII "X" -- avoids the LiberationSans-SDF glyph-fallback console spam that
-            // bit the convert arrow in §16 B4 (de5d4c0), same as PocketPanelUI's close button.
             CreateStretchedLabel(closeObject.transform, "X", Color.white, 36f, 20f, FontStyles.Bold);
         }
 
@@ -338,8 +350,6 @@ namespace BrainDrain.UI
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
             scrollRect.scrollSensitivity = 30f;
 
-            // Viewport uses RectMask2D, never legacy Mask -- same trap/precedent as
-            // PocketPanelUI/DialogueLogPanelUI's viewport (see PocketPanelUI's comment).
             GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform));
             viewportObject.transform.SetParent(scrollObject.transform, false);
             RectTransform viewportRect = viewportObject.GetComponent<RectTransform>();
@@ -384,7 +394,7 @@ namespace BrainDrain.UI
             emptyState.transform.SetParent(contentRoot, false);
 
             TextMeshProUGUI text = emptyState.AddComponent<TextMeshProUGUI>();
-            text.text = "THE WALLET IS EMPTY.\nBUY A TIMED ITEM TO SEE IT HERE.";
+            text.text = "THE WALLET IS EMPTY.\nBUY A FREEZE TO SEE IT HERE.";
             text.color = MutedTextColor;
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 30f;
@@ -395,6 +405,91 @@ namespace BrainDrain.UI
 
             LayoutElement layoutElement = emptyState.AddComponent<LayoutElement>();
             layoutElement.minHeight = 220f;
+        }
+
+        /// <summary>Small auto-fading banner, pinned to the top of the main Canvas (not inside
+        /// THE WALLET panel -- the player may not have it open when a freeze ends). Built once,
+        /// reused for every expiry -- ShowToast restarts its fade coroutine rather than building a
+        /// new GameObject each time.</summary>
+        private void BuildToast()
+        {
+            Canvas rootCanvas = canvasRect.GetComponentInParent<Canvas>();
+            Transform toastParent = rootCanvas != null ? rootCanvas.transform : canvasRect;
+
+            toastObject = new GameObject("WalletFreezeExpiredToast", typeof(RectTransform));
+            toastObject.transform.SetParent(toastParent, false);
+            toastObject.transform.SetAsLastSibling();
+
+            RectTransform rect = toastObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -140f);
+            rect.sizeDelta = new Vector2(620f, 96f);
+
+            Image image = toastObject.AddComponent<Image>();
+            image.color = PanelChipColor;
+            image.raycastTarget = false;
+
+            toastGroup = toastObject.AddComponent<CanvasGroup>();
+            toastGroup.alpha = 0f;
+            toastGroup.blocksRaycasts = false;
+            toastGroup.interactable = false;
+
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
+            labelObject.transform.SetParent(toastObject.transform, false);
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(20f, 8f);
+            labelRect.offsetMax = new Vector2(-20f, -8f);
+
+            toastLabel = labelObject.AddComponent<TextMeshProUGUI>();
+            toastLabel.color = AccentColor;
+            toastLabel.fontStyle = FontStyles.Bold;
+            toastLabel.alignment = TextAlignmentOptions.Center;
+            toastLabel.fontSize = 28f;
+            toastLabel.enableAutoSizing = true;
+            toastLabel.fontSizeMin = 18f;
+            toastLabel.fontSizeMax = 28f;
+            toastLabel.textWrappingMode = TextWrappingModes.Normal;
+            toastLabel.raycastTarget = false;
+
+            toastObject.SetActive(false);
+        }
+
+        private void ShowToast(string message)
+        {
+            if (toastObject == null) { return; }
+            toastLabel.text = message;
+            toastObject.SetActive(true);
+            if (toastCoroutine != null) { StopCoroutine(toastCoroutine); }
+            toastCoroutine = StartCoroutine(ToastRoutine());
+        }
+
+        private IEnumerator ToastRoutine()
+        {
+            float t = 0f;
+            while (t < ToastFadeSeconds)
+            {
+                t += Time.unscaledDeltaTime;
+                toastGroup.alpha = Mathf.Clamp01(t / ToastFadeSeconds);
+                yield return null;
+            }
+            toastGroup.alpha = 1f;
+
+            yield return new WaitForSecondsRealtime(ToastVisibleSeconds);
+
+            t = 0f;
+            while (t < ToastFadeSeconds)
+            {
+                t += Time.unscaledDeltaTime;
+                toastGroup.alpha = 1f - Mathf.Clamp01(t / ToastFadeSeconds);
+                yield return null;
+            }
+            toastGroup.alpha = 0f;
+            toastObject.SetActive(false);
+            toastCoroutine = null;
         }
 
         private void ToggleOpen()
@@ -441,10 +536,10 @@ namespace BrainDrain.UI
             panelGroup.interactable = !hidden;
         }
 
-        /// <summary>Rebuilds the row list from GodTierStoreManager's live ledger. Called from
-        /// Open(), from HandleItemsChanged (a purchase happened while already open), and once a
-        /// second from HandleSecondTick while visible -- the second-tick pass is also what drops
-        /// a row the moment its countdown reaches zero (ActiveTimedPurchases prunes on read).</summary>
+        /// <summary>Rebuilds the row list from GodTierStoreManager's live inventory + active-freeze
+        /// state. Called from Open(), from HandleItemsChanged (a purchase/activation happened
+        /// while already open), and once a second from HandleSecondTick while visible (keeps the
+        /// active countdown and every row's locked-state label honest).</summary>
         private void RebuildList()
         {
             if (contentRoot == null) return;
@@ -460,22 +555,37 @@ namespace BrainDrain.UI
             }
 
             GodTierStoreManager manager = GodTierStoreManager.Instance;
-            IReadOnlyList<ActiveTimedPurchase> purchases = manager != null
-                ? manager.ActiveTimedPurchases
-                : null;
-
-            bool anyActive = purchases != null && purchases.Count > 0;
-            if (emptyState != null)
+            if (manager == null)
             {
-                emptyState.SetActive(!anyActive);
+                if (emptyState != null) { emptyState.SetActive(true); }
+                return;
             }
 
-            if (!anyActive) return;
-
+            bool hasActive = manager.HasActiveFreeze;
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            for (int i = 0; i < purchases.Count; i++)
+
+            List<GodTierStoreItemData> freezeItems = new List<GodTierStoreItemData>();
+            int totalOwnedAcrossItems = 0;
+            for (int i = 0; i < manager.Items.Count; i++)
             {
-                BuildRow(purchases[i], manager, now);
+                GodTierStoreItemData item = manager.Items[i];
+                if (item == null || item.effectType != GodTierStoreEffectType.BrainFreezeIQImmunity) { continue; }
+                int count = manager.GetFreezeInventoryCount(item.itemId);
+                if (count > 0) { freezeItems.Add(item); totalOwnedAcrossItems += count; }
+            }
+
+            bool anyContent = hasActive || freezeItems.Count > 0;
+            if (emptyState != null) { emptyState.SetActive(!anyContent); }
+            if (!anyContent) { return; }
+
+            if (hasActive)
+            {
+                BuildActiveCard(manager, now);
+            }
+
+            for (int i = 0; i < freezeItems.Count; i++)
+            {
+                BuildInventoryRow(freezeItems[i], manager, hasActive);
             }
         }
 
@@ -484,35 +594,181 @@ namespace BrainDrain.UI
             if (spritesLoaded) { return; }
             cardSprite = Resources.Load<Sprite>("UI/Generated/Wallet_Card");
             shadowSprite = Resources.Load<Sprite>("UI/Generated/BizCard_Shadow");
-            sheenSprite = Resources.Load<Sprite>("UI/Generated/Wallet_Sheen");
             pillSprite = Resources.Load<Sprite>("UI/Generated/Alert_Button");
+            TierIconSprites[GodTierStoreRarityTier.Uncommon] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Uncommon");
+            TierIconSprites[GodTierStoreRarityTier.Rare] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Rare");
+            TierIconSprites[GodTierStoreRarityTier.Epic] = Resources.Load<Sprite>("UI/Generated/FreezeCup_Epic");
             spritesLoaded = true;
         }
 
-        /// <summary>One active purchase, shown as a membership card: Wallet_Card background
-        /// (BizCard_Shadow behind it, reused rather than a second shadow sprite -- a soft blurred
-        /// drop shadow doesn't need to be card-shaped specifically), the display name (resolved
-        /// fresh from the matching GodTierStoreItemData -- see ActiveTimedPurchase's own doc
-        /// comment for why) and a countdown pill. Non-interactive -- there is nothing to tap here,
-        /// unlike THE POCKET's re-openable cards. Rebuilt fresh every second along with the rest
-        /// of the list (RebuildList's own doc comment), so the sheen sweep and low-time pulse are
-        /// driven by WalletRowAnimator off Time.unscaledTime rather than a DOTween tween -- a
-        /// tween living on this row would be killed and restarted every single second along with
-        /// the GameObject itself, never completing a sweep.</summary>
-        private void BuildRow(ActiveTimedPurchase purchase, GodTierStoreManager manager, long now)
+        private static Color TierColor(GodTierStoreRarityTier tier) => tier switch
+        {
+            GodTierStoreRarityTier.Uncommon => Palette.RarityUncommon,
+            GodTierStoreRarityTier.Rare => Palette.RarityRare,
+            GodTierStoreRarityTier.Epic => Palette.RarityEpic,
+            _ => Palette.White,
+        };
+
+        private static Sprite TierSprite(GodTierStoreRarityTier tier) =>
+            TierIconSprites.TryGetValue(tier, out Sprite sprite) ? sprite : null;
+
+        /// <summary>The single active-freeze card, pinned above the inventory rows (rule 4: "shown
+        /// on top with its countdown pill"). No Use button -- there's nothing to do with a freeze
+        /// that's already running.</summary>
+        private void BuildActiveCard(GodTierStoreManager manager, long now)
         {
             EnsureSpritesLoaded();
 
-            GameObject rowObject = new GameObject("WalletRow", typeof(RectTransform));
-            rowObject.transform.SetParent(contentRoot, false);
+            string activeItemId = manager.ActiveFreezeItemId;
+            GodTierStoreItemData activeItem = ResolveItem(manager, activeItemId);
+            long expiry = PlayerIQManager.Instance != null ? PlayerIQManager.Instance.BrainFreezeExpiryUnixSeconds : now;
+            long secondsRemaining = Math.Max(0L, expiry - now);
+            float totalDurationSeconds = activeItem != null ? activeItem.freezeDurationHours * 3600f : 0f;
+            bool isLowTime = totalDurationSeconds > 0f && secondsRemaining < totalDurationSeconds * 0.1f;
+            GodTierStoreRarityTier tier = activeItem != null ? activeItem.rarityTier : GodTierStoreRarityTier.None;
 
+            GameObject rowObject = new GameObject("ActiveFreezeCard", typeof(RectTransform));
+            rowObject.transform.SetParent(contentRoot, false);
             LayoutElement layoutElement = rowObject.AddComponent<LayoutElement>();
             layoutElement.minHeight = 180f;
 
+            BuildCardBackground(rowObject.transform);
+
+            BuildTierIcon(rowObject.transform, tier, 0);
+
+            GameObject nameObject = new GameObject("RarityTierNameText", typeof(RectTransform));
+            nameObject.transform.SetParent(rowObject.transform, false);
+            RectTransform nameRect = nameObject.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 0.5f);
+            nameRect.anchorMax = new Vector2(1f, 1f);
+            nameRect.offsetMin = new Vector2(140f, 0f);
+            nameRect.offsetMax = new Vector2(-24f, -16f);
+            TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
+            nameLabel.text = "ACTIVE: " + (activeItem != null ? activeItem.displayName : "FREEZE");
+            nameLabel.color = TierColor(tier);
+            nameLabel.fontStyle = FontStyles.Bold;
+            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
+            nameLabel.fontSize = 26f;
+            nameLabel.enableAutoSizing = true;
+            nameLabel.fontSizeMin = 18f;
+            nameLabel.fontSizeMax = 26f;
+            nameLabel.textWrappingMode = TextWrappingModes.Normal;
+            nameLabel.raycastTarget = false;
+
+            BuildCountdownPill(rowObject.transform, secondsRemaining, isLowTime, new Vector2(140f, 20f));
+        }
+
+        /// <summary>One owned freeze itemId's row: icon+badge, tier-colored name, duration, and a
+        /// Use button that either activates it (ActivateFreeze) or, while another freeze is
+        /// already active, shows the shared "Active — Xd Yh left" countdown and is disabled.</summary>
+        private void BuildInventoryRow(GodTierStoreItemData item, GodTierStoreManager manager, bool lockedByActiveFreeze)
+        {
+            EnsureSpritesLoaded();
+
+            int count = manager.GetFreezeInventoryCount(item.itemId);
+            GodTierStoreRarityTier tier = item.rarityTier;
+
+            GameObject rowObject = new GameObject("WalletRow", typeof(RectTransform));
+            rowObject.transform.SetParent(contentRoot, false);
+            LayoutElement layoutElement = rowObject.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 180f;
+
+            BuildCardBackground(rowObject.transform);
+            BuildTierIcon(rowObject.transform, tier, count);
+
+            GameObject nameObject = new GameObject("RarityTierNameText", typeof(RectTransform));
+            nameObject.transform.SetParent(rowObject.transform, false);
+            RectTransform nameRect = nameObject.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 0.55f);
+            nameRect.anchorMax = new Vector2(0.62f, 1f);
+            nameRect.offsetMin = new Vector2(140f, 0f);
+            nameRect.offsetMax = new Vector2(0f, -14f);
+            TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
+            nameLabel.text = item.displayName;
+            nameLabel.color = TierColor(tier);
+            nameLabel.fontStyle = FontStyles.Bold;
+            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
+            nameLabel.fontSize = 26f;
+            nameLabel.enableAutoSizing = true;
+            nameLabel.fontSizeMin = 18f;
+            nameLabel.fontSizeMax = 26f;
+            nameLabel.textWrappingMode = TextWrappingModes.Normal;
+            nameLabel.raycastTarget = false;
+
+            GameObject durationObject = new GameObject("DurationText", typeof(RectTransform));
+            durationObject.transform.SetParent(rowObject.transform, false);
+            RectTransform durationRect = durationObject.GetComponent<RectTransform>();
+            durationRect.anchorMin = new Vector2(0f, 0.2f);
+            durationRect.anchorMax = new Vector2(0.62f, 0.55f);
+            durationRect.offsetMin = new Vector2(140f, 0f);
+            durationRect.offsetMax = new Vector2(0f, 0f);
+            TextMeshProUGUI durationLabel = durationObject.AddComponent<TextMeshProUGUI>();
+            durationLabel.text = FormatDuration(item.freezeDurationHours);
+            durationLabel.color = MutedTextColor;
+            durationLabel.alignment = TextAlignmentOptions.TopLeft;
+            durationLabel.fontSize = 22f;
+            durationLabel.enableAutoSizing = true;
+            durationLabel.fontSizeMin = 16f;
+            durationLabel.fontSizeMax = 22f;
+            durationLabel.raycastTarget = false;
+
+            GameObject useButtonObject = new GameObject("UseButton", typeof(RectTransform));
+            useButtonObject.transform.SetParent(rowObject.transform, false);
+            RectTransform useButtonRect = useButtonObject.GetComponent<RectTransform>();
+            useButtonRect.anchorMin = new Vector2(0.64f, 0.22f);
+            useButtonRect.anchorMax = new Vector2(0.96f, 0.78f);
+            useButtonRect.offsetMin = Vector2.zero;
+            useButtonRect.offsetMax = Vector2.zero;
+            Image useButtonImage = useButtonObject.AddComponent<Image>();
+            useButtonImage.color = new Color(UseEnabledColor.r, UseEnabledColor.g, UseEnabledColor.b, 0.18f);
+            Button useButton = useButtonObject.AddComponent<Button>();
+            useButton.targetGraphic = useButtonImage;
+
+            GameObject useLabelObject = new GameObject("Label", typeof(RectTransform));
+            useLabelObject.transform.SetParent(useButtonObject.transform, false);
+            RectTransform useLabelRect = useLabelObject.GetComponent<RectTransform>();
+            useLabelRect.anchorMin = Vector2.zero;
+            useLabelRect.anchorMax = Vector2.one;
+            useLabelRect.offsetMin = new Vector2(10f, 6f);
+            useLabelRect.offsetMax = new Vector2(-10f, -6f);
+            TextMeshProUGUI useLabel = useLabelObject.AddComponent<TextMeshProUGUI>();
+            useLabel.alignment = TextAlignmentOptions.Center;
+            useLabel.fontStyle = FontStyles.Bold;
+            useLabel.fontSize = 24f;
+            useLabel.enableAutoSizing = true;
+            useLabel.fontSizeMin = 14f;
+            useLabel.fontSizeMax = 24f;
+            useLabel.textWrappingMode = TextWrappingModes.Normal;
+            useLabel.raycastTarget = false;
+
+            if (lockedByActiveFreeze)
+            {
+                // rule 2: "every Use button is disabled and shows 'Active — 2d 14h left'" -- the
+                // same global countdown on every row, since only one freeze can run regardless of
+                // which item it came from.
+                long expiry = PlayerIQManager.Instance != null ? PlayerIQManager.Instance.BrainFreezeExpiryUnixSeconds : 0L;
+                long remaining = Math.Max(0L, expiry - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                useLabel.text = "Active — " + FormatActiveRemaining(remaining) + " left";
+                useLabel.color = UseDisabledColor;
+                useButtonImage.color = new Color(UseDisabledColor.r, UseDisabledColor.g, UseDisabledColor.b, 0.12f);
+                useButton.interactable = false;
+            }
+            else
+            {
+                useLabel.text = "USE";
+                useLabel.color = UseEnabledColor;
+                string itemId = item.itemId;
+                useButton.onClick.AddListener(() => GodTierStoreManager.Instance?.ActivateFreeze(itemId));
+                useButton.interactable = true;
+            }
+        }
+
+        private void BuildCardBackground(Transform parent)
+        {
             if (shadowSprite != null)
             {
                 GameObject shadowObject = new GameObject("Shadow", typeof(RectTransform));
-                shadowObject.transform.SetParent(rowObject.transform, false);
+                shadowObject.transform.SetParent(parent, false);
                 RectTransform shadowRect = shadowObject.GetComponent<RectTransform>();
                 shadowRect.anchorMin = Vector2.zero;
                 shadowRect.anchorMax = Vector2.one;
@@ -525,7 +781,7 @@ namespace BrainDrain.UI
             }
 
             GameObject cardObject = new GameObject("Card", typeof(RectTransform));
-            cardObject.transform.SetParent(rowObject.transform, false);
+            cardObject.transform.SetParent(parent, false);
             RectTransform cardRect = cardObject.GetComponent<RectTransform>();
             cardRect.anchorMin = Vector2.zero;
             cardRect.anchorMax = Vector2.one;
@@ -535,66 +791,71 @@ namespace BrainDrain.UI
             if (cardSprite != null) { cardImage.sprite = cardSprite; cardImage.type = Image.Type.Sliced; }
             else { cardImage.color = RowColor; }
             cardImage.raycastTarget = false;
+        }
 
-            GameObject sheenMaskObject = new GameObject("SheenMask", typeof(RectTransform));
-            sheenMaskObject.transform.SetParent(cardObject.transform, false);
-            RectTransform sheenMaskRect = sheenMaskObject.GetComponent<RectTransform>();
-            sheenMaskRect.anchorMin = Vector2.zero;
-            sheenMaskRect.anchorMax = Vector2.one;
-            sheenMaskRect.offsetMin = Vector2.zero;
-            sheenMaskRect.offsetMax = Vector2.zero;
-            sheenMaskObject.AddComponent<RectMask2D>();
+        /// <summary>Tier cup icon with a live "xN" count badge -- badge text always comes from a
+        /// TMP component, never baked into the generated PNG (project convention). count == 0
+        /// suppresses the badge (used for the active card, where showing a stale leftover count
+        /// next to "ACTIVE" would be confusing).</summary>
+        private void BuildTierIcon(Transform parent, GodTierStoreRarityTier tier, int count)
+        {
+            GameObject iconObject = new GameObject("RarityTierIcon", typeof(RectTransform));
+            iconObject.transform.SetParent(parent, false);
+            RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(20f, 0f);
+            iconRect.sizeDelta = new Vector2(104f, 104f);
+            Image iconImage = iconObject.AddComponent<Image>();
+            Sprite sprite = TierSprite(tier);
+            if (sprite != null) { iconImage.sprite = sprite; iconImage.type = Image.Type.Simple; iconImage.preserveAspect = true; }
+            iconImage.color = Color.white; // pass-through onto the generated sprite's own baked tint
+            iconImage.raycastTarget = false;
 
-            Image sheenImage = null;
-            RectTransform sheenRect = null;
-            if (sheenSprite != null)
+            if (count > 0)
             {
-                GameObject sheenObject = new GameObject("Sheen", typeof(RectTransform));
-                sheenObject.transform.SetParent(sheenMaskObject.transform, false);
-                sheenRect = sheenObject.GetComponent<RectTransform>();
-                sheenRect.anchorMin = new Vector2(0f, 0f);
-                sheenRect.anchorMax = new Vector2(0f, 1f);
-                sheenRect.pivot = new Vector2(0.5f, 0.5f);
-                sheenRect.sizeDelta = new Vector2(80f, 0f);
-                sheenImage = sheenObject.AddComponent<Image>();
-                sheenImage.sprite = sheenSprite;
-                sheenImage.type = Image.Type.Simple;
-                sheenImage.preserveAspect = false;
-                sheenImage.raycastTarget = false;
-                sheenImage.color = Color.white;
+                GameObject badgeObject = new GameObject("CountBadge", typeof(RectTransform));
+                badgeObject.transform.SetParent(iconObject.transform, false);
+                RectTransform badgeRect = badgeObject.GetComponent<RectTransform>();
+                badgeRect.anchorMin = new Vector2(1f, 0f);
+                badgeRect.anchorMax = new Vector2(1f, 0f);
+                badgeRect.pivot = new Vector2(0.5f, 0.5f);
+                badgeRect.anchoredPosition = new Vector2(-6f, 6f);
+                badgeRect.sizeDelta = new Vector2(44f, 32f);
+                Image badgeImage = badgeObject.AddComponent<Image>();
+                badgeImage.color = Palette.Base;
+                badgeImage.raycastTarget = false;
+
+                GameObject badgeLabelObject = new GameObject("Label", typeof(RectTransform));
+                badgeLabelObject.transform.SetParent(badgeObject.transform, false);
+                RectTransform badgeLabelRect = badgeLabelObject.GetComponent<RectTransform>();
+                badgeLabelRect.anchorMin = Vector2.zero;
+                badgeLabelRect.anchorMax = Vector2.one;
+                badgeLabelRect.offsetMin = Vector2.zero;
+                badgeLabelRect.offsetMax = Vector2.zero;
+                TextMeshProUGUI badgeLabel = badgeLabelObject.AddComponent<TextMeshProUGUI>();
+                badgeLabel.text = "x" + count;
+                badgeLabel.color = Palette.White;
+                badgeLabel.fontStyle = FontStyles.Bold;
+                badgeLabel.alignment = TextAlignmentOptions.Center;
+                badgeLabel.fontSize = 20f;
+                badgeLabel.enableAutoSizing = true;
+                badgeLabel.fontSizeMin = 12f;
+                badgeLabel.fontSizeMax = 20f;
+                badgeLabel.raycastTarget = false;
             }
+        }
 
-            string displayName = ResolveDisplayName(manager, purchase.itemId);
-            long secondsRemaining = Math.Max(0L, purchase.expiryUnixSeconds - now);
-            float totalDurationSeconds = ResolveDurationSeconds(manager, purchase.itemId);
-            bool isLowTime = totalDurationSeconds > 0f && secondsRemaining < totalDurationSeconds * 0.1f;
-
-            GameObject nameObject = new GameObject("NameText", typeof(RectTransform));
-            nameObject.transform.SetParent(cardObject.transform, false);
-            RectTransform nameRect = nameObject.GetComponent<RectTransform>();
-            nameRect.anchorMin = new Vector2(0f, 0.5f);
-            nameRect.anchorMax = new Vector2(1f, 1f);
-            nameRect.offsetMin = new Vector2(24f, 0f);
-            nameRect.offsetMax = new Vector2(-24f, -16f);
-            TextMeshProUGUI nameLabel = nameObject.AddComponent<TextMeshProUGUI>();
-            nameLabel.text = displayName;
-            nameLabel.color = Color.white;
-            nameLabel.fontStyle = FontStyles.Bold;
-            nameLabel.alignment = TextAlignmentOptions.BottomLeft;
-            nameLabel.fontSize = 28f;
-            nameLabel.enableAutoSizing = true;
-            nameLabel.fontSizeMin = 22f;
-            nameLabel.fontSizeMax = 28f;
-            nameLabel.textWrappingMode = TextWrappingModes.Normal;
-            nameLabel.raycastTarget = false;
-
+        private void BuildCountdownPill(Transform parent, long secondsRemaining, bool isLowTime, Vector2 anchoredPosition)
+        {
             GameObject pillObject = new GameObject("CountdownPill", typeof(RectTransform));
-            pillObject.transform.SetParent(cardObject.transform, false);
+            pillObject.transform.SetParent(parent, false);
             RectTransform pillRect = pillObject.GetComponent<RectTransform>();
             pillRect.anchorMin = new Vector2(0f, 0f);
             pillRect.anchorMax = new Vector2(0f, 0f);
             pillRect.pivot = new Vector2(0f, 0f);
-            pillRect.anchoredPosition = new Vector2(24f, 20f);
+            pillRect.anchoredPosition = anchoredPosition;
             pillRect.sizeDelta = new Vector2(228f, 52f);
             Image pillImage = pillObject.AddComponent<Image>();
             if (pillSprite != null) { pillImage.sprite = pillSprite; pillImage.type = Image.Type.Sliced; }
@@ -613,10 +874,6 @@ namespace BrainDrain.UI
             pillLabel.color = Color.white;
             pillLabel.fontStyle = FontStyles.Bold;
             pillLabel.alignment = TextAlignmentOptions.Center;
-            // "Monospace-style": no dedicated monospace font asset exists in this project (none
-            // generated this pass either -- out of scope, a real SDF font asset is a much bigger
-            // undertaking than this restyle). Approximated with fixed zero-padded fields
-            // (FormatPillCountdown) and a touch of extra character spacing so digits read evenly.
             pillLabel.characterSpacing = 2f;
             pillLabel.fontSize = 26f;
             pillLabel.enableAutoSizing = true;
@@ -624,35 +881,10 @@ namespace BrainDrain.UI
             pillLabel.fontSizeMax = 26f;
             pillLabel.textWrappingMode = TextWrappingModes.NoWrap;
             pillLabel.raycastTarget = false;
-
-            WalletRowAnimator animator = rowObject.AddComponent<WalletRowAnimator>();
-            animator.Configure(sheenImage, sheenRect, cardRect, pillImage, isLowTime, PillWarning);
         }
 
-        /// <summary>Resolves an itemId back to its configured total timed duration (hours ->
-        /// seconds), used only to decide the low-time pulse threshold (under 10% remaining).
-        /// Returns 0 if the item can't be found or isn't configured with a duration -- callers
-        /// treat 0 as "never pulse" rather than guessing.</summary>
-        private static float ResolveDurationSeconds(GodTierStoreManager manager, string itemId)
-        {
-            if (manager != null)
-            {
-                IReadOnlyList<GodTierStoreItemData> items = manager.Items;
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (items[i] != null && items[i].itemId == itemId)
-                    {
-                        return items[i].freezeDurationHours * 3600f;
-                    }
-                }
-            }
-
-            return 0f;
-        }
-
-        /// <summary>Fixed-width countdown for the pill: "Nd HH:MM" past a day, else "HH:MM:SS" --
-        /// deliberately a constant-width shape (not a variable "2d 4h 12m" layout), which would
-        /// look uneven inside a small fixed pill.</summary>
+        /// <summary>Fixed-width countdown for the active card's pill: "Nd HH:MM" past a day, else
+        /// "HH:MM:SS".</summary>
         private static string FormatPillCountdown(long totalSeconds)
         {
             TimeSpan span = TimeSpan.FromSeconds(totalSeconds);
@@ -664,25 +896,43 @@ namespace BrainDrain.UI
             return $"{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}";
         }
 
-        /// <summary>Resolves an itemId back to its configured displayName. Falls back to the raw
-        /// itemId if the ScriptableObject can't be found -- should not normally happen, but a
-        /// ledger entry outliving its authoring asset (e.g. removed from the store's item list
-        /// mid-development) must never crash the panel.</summary>
-        private static string ResolveDisplayName(GodTierStoreManager manager, string itemId)
+        /// <summary>Matches rule 2's exact wording shape ("2d 14h") for a locked Use button's
+        /// label -- coarser than the pill's HH:MM:SS, since this is a secondary/redundant display
+        /// of the same countdown already shown in full on the active card above.</summary>
+        private static string FormatActiveRemaining(long totalSeconds)
         {
-            if (manager != null)
+            TimeSpan span = TimeSpan.FromSeconds(totalSeconds);
+            if (span.TotalDays >= 1d)
             {
-                IReadOnlyList<GodTierStoreItemData> items = manager.Items;
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (items[i] != null && items[i].itemId == itemId)
-                    {
-                        return items[i].displayName;
-                    }
-                }
+                return $"{(int)span.TotalDays}d {span.Hours}h";
             }
+            if (span.TotalHours >= 1d)
+            {
+                return $"{(int)span.TotalHours}h {span.Minutes}m";
+            }
+            return $"{span.Minutes}m";
+        }
 
-            return itemId;
+        private static string FormatDuration(float hours)
+        {
+            int wholeHours = Mathf.RoundToInt(hours);
+            if (wholeHours >= 24 && wholeHours % 24 == 0)
+            {
+                int days = wholeHours / 24;
+                return days == 1 ? "24 HOURS" : $"{days} DAYS";
+            }
+            return $"{wholeHours} HOURS";
+        }
+
+        private static GodTierStoreItemData ResolveItem(GodTierStoreManager manager, string itemId)
+        {
+            if (manager == null || string.IsNullOrWhiteSpace(itemId)) { return null; }
+            IReadOnlyList<GodTierStoreItemData> items = manager.Items;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] != null && items[i].itemId == itemId) { return items[i]; }
+            }
+            return null;
         }
 
         private static void CreateStretchedLabel(Transform parent, string text, Color color, float maxSize, float minSize, FontStyles style)
@@ -704,66 +954,6 @@ namespace BrainDrain.UI
             label.fontSizeMin = minSize;
             label.fontSizeMax = maxSize;
             label.raycastTarget = false;
-        }
-    }
-
-    /// <summary>
-    /// 2026-10-04 art pass (D): drives a wallet row's sheen sweep and low-time pill pulse purely
-    /// from Time.unscaledTime rather than a DOTween tween with internal state -- TimedPurchase
-    /// WalletUI.RebuildList() destroys and rebuilds every row once a second (its own doc comment
-    /// explains why: simplicity, and it's what drops an expired row), which would kill and
-    /// restart any stateful tween before it ever completed. Because every value here is computed
-    /// fresh from the clock rather than carried over from the previous frame, a freshly-built row
-    /// picks up exactly where the sweep/pulse cycle should be "right now" with no visible seam.
-    /// </summary>
-    internal sealed class WalletRowAnimator : MonoBehaviour
-    {
-        private const float SheenIntervalSeconds = 5f;
-        private const float SheenSweepDuration = 0.8f;
-        private const float PulsePeriodSeconds = 1f;
-
-        private UnityEngine.UI.Image sheenImage;
-        private RectTransform sheenRect;
-        private RectTransform cardRect;
-        private UnityEngine.UI.Image pillImage;
-        private bool isPulsing;
-        private Color pulseColor;
-
-        public void Configure(UnityEngine.UI.Image sheenImage, RectTransform sheenRect, RectTransform cardRect, UnityEngine.UI.Image pillImage, bool isPulsing, Color pulseColor)
-        {
-            this.sheenImage = sheenImage;
-            this.sheenRect = sheenRect;
-            this.cardRect = cardRect;
-            this.pillImage = pillImage;
-            this.isPulsing = isPulsing;
-            this.pulseColor = pulseColor;
-        }
-
-        private void Update()
-        {
-            if (sheenImage != null && sheenRect != null && cardRect != null)
-            {
-                float cycle = Time.unscaledTime % SheenIntervalSeconds;
-                bool sweeping = cycle <= SheenSweepDuration;
-                sheenImage.enabled = sweeping;
-                if (sweeping)
-                {
-                    float t = cycle / SheenSweepDuration;
-                    float cardWidth = cardRect.rect.width;
-                    float sheenHalfWidth = sheenRect.sizeDelta.x * 0.5f;
-                    Vector2 pos = sheenRect.anchoredPosition;
-                    pos.x = Mathf.Lerp(-sheenHalfWidth, cardWidth + sheenHalfWidth, t);
-                    sheenRect.anchoredPosition = pos;
-                }
-            }
-
-            if (isPulsing && pillImage != null)
-            {
-                float alpha = Mathf.Lerp(0.6f, 1f, (Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f / PulsePeriodSeconds) + 1f) * 0.5f);
-                Color c = pulseColor;
-                c.a = alpha;
-                pillImage.color = c;
-            }
         }
     }
 }

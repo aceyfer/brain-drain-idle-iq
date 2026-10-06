@@ -192,13 +192,11 @@ namespace BrainDrain.UI
             bool profanityToggle = owned
                 && boundData.effectType == GodTierStoreEffectType.UnlockProfanityPack;
 
-            // IAP RULES: "button label shows +24h/+72h/+7d while one is active" -- repurchasing a
-            // timed consumable extends the stack (PlayerIQManager.ApplyBrainFreeze), it never
-            // wastes the purchase, so the label communicates that instead of just repeating the
-            // price. Checked by itemId, not productId, same key GodTierStoreManager's own ledger
-            // uses (ActiveTimedPurchase.itemId).
-            bool hasActiveTimedPurchase = boundData.isConsumable && IsThisItemActive();
-
+            // 2026-10-06 FREEZE INVENTORY amendment: REPLACES the old "+24h/+72h/+7d" extend
+            // label entirely. Buying a freeze no longer activates/stacks it -- it only adds a
+            // charge to the Wallet, so there is nothing to communicate here about an active
+            // freeze; the Buy button always shows the real price, whether or not a freeze happens
+            // to be active right now (activation lives in THE WALLET, not here).
             IapCommerceService commerce = IapCommerceService.Instance;
             bool offline = commerce == null || commerce.IsOffline;
             bool storeReady = commerce != null && commerce.IsReady;
@@ -239,10 +237,6 @@ namespace BrainDrain.UI
                 {
                     priceText.text = "...";
                 }
-                else if (hasActiveTimedPurchase)
-                {
-                    priceText.text = FormatExtendLabel(boundData.freezeDurationHours);
-                }
                 else
                 {
 #if UNITY_EDITOR
@@ -264,32 +258,6 @@ namespace BrainDrain.UI
             Color accent = owned ? OwnedColor : (offline || !storeReady || purchaseDeferred) ? UnavailableColor : AvailableColor;
             ApplyAccent(accent);
             if (buyButton != null) buyButton.interactable = profanityToggle || canPurchase;
-        }
-
-        /// <summary>Whether boundManager currently has an unexpired ActiveTimedPurchase ledger
-        /// entry for this row's own itemId -- ActiveTimedPurchases already prunes expired entries
-        /// on every read, so "any match" is sufficient, no extra expiry check needed here.</summary>
-        private bool IsThisItemActive()
-        {
-            var active = boundManager.ActiveTimedPurchases;
-            for (int i = 0; i < active.Count; i++)
-            {
-                if (active[i].itemId == boundData.itemId) { return true; }
-            }
-            return false;
-        }
-
-        /// <summary>Matches the three current Brain Freeze family durations exactly (24h/72h/7d
-        /// per the IAP rules spec) with a sensible rule for any future value: a round number of
-        /// days at a week or more reads as days, everything else as hours.</summary>
-        private static string FormatExtendLabel(float hours)
-        {
-            int wholeHours = Mathf.RoundToInt(hours);
-            if (wholeHours >= 168 && wholeHours % 24 == 0)
-            {
-                return $"+{wholeHours / 24}d";
-            }
-            return $"+{wholeHours}h";
         }
 
         private void ApplyAccent(Color accent)
