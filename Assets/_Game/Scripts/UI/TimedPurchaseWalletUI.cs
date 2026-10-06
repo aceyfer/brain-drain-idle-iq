@@ -51,7 +51,16 @@ namespace BrainDrain.UI
         private static readonly Color ButtonFillColor = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
         private static readonly Color MutedTextColor = new Color(Palette.White.r, Palette.White.g, Palette.White.b, 0.7f);
         private static readonly Color UseEnabledColor = Palette.Cyan;
-        private static readonly Color UseDisabledColor = Palette.Dim;
+        // 2026-10-07 play-test fix: Palette.Dim's 0.45 alpha (tuned for small locked-label
+        // chrome elsewhere) was "faint, hard to read" on a multi-word status string ("Active —
+        // Xd Yh left"). Same grey hue, boosted to 0.8 alpha specifically for this readable-dim-
+        // text role -- still visually distinct from the Cyan "USE" state, just not illegible.
+        private static readonly Color UseDisabledColor = new Color(Palette.Dim.r, Palette.Dim.g, Palette.Dim.b, 0.8f);
+        // Disabled pill tint: desaturates/darkens the Alert_Button sprite via a solid (alpha=1)
+        // grey multiply rather than a translucent tint -- transparency was exactly what made the
+        // old flat disabled fill hard to read, so the disabled state stays fully opaque and
+        // conveys "disabled" through hue/brightness instead.
+        private static readonly Color DisabledPillTint = new Color(0.5f, 0.5f, 0.5f, 1f);
 
         private static readonly Color32 PillCyan = new Color32(0x00, 0xDD, 0xEB, 0xFF);
         private static readonly Color32 PillWarning = new Color32(0x80, 0xF4, 0xFF, 0xFF);
@@ -785,8 +794,13 @@ namespace BrainDrain.UI
             useButtonRect.anchorMax = new Vector2(0.96f, 0.78f);
             useButtonRect.offsetMin = Vector2.zero;
             useButtonRect.offsetMax = Vector2.zero;
+            // 2026-10-07 play-test fix: was a flat translucent tint (0.18 alpha) -- the real
+            // Alert_Button pill now, matching every other action button in this codebase. White
+            // pass-through when enabled (the sprite's own baked Cyan/Glow reads as-is); a solid
+            // (alpha=1) grey multiply when disabled -- see DisabledPillTint's own doc comment for
+            // why that stays opaque rather than translucent.
             Image useButtonImage = useButtonObject.AddComponent<Image>();
-            useButtonImage.color = new Color(UseEnabledColor.r, UseEnabledColor.g, UseEnabledColor.b, 0.18f);
+            if (pillSprite != null) { useButtonImage.sprite = pillSprite; useButtonImage.type = Image.Type.Sliced; }
             Button useButton = useButtonObject.AddComponent<Button>();
             useButton.targetGraphic = useButtonImage;
 
@@ -800,10 +814,11 @@ namespace BrainDrain.UI
             TextMeshProUGUI useLabel = useLabelObject.AddComponent<TextMeshProUGUI>();
             useLabel.alignment = TextAlignmentOptions.Center;
             useLabel.fontStyle = FontStyles.Bold;
-            useLabel.fontSize = 24f;
+            // "USE label: Cyan bold >=26" -- floor set at exactly that.
+            useLabel.fontSize = 30f;
             useLabel.enableAutoSizing = true;
-            useLabel.fontSizeMin = 14f;
-            useLabel.fontSizeMax = 24f;
+            useLabel.fontSizeMin = 18f; // only reached by the longer "Active -- Xd Yh left" state
+            useLabel.fontSizeMax = 30f;
             useLabel.textWrappingMode = TextWrappingModes.Normal;
             useLabel.raycastTarget = false;
 
@@ -816,13 +831,15 @@ namespace BrainDrain.UI
                 long remaining = Math.Max(0L, expiry - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 useLabel.text = "Active — " + FormatActiveRemaining(remaining) + " left";
                 useLabel.color = UseDisabledColor;
-                useButtonImage.color = new Color(UseDisabledColor.r, UseDisabledColor.g, UseDisabledColor.b, 0.12f);
+                useButtonImage.color = DisabledPillTint;
                 useButton.interactable = false;
             }
             else
             {
                 useLabel.text = "USE";
+                useLabel.fontSizeMin = 26f; // "USE" alone never needs to shrink below the floor
                 useLabel.color = UseEnabledColor;
+                useButtonImage.color = Color.white;
                 string itemId = item.itemId;
                 useButton.onClick.AddListener(() => GodTierStoreManager.Instance?.ActivateFreeze(itemId));
                 useButton.interactable = true;
@@ -887,8 +904,10 @@ namespace BrainDrain.UI
                 badgeRect.anchorMin = new Vector2(1f, 0f);
                 badgeRect.anchorMax = new Vector2(1f, 0f);
                 badgeRect.pivot = new Vector2(0.5f, 0.5f);
-                badgeRect.anchoredPosition = new Vector2(-6f, 6f);
-                badgeRect.sizeDelta = new Vector2(44f, 32f);
+                badgeRect.anchoredPosition = new Vector2(-4f, 4f);
+                // 2026-10-07 play-test fix: was 44x32, too small to comfortably fit >=22pt bold
+                // text -- enlarged to fit the new floor with real padding.
+                badgeRect.sizeDelta = new Vector2(56f, 40f);
                 Image badgeImage = badgeObject.AddComponent<Image>();
                 badgeImage.color = Palette.Base;
                 badgeImage.raycastTarget = false;
@@ -905,10 +924,11 @@ namespace BrainDrain.UI
                 badgeLabel.color = Palette.White;
                 badgeLabel.fontStyle = FontStyles.Bold;
                 badgeLabel.alignment = TextAlignmentOptions.Center;
-                badgeLabel.fontSize = 20f;
+                // "count badge: >=22pt bold White" -- floor set at exactly that.
+                badgeLabel.fontSize = 26f;
                 badgeLabel.enableAutoSizing = true;
-                badgeLabel.fontSizeMin = 12f;
-                badgeLabel.fontSizeMax = 20f;
+                badgeLabel.fontSizeMin = 22f;
+                badgeLabel.fontSizeMax = 26f;
                 badgeLabel.raycastTarget = false;
             }
         }
