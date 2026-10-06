@@ -64,6 +64,75 @@ namespace BrainDrain.UI
             if (convertBPAmountButton != null) convertBPAmountButton.onClick.AddListener(ConvertHalfBP);
             if (convertAllBPButton != null) convertAllBPButton.onClick.AddListener(ConvertAllBP);
             if (convertAllCashButton != null) convertAllCashButton.onClick.AddListener(ConvertAllCash);
+
+            ApplyPaletteStyle();
+        }
+
+        /// <summary>
+        /// 2026-10-06 FTUE AUDIT (first convert): this controller never asserted ANY color at
+        /// runtime -- unlike every sibling popup touched by the Palette Lockdown/Art Pass 2 work
+        /// (RandomEventUIController.ApplyPaletteStyle, DialogueDisplayUI.Awake), it was still
+        /// whatever the scene happened to have baked in, pre-dating that whole effort. No .unity
+        /// scene writes are permitted, so this asserts the same code-owns-presentation pattern
+        /// those two already use: Surface-filled panel, White status text, Cyan-tinted buttons --
+        /// matching the event popup's own token choices. Applied once at Awake() since nothing
+        /// here varies per open (RefreshVisuals already re-applies text CONTENT, not color, on
+        /// every currency change).
+        /// </summary>
+        private void ApplyPaletteStyle()
+        {
+            if (convertPanel != null)
+            {
+                Image panelImage = convertPanel.GetComponent<Image>();
+                if (panelImage != null)
+                {
+                    panelImage.color = new Color(Palette.Surface.r, Palette.Surface.g, Palette.Surface.b, 0.96f);
+                }
+            }
+
+            ApplyTextColor(bpToCashStatusText);
+            ApplyTextColor(cashToPointsStatusText);
+
+            ApplyButtonAccent(convertBPAmountButton);
+            ApplyButtonAccent(convertAllBPButton);
+            ApplyButtonAccent(convertAllCashButton);
+
+            if (closeButton != null)
+            {
+                Image closeImage = closeButton.GetComponent<Image>();
+                if (closeImage != null)
+                {
+                    closeImage.color = new Color(1f, 1f, 1f, 0.12f);
+                }
+
+                TextMeshProUGUI closeGlyph = closeButton.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (closeGlyph != null)
+                {
+                    closeGlyph.color = Palette.White;
+                }
+            }
+        }
+
+        private static void ApplyTextColor(TextMeshProUGUI text)
+        {
+            if (text != null) { text.color = Palette.White; }
+        }
+
+        private static void ApplyButtonAccent(Button button)
+        {
+            if (button == null) { return; }
+
+            Image image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = new Color(Palette.Cyan.r, Palette.Cyan.g, Palette.Cyan.b, 0.22f);
+            }
+
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                label.color = Palette.Cyan;
+            }
         }
 
         private void Start()
