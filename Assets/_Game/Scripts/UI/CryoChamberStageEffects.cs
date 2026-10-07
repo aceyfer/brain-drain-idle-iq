@@ -9,19 +9,35 @@ namespace BrainDrain.UI
     /// 2026-10-05 ART PASS 2: wires the code-generated Stage 0 "Cryo Chamber" backdrop
     /// (CryoChamberBackdropGenerator) into BackgroundStageView without a scene write --
     /// self-bootstrapping like PocketPanelUI/RuntimePaletteFixups, no Inspector reference needed.
-    /// Three jobs: (1) override BackgroundStageView.stageSprites[0] with the generated room art,
-    /// (2) layer a second Image using the isolated pod-glow sprite on top, pulsing its alpha on a
-    /// slow 4s sine so the pod lights read as alive, (3) place two small "DECEASED" TMP labels
-    /// over the two tagged pods -- the generator bakes a plain Dim rectangle there, not text,
-    /// matching this project's convention that text always comes from a TMP component. All three
-    /// are only ever visible while World Restoration is actually at stage 0 (gated the same way
-    /// BackgroundStageView itself reacts to OnRestorationStageChanged), since the glow/labels
-    /// would otherwise float over whatever backdrop a later stage swaps in. The room art itself is
-    /// swappable: dropping a PNG named CryoChamber_Backdrop.png into Assets/Resources/UI/Generated/
-    /// is picked up automatically instead of the generated room sprite -- see Start().
+    /// Three jobs when useCryoBackdropOverride is on: (1) override BackgroundStageView.
+    /// stageSprites[0] with the generated room art, (2) layer a second Image using the isolated
+    /// pod-glow sprite on top, pulsing its alpha on a slow 4s sine so the pod lights read as
+    /// alive, (3) place two small "DECEASED" TMP labels over the two tagged pods -- the generator
+    /// bakes a plain Dim rectangle there, not text, matching this project's convention that text
+    /// always comes from a TMP component. All three are only ever visible while World Restoration
+    /// is actually at stage 0, since the glow/labels would otherwise float over whatever backdrop
+    /// a later stage swaps in. The room art itself is swappable: dropping a PNG named
+    /// CryoChamber_Backdrop.png into Assets/Resources/UI/Generated/ is picked up automatically
+    /// instead of the generated room sprite -- see Start().
+    ///
+    /// 2026-10-09 play-test fix: this used to override Stage 0's backdrop UNCONDITIONALLY on
+    /// every boot, silently replacing whatever Leonardo-painted art was authored in
+    /// BackgroundStageView's own stageSprites[0] Inspector slot, with no way back -- confirmed via
+    /// BackgroundStageView.OverrideStageSprite (overwrites the live array, no restore path) and
+    /// this class's own Start() (self-bootstraps unconditionally via RuntimeInitializeOnLoadMethod,
+    /// not gated on current stage at all). All three jobs above are now gated behind
+    /// useCryoBackdropOverride (OFF by default) -- the pod-glow/DECEASED-tag overlay is included
+    /// in that gate too, not just the backdrop swap: both are positioned at exact pixel
+    /// coordinates matching only the generated cryo room's own pod layout, so there is no
+    /// "backdrop-independent" cryo effect (a generic tint/frost/particle layer) to keep running
+    /// over the real painted art -- showing them without the matching backdrop would just float
+    /// glow blobs and DECEASED labels over unrelated art.
     /// </summary>
     public sealed class CryoChamberStageEffects : MonoBehaviour
     {
+        [Tooltip("OFF by default so the Leonardo-painted Stage 0 backdrop always shows. Turn this on once a painted (or accepted placeholder) cryo backdrop is ready to ship -- it swaps BackgroundStageView.stageSprites[0] for the generated/drop-in Cryo Chamber room art and enables the pod-glow + DECEASED-tag overlay, which only make sense together with that specific room art.")]
+        [SerializeField] private bool useCryoBackdropOverride = false;
+
         private const float PulsePeriodSeconds = 4f;
         private const float PulseAlphaMin = 0.3f;
         private const float PulseAlphaMax = 0.75f;
@@ -40,6 +56,7 @@ namespace BrainDrain.UI
 
         private GameObject overlayRoot;
         private Image glowImage;
+        private BackgroundStageView cachedBackgroundView;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -54,18 +71,22 @@ namespace BrainDrain.UI
             BackgroundStageView backgroundView = FindAnyObjectByType<BackgroundStageView>();
             Image backgroundImage = backgroundView != null ? backgroundView.GetComponent<Image>() : null;
             if (backgroundView == null || backgroundImage == null) { return; }
+            cachedBackgroundView = backgroundView;
 
-            // 2026-10-05 play-test fix: a hand-painted replacement is swapped in automatically if
-            // Aceyfer drops one into Assets/Resources/UI/Generated/CryoChamber_Backdrop.png -- same
-            // folder the generated art already lives in (Resources.Load can't see outside a
-            // Resources folder at runtime, so this is the one location a drop-in file can live for
-            // this to work in an actual build, not just the Editor). Falls back to the generated
-            // room art when no override file is present.
-            Sprite roomSprite = Resources.Load<Sprite>("UI/Generated/CryoChamber_Backdrop")
-                ?? Resources.Load<Sprite>("UI/Generated/Stage0_CryoChamber");
-            if (roomSprite != null) { backgroundView.OverrideStageSprite(0, roomSprite); }
+            if (useCryoBackdropOverride)
+            {
+                // 2026-10-05 play-test fix: a hand-painted replacement is swapped in automatically
+                // if Aceyfer drops one into Assets/Resources/UI/Generated/CryoChamber_Backdrop.png
+                // -- same folder the generated art already lives in (Resources.Load can't see
+                // outside a Resources folder at runtime, so this is the one location a drop-in
+                // file can live for this to work in an actual build, not just the Editor). Falls
+                // back to the generated room art when no override file is present.
+                Sprite roomSprite = Resources.Load<Sprite>("UI/Generated/CryoChamber_Backdrop")
+                    ?? Resources.Load<Sprite>("UI/Generated/Stage0_CryoChamber");
+                if (roomSprite != null) { backgroundView.OverrideStageSprite(0, roomSprite); }
 
-            BuildOverlay(backgroundImage.transform);
+                BuildOverlay(backgroundImage.transform);
+            }
 
             WorldRestorationManager manager = WorldRestorationManager.Instance;
             if (manager != null)
@@ -88,9 +109,19 @@ namespace BrainDrain.UI
             RefreshVisibility(stage != null ? stage.stageIndex : 0);
         }
 
+        /// <summary>2026-10-09 play-test fix: once the player moves past Stage 0, this now also
+        /// tells BackgroundStageView to restore whatever painted art was in slot 0 before the
+        /// override -- a no-op if useCryoBackdropOverride is off (nothing was ever overridden to
+        /// restore), and harmless to call every stage change regardless of current override
+        /// state, since ClearOverride itself is already a safe no-op once already cleared.</summary>
         private void RefreshVisibility(int stageIndex)
         {
             if (overlayRoot != null) { overlayRoot.SetActive(stageIndex == 0); }
+
+            if (stageIndex != 0 && cachedBackgroundView != null)
+            {
+                cachedBackgroundView.ClearOverride(0);
+            }
         }
 
         private void BuildOverlay(Transform backgroundTransform)

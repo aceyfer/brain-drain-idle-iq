@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using BrainDrain.Systems;
@@ -30,6 +31,13 @@ namespace BrainDrain.UI
         private Coroutine transitionRoutine;
         private bool hasResolvedInitialStage;
 
+        /// <summary>2026-10-09 play-test fix: the Leonardo-painted Stage 0 backdrop was being
+        /// silently replaced by CryoChamberStageEffects' override with no way back -- this records
+        /// the Inspector-authored sprite that was sitting in stageSprites[index] the FIRST time
+        /// that index is ever overridden, so ClearOverride can restore it later. Keyed by index,
+        /// not a single field, since any stage slot could in principle be overridden.</summary>
+        private readonly Dictionary<int, Sprite> originalSpritesBeforeOverride = new();
+
         /// <summary>
         /// 2026-10-05 ART PASS 2: lets a self-bootstrapping component (CryoChamberStageEffects)
         /// swap a stage's backdrop sprite at runtime without a scene write -- stageSprites[] is
@@ -53,6 +61,11 @@ namespace BrainDrain.UI
                 stageSprites = grown;
             }
 
+            if (!originalSpritesBeforeOverride.ContainsKey(index))
+            {
+                originalSpritesBeforeOverride[index] = stageSprites[index];
+            }
+
             Sprite previous = stageSprites[index];
             stageSprites[index] = sprite;
 
@@ -60,6 +73,29 @@ namespace BrainDrain.UI
                 && ResolveCurrentStageIndex() == index)
             {
                 backgroundImage.sprite = sprite;
+                SetAlpha(1f);
+            }
+        }
+
+        /// <summary>2026-10-09 play-test fix: restores stageSprites[index] to whatever was there
+        /// before the matching OverrideStageSprite call (the Inspector-authored painted art), and
+        /// re-applies it immediately if that index is the one currently on screen. No-op if that
+        /// index was never overridden -- callers (e.g. CryoChamberStageEffects when its cryo
+        /// backdrop override is off, or once the player moves past Stage 0) can call this freely
+        /// without checking state first.</summary>
+        public void ClearOverride(int index)
+        {
+            if (index < 0 || stageSprites == null || index >= stageSprites.Length) { return; }
+            if (!originalSpritesBeforeOverride.TryGetValue(index, out Sprite original)) { return; }
+
+            Sprite overridden = stageSprites[index];
+            stageSprites[index] = original;
+            originalSpritesBeforeOverride.Remove(index);
+
+            if (original != null && backgroundImage != null && backgroundImage.sprite == overridden
+                && ResolveCurrentStageIndex() == index)
+            {
+                backgroundImage.sprite = original;
                 SetAlpha(1f);
             }
         }
