@@ -109,6 +109,7 @@ namespace BrainDrain.UI
         private RectTransform canvasRect;
         private CanvasGroup panelGroup;
         private GameObject backdropObject;
+        private RectTransform closeButtonRect;
         private RectTransform contentRoot;
         private GameObject emptyState;
         private GameObject toastObject;
@@ -317,6 +318,12 @@ namespace BrainDrain.UI
             Canvas backdropCanvas = backdropObject.AddComponent<Canvas>();
             backdropCanvas.overrideSorting = true;
             backdropCanvas.sortingOrder = PanelOverrideSortingOrder - 1; // just behind the panel
+            // 2026-10-09 play-test fix: a nested Canvas with overrideSorting is its own raycast
+            // target set in Unity's GraphicRegistry -- the scene's single root GraphicRaycaster
+            // does NOT pick up graphics registered under a nested overrideSorting Canvas, so
+            // without its own raycaster here this Image's raycastTarget=true (meant to block taps
+            // to the HUD behind it) was silently a no-op; clicks passed straight through.
+            backdropObject.AddComponent<GraphicRaycaster>();
 
             backdropObject.SetActive(false);
         }
@@ -337,6 +344,14 @@ namespace BrainDrain.UI
             Canvas panelCanvas = panelObject.AddComponent<Canvas>();
             panelCanvas.overrideSorting = true;
             panelCanvas.sortingOrder = PanelOverrideSortingOrder;
+            // 2026-10-09 play-test fix: the actual root cause of "close X does nothing" -- this
+            // nested overrideSorting Canvas had no GraphicRaycaster of its own, so NOTHING under
+            // it (the close button, every row's USE button, the panel's own catch-all fill) was
+            // reachable by the scene's single root GraphicRaycaster at all; clicks fell straight
+            // through to whatever the root canvas's own raycaster found underneath instead. A
+            // nested overrideSorting Canvas needs its own raycaster, full stop -- same fix as
+            // BuildBackdrop's Canvas right above.
+            panelObject.AddComponent<GraphicRaycaster>();
 
             Image panelImage = panelObject.AddComponent<Image>();
             panelImage.color = PanelChipColor;
@@ -393,6 +408,8 @@ namespace BrainDrain.UI
             button.onClick.AddListener(Close);
 
             CreateStretchedLabel(closeObject.transform, "X", Color.white, 36f, 20f, FontStyles.Bold);
+
+            closeButtonRect = closeRect;
         }
 
         private void BuildScrollList(Transform parent)
@@ -703,6 +720,54 @@ namespace BrainDrain.UI
             SetPanelHidden(true);
             isVisible = false;
         }
+
+#if UNITY_EDITOR
+        /// <summary>2026-10-09 play-test fix: Editor-only diagnostic for exactly this class of
+        /// "a click doesn't reach the button it's sitting on top of" bug -- fires the SAME
+        /// EventSystem.RaycastAll pipeline a real click uses, at the close button's own current
+        /// screen position, and logs every Graphic it hit, topmost (what a real click would land
+        /// on) first. Called from BrainDrain > Testing > Log Wallet Close Button Raycast Hits
+        /// while the Wallet is open in Play Mode.</summary>
+        public void DebugLogCloseButtonRaycastHits()
+        {
+            if (closeButtonRect == null || !isVisible)
+            {
+                Debug.LogWarning("[TimedPurchaseWalletUI] Can't raycast -- open THE WALLET first.");
+                return;
+            }
+
+            UnityEngine.EventSystems.EventSystem eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            if (eventSystem == null)
+            {
+                Debug.LogWarning("[TimedPurchaseWalletUI] No EventSystem in the scene -- can't raycast.");
+                return;
+            }
+
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(null, closeButtonRect.position);
+            var pointerData = new UnityEngine.EventSystems.PointerEventData(eventSystem) { position = screenPoint };
+            var results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+            eventSystem.RaycastAll(pointerData, results);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[TimedPurchaseWalletUI] Raycast at close button position {screenPoint} hit {results.Count} object(s), topmost first:");
+            for (int i = 0; i < results.Count; i++)
+            {
+                UnityEngine.EventSystems.RaycastResult r = results[i];
+                sb.AppendLine($"  [{i}] {Path(r.gameObject.transform)} (sortingLayer={r.sortingLayer}, sortingOrder={r.sortingOrder}, depth={r.depth})");
+            }
+            Debug.Log(sb.ToString());
+        }
+
+        private static string Path(Transform t)
+        {
+            string path = t.name;
+            for (Transform p = t.parent; p != null; p = p.parent)
+            {
+                path = p.name + "/" + path;
+            }
+            return path;
+        }
+#endif
 
         /// <summary>Single owner of the panel's hidden/shown state (code-owned presentation state,
         /// Bible §8). Alpha + raycast gating, never GameObject SetActive -- matches
