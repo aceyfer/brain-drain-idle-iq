@@ -623,14 +623,17 @@ namespace BrainDrain.UI
             toastRect.anchoredPosition = pos;
         }
 
-        /// <summary>2026-10-08 play-test fix: while THE WALLET is open, docking the toast below
-        /// the HUD header (as PositionToastBelowHeader does) lands it over the panel's own "THE
-        /// WALLET" title, since the panel is also centered near the top of the screen. Reparents
-        /// the toast under the panel itself instead -- it then automatically inherits the panel's
-        /// own overrideSorting Canvas (so it renders correctly above the panel's content) and
-        /// stays correctly positioned regardless of where the panel sits on screen. A flat offset
-        /// below the title band is fine here (unlike the HUD header) since the panel's own layout
-        /// is fixed/authored, not safe-area-dependent.</summary>
+        /// <summary>2026-10-08 play-test fix, corrected 2026-10-09: docking the toast below the
+        /// HUD header (as PositionToastBelowHeader does) lands it over the panel's own "THE
+        /// WALLET" title while the panel is open, since the panel is also centered near the top
+        /// of the screen -- fixed by reparenting under the panel. The FIRST fix then anchored it
+        /// just below the title band instead, which covers the first inventory row's own USE
+        /// button (play-test feedback: the toast and the row it was meant to be a nudge ABOUT
+        /// were overlapping). Bottom-anchored now -- clear of every row regardless of list length,
+        /// since the scroll list's own bottom margin (BuildScrollList's offsetMin.y = 24) already
+        /// keeps row content from reaching the panel's true bottom edge. Reparenting under the
+        /// panel still applies (inherits its overrideSorting Canvas, stays correct regardless of
+        /// where the panel sits on screen).</summary>
         private void PositionToastInsidePanel()
         {
             if (toastRect == null || panelGroup == null) { return; }
@@ -644,10 +647,10 @@ namespace BrainDrain.UI
             }
             toastRect.SetAsLastSibling();
 
-            toastRect.anchorMin = new Vector2(0.5f, 1f);
-            toastRect.anchorMax = new Vector2(0.5f, 1f);
-            toastRect.pivot = new Vector2(0.5f, 1f);
-            toastRect.anchoredPosition = new Vector2(0f, -112f); // clears Title's own -24/72 band
+            toastRect.anchorMin = new Vector2(0.5f, 0f);
+            toastRect.anchorMax = new Vector2(0.5f, 0f);
+            toastRect.pivot = new Vector2(0.5f, 0f);
+            toastRect.anchoredPosition = new Vector2(0f, 32f);
         }
 
         private void ShowToast(string message)
