@@ -22,6 +22,8 @@ After any `git apply --cached` commit, run `git diff HEAD -- <file>` and confirm
 
 Never run `rm -rf` or delete directories; delete only specific files you created this session, by exact path.
 
+No code-generated or procedural game art (backdrops, scene art, illustrations) — all real art comes from Aceyfer's Leonardo pipeline; UI layout, colors, typography, and existing border/frame assets are fine.
+
 ## Architecture
 
 All gameplay code lives under `Assets/_Game/Scripts`, split into `BrainDrain.Core` (simulation/state) and `BrainDrain.UI` (presentation). Everything is wired together through Unity Inspector references and runtime `FindAnyObjectByType` fallbacks rather than dependency injection — when adding a new system, follow the existing pattern of a serialized field that falls back to `GameManager.Instance` lookups.
