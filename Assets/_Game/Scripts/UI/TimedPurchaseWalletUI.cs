@@ -405,6 +405,10 @@ namespace BrainDrain.UI
 
             Button button = closeObject.AddComponent<Button>();
             button.targetGraphic = image;
+            // 2026-10-10 play-test fix: explicit, not relying on AddComponent<Button>()'s own
+            // default -- rules out suspect (a) from the close-button-doesn't-fire investigation
+            // for certain rather than assuming the default held.
+            button.interactable = true;
             button.onClick.AddListener(Close);
 
             CreateStretchedLabel(closeObject.transform, "X", Color.white, 36f, 20f, FontStyles.Bold);
@@ -712,6 +716,22 @@ namespace BrainDrain.UI
             RebuildList();
             SetPanelHidden(false);
             isVisible = true;
+
+            // 2026-10-10 play-test fix (suspect b): Selectable.IsInteractable() caches whether its
+            // CanvasGroup ancestors currently allow interaction, and that cache is only recomputed
+            // when Unity broadcasts OnCanvasGroupChanged -- which does NOT happen from a plain
+            // `panelGroup.interactable = true` assignment (SetPanelHidden above), only from a
+            // CanvasGroup OnEnable/OnDisable or a hierarchy change. WalletCloseButton's Button was
+            // added during the very first Build() pass, before SetPanelHidden(true) ever ran even
+            // once -- so its cache was captured against panelGroup's un-hidden CanvasGroup default
+            // and may never have been invalidated by any later interactable flip. Row USE buttons
+            // never hit this because RebuildList() always (re)creates them AFTER an Open() call,
+            // i.e. only ever while panelGroup is already interactable. Toggling the CanvasGroup
+            // COMPONENT itself (never the GameObject -- SetPanelHidden's whole point is avoiding
+            // SetActive) forces that broadcast to every descendant Selectable, close button
+            // included, each time the panel opens.
+            panelGroup.enabled = false;
+            panelGroup.enabled = true;
         }
 
         public void Close()
@@ -759,6 +779,49 @@ namespace BrainDrain.UI
                 sb.AppendLine($"  [{i}] {Path(r.gameObject.transform)} (sortingLayer={r.sortingLayer}, sortingOrder={r.sortingOrder}, depth={r.depth})");
             }
             Debug.Log(sb.ToString());
+
+            // 2026-10-10 play-test fix: raycast confirmed WalletCloseButton is the topmost hit,
+            // yet onClick never fired -- extended diagnostic covering the 4 suspects directly
+            // rather than more raycast data, which already proved out. (a) Button presence +
+            // interactable, (b) every CanvasGroup from the button up to the root, (c)/(d) whether
+            // a real listener is actually attached, tested by invoking it directly -- bypasses the
+            // raycast/EventSystem pipeline entirely, so a log line here means the listener itself
+            // is fine and the real cause is upstream in input/interactable routing, not a wiped or
+            // stale listener.
+            GameObject closeGO = closeButtonRect.gameObject;
+            Button closeButtonComponent = closeGO.GetComponent<Button>();
+
+            var diag = new System.Text.StringBuilder();
+            diag.AppendLine("[TimedPurchaseWalletUI] WalletCloseButton diagnostics:");
+            diag.AppendLine($"  (a) Button component present: {closeButtonComponent != null}");
+            if (closeButtonComponent != null)
+            {
+                diag.AppendLine($"  (a) Button.interactable (own flag, ignores CanvasGroup chain): {closeButtonComponent.interactable}");
+                diag.AppendLine($"  (a) Selectable.IsInteractable() (own flag AND CanvasGroup chain combined): {closeButtonComponent.IsInteractable()}");
+                diag.AppendLine($"  (c) onClick persistent (Inspector-wired) listener count: {closeButtonComponent.onClick.GetPersistentEventCount()}");
+                diag.AppendLine("      Note: UnityEvent exposes no public API to count runtime (AddListener) listeners separately --");
+                diag.AppendLine("      a persistent count of 0 is EXPECTED here since this button is built entirely in code via AddListener,");
+                diag.AppendLine("      not wired in the Inspector. The manual invoke below is the real test for (c)/(d).");
+            }
+
+            diag.AppendLine("  (b) CanvasGroup chain, nearest first:");
+            bool anyGroup = false;
+            for (Transform t = closeGO.transform; t != null; t = t.parent)
+            {
+                CanvasGroup cg = t.GetComponent<CanvasGroup>();
+                if (cg == null) { continue; }
+                anyGroup = true;
+                diag.AppendLine($"      {Path(t)}: interactable={cg.interactable}, blocksRaycasts={cg.blocksRaycasts}, ignoreParentGroups={cg.ignoreParentGroups}, alpha={cg.alpha:F2}, enabled={cg.enabled}");
+            }
+            if (!anyGroup) { diag.AppendLine("      (none found)"); }
+            Debug.Log(diag.ToString());
+
+            if (closeButtonComponent != null)
+            {
+                Debug.Log("[TimedPurchaseWalletUI] Manually invoking WalletCloseButton.onClick.Invoke() now (bypasses raycast/EventSystem/interactable entirely) -- " +
+                    "if 'WalletClose clicked' logs right after this line, the listener IS correctly wired and the real bug is upstream in input/interactable routing, not a missing/stale/wiped listener.");
+                closeButtonComponent.onClick.Invoke();
+            }
         }
 
         private static string Path(Transform t)
