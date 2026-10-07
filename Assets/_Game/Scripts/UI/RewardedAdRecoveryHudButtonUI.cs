@@ -171,7 +171,15 @@ namespace BrainDrain.UI
             rect.anchorMin = diaLogRect.anchorMin;
             rect.anchorMax = diaLogRect.anchorMax;
             rect.pivot = diaLogRect.pivot;
-            rect.sizeDelta = diaLogRect.sizeDelta;
+            // 2026-10-10 play-test fix: width matches the other three side buttons exactly
+            // (diaLogRect.sizeDelta.x, same as before) -- only height grows, since this is the
+            // only one of the four carrying a two-line label ("RECOVER IQ" + the x/y counter) and
+            // the shared 50px height left it cramped/unreadable. Safe to grow downward: this is
+            // the last slot in the stack (SlotIndex 3), nothing below it to collide with, and the
+            // position offset below is still computed from the OTHER buttons' own (unchanged)
+            // height, so their spacing is untouched.
+            float extraHeightForTwoLines = 20f;
+            rect.sizeDelta = new Vector2(diaLogRect.sizeDelta.x, diaLogRect.sizeDelta.y + extraHeightForTwoLines);
             rect.anchoredPosition = diaLogRect.anchoredPosition + new Vector2(0f, -SlotIndex * (diaLogRect.sizeDelta.y + ButtonGap));
 
             Image image = buttonObject.AddComponent<Image>();
@@ -192,13 +200,14 @@ namespace BrainDrain.UI
             label.color = Color.white;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.Center;
-            // All four side buttons copy LogOpenButton's 140x50 rect. Give this
-            // two-line label its own compact range rather than a 20pt hard floor.
-            label.fontSize = 20f;
+            // 2026-10-10 play-test fix: the extra button height above gives this room to breathe
+            // -- lineSpacing no longer needs the aggressive -20 squeeze that was causing the two
+            // lines to visually cram together.
+            label.fontSize = 22f;
             label.enableAutoSizing = true;
             label.fontSizeMin = 16f;
-            label.fontSizeMax = 20f;
-            label.lineSpacing = -20f;
+            label.fontSizeMax = 22f;
+            label.lineSpacing = -6f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
 
