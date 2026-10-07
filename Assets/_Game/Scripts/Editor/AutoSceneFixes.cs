@@ -45,6 +45,7 @@ namespace BrainDrain.EditorTools
             RemoveDuplicateRandomEventManagers();
             ReactivateShopPanelIfNeeded();
             FixShopPanelIfUnwired();
+            ReactivateRewardedAdRecoveryPopupIfNeeded();
         }
 
         /// <summary>
@@ -73,6 +74,38 @@ namespace BrainDrain.EditorTools
             Debug.Log("[AutoSceneFixes] ShopPanel was saved inactive, which prevents its own ShopUIController.Awake() from ever running -- reactivating it.");
             shopUI.gameObject.SetActive(true);
             MarkAndSaveScene(nameof(ReactivateShopPanelIfNeeded));
+        }
+
+        /// <summary>
+        /// 2026-10-10 play-test fix: confirmed via the saved scene YAML (m_IsActive: 0 on the
+        /// "RewardedAdRecoveryPopup" GameObject) that this is the exact same class of bug as
+        /// ReactivateShopPanelIfNeeded above, just on a different panel -- RewardedAdRecoveryUIController
+        /// lives directly on that root GameObject (not a child), so a saved-inactive root means its
+        /// own Awake()/Start() (onClick wiring, OnRecoveryStateChanged subscription, initial
+        /// SetCanvasState(false)) never ran at all. The RECOVER IQ HUD button is a completely
+        /// separate self-bootstrapping system that only needs RewardedAdRecoveryManager to exist to
+        /// show itself, so it rendered fine regardless -- but its own FindAnyObjectByType lookup for
+        /// the popup controller (active-objects-only by default) silently returned null, so clicking
+        /// it no-opped with zero error/log. Same correct fix as Shop: the GameObject must start
+        /// active so its own SetCanvasState(false) can hide it properly post-Awake, never saved
+        /// pre-hidden in the scene file directly.
+        /// </summary>
+        private static void ReactivateRewardedAdRecoveryPopupIfNeeded()
+        {
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            RewardedAdRecoveryUIController popup = Object.FindAnyObjectByType<RewardedAdRecoveryUIController>(FindObjectsInactive.Include);
+            if (popup == null || popup.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            Debug.Log("[AutoSceneFixes] RewardedAdRecoveryPopup was saved inactive, which prevents its own RewardedAdRecoveryUIController.Awake()/Start() from ever running -- reactivating it.");
+            popup.gameObject.SetActive(true);
+            MarkAndSaveScene(nameof(ReactivateRewardedAdRecoveryPopupIfNeeded));
         }
 
         private static void RemoveDuplicateRandomEventManagers()

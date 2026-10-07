@@ -135,6 +135,10 @@ namespace BrainDrain.UI
         {
             hiddenByPlayer = false;
             RefreshVisuals();
+
+            RewardedAdRecoveryManager manager = RewardedAdRecoveryManager.Instance;
+            bool hasPending = manager != null && manager.HasPendingRecovery;
+            Debug.Log($"[RewardedAdRecoveryUIController] ReopenPopup: hasPending={hasPending}, suppressedByOtherPanel={suppressedByOtherPanel}, hiddenByPlayer={hiddenByPlayer} -> shown={hasPending && !suppressedByOtherPanel && !hiddenByPlayer}");
         }
 
         /// <summary>Called by MainUIController -- see suppressedByOtherPanel's doc comment.</summary>

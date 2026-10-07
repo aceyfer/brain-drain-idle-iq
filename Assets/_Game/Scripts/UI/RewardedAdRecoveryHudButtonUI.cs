@@ -213,9 +213,23 @@ namespace BrainDrain.UI
 
         private void OnClicked()
         {
+            Debug.Log("[RewardedAdRecoveryHudButtonUI] RecoverIQ clicked");
+
             if (popupController == null)
             {
-                popupController = FindAnyObjectByType<RewardedAdRecoveryUIController>();
+                // 2026-10-10 play-test fix: root cause of "opens no popup and logs nothing" was
+                // RewardedAdRecoveryPopup being saved inactive in the scene (fixed in
+                // AutoSceneFixes.ReactivateRewardedAdRecoveryPopupIfNeeded) -- while that's
+                // active, the controller's own Awake()/Start() never ran, so FindAnyObjectByType's
+                // default active-only search could never find it and this silently no-opped via
+                // the ?. below. FindObjectsInactive.Include here is defensive insurance only (so a
+                // stale Editor session that hasn't re-run the auto-fix yet still works); the real
+                // fix is the GameObject starting active in the saved scene.
+                popupController = FindAnyObjectByType<RewardedAdRecoveryUIController>(FindObjectsInactive.Include);
+                if (popupController == null)
+                {
+                    Debug.LogWarning("[RewardedAdRecoveryHudButtonUI] No RewardedAdRecoveryUIController found in the scene -- RECOVER IQ has nothing to reopen.");
+                }
             }
 
             popupController?.ReopenPopup();
