@@ -25,6 +25,13 @@ namespace BrainDrain.UI
         private static readonly Color OwnedColor = Palette.Cyan;
         private static readonly Color UnavailableColor = Palette.Dim;
 
+        // 2026-10-10 play-test fix: matches UpgradeSlotUI.CardColor exactly (the BP/Cash tabs'
+        // own row background) -- was background.color = tinted-accent@18% alpha down in
+        // ApplyAccent, which for AvailableColor (white) washed out to a pale "flat grey card"
+        // instead of a real dark row surface. Not promoted into Palette.cs: UpgradeSlotUI still
+        // owns its own local copy too, and unifying the two is a bigger refactor than this ask.
+        private static readonly Color RowCardColor = new Color32(0x11, 0x15, 0x1B, 0xF5);
+
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;
@@ -91,6 +98,13 @@ namespace BrainDrain.UI
             {
                 priceText.alignment = TextAlignmentOptions.Center;
                 priceText.margin = new Vector4(16f, 4f, 16f, 4f);
+
+                // 2026-10-10 play-test fix: ShopBuyButtonLayout.Register just above forced
+                // fontSizeMax to at least 30 (shared floor across every shop tab) -- too large
+                // for the God Shop's own ornate purchase button frame, which eats more interior
+                // padding than the plainer BP/Cash buy buttons. Capped back down here, after
+                // Register, specifically for this tab only.
+                priceText.fontSizeMax = 22f;
             }
 
             // Touching .Instance here is fine (self-bootstraps if needed) -- GodTierStoreManager's
@@ -262,9 +276,17 @@ namespace BrainDrain.UI
 
         private void ApplyAccent(Color accent)
         {
-            if (background != null) background.color = new Color(accent.r, accent.g, accent.b, 0.18f);
+            // 2026-10-10 play-test fix: background is now a fixed dark row surface (matches
+            // UpgradeSlotUI's BP/Cash row convention) instead of a translucent accent tint that
+            // washed out to pale grey -- state now reads entirely through name/price color, same
+            // division of labor UpgradeSlotUI already uses (identityRail there, text here).
+            if (background != null) background.color = RowCardColor;
             if (nameText != null) nameText.color = accent;
             if (priceText != null) priceText.color = accent;
+            // Was never explicitly set -- fell back to whatever flat/low-contrast color the
+            // scene-authored template happened to carry. Always readable white regardless of
+            // row state, matching UpgradeSlotUI.descriptionText's own always-white convention.
+            if (descriptionText != null) descriptionText.color = Palette.White;
         }
     }
 }
