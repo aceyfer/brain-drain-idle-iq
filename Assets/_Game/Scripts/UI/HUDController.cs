@@ -131,10 +131,9 @@ namespace BrainDrain.UI
         [SerializeField] private Image celebrationFlashOverlay;
 
         [Header("Scoreboard Redesign (2026-10-12)")]
-        [Tooltip("Optional. Assets/_Game/Materials/TMP/Oswald_NeonBlueGlow.mat, Inspector-assigned -- "
-            + "this project's existing TMP materials (Oswald_CyanGlow.mat etc.) live outside any "
-            + "Resources folder and are wired this way, not via Resources.Load. No effect on "
-            + "brainPowerCounterText until assigned.")]
+        [Tooltip("Optional override. BrainsCounterText's glow material loads automatically from "
+            + "Resources/UI/Scoreboard/Oswald_NeonBlueGlow.mat (GetScoreboardGlowMaterial) -- only "
+            + "assign this if you want a DIFFERENT material without touching code.")]
         [SerializeField] private Material brainsCounterGlowMaterial;
 
         private int lastIQMilestoneIndex;
@@ -889,6 +888,23 @@ namespace BrainDrain.UI
             return cachedOswaldFont;
         }
 
+        /// <summary>2026-10-12 play-test fix: brainsCounterGlowMaterial required a manual Inspector
+        /// assignment to ever take effect, which is a scene write -- moved the material itself
+        /// (same guid, via git mv) under Resources/UI/Scoreboard so this can load it the same way
+        /// GetOswaldFont loads the font above. Cached once per domain reload for the same reason.
+        /// The Inspector field stays as an optional override (checked first, in
+        /// ApplyScoreboardGlowMaterial below), not removed.</summary>
+        private static Material cachedScoreboardGlowMaterial;
+
+        private static Material GetScoreboardGlowMaterial()
+        {
+            if (cachedScoreboardGlowMaterial == null)
+            {
+                cachedScoreboardGlowMaterial = Resources.Load<Material>("UI/Scoreboard/Oswald_NeonBlueGlow");
+            }
+            return cachedScoreboardGlowMaterial;
+        }
+
         /// <summary>2026-10-12 scoreboard redesign: every scoreboard label unified onto Oswald Bold
         /// SDF, replacing whatever mix of fonts (LiberationSans included) the scene authored.</summary>
         private void UnifyScoreboardFont()
@@ -950,9 +966,13 @@ namespace BrainDrain.UI
             SetFixedLabel(bppsText, 27f, null);
             SetFixedLabel(cashText, 27f, null);
 
-            if (brainsCounterGlowMaterial != null && brainPowerCounterText != null)
+            // 2026-10-12 play-test fix: Inspector field checked first (optional override, still
+            // supported for anyone who wants a different material without touching code), falling
+            // back to the Resources-loaded one so this takes effect with no scene write at all.
+            Material glowMaterial = brainsCounterGlowMaterial != null ? brainsCounterGlowMaterial : GetScoreboardGlowMaterial();
+            if (glowMaterial != null && brainPowerCounterText != null)
             {
-                brainPowerCounterText.fontSharedMaterial = brainsCounterGlowMaterial;
+                brainPowerCounterText.fontSharedMaterial = glowMaterial;
             }
         }
 
