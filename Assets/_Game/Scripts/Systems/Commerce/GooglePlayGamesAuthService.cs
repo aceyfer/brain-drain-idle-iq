@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if BRAINDRAIN_PLAYGAMES && UNITY_ANDROID && !UNITY_EDITOR
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 #endif
@@ -24,18 +24,41 @@ namespace BrainDrain.Systems.Commerce
     /// PlayGamesAsync. TryLinkExistingAnonymousAccountAsync (NOT wired into anything automatically)
     /// is the less-exercised edge case and is flagged again at its own declaration.
     ///
-    /// The `using GooglePlayGames` directives are deliberately guarded by the same
-    /// `#if UNITY_ANDROID && !UNITY_EDITOR` as their usage below -- NOT just the method bodies --
-    /// so this file compiles fine in the Editor and on non-Android platforms even before the
-    /// Google Play Games plugin for Unity is imported. That plugin is a separate .unitypackage
-    /// import (Assets > Import Package > Custom Package), not a Package Manager/manifest.json
-    /// dependency -- see Assets/Plans/google-play-games-linking-setup.md for the full manual setup
-    /// (Play Console Play Games Services configuration, OAuth Web client ID, plugin import,
-    /// Android Setup wizard). It is only required to actually build for Android; this file itself
-    /// does not block compiling in the Editor.
+    /// 2026-10-11 launch-audit follow-up: the `using GooglePlayGames` directives used to be
+    /// guarded by only `#if UNITY_ANDROID && !UNITY_EDITOR`, which assumed the plugin was always
+    /// present on an Android build -- confirmed false (the audit found no GooglePlayGames/ folder
+    /// anywhere in Assets/), so an actual Android build (not just Editor compilation, which never
+    /// hits this guard regardless of target) would fail with an unresolved `GooglePlayGames`
+    /// namespace until the plugin was imported. Now also gated on BRAINDRAIN_PLAYGAMES, this
+    /// project's hand-set equivalent of asmdef versionDefines (same reasoning as
+    /// CloudSaveDefineSync/BRAINDRAIN_CLOUDSAVE: no .asmdef files exist here, so Unity's real
+    /// versionDefines feature isn't available to Assembly-CSharp code) -- but unlike Cloud Save,
+    /// there's no Package Manager entry to auto-detect: the Google Play Games Plugin for Unity is
+    /// a plain .unitypackage import (Assets > Import Package > Custom Package), not a
+    /// manifest.json dependency, so nothing in this repo can observe whether it's present. Aceyfer
+    /// must add BRAINDRAIN_PLAYGAMES to Project Settings > Player > Scripting Define Symbols
+    /// (Android tab) himself, by hand, after importing the plugin -- step 3.5 in
+    /// Assets/Plans/google-play-games-linking-setup.md now says so explicitly. Without the define
+    /// (the default state, and every build until he does this): compiles cleanly on every
+    /// platform including a real Android build, and EnsureSignedInAsync falls back to the existing
+    /// anonymous sign-in path with one one-time warning (LogMissingPluginWarningOnce below) rather
+    /// than silently never telling anyone why reinstall-survival isn't working.
     /// </summary>
     public static class GooglePlayGamesAuthService
     {
+        /// <summary>Fires exactly once per process -- EnsureSignedInAsync runs on every app launch
+        /// (via GodTierStoreManager.Start() -> FreezeInventoryCloudSync.ReconcileOnLaunchAsync, and
+        /// again on every purchase validation), and this must read as one clear startup notice, not
+        /// a warning repeated on every one of those calls.</summary>
+        private static bool loggedMissingPluginWarning;
+
+        private static void LogMissingPluginWarningOnce()
+        {
+            if (loggedMissingPluginWarning) { return; }
+            loggedMissingPluginWarning = true;
+            Debug.LogWarning("[GooglePlayGamesAuthService] Play Games plugin not installed -- anonymous identity only; purchases won't survive reinstall.");
+        }
+
         /// <summary>
         /// Ensures a UGS identity exists, preferring one linked to Google Play Games over an
         /// anonymous one. Call this before anything that needs a durable, cross-device identity --
@@ -84,7 +107,7 @@ namespace BrainDrain.Systems.Commerce
         private static Task<string> RequestGooglePlayGamesAuthCodeAsync()
         {
             var tcs = new TaskCompletionSource<string>();
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if BRAINDRAIN_PLAYGAMES && UNITY_ANDROID && !UNITY_EDITOR
             PlayGamesPlatform.Activate();
             PlayGamesPlatform.Instance.Authenticate(status =>
             {
@@ -98,7 +121,14 @@ namespace BrainDrain.Systems.Commerce
                 PlayGamesPlatform.Instance.RequestServerSideAccess(false, code => tcs.TrySetResult(code));
             });
 #else
-            tcs.TrySetResult(null); // Editor / non-Android -- EnsureSignedInAsync falls back to anonymous.
+            // Editor / non-Android -- irrelevant, the plugin was never going to be used here
+            // anyway. On an actual Android build specifically, this branch means the
+            // BRAINDRAIN_PLAYGAMES define isn't set (plugin not imported yet, or not added to
+            // Scripting Define Symbols) -- that's the one case worth telling someone about.
+#if UNITY_ANDROID && !UNITY_EDITOR
+            LogMissingPluginWarningOnce();
+#endif
+            tcs.TrySetResult(null); // EnsureSignedInAsync falls back to anonymous.
 #endif
             return tcs.Task;
         }

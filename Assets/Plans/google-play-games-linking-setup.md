@@ -26,6 +26,14 @@ This is a `.unitypackage`, not a Package Manager/`manifest.json` dependency — 
 1. Download `GooglePlayGamesPluginForUnity-X.YY.ZZ.unitypackage` from the [plugin's GitHub releases](https://github.com/playgameservices/play-games-plugin-for-unity/releases) (v11.01+ required — matches the `SignInStatus`/`RequestServerSideAccess` API `GooglePlayGamesAuthService.cs` is written against).
 2. In the Unity Editor: **Assets → Import Package → Custom Package** → select the downloaded file.
 
+### Step 3.5 — Add the BRAINDRAIN_PLAYGAMES scripting define (manual, every time — no auto-detect)
+
+`GooglePlayGamesAuthService.cs`'s `using GooglePlayGames` directives are gated behind `BRAINDRAIN_PLAYGAMES` (2026-10-11 launch-audit fix), this project's hand-set equivalent of asmdef `versionDefines` — there are no `.asmdef` files here, and unlike Cloud Save (a real Package Manager dependency, auto-synced by `CloudSaveDefineSync.cs`), this plugin is a plain `.unitypackage` import with no package name anything in this repo can detect. Nothing will add this define for you.
+
+1. **Edit → Project Settings → Player → Android tab → Other Settings → Scripting Define Symbols.**
+2. Add `BRAINDRAIN_PLAYGAMES` to the list.
+3. Without this define (the default, and every build before this step), the project still compiles cleanly on Android — `EnsureSignedInAsync` just falls back to anonymous sign-in and logs one warning on first use: `"Play Games plugin not installed -- anonymous identity only; purchases won't survive reinstall."` If you still see that warning in `adb logcat` after importing the plugin, you forgot this step.
+
 ## Step 4 — Android Setup wizard (in-Editor)
 
 1. **Window → Google Play Games → Setup → Android Setup.**
