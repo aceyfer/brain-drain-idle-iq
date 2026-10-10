@@ -28,6 +28,16 @@ namespace BrainDrain.UI
             "WalletOpenButton",
             "RecoverIQButton",
             "RestorePurchasesButton",
+            // 2026-10-11 play-test fix: RebirthModal's SELL OUT/ABORT buttons (the only two
+            // Buttons named exactly this in the scene -- confirmed via grep before adding) were
+            // getting UniversalButtonBorderApplier's own ButtonBorder_Stage 9-slice, designed for
+            // a compact ~190x50 button -- stretched across their new wide/short rect, the frame's
+            // fixed-size corner pieces were the only recognizable gold left, reading as "black
+            // box with gold nubs at the edges." Excluded here so they use this class's Alert_Frame
+            // look instead (same system WALLET/POCKET/RECOVER IQ already use, which fits a wide
+            // pill shape correctly) -- see RebirthUIController.OpenModal.
+            "CancelButton",
+            "ConfirmButton",
         };
 
         // 2026-10-05 play-test fix: labels were stretched edge-to-edge with zero inset (each

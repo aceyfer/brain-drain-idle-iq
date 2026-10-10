@@ -142,14 +142,6 @@ namespace BrainDrain.UI
             // white label and fires the event -- same startup-label-race fix as MainUIController.
             UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
             UniversalButtonBorderApplier.OnThemeApplied += HandleThemeApplied;
-
-            // 2026-10-11 play-test fix: UniversalButtonBorderApplier.ApplyThemeToButton
-            // unconditionally sets fontSizeMin=22 on any button it successfully borders
-            // (confirmButton/cancelButton included -- they pass its height check and do get
-            // bordered), stomping the 30pt floor this modal's own labels need. Re-asserted here on
-            // every theme pass, same reasoning/pattern as HandleThemeApplied above.
-            UniversalButtonBorderApplier.OnThemeApplied -= ReassertSnottingButtonLabelFloors;
-            UniversalButtonBorderApplier.OnThemeApplied += ReassertSnottingButtonLabelFloors;
         }
 
         private void Start()
@@ -171,7 +163,6 @@ namespace BrainDrain.UI
             }
 
             UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
-            UniversalButtonBorderApplier.OnThemeApplied -= ReassertSnottingButtonLabelFloors;
         }
 
         private void HandleRestorationProgressChanged(double _)
@@ -386,14 +377,30 @@ namespace BrainDrain.UI
             rebirthModalPanel.SetActive(true);
             UpdateVisuals();
 
-            // 2026-10-11 play-test fix: forces a fresh border/label-hole recompute against the
-            // buttons' current (now bigger, stretched) size every time the modal opens, rather
-            // than trusting whatever UniversalButtonBorderApplier's own one-time Start() pass
-            // happened to compute against -- same ApplyToButton entry point late-built HUD
-            // buttons already use. Re-asserts the 30pt floor immediately after, since that pass
-            // always resets fontSizeMin to its own hardcoded 22.
-            if (confirmButton != null) { UniversalButtonBorderApplier.Instance?.ApplyToButton(confirmButton); }
-            if (cancelButton != null) { UniversalButtonBorderApplier.Instance?.ApplyToButton(cancelButton); }
+            // 2026-10-11 play-test fix round 2: UniversalButtonBorderApplier's own
+            // ButtonBorder_Stage 9-slice is designed for a compact ~190x50 button -- stretched
+            // across these buttons' new wide/short rect, only the frame's fixed-size corner
+            // pieces stayed recognizable gold, reading as a plain black box with gold nubs at the
+            // edges. CancelButton/ConfirmButton are now excluded from that system entirely
+            // (AlertFrameButtonStyle.ManagedButtonNames) in favor of THIS class's own Alert_Frame
+            // look -- same system WALLET/POCKET/RECOVER IQ/Dia-Log already use, which fits a wide
+            // pill shape correctly. Re-applied every open (cheap, idempotent) rather than once in
+            // Awake, so it's always current against the buttons' live size.
+            if (confirmButton != null) { AlertFrameButtonStyle.Apply(confirmButton); }
+            if (cancelButton != null) { AlertFrameButtonStyle.Apply(cancelButton); }
+
+            // AlertFrameButtonStyle.Apply colors every label Cyan -- correct for SELL OUT (the
+            // existing CTA accent), but ABORT needs to read as the visually safer/neutral default
+            // per Aceyfer's explicit call, not match SELL OUT's accent color. Re-neutralized here,
+            // after Apply, rather than skipping Apply for cancelButton (it still needs the same
+            // frame sprite and padding Apply sets up).
+            if (cancelButton != null)
+            {
+                TextMeshProUGUI cancelLabel = cancelButton.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (cancelLabel != null) { cancelLabel.color = Palette.White; }
+            }
+
+            // AlertFrameButtonStyle.Apply floors autosize at 16pt -- this modal's labels need 30.
             ReassertSnottingButtonLabelFloors();
 
             RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
@@ -541,12 +548,12 @@ namespace BrainDrain.UI
             CloseModal();
         }
 
-        /// <summary>2026-10-11 play-test fix: UniversalButtonBorderApplier.ApplyThemeToButton
-        /// hardcodes fontSizeMin=22 on every button it successfully borders, confirmButton/
-        /// cancelButton included -- this modal's SELL OUT/ABORT need a 30pt floor instead. Wired
-        /// to OnThemeApplied (fires after every stage change / override-theme swap, not just
-        /// once) and called directly from OpenModal, same two-trigger pattern HandleThemeApplied
-        /// already uses elsewhere in this class.</summary>
+        /// <summary>2026-10-11 play-test fix round 2: now that CancelButton/ConfirmButton use
+        /// AlertFrameButtonStyle.Apply instead of UniversalButtonBorderApplier (see OpenModal),
+        /// the system stomping the floor changed too -- Apply itself floors autosize at 16pt.
+        /// Called directly after Apply in OpenModal; no longer needs an OnThemeApplied hook since
+        /// Apply is a one-shot call this class already re-runs on every open, not an ongoing
+        /// per-stage re-theme.</summary>
         private void ReassertSnottingButtonLabelFloors()
         {
             ReassertButtonLabelFloor(confirmButton);

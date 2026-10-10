@@ -208,9 +208,15 @@ namespace BrainDrain.EditorTools
         /// </summary>
         private static bool FixButtons(GameObject panel)
         {
+            // 2026-10-11 play-test fix round 3: buttons sat flush against the screen's bottom
+            // edge (RebirthModal's own bottom anchor coincides with the screen edge). Reference
+            // resolution is 1080x1920 (confirmed in SampleScene.unity's CanvasScaler) and
+            // RebirthModal is 60% of that height (1152px) -- raising the bottom anchor from 0.03
+            // to 0.075 adds ~52px of clearance (within the requested 40-60px), kept at the same
+            // 0.10 band height by raising the top anchor by the same amount.
             bool changed = false;
-            changed |= FixButtonRect(panel, "CancelButton", new Vector2(0.05f, 0.03f), new Vector2(0.48f, 0.13f));
-            changed |= FixButtonRect(panel, "ConfirmButton", new Vector2(0.52f, 0.03f), new Vector2(0.95f, 0.13f));
+            changed |= FixButtonRect(panel, "CancelButton", new Vector2(0.05f, 0.075f), new Vector2(0.48f, 0.175f));
+            changed |= FixButtonRect(panel, "ConfirmButton", new Vector2(0.52f, 0.075f), new Vector2(0.95f, 0.175f));
             return changed;
         }
 
