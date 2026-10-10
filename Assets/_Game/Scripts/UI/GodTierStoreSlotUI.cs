@@ -41,6 +41,13 @@ namespace BrainDrain.UI
         [SerializeField] private Button buyButton;
         [SerializeField] private Image background;
 
+        // 2026-10-11 play-test fix: cloned from UpgradeSlotUI's own identityRail (see
+        // ShopUIController.CreateRuntimeGodShopSlotTemplate) but never previously wired here, so
+        // it kept whatever color the BP/Cash row happened to carry at clone time (confirmed live:
+        // green) regardless of which God Shop item it belonged to. Now set per-item in
+        // RefreshState via rarityTier.
+        [SerializeField] private Image identityRail;
+
         private GodTierStoreItemData boundData;
         private GodTierStoreManager boundManager;
         private IapCommerceService subscribedCommerceService;
@@ -63,13 +70,15 @@ namespace BrainDrain.UI
             TextMeshProUGUI descriptionLabel,
             TextMeshProUGUI priceLabel,
             Button buy,
-            Image backgroundImage)
+            Image backgroundImage,
+            Image identityRailImage)
         {
             nameText = nameLabel;
             descriptionText = descriptionLabel;
             priceText = priceLabel;
             buyButton = buy;
             background = backgroundImage;
+            identityRail = identityRailImage;
         }
 
         public void Bind(GodTierStoreItemData data, GodTierStoreManager manager)
@@ -99,12 +108,12 @@ namespace BrainDrain.UI
                 priceText.alignment = TextAlignmentOptions.Center;
                 priceText.margin = new Vector4(16f, 4f, 16f, 4f);
 
-                // 2026-10-10 play-test fix: ShopBuyButtonLayout.Register just above forced
-                // fontSizeMax to at least 30 (shared floor across every shop tab) -- too large
-                // for the God Shop's own ornate purchase button frame, which eats more interior
-                // padding than the plainer BP/Cash buy buttons. Capped back down here, after
-                // Register, specifically for this tab only.
-                priceText.fontSizeMax = 22f;
+                // 2026-10-11 play-test fix: round 1 capped this to 22, which play-tested as too
+                // SMALL inside the gold frame's actual inner area -- 32-36pt reads correctly
+                // there. fontSizeMin stays low enough that autosizing can still shrink longer
+                // prices ($14.99, $29.99) to fit rather than overflow.
+                priceText.fontSizeMin = 20f;
+                priceText.fontSizeMax = 34f;
             }
 
             // Touching .Instance here is fine (self-bootstraps if needed) -- GodTierStoreManager's
@@ -271,7 +280,35 @@ namespace BrainDrain.UI
 
             Color accent = owned ? OwnedColor : (offline || !storeReady || purchaseDeferred) ? UnavailableColor : AvailableColor;
             ApplyAccent(accent);
+            ApplyRarityStripe(boundData.rarityTier);
             if (buyButton != null) buyButton.interactable = profanityToggle || canPurchase;
+        }
+
+        /// <summary>2026-10-11 play-test fix: identityRail was cloned from UpgradeSlotUI's own
+        /// rail (see ShopUIController.CreateRuntimeGodShopSlotTemplate) but nothing here ever
+        /// recolored it, so every row showed whatever color the BP/Cash row happened to carry at
+        /// clone time (confirmed live: green) regardless of item. Maps 1:1 to the same rarity
+        /// tiers THE WALLET's freeze icons already use (Aceyfer's explicit spec); None (every
+        /// non-freeze item, e.g. Bad Words Pack) gets Cyan rather than a rarity color, since it
+        /// isn't rarity-tiered merchandise. Renames the rail so PaletteAudit's RarityTier name
+        /// gate (Palette.cs's own doc comment) allows the Rarity* colors on it -- the shared BP/
+        /// Cash prefab's own rail keeps its original name, only this clone is renamed.</summary>
+        private void ApplyRarityStripe(GodTierStoreRarityTier tier)
+        {
+            if (identityRail == null) { return; }
+
+            if (!identityRail.name.Contains("RarityTier"))
+            {
+                identityRail.name = "RarityTierStripe";
+            }
+
+            identityRail.color = tier switch
+            {
+                GodTierStoreRarityTier.Uncommon => Palette.RarityUncommon,
+                GodTierStoreRarityTier.Rare => Palette.RarityRare,
+                GodTierStoreRarityTier.Epic => Palette.RarityEpic,
+                _ => Palette.Cyan,
+            };
         }
 
         private void ApplyAccent(Color accent)

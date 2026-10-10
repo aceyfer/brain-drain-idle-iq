@@ -643,6 +643,7 @@ namespace BrainDrain.UI
             TMPro.TextMeshProUGUI priceLabel = source.CostText;
             Button buy = source.BuyButton;
             Image backgroundImage = source.Background;
+            Image identityRailImage = source.IdentityRail;
 
             // GodTierStoreSlotUI has no use for the building-row CountText -- left alone, it
             // keeps showing UpgradeSlotPrefab's authored placeholder ("OWNED: 0") forever, since
@@ -657,7 +658,7 @@ namespace BrainDrain.UI
             Destroy(source);
 
             GodTierStoreSlotUI slot = instance.AddComponent<GodTierStoreSlotUI>();
-            slot.AssignRuntimeReferences(nameLabel, descriptionLabel, priceLabel, buy, backgroundImage);
+            slot.AssignRuntimeReferences(nameLabel, descriptionLabel, priceLabel, buy, backgroundImage, identityRailImage);
             return slot;
         }
 
