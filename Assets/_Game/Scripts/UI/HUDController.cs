@@ -121,6 +121,13 @@ namespace BrainDrain.UI
         [Tooltip("Optional. Full-screen Image (alpha 0 at rest) used for the cyan tint and white flash.")]
         [SerializeField] private Image celebrationFlashOverlay;
 
+        [Header("Scoreboard Redesign (2026-10-12)")]
+        [Tooltip("Optional. Assets/_Game/Materials/TMP/Oswald_NeonBlueGlow.mat, Inspector-assigned -- "
+            + "this project's existing TMP materials (Oswald_CyanGlow.mat etc.) live outside any "
+            + "Resources folder and are wired this way, not via Resources.Load. No effect on "
+            + "brainPowerCounterText until assigned.")]
+        [SerializeField] private Material brainsCounterGlowMaterial;
+
         private int lastIQMilestoneIndex;
         private float nextTextFlushTime;
         private float lastKnownPlayerIQ = -1f;
@@ -869,6 +876,11 @@ namespace BrainDrain.UI
             SetFixedLabel(brainPowerCounterText, 44f, null);
             SetFixedLabel(bppsText, 27f, null);
             SetFixedLabel(cashText, 27f, null);
+
+            if (brainsCounterGlowMaterial != null && brainPowerCounterText != null)
+            {
+                brainPowerCounterText.fontSharedMaterial = brainsCounterGlowMaterial;
+            }
         }
 
         /// <summary>Forces a fixed (non-autosizing) font size, matching the scoreboard redesign's
