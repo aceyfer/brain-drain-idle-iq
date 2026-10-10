@@ -988,6 +988,20 @@ namespace BrainDrain.UI
                     continue;
                 }
 
+                // 2026-10-11 launch-audit follow-up: GodTierStoreManager.Items already contains
+                // only the scene-assigned catalog (confirmed live: 4 launch items, not all 9
+                // .asset files on disk), so this wasn't actually reachable with the current scene
+                // wiring -- but GodTierStoreManager.BuildProductLookup/RequestPurchase both treat
+                // a blank productId as "unpurchasable, logged, not thrown," and this loop had no
+                // matching guard. Defensive: a future item added to that list before its
+                // productId is wired would otherwise render a fully-priced, apparently-buyable
+                // row whose buy button silently no-ops. Skip here too, same condition
+                // RequestPurchase already checks.
+                if (string.IsNullOrWhiteSpace(item.productId))
+                {
+                    continue;
+                }
+
                 GodTierStoreSlotUI slot = Instantiate(runtimeGodShopSlotTemplate, rpContent);
                 slot.name = $"GodShopSlot_{item.itemId}";
                 slot.gameObject.SetActive(true);
