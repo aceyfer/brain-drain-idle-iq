@@ -1657,5 +1657,144 @@ namespace BrainDrain.Systems
         private static float EaseInOutQuad(float t) => t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
 
         private static float EaseInOutSine(float t) => -(Mathf.Cos(Mathf.PI * t) - 1f) / 2f;
+
+        // ----- Scoreboard milestone spark burst (2026-10-12 scoreboard redesign) -------------
+        //
+        // Deliberately POOLED, unlike SpawnSplatParticles/PlayExtractionParticles above (both
+        // Instantiate + Destroy a fresh GameObject per particle, per call -- fine for the existing
+        // tap particles, which this redesign explicitly leaves untouched, but milestones need a
+        // burst that never allocates a new GameObject after the first one). The 6 spark
+        // GameObjects are created once, lazily, on the first milestone, then reused for every
+        // later burst -- only Image.color/RectTransform values change per burst, no
+        // Instantiate/Destroy, no sprite needed (sprite=null renders a flat tintable rect, rotated
+        // 45 degrees to read as a diamond, so this needs no new art asset).
+
+        private const int ScoreboardSparkPoolSize = 6;
+        private const float ScoreboardSparkLifetime = 0.25f;
+
+        private RectTransform[] scoreboardSparkPool;
+        private Image[] scoreboardSparkImages;
+        private Coroutine scoreboardSparkRoutine;
+
+        /// <summary>Fires a one-shot burst of 4-6 pooled NeonBlue/EnergyPurple diamond sparks
+        /// around origin. Call ONLY on real milestones (stage unlock, restoration crossing) -- not
+        /// on taps, which keep their own existing particle effect untouched.</summary>
+        public static void PlayMilestoneSparkBurst(RectTransform origin)
+        {
+            if (origin == null)
+            {
+                return;
+            }
+
+            EnsureInstance()?.DoMilestoneSparkBurst(origin);
+        }
+
+        private void DoMilestoneSparkBurst(RectTransform origin)
+        {
+            if (isQuitting)
+            {
+                return;
+            }
+
+            EnsureScoreboardSparkPool(origin);
+
+            if (scoreboardSparkRoutine != null)
+            {
+                StopCoroutine(scoreboardSparkRoutine);
+            }
+
+            scoreboardSparkRoutine = StartCoroutine(ScoreboardSparkBurstRoutine(origin));
+        }
+
+        private void EnsureScoreboardSparkPool(RectTransform origin)
+        {
+            if (scoreboardSparkPool != null)
+            {
+                return;
+            }
+
+            scoreboardSparkPool = new RectTransform[ScoreboardSparkPoolSize];
+            scoreboardSparkImages = new Image[ScoreboardSparkPoolSize];
+
+            GameObject poolParent = new GameObject("ScoreboardSparkPool", typeof(RectTransform));
+            poolParent.transform.SetParent(origin, false);
+            RectTransform poolParentRect = poolParent.GetComponent<RectTransform>();
+            poolParentRect.anchorMin = new Vector2(0.5f, 0.5f);
+            poolParentRect.anchorMax = new Vector2(0.5f, 0.5f);
+            poolParentRect.anchoredPosition = Vector2.zero;
+            poolParentRect.sizeDelta = Vector2.zero;
+
+            for (int i = 0; i < ScoreboardSparkPoolSize; i++)
+            {
+                GameObject sparkObject = new GameObject("ScoreboardSpark_" + i, typeof(RectTransform), typeof(Image));
+                sparkObject.transform.SetParent(poolParent.transform, false);
+
+                RectTransform sparkRect = sparkObject.GetComponent<RectTransform>();
+                sparkRect.sizeDelta = new Vector2(12f, 12f);
+                sparkRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
+
+                Image sparkImage = sparkObject.GetComponent<Image>();
+                sparkImage.raycastTarget = false;
+                sparkObject.SetActive(false);
+
+                scoreboardSparkPool[i] = sparkRect;
+                scoreboardSparkImages[i] = sparkImage;
+            }
+        }
+
+        /// <summary>Animates whichever pooled sparks this burst activates (4-6 of the 6) outward
+        /// from the origin's center, fading out, in a single coroutine covering all of them
+        /// together rather than one coroutine per spark.</summary>
+        private IEnumerator ScoreboardSparkBurstRoutine(RectTransform origin)
+        {
+            int count = Mathf.Min(ScoreboardSparkPoolSize, UnityEngine.Random.Range(4, 7));
+            Vector2[] directions = new Vector2[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform sparkRect = scoreboardSparkPool[i];
+                Image sparkImage = scoreboardSparkImages[i];
+                if (sparkRect == null || sparkImage == null) { continue; }
+
+                float angle = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
+                directions[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+
+                sparkRect.anchoredPosition = Vector2.zero;
+                sparkImage.color = (i % 2 == 0) ? Palette.Cyan : Palette.EnergyPurple;
+                sparkRect.gameObject.SetActive(true);
+            }
+
+            float elapsed = 0f;
+            const float travelDistance = 36f;
+
+            while (elapsed < ScoreboardSparkLifetime)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / ScoreboardSparkLifetime);
+                float eased = EaseOutQuad(t);
+
+                for (int i = 0; i < count; i++)
+                {
+                    RectTransform sparkRect = scoreboardSparkPool[i];
+                    Image sparkImage = scoreboardSparkImages[i];
+                    if (sparkRect == null || sparkImage == null) { continue; }
+
+                    sparkRect.anchoredPosition = directions[i] * (travelDistance * eased);
+                    Color c = sparkImage.color;
+                    c.a = 1f - t;
+                    sparkImage.color = c;
+                }
+
+                yield return null;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform sparkRect = scoreboardSparkPool[i];
+                if (sparkRect != null) { sparkRect.gameObject.SetActive(false); }
+            }
+
+            scoreboardSparkRoutine = null;
+        }
     }
 }

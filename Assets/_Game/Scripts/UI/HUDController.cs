@@ -112,7 +112,10 @@ namespace BrainDrain.UI
         private const float RestorationFillGlideRate = 1.5f; // fraction/sec, Mathf.MoveTowards
         private const float RestorationFlashDuration = 0.15f;
         private const float RestorationSheenInterval = 4f;
-        private const float RestorationSheenSweepDuration = 0.8f;
+        // 2026-10-12 scoreboard redesign: 0.8 -> 0.7, matching the redesign spec's "every 4s over
+        // 0.7s" exactly -- the sweep mechanism itself (RestorationSheenInterval/TickRestorationBar
+        // Animation below) already existed and needed no other changes.
+        private const float RestorationSheenSweepDuration = 0.7f;
         private const float RestorationSproutBobAmplitude = 2f;
         private const float RestorationSproutBobPeriod = 2f;
 
@@ -152,6 +155,16 @@ namespace BrainDrain.UI
         private double pendingCash;
         private double pendingPoints;
         private bool pendingPointsRebirthActivated;
+
+        // 2026-10-12 scoreboard redesign: exponential count-up for brainPowerCounterText/cashText,
+        // driven inside the existing 0.1s flush (TextFlushIntervalSeconds) rather than a new
+        // per-frame tick -- the DISPLAYED value chases pendingBrainPower/pendingCash by a fixed
+        // fraction each flush, instead of snapping straight to the target. Seeded to the real
+        // starting value in InitializeHUD so cold boot shows the correct number immediately;
+        // only live changes afterward animate.
+        private const double CounterCatchUpRate = 0.35;
+        private double displayedBrainPowerCounter;
+        private double displayedCashCounter;
 
         public TextMeshProUGUI CapacityText
         {
@@ -276,6 +289,12 @@ namespace BrainDrain.UI
             {
                 UpdateCapacityText(currency.BrainPower);
                 MarkRankDirty();
+                // Seeded to the real starting value BEFORE the first flush -- without this, cold
+                // boot would count up from 0 to currency.BrainPower/CurrentCash instead of just
+                // showing the correct number immediately, since StepTowardExponential only
+                // animates CHANGES from whatever displayed*Counter already holds.
+                displayedBrainPowerCounter = currency.BrainPower;
+                displayedCashCounter = currency.CurrentCash;
                 UpdateBrainPowerCounterText(currency.BrainPower);
                 UpdateCumulativeBrainPowerCounterText(currency.CumulativeBrainPower);
                 UpdateBPPSText();
@@ -354,6 +373,12 @@ namespace BrainDrain.UI
                 // in case a future pass wants a stage-crossing beat on the new bar.
                 worldRestoration.OnRestorationStageChanged -= HandleRestorationStageChangedForLabel;
                 worldRestoration.OnRestorationStageChanged += HandleRestorationStageChangedForLabel;
+                // 2026-10-12 scoreboard redesign: a NEW, separate handler for the milestone spark
+                // burst -- deliberately not re-subscribing HandleRestorationMilestone itself (see
+                // the comment right above), since that would reintroduce the exact DOTween-vs-
+                // MoveTowards fight it was unsubscribed to avoid.
+                worldRestoration.OnRestorationStageChanged -= HandleRestorationMilestoneSpark;
+                worldRestoration.OnRestorationStageChanged += HandleRestorationMilestoneSpark;
             }
 
             // Re-evaluate the restoration text when the player performs their first Snotting,
@@ -374,6 +399,7 @@ namespace BrainDrain.UI
             // Unconditional, every frame -- the restoration bar's glide/sheen/sprout/flash need
             // real per-frame granularity, unlike the throttled numeric-text flush below.
             TickRestorationBarAnimation();
+            TickScoreboardGlowPulse();
 
             if (!HasDirtyNumericText())
             {
@@ -405,8 +431,12 @@ namespace BrainDrain.UI
 
             if (dirtyBrainPower)
             {
-                dirtyBrainPower = false;
-                HUDNumericFormatter.SetBrainPowerCounter(brainPowerCounterText, pendingBrainPower);
+                displayedBrainPowerCounter = StepTowardExponential(displayedBrainPowerCounter, pendingBrainPower, CounterCatchUpRate);
+                // Stays dirty (re-flushed next 0.1s tick) until the count-up actually reaches the
+                // target -- a brand new currency change arriving mid-animation just retargets the
+                // chase smoothly rather than resetting it.
+                dirtyBrainPower = displayedBrainPowerCounter != pendingBrainPower;
+                HUDNumericFormatter.SetBrainPowerCounter(brainPowerCounterText, displayedBrainPowerCounter);
             }
 
             if (dirtyCumulativeBrainPower)
@@ -435,11 +465,12 @@ namespace BrainDrain.UI
 
             if (dirtyCash)
             {
-                dirtyCash = false;
+                displayedCashCounter = StepTowardExponential(displayedCashCounter, pendingCash, CounterCatchUpRate);
+                dirtyCash = displayedCashCounter != pendingCash;
                 CurrencyManager currency = CurrencyManager.Instance;
                 double cps = currency != null ? currency.CashPerSecond : 0d;
                 bool throttled = DailyEngagementCapManager.Instance != null && DailyEngagementCapManager.Instance.IsThrottled;
-                HUDNumericFormatter.SetCash(cashText, pendingCash, cps, throttled);
+                HUDNumericFormatter.SetCash(cashText, displayedCashCounter, cps, throttled);
             }
 
             if (dirtyPoints)
@@ -447,6 +478,23 @@ namespace BrainDrain.UI
                 dirtyPoints = false;
                 HUDNumericFormatter.SetPoints(pointsText, pendingPoints, pendingPointsRebirthActivated);
             }
+        }
+
+        /// <summary>Moves current a fixed fraction of the way toward target each call -- an
+        /// exponential approach, not a linear one, so the count-up reads fast-then-settling rather
+        /// than mechanical. Snaps to target once within a relative epsilon (0.05% of the target, or
+        /// 0.5 absolute, whichever is larger) so huge late-game numbers actually converge instead
+        /// of crawling asymptotically forever, and so a target of exactly 0 is reachable at all.</summary>
+        private static double StepTowardExponential(double current, double target, double rate)
+        {
+            double diff = target - current;
+            double epsilon = System.Math.Max(0.5, System.Math.Abs(target) * 0.0005);
+            if (System.Math.Abs(diff) <= epsilon)
+            {
+                return target;
+            }
+
+            return current + diff * rate;
         }
 
         private void UnsubscribeFromEvents()
@@ -492,6 +540,7 @@ namespace BrainDrain.UI
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleStageChangedForRank;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationMilestone;
                 WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationStageChangedForLabel;
+                WorldRestorationManager.Instance.OnRestorationStageChanged -= HandleRestorationMilestoneSpark;
             }
         }
 
@@ -592,6 +641,23 @@ namespace BrainDrain.UI
                 restorationFillImage.color,
                 settledFraction,
                 ComputePlungerTargetX(settledFraction));
+        }
+
+        /// <summary>2026-10-12 scoreboard redesign: milestone-only spark burst (stage unlock /
+        /// restoration crossing -- WorldRestorationManager only exposes one "a stage just changed"
+        /// event, so that's the single milestone this hooks). Same stageIndex &lt; 1 guard as
+        /// HandleRestorationMilestone above, so the initial boot/load resolution to the baseline
+        /// stage doesn't fire a burst. Deliberately NOT wired to tap events -- the existing tap
+        /// particles (PlaySplatParticles/PlayExtractionParticles) are untouched.</summary>
+        private void HandleRestorationMilestoneSpark(WorldRestorationStage stage)
+        {
+            if (stage == null || stage.stageIndex < 1)
+            {
+                return;
+            }
+
+            RectTransform header = brainPowerCounterText != null ? brainPowerCounterText.transform.parent as RectTransform : null;
+            AnimationController.PlayMilestoneSparkBurst(header);
         }
 
         /// <summary>
@@ -1312,6 +1378,22 @@ namespace BrainDrain.UI
             rect.offsetMax = Vector2.zero;
 
             return image;
+        }
+
+        /// <summary>Idle breathing glow on the scoreboard's neon edge -- alpha 0.5-0.95, sine on
+        /// unscaledTime*2.2 (continues while paused/menus open, matching the restoration bar's own
+        /// unscaledTime convention above). Zero-GC: struct Color mutation only, no allocation.</summary>
+        private void TickScoreboardGlowPulse()
+        {
+            if (!scoreboardPanelBuilt || scoreboardEdgeImage == null)
+            {
+                return;
+            }
+
+            float sine01 = (Mathf.Sin(Time.unscaledTime * 2.2f) + 1f) * 0.5f;
+            Color c = scoreboardEdgeImage.color;
+            c.a = Mathf.Lerp(0.5f, 0.95f, sine01);
+            scoreboardEdgeImage.color = c;
         }
 
         private static void SetTextColor(TextMeshProUGUI label, Color color)
