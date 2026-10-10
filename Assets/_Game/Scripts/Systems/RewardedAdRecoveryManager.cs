@@ -174,6 +174,17 @@ namespace BrainDrain.Systems
 
         private void HandleOfflineDecayApplied(float amountLost)
         {
+            // 2026-10-11 play-test fix: PlayerIQManager only fires this event for amountLost >
+            // 0.01f, but the popup displays PendingAmountLost with :F0 ("COGS docked you N IQ") --
+            // anything below 0.5 rounds down to a confusing "0 IQ" even though a real (if tiny)
+            // loss occurred. Gate the whole recovery flow (popup + HUD button, both driven off
+            // HasPendingRecovery) on the DISPLAYED amount being at least 1, not the raw float, so
+            // a loss that would read as "0 IQ" shows no popup and no RECOVER button at all.
+            if (Mathf.RoundToInt(amountLost) < 1)
+            {
+                return;
+            }
+
             AdsWatchedThisEvent = 0;
             PendingAmountLost = amountLost;
             HasPendingRecovery = true;
