@@ -156,11 +156,14 @@ namespace BrainDrain.EditorTools
             TextMeshProUGUI text = progressObject.GetComponent<TextMeshProUGUI>();
             if (text == null) { text = progressObject.AddComponent<TextMeshProUGUI>(); }
             text.text = "0/8 ads watched";
-            text.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+            // 2026-10-11 play-test fix: was flat grey at a 12-18pt floor/ceiling -- matches
+            // RewardedAdRecoveryUIController.RefreshVisuals' own runtime override now, so a
+            // freshly-built scene object starts right instead of relying solely on that override.
+            text.color = Palette.Glow;
             text.alignment = TextAlignmentOptions.Center;
             text.enableAutoSizing = true;
-            text.fontSizeMin = 12f;
-            text.fontSizeMax = 18f;
+            text.fontSizeMin = 24f;
+            text.fontSizeMax = 32f;
             text.raycastTarget = false;
         }
 

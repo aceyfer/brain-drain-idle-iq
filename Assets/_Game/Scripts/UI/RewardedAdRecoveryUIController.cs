@@ -184,6 +184,14 @@ namespace BrainDrain.UI
             if (progressText != null)
             {
                 progressText.text = $"{manager.AdsWatchedThisEvent}/{manager.MaxAdsForEvent} ads watched";
+
+                // 2026-10-11 play-test fix: scene-authored default (RewardedAdRecoveryWireFix)
+                // was a 12-18pt floor/ceiling in flat grey -- set here too so the fix holds
+                // regardless of scene state, same code-owns-presentation pattern as
+                // RebirthUIController.UpdateVisuals().
+                progressText.color = Palette.Glow;
+                progressText.fontSizeMin = 24f;
+                if (progressText.fontSizeMax < 24f) { progressText.fontSizeMax = 24f; }
             }
 
             if (watchAdButton != null)
