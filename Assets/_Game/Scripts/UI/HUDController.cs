@@ -751,13 +751,21 @@ namespace BrainDrain.UI
             }
             else if (cumulativePointsSpent >= threshold)
             {
+                // 2026-10-12 scoreboard redesign: dropped the inline <size=16> tag (the label's
+                // own floor is 22pt, see EnforceMinimumFontSizes -- a 16pt span inside it read
+                // smaller than the rest of the line) and the raw off-palette green hex (#75F04C)
+                // in favor of Palette.Cyan ("NeonBlue"), matching the "ready" state's established
+                // color everywhere else in this codebase (e.g. RebirthUIController's own
+                // ReadyLabelColor).
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#75F04C><size=16>SNOTTING READY</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#{ColorUtility.ToHtmlStringRGBA(Palette.Cyan)}>SNOTTING READY</color>";
             }
             else
             {
+                // Same <size=16> removal, plus the raw off-palette gold hex (#C99A38) replaced
+                // with Palette.Dim, the established locked/unaffordable token.
                 restorationProgressText.text =
-                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#C99A38><size=16>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</size></color>";
+                    $"{stageName.ToUpper()} — {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(finalThreshold)} ({percent:F1}%) | <color=#{ColorUtility.ToHtmlStringRGBA(Palette.Dim)}>SNOTTING LOCKED {NumberFormatter.Format(cumulativePointsSpent)}/{NumberFormatter.Format(threshold)}</color>";
             }
         }
 
@@ -787,6 +795,49 @@ namespace BrainDrain.UI
             EnforceMinimumFontSizes();
         }
 
+        /// <summary>Cached once per domain reload -- avoids a repeated Resources.Load on every
+        /// ApplyVisualStyle call (e.g. every World Restoration stage change, see HandleThemeApplied-
+        /// style callers elsewhere in this project).</summary>
+        private static TMP_FontAsset cachedOswaldFont;
+
+        private static TMP_FontAsset GetOswaldFont()
+        {
+            if (cachedOswaldFont == null)
+            {
+                cachedOswaldFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF");
+            }
+            return cachedOswaldFont;
+        }
+
+        /// <summary>2026-10-12 scoreboard redesign: every scoreboard label unified onto Oswald Bold
+        /// SDF, replacing whatever mix of fonts (LiberationSans included) the scene authored.</summary>
+        private void UnifyScoreboardFont()
+        {
+            TMP_FontAsset oswald = GetOswaldFont();
+            if (oswald == null)
+            {
+                Debug.LogWarning("[HUDController] Oswald Bold SDF not found at Resources/Fonts & Materials -- scoreboard font left as-authored.", this);
+                return;
+            }
+
+            SetFont(capacityText, oswald);
+            SetFont(playerIQText, oswald);
+            SetFont(rankText, oswald);
+            SetFont(illumisnottyTitleText, oswald);
+            SetFont(brainPowerCounterText, oswald);
+            SetFont(cumulativeBrainPowerCounterText, oswald);
+            SetFont(rebirthCountText, oswald);
+            SetFont(bppsText, oswald);
+            SetFont(cashText, oswald);
+            SetFont(pointsText, oswald);
+            SetFont(restorationProgressText, oswald);
+        }
+
+        private static void SetFont(TextMeshProUGUI label, TMP_FontAsset font)
+        {
+            if (label != null) { label.font = font; }
+        }
+
         /// <summary>
         /// 2026-10-01 (item 8): HUD font sizes are otherwise entirely scene-baked -- neither
         /// HUDNumericFormatter nor this controller's update methods ever touch fontSize/
@@ -794,39 +845,41 @@ namespace BrainDrain.UI
         /// secondary/tertiary labels shipped with autosize floors well under the visual guide's
         /// "nothing under 20, secondary labels >= 24, primary BP/cash numbers >= 36" rule. Fixed
         /// here (no .unity scene write) rather than in the scene file, following the same
-        /// override-at-ApplyVisualStyle-time pattern as EnsureRestorationBarClipped above. Only
-        /// the labels found to actually violate the floor are touched -- brainPowerCounterText,
-        /// playerIQText, capacityText, and pointsText were already compliant in the scene and are
-        /// left at their authored values.
+        /// override-at-ApplyVisualStyle-time pattern as EnsureRestorationBarClipped above.
+        ///
+        /// 2026-10-12 scoreboard redesign: five labels now get a FIXED size (not an autosize
+        /// floor/ceiling) per the redesign spec -- playerIQText, illumisnottyTitleText,
+        /// brainPowerCounterText, bppsText, cashText. This supersedes the old BPPS-copies-IQ's-font
+        /// block (which could repoint BPPS to whatever playerIQText's own scene-authored font
+        /// happened to be, LiberationSans included) and the old 36-40pt cash floor (the original
+        /// visual guide's "primary numbers >= 36" rule, replaced by this redesign's fixed 27pt).
+        /// Everything else keeps its prior floor-based sizing.
         /// </summary>
         private void EnforceMinimumFontSizes()
         {
+            UnifyScoreboardFont();
+
             RaiseFontFloor(rankText, 24f, 26f);
-            RaiseFontFloor(illumisnottyTitleText, 24f, 26f);
             RaiseFixedFontSize(cumulativeBrainPowerCounterText, 24f);
             RaiseFixedFontSize(rebirthCountText, 24f);
-            // BPPS used a different font and a 24pt floor beside the IQ label's 34pt bold
-            // type. Match the IQ typography, not merely the minimum readability threshold.
-            // Both share the header's scale; the BPPS row is 42 units high (IQ is 40).
-            if (bppsText != null && playerIQText != null)
-            {
-                bppsText.font = playerIQText.font;
-                bppsText.fontStyle = playerIQText.fontStyle;
-                bppsText.enableAutoSizing = false;
-                bppsText.fontSize = Mathf.Max(24f, playerIQText.enableAutoSizing
-                    ? playerIQText.fontSizeMax : playerIQText.fontSize);
-                bppsText.textWrappingMode = TextWrappingModes.NoWrap;
-            }
-            else
-            {
-                RaiseFixedFontSize(bppsText, 34f);
-            }
             RaiseFontFloor(restorationProgressText, 24f, 26f);
 
-            // cashText is a primary currency number per the visual guide ("primary numbers (BP,
-            // cash) >= 36") -- its scene autosize range (14-18, base 36) meant it could never
-            // actually render at 36 in practice.
-            RaiseFontFloor(cashText, 36f, 40f);
+            SetFixedLabel(playerIQText, 30f, TextAlignmentOptions.Left);
+            SetFixedLabel(illumisnottyTitleText, 25f, TextAlignmentOptions.Right);
+            SetFixedLabel(brainPowerCounterText, 44f, null);
+            SetFixedLabel(bppsText, 27f, null);
+            SetFixedLabel(cashText, 27f, null);
+        }
+
+        /// <summary>Forces a fixed (non-autosizing) font size, matching the scoreboard redesign's
+        /// "fixed Npt" spec rather than an autosize floor/ceiling. Alignment only touched when a
+        /// value is passed -- most of these labels keep whatever alignment the scene authored.</summary>
+        private static void SetFixedLabel(TextMeshProUGUI label, float size, TextAlignmentOptions? alignment)
+        {
+            if (label == null) { return; }
+            label.enableAutoSizing = false;
+            label.fontSize = size;
+            if (alignment.HasValue) { label.alignment = alignment.Value; }
         }
 
         private static void RaiseFontFloor(TextMeshProUGUI label, float minFloor, float maxFloor)
