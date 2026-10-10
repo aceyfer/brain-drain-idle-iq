@@ -39,6 +39,29 @@ namespace BrainDrain.UI
         public static readonly Color Dim = new Color(0.6f, 0.6f, 0.6f, 0.45f);
 
         /// <summary>
+        /// 2026-10-12 scoreboard redesign (Unity AI's audit, Aceyfer-approved with changes):
+        /// NEW BRAND COLORS -- black / deep blue / neon blue backbone, purple only as an energy
+        /// accent. "NeonBlue" in the redesign spec is this file's existing Cyan (#00DDEB), not a
+        /// new token -- deliberately not duplicated here as a second field with the same value,
+        /// which would just invite the two to drift. Reach for Palette.Cyan wherever the
+        /// scoreboard spec says "NeonBlue."
+        /// </summary>
+        public static readonly Color Black = new Color32(0x05, 0x07, 0x0D, 0xFF);
+
+        /// <summary>Scoreboard backbone -- deep blue, paired with Black and Cyan ("NeonBlue").</summary>
+        public static readonly Color DeepBlue = new Color32(0x0B, 0x2A, 0x5B, 0xFF);
+
+        /// <summary>
+        /// Energy accent ONLY (milestone sparks, not a general-purpose fill/text color) -- same
+        /// exact value as RarityEpic, kept as a separate token rather than reusing that one
+        /// directly: RarityEpic is gated to rarity-tagged UI by PaletteAudit's own RarityTier name
+        /// allowlist (see that token's doc comment), and the scoreboard's milestone sparks aren't
+        /// rarity UI. Using RarityEpic here would either fail that gate or require loosening it
+        /// for an unrelated feature.
+        /// </summary>
+        public static readonly Color EnergyPurple = new Color32(0xA3, 0x35, 0xEE, 0xFF);
+
+        /// <summary>
         /// 2026-10-06 FREEZE INVENTORY rarity tiers (Aceyfer's explicit color spec, standard
         /// MMO-loot-rarity hues) -- Brain Freeze family tier icons/names ONLY. Deliberately NOT
         /// general-purpose UI colors like the 7 tokens above: PaletteAudit only allows these on
