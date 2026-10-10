@@ -950,7 +950,28 @@ namespace BrainDrain.UI
         /// happened to be, LiberationSans included) and the old 36-40pt cash floor (the original
         /// visual guide's "primary numbers >= 36" rule, replaced by this redesign's fixed 27pt).
         /// Everything else keeps its prior floor-based sizing.
+        ///
+        /// 2026-10-10 sizing pass: bumped all five per Aceyfer's explicit ask ("the panel has
+        /// plenty of unused space... fill it"). Re-reads the pass's two seemingly-opposed lines --
+        /// "keep autosize off on the counters to avoid CPU spikes" vs. "let the counters fall back
+        /// to autosize... so they never overflow" -- as: default OFF for everything in this bump,
+        /// EXCEPT the three magnitude-unbounded numeric counters (brainPowerCounterText/bppsText/
+        /// cashText), which get autosize-with-max specifically so a value like "999.99T BRAIN
+        /// POWER" shrinks to fit the header's width instead of clipping, while short everyday
+        /// values still render at (or near) the new max. playerIQText/illumisnottyTitleText aren't
+        /// runaway-magnitude counters, so they stay truly fixed. RebalanceScoreboardLayout (below)
+        /// depends on these constants, not the labels' live fontSize, so call order relative to it
+        /// doesn't matter.
         /// </summary>
+        private const float IQFontSize = 40f;
+        private const float IllumisnottyTitleFontSize = 34f;
+        private const float BrainsCounterFontMin = 40f;
+        private const float BrainsCounterFontMax = 64f;
+        private const float CounterFontMin = 26f;
+        private const float CounterFontMax = 38f;
+        private const float RestorationFontFloor = 28f;
+        private const float RestorationFontCeiling = 30f;
+
         private void EnforceMinimumFontSizes()
         {
             UnifyScoreboardFont();
@@ -958,13 +979,19 @@ namespace BrainDrain.UI
             RaiseFontFloor(rankText, 24f, 26f);
             RaiseFixedFontSize(cumulativeBrainPowerCounterText, 24f);
             RaiseFixedFontSize(rebirthCountText, 24f);
-            RaiseFontFloor(restorationProgressText, 24f, 26f);
+            RaiseFontFloor(restorationProgressText, RestorationFontFloor, RestorationFontCeiling);
+            if (restorationProgressText != null)
+            {
+                // Only label allowed to wrap (1-2 lines) -- every other scoreboard label below
+                // stays single-line per the sizing pass's explicit instruction.
+                restorationProgressText.textWrappingMode = TextWrappingModes.Normal;
+            }
 
-            SetFixedLabel(playerIQText, 30f, TextAlignmentOptions.Left);
-            SetFixedLabel(illumisnottyTitleText, 25f, TextAlignmentOptions.Right);
-            SetFixedLabel(brainPowerCounterText, 44f, null);
-            SetFixedLabel(bppsText, 27f, null);
-            SetFixedLabel(cashText, 27f, null);
+            SetFixedLabel(playerIQText, IQFontSize, TextAlignmentOptions.Left);
+            SetFixedLabel(illumisnottyTitleText, IllumisnottyTitleFontSize, TextAlignmentOptions.Right);
+            SetAutosizeLabel(brainPowerCounterText, BrainsCounterFontMin, BrainsCounterFontMax, null);
+            SetAutosizeLabel(bppsText, CounterFontMin, CounterFontMax, null);
+            SetAutosizeLabel(cashText, CounterFontMin, CounterFontMax, null);
 
             // 2026-10-12 play-test fix: Inspector field checked first (optional override, still
             // supported for anyone who wants a different material without touching code), falling
@@ -974,16 +1001,34 @@ namespace BrainDrain.UI
             {
                 brainPowerCounterText.fontSharedMaterial = glowMaterial;
             }
+
+            RebalanceScoreboardLayout();
         }
 
-        /// <summary>Forces a fixed (non-autosizing) font size, matching the scoreboard redesign's
-        /// "fixed Npt" spec rather than an autosize floor/ceiling. Alignment only touched when a
-        /// value is passed -- most of these labels keep whatever alignment the scene authored.</summary>
+        /// <summary>Forces a fixed (non-autosizing), single-line font size, matching the scoreboard
+        /// redesign's "fixed Npt" spec rather than an autosize floor/ceiling. Alignment only touched
+        /// when a value is passed -- most of these labels keep whatever alignment the scene
+        /// authored.</summary>
         private static void SetFixedLabel(TextMeshProUGUI label, float size, TextAlignmentOptions? alignment)
         {
             if (label == null) { return; }
             label.enableAutoSizing = false;
             label.fontSize = size;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            if (alignment.HasValue) { label.alignment = alignment.Value; }
+        }
+
+        /// <summary>2026-10-10 sizing pass: the magnitude-unbounded numeric counters (BrainsCounter/
+        /// BPPS/Cash) -- autosizes down from max toward min, single-line, so a long formatted value
+        /// shrinks to fit the header's width instead of clipping, while short values render near
+        /// max.</summary>
+        private static void SetAutosizeLabel(TextMeshProUGUI label, float min, float max, TextAlignmentOptions? alignment)
+        {
+            if (label == null) { return; }
+            label.enableAutoSizing = true;
+            label.fontSizeMin = min;
+            label.fontSizeMax = max;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
             if (alignment.HasValue) { label.alignment = alignment.Value; }
         }
 
@@ -1003,6 +1048,134 @@ namespace BrainDrain.UI
                 return;
             }
             if (label.fontSize < minSize) { label.fontSize = minSize; }
+        }
+
+        /// <summary>
+        /// 2026-10-10 scoreboard sizing pass: re-balances CurrencyHeader's own height and each of
+        /// its 7 children's row (Y position + height) around the bumped font sizes above, entirely
+        /// code-driven -- no .unity write. Six rows, top to bottom: [IQText | IllumisnottyTitleText]
+        /// side by side, BrainsCounterText, TextsRow (BPPS/Cash, a HorizontalLayoutGroup --
+        /// confirmed by reading the scene directly: ChildControlHeight/ChildForceExpandHeight are
+        /// both already on, so resizing TextsRow's own RectTransform is enough, its two children
+        /// don't need touching individually), restorationProgressText, cumulativeBrainPowerCounterText,
+        /// rebirthCountText.
+        ///
+        /// Splits rows into two kinds:
+        /// - FIXED (IQ/Title row, CumulativeBP, RebirthCount): single-line, non-autosizing, so they
+        ///   get a height computed to fully fit their fixed font size -- no shrink available if the
+        ///   estimate is tight, so these are never compressed by the clamp below.
+        /// - FLEXIBLE (BrainsCounter, TextsRow, restoration): autosizing (or wrap-allowed, for
+        ///   restoration), so they get whatever's left of the safe budget after the fixed rows,
+        ///   split proportionally to their own ideal (max-font) height. Autosizing absorbs any
+        ///   estimation error gracefully -- short of the max, not clipped -- rather than needing the
+        ///   estimate to be pixel-exact.
+        ///
+        /// The safe budget itself is read LIVE from the scene (ComputeMaxSafeHeaderHeight), not
+        /// hardcoded: CurrencyHeader's own top offset vs. the Dia-Log button's (LogOpenButton) top
+        /// offset, both under the same CustomSafeArea parent, minus a safety margin -- the exact
+        /// "keep the side buttons clear" boundary, self-correcting if either one ever moves.
+        /// </summary>
+        private const float ScoreboardRowGap = 4f;
+        private const float ScoreboardTopPadding = 6f;
+        private const float ScoreboardBottomPadding = 6f;
+        private const float ScoreboardButtonSafetyMargin = 16f;
+        private const float ScoreboardFallbackMaxHeight = 300f;
+        private const string DiaLogButtonName = "LogOpenButton"; // same lookup PocketPanelUI/TimedPurchaseWalletUI/RewardedAdRecoveryHudButtonUI already use
+
+        private static float EstimateRowHeight(float fontSize, int lines = 1)
+        {
+            return (fontSize * 1.05f * lines) + 4f;
+        }
+
+        private static float ComputeMaxSafeHeaderHeight(RectTransform header)
+        {
+            GameObject diaLogButton = GameObject.Find(DiaLogButtonName);
+            RectTransform diaLogRect = diaLogButton != null ? diaLogButton.GetComponent<RectTransform>() : null;
+            if (diaLogRect == null)
+            {
+                Debug.LogWarning("[HUDController] Dia-Log button (LogOpenButton) not found -- scoreboard height clamp using a conservative fallback instead of a live read.");
+                return ScoreboardFallbackMaxHeight;
+            }
+
+            float headerTopOffset = -header.anchoredPosition.y;
+            float diaLogTopOffset = -diaLogRect.anchoredPosition.y;
+            return Mathf.Max(100f, (diaLogTopOffset - headerTopOffset) - ScoreboardButtonSafetyMargin);
+        }
+
+        private static void SetRowRect(RectTransform rect, float topOffset, float height)
+        {
+            if (rect == null) { return; }
+            Vector2 pos = rect.anchoredPosition;
+            pos.y = -topOffset;
+            rect.anchoredPosition = pos;
+            Vector2 size = rect.sizeDelta;
+            size.y = height;
+            rect.sizeDelta = size;
+        }
+
+        private void RebalanceScoreboardLayout()
+        {
+            if (brainPowerCounterText == null) { return; }
+            RectTransform header = brainPowerCounterText.transform.parent as RectTransform;
+            if (header == null) { return; }
+
+            RectTransform iqRect = playerIQText != null ? playerIQText.rectTransform : null;
+            RectTransform titleRect = illumisnottyTitleText != null ? illumisnottyTitleText.rectTransform : null;
+            RectTransform brainsRect = brainPowerCounterText.rectTransform;
+            RectTransform textsRowRect = bppsText != null ? bppsText.transform.parent as RectTransform : null;
+            RectTransform restorationRect = restorationProgressText != null ? restorationProgressText.rectTransform : null;
+            RectTransform cumulativeRect = cumulativeBrainPowerCounterText != null ? cumulativeBrainPowerCounterText.rectTransform : null;
+            RectTransform rebirthRect = rebirthCountText != null ? rebirthCountText.rectTransform : null;
+
+            float rowAHeight = EstimateRowHeight(Mathf.Max(IQFontSize, IllumisnottyTitleFontSize));
+            float rowEHeight = EstimateRowHeight(24f); // cumulative BP label -- unchanged by this pass
+            float rowFHeight = EstimateRowHeight(24f); // rebirth count label -- unchanged by this pass
+            float fixedTotal = rowAHeight + rowEHeight + rowFHeight;
+
+            float idealB = EstimateRowHeight(BrainsCounterFontMax);
+            float idealC = EstimateRowHeight(CounterFontMax);
+            float idealD = EstimateRowHeight(RestorationFontCeiling, 2); // up to 2 lines
+            float idealFlexTotal = idealB + idealC + idealD;
+
+            const int gapCount = 5;
+            float chrome = fixedTotal + (ScoreboardRowGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
+
+            float maxSafeHeight = ComputeMaxSafeHeaderHeight(header);
+            float availableForFlex = Mathf.Max(idealB * 0.5f, maxSafeHeight - chrome);
+            float flexScale = idealFlexTotal > 0f ? Mathf.Min(1f, availableForFlex / idealFlexTotal) : 1f;
+
+            float rowBHeight = idealB * flexScale;
+            float rowCHeight = idealC * flexScale;
+            float rowDHeight = idealD * flexScale;
+
+            float totalHeight = chrome + rowBHeight + rowCHeight + rowDHeight;
+            if (totalHeight > maxSafeHeight)
+            {
+                Debug.LogWarning($"[HUDController] Scoreboard content ({totalHeight:F0}px) exceeds the safe budget before the side buttons ({maxSafeHeight:F0}px) even after compacting -- a row's font size may need trimming, or the side buttons moved down.");
+            }
+
+            Vector2 headerSize = header.sizeDelta;
+            headerSize.y = totalHeight;
+            header.sizeDelta = headerSize;
+
+            float y = ScoreboardTopPadding;
+            SetRowRect(iqRect, y, rowAHeight);
+            SetRowRect(titleRect, y, rowAHeight);
+            y += rowAHeight + ScoreboardRowGap;
+
+            SetRowRect(brainsRect, y, rowBHeight);
+            y += rowBHeight + ScoreboardRowGap;
+
+            SetRowRect(textsRowRect, y, rowCHeight);
+            y += rowCHeight + ScoreboardRowGap;
+
+            SetRowRect(restorationRect, y, rowDHeight);
+            y += rowDHeight + ScoreboardRowGap;
+
+            SetRowRect(cumulativeRect, y, rowEHeight);
+            y += rowEHeight + ScoreboardRowGap;
+
+            SetRowRect(rebirthRect, y, rowFHeight);
         }
 
         /// <summary>
