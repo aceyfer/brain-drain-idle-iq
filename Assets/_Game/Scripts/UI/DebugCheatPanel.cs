@@ -207,7 +207,9 @@ namespace BrainDrain.UI
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(440f, 0f);
+            // 2026-10-10 play-test fix: panel/buttons/text doubled across this whole method --
+            // tiny at actual portrait device scale.
+            panelRect.sizeDelta = new Vector2(880f, 0f);
             panelRect.anchoredPosition = Vector2.zero;
 
             Image background = panelObject.AddComponent<Image>();
@@ -228,8 +230,8 @@ namespace BrainDrain.UI
             RectTransform borderRect = borderObject.GetComponent<RectTransform>();
             borderRect.anchorMin = Vector2.zero;
             borderRect.anchorMax = Vector2.one;
-            borderRect.offsetMin = new Vector2(-4f, -4f);
-            borderRect.offsetMax = new Vector2(4f, 4f);
+            borderRect.offsetMin = new Vector2(-8f, -8f);
+            borderRect.offsetMax = new Vector2(8f, 8f);
             borderObject.AddComponent<Image>().color = HotPink;
 
             GameObject contentObject = new GameObject("Content", typeof(RectTransform));
@@ -241,8 +243,8 @@ namespace BrainDrain.UI
             contentRect.anchoredPosition = Vector2.zero;
 
             VerticalLayoutGroup layoutGroup = contentObject.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(12, 12, 12, 12);
-            layoutGroup.spacing = 6f;
+            layoutGroup.padding = new RectOffset(24, 24, 24, 24);
+            layoutGroup.spacing = 12f;
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.childControlWidth = true;
@@ -251,7 +253,7 @@ namespace BrainDrain.UI
             ContentSizeFitter sizeFitter = contentObject.AddComponent<ContentSizeFitter>();
             sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            CreateLabel(contentObject.transform, "DEBUG CHEATS (EDITOR ONLY)", 16f);
+            CreateLabel(contentObject.transform, "DEBUG CHEATS (EDITOR ONLY)", 32f);
 
             CreateButton(contentObject.transform, "+10K BRAIN POWER", () => DebugCheats.AddBrainPower(10000d));
             CreateButton(contentObject.transform, "+100K BRAIN POWER", () => DebugCheats.AddBrainPower(100000d));
@@ -273,7 +275,7 @@ namespace BrainDrain.UI
             CreateButton(contentObject.transform, "LOG CLICK BLOCKERS", LogClickBlockers);
             CreateButton(contentObject.transform, "CLEAR SAVE (FRESH START)", DebugCheats.ClearSave);
 
-            CreateLabel(contentObject.transform, "DAILY ENGAGEMENT CAP", 13f);
+            CreateLabel(contentObject.transform, "DAILY ENGAGEMENT CAP", 26f);
             dailyCapReadoutText = CreateReadoutText(contentObject.transform);
             CreateButton(contentObject.transform, "BURN CAP ALLOWANCE", DebugCheats.BurnDailyCapAllowance);
             CreateButton(contentObject.transform, "RESET CAP DAY", DebugCheats.ResetDailyCapDay);
@@ -290,21 +292,21 @@ namespace BrainDrain.UI
                 return;
             }
 
-            CreateLabel(parent, "WORLD RESTORE STAGE", 13f);
+            CreateLabel(parent, "WORLD RESTORE STAGE", 26f);
 
             GameObject rowObject = new GameObject("WorldRestoreRow", typeof(RectTransform));
             rowObject.transform.SetParent(parent, false);
 
             HorizontalLayoutGroup rowLayout = rowObject.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 4f;
+            rowLayout.spacing = 8f;
             rowLayout.childForceExpandWidth = true;
             rowLayout.childForceExpandHeight = true;
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
 
             LayoutElement rowElement = rowObject.AddComponent<LayoutElement>();
-            rowElement.minHeight = 44f;
-            rowElement.preferredHeight = 44f;
+            rowElement.minHeight = 88f;
+            rowElement.preferredHeight = 88f;
 
             // Fails closed: if RebirthManager isn't resolved, there's no way to verify which
             // stage matches the real gate, so use a sentinel no stage's pointsRequired can ever
@@ -385,8 +387,8 @@ namespace BrainDrain.UI
             labelObject.transform.SetParent(parent, false);
 
             LayoutElement layout = labelObject.AddComponent<LayoutElement>();
-            layout.minHeight = fontSize + 8f;
-            layout.preferredHeight = fontSize + 8f;
+            layout.minHeight = fontSize + 16f;
+            layout.preferredHeight = fontSize + 16f;
 
             TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
             label.text = text;
@@ -403,14 +405,14 @@ namespace BrainDrain.UI
             labelObject.transform.SetParent(parent, false);
 
             LayoutElement layout = labelObject.AddComponent<LayoutElement>();
-            layout.minHeight = 56f;
-            layout.preferredHeight = 56f;
+            layout.minHeight = 112f;
+            layout.preferredHeight = 112f;
 
             TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
             label.text = string.Empty;
             label.color = Color.white;
             label.alignment = TextAlignmentOptions.Center;
-            label.fontSize = 13f;
+            label.fontSize = 26f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
 
@@ -423,8 +425,8 @@ namespace BrainDrain.UI
             buttonObject.transform.SetParent(parent, false);
 
             LayoutElement layout = buttonObject.AddComponent<LayoutElement>();
-            layout.minHeight = 36f;
-            layout.preferredHeight = 36f;
+            layout.minHeight = 72f;
+            layout.preferredHeight = 72f;
 
             Image image = buttonObject.AddComponent<Image>();
             image.color = ButtonFill;
@@ -445,10 +447,10 @@ namespace BrainDrain.UI
             text.color = Color.white;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
-            text.fontSize = 16f;
+            text.fontSize = 32f;
             text.enableAutoSizing = true;
-            text.fontSizeMin = 10f;
-            text.fontSizeMax = 16f;
+            text.fontSizeMin = 20f;
+            text.fontSizeMax = 32f;
             text.raycastTarget = false;
 
             return button;
