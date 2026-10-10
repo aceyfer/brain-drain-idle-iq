@@ -142,6 +142,14 @@ namespace BrainDrain.UI
             // white label and fires the event -- same startup-label-race fix as MainUIController.
             UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
             UniversalButtonBorderApplier.OnThemeApplied += HandleThemeApplied;
+
+            // 2026-10-11 play-test fix: UniversalButtonBorderApplier.ApplyThemeToButton
+            // unconditionally sets fontSizeMin=22 on any button it successfully borders
+            // (confirmButton/cancelButton included -- they pass its height check and do get
+            // bordered), stomping the 30pt floor this modal's own labels need. Re-asserted here on
+            // every theme pass, same reasoning/pattern as HandleThemeApplied above.
+            UniversalButtonBorderApplier.OnThemeApplied -= ReassertSnottingButtonLabelFloors;
+            UniversalButtonBorderApplier.OnThemeApplied += ReassertSnottingButtonLabelFloors;
         }
 
         private void Start()
@@ -163,6 +171,7 @@ namespace BrainDrain.UI
             }
 
             UniversalButtonBorderApplier.OnThemeApplied -= HandleThemeApplied;
+            UniversalButtonBorderApplier.OnThemeApplied -= ReassertSnottingButtonLabelFloors;
         }
 
         private void HandleRestorationProgressChanged(double _)
@@ -377,6 +386,16 @@ namespace BrainDrain.UI
             rebirthModalPanel.SetActive(true);
             UpdateVisuals();
 
+            // 2026-10-11 play-test fix: forces a fresh border/label-hole recompute against the
+            // buttons' current (now bigger, stretched) size every time the modal opens, rather
+            // than trusting whatever UniversalButtonBorderApplier's own one-time Start() pass
+            // happened to compute against -- same ApplyToButton entry point late-built HUD
+            // buttons already use. Re-asserts the 30pt floor immediately after, since that pass
+            // always resets fontSizeMin to its own hardcoded 22.
+            if (confirmButton != null) { UniversalButtonBorderApplier.Instance?.ApplyToButton(confirmButton); }
+            if (cancelButton != null) { UniversalButtonBorderApplier.Instance?.ApplyToButton(cancelButton); }
+            ReassertSnottingButtonLabelFloors();
+
             RectTransform panelRect = rebirthModalPanel.GetComponent<RectTransform>();
             CanvasGroup panelCanvasGroup = rebirthModalPanel.GetComponent<CanvasGroup>();
             AnimationController.PlayPopupSpawn(panelRect, panelCanvasGroup);
@@ -520,6 +539,29 @@ namespace BrainDrain.UI
         private void OnCancelClicked()
         {
             CloseModal();
+        }
+
+        /// <summary>2026-10-11 play-test fix: UniversalButtonBorderApplier.ApplyThemeToButton
+        /// hardcodes fontSizeMin=22 on every button it successfully borders, confirmButton/
+        /// cancelButton included -- this modal's SELL OUT/ABORT need a 30pt floor instead. Wired
+        /// to OnThemeApplied (fires after every stage change / override-theme swap, not just
+        /// once) and called directly from OpenModal, same two-trigger pattern HandleThemeApplied
+        /// already uses elsewhere in this class.</summary>
+        private void ReassertSnottingButtonLabelFloors()
+        {
+            ReassertButtonLabelFloor(confirmButton);
+            ReassertButtonLabelFloor(cancelButton);
+        }
+
+        private static void ReassertButtonLabelFloor(Button button)
+        {
+            if (button == null) { return; }
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label == null) { return; }
+
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 30f;
+            if (label.fontSizeMax < 30f) { label.fontSizeMax = 40f; }
         }
     }
 }

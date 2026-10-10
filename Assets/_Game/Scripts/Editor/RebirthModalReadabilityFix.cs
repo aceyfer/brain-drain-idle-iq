@@ -27,6 +27,14 @@ namespace BrainDrain.EditorTools
     /// half-width-each layout with a 30pt autosize floor on their labels. Button/title FILL
     /// colors, the approved Snotting glow, and shared button borders are untouched -- only
     /// position/size and (for the title only) label color changed.
+    ///
+    /// 2026-10-11 round 3: round 2's button fix only moved/resized the rect -- the button
+    /// label's actual 30pt floor turned out to be getting stomped back to 22pt at runtime by
+    /// UniversalButtonBorderApplier.ApplyThemeToButton (fixed in RebirthUIController.cs instead,
+    /// not here, since that override is a per-session runtime behavior this Editor tool can't
+    /// out-run). DescriptionText's own font (still fixed 16pt, dim grey-white -- round 2 only
+    /// moved its anchor box, never touched its font) is fixed here: autosize floor 22pt, Palette.
+    /// Glow.
     /// </summary>
     public static class RebirthModalReadabilityFix
     {
@@ -160,6 +168,30 @@ namespace BrainDrain.EditorTools
                     descriptionRect.anchorMax = targetMax;
                     EditorUtility.SetDirty(descriptionRect);
                     changed = true;
+                }
+
+                // 2026-10-11 play-test fix round 3: the flavor text itself was still a fixed
+                // 16pt, non-autosizing, dim grey-white -- round 2 only moved its anchor box,
+                // never touched its own font settings. Word-wrap mode was already Normal (the
+                // "wrap across two or three lines" ask was already structurally satisfied), so
+                // only size/color/autosize change here.
+                TextMeshProUGUI descriptionLabel = description.GetComponent<TextMeshProUGUI>();
+                if (descriptionLabel != null)
+                {
+                    bool labelChanged = !descriptionLabel.enableAutoSizing
+                        || descriptionLabel.fontSizeMin < 22f
+                        || descriptionLabel.fontSizeMax != 26f
+                        || descriptionLabel.color != Palette.Glow;
+                    if (labelChanged)
+                    {
+                        Debug.Log($"[RebirthModalReadabilityFix] DescriptionText label: fontSize={descriptionLabel.fontSize}, autosize={descriptionLabel.enableAutoSizing}, color={descriptionLabel.color} -> autosize [22, 26], Palette.Glow.");
+                        descriptionLabel.enableAutoSizing = true;
+                        descriptionLabel.fontSizeMin = 22f;
+                        descriptionLabel.fontSizeMax = 26f;
+                        descriptionLabel.color = Palette.Glow;
+                        EditorUtility.SetDirty(descriptionLabel);
+                        changed = true;
+                    }
                 }
             }
 
