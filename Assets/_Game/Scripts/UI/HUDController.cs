@@ -96,6 +96,12 @@ namespace BrainDrain.UI
         private RectTransform restorationSproutRect;
         private Image restorationSproutImage;
         private bool restorationBarBuilt;
+
+        // 2026-10-12 scoreboard redesign -- built once by BuildScoreboardPanel, never
+        // Inspector-serialized (same "own it in code" convention as the restoration bar fields
+        // above). scoreboardEdgeImage is also read by the Step 4 idle glow pulse.
+        private bool scoreboardPanelBuilt;
+        private Image scoreboardEdgeImage;
         private float restorationDisplayedFraction;
         private float restorationTargetFraction;
         private float nextRestorationSheenTime;
@@ -800,6 +806,7 @@ namespace BrainDrain.UI
             // EnsureRestorationBarClipped itself.
             BuildRestorationBar();
             EnforceMinimumFontSizes();
+            BuildScoreboardPanel();
         }
 
         /// <summary>Cached once per domain reload -- avoids a repeated Resources.Load on every
@@ -1042,6 +1049,29 @@ namespace BrainDrain.UI
             sheenRect.pivot = new Vector2(0.5f, 0.5f);
             sheenRect.sizeDelta = new Vector2(160f, barHeight);
 
+            // 2026-10-12 scoreboard redesign: empty, disabled art hook for a future painted
+            // circuit "tattoo" overlay on the restoration bar -- explicitly NOT in scope for this
+            // pass (decorative art, will come from Aceyfer's Leonardo pipeline per the no-
+            // procedural-art rule). Built here, between Sheen and FrameOverlay, so a later pass
+            // only has to assign a sprite and flip enabled on; no sprite is assigned now and the
+            // Image starts disabled so it has zero visual effect until then.
+            Transform tattooTransform = track.Find("RestorationTattooOverlay");
+            GameObject tattooObject = tattooTransform != null
+                ? tattooTransform.gameObject
+                : new GameObject("RestorationTattooOverlay", typeof(RectTransform), typeof(Image));
+            tattooObject.transform.SetParent(track, false);
+            Image tattooImage = tattooObject.GetComponent<Image>();
+            tattooImage.type = Image.Type.Simple;
+            tattooImage.preserveAspect = false;
+            tattooImage.raycastTarget = false;
+            tattooImage.color = Color.white;
+            tattooImage.enabled = false;
+            RectTransform tattooRect = tattooImage.rectTransform;
+            tattooRect.anchorMin = Vector2.zero;
+            tattooRect.anchorMax = Vector2.one;
+            tattooRect.offsetMin = Vector2.zero;
+            tattooRect.offsetMax = Vector2.zero;
+
             // Frame overlay: FrameOutlineOnly redraws the rim on top of Fill/Sheen (transparent
             // center) so the fill edge looks tucked under it without covering the fill itself.
             Transform overlayTransform = track.Find("RestorationFrameOverlay");
@@ -1081,8 +1111,9 @@ namespace BrainDrain.UI
             restorationSproutRect.sizeDelta = new Vector2(sproutSize, sproutSize);
 
             sheenMaskObject.transform.SetSiblingIndex(1);
-            overlayObject.transform.SetSiblingIndex(2);
-            sproutObject.transform.SetSiblingIndex(3);
+            tattooObject.transform.SetSiblingIndex(2);
+            overlayObject.transform.SetSiblingIndex(3);
+            sproutObject.transform.SetSiblingIndex(4);
 
             // Defensively retire the old vessel-era graphics (see diagnosis above) -- both are
             // already unwired/null in the live scene; this only matters if a future wiring pass
@@ -1207,6 +1238,80 @@ namespace BrainDrain.UI
             {
                 track.gameObject.AddComponent<RectMask2D>();
             }
+        }
+
+        /// <summary>
+        /// 2026-10-12 scoreboard redesign: gives CurrencyHeader a fixed, code-owned black-glass
+        /// look -- solid Black-ish fill, a NeonBlue/Glow edge ring, a subtle scanline overlay --
+        /// so it reads identically on all 6 World Restoration stages. Resolved via
+        /// brainPowerCounterText's own parent (same no-new-field pattern as HeaderPanelRect above)
+        /// rather than a new serialized reference, so this needs no scene wiring. Idempotent
+        /// (Find-before-create), same convention as BuildRestorationBar; safe to call repeatedly
+        /// from ApplyVisualStyle.
+        /// </summary>
+        private void BuildScoreboardPanel()
+        {
+            if (brainPowerCounterText == null) { return; }
+
+            Transform header = brainPowerCounterText.transform.parent;
+            if (header == null) { return; }
+
+            Sprite blackGlassSprite = Resources.Load<Sprite>("UI/Scoreboard/Scoreboard_BlackGlass");
+            Sprite neonEdgeSprite = Resources.Load<Sprite>("UI/Scoreboard/Scoreboard_NeonEdge");
+            Sprite scanlineSprite = Resources.Load<Sprite>("UI/Scoreboard/Scoreboard_Scanline");
+
+            if (blackGlassSprite == null || neonEdgeSprite == null || scanlineSprite == null)
+            {
+                Debug.LogWarning("[HUDController] Scoreboard art missing from Resources/UI/Scoreboard -- CurrencyHeader left as scene-authored.", this);
+                return;
+            }
+
+            // Fill lives directly on CurrencyHeader's own Image component -- fixed, code-owned,
+            // and never touched by AccentBarStageView/TopBG's per-stage swap (that component
+            // targets a completely different GameObject under RainOverlay, confirmed by reading
+            // the scene directly, not assumed), so the panel reads identically on all 6 stages by
+            // construction, not by coincidence.
+            Image headerFill = header.GetComponent<Image>();
+            if (headerFill == null) { headerFill = header.gameObject.AddComponent<Image>(); }
+            headerFill.sprite = blackGlassSprite;
+            headerFill.type = Image.Type.Sliced;
+            headerFill.color = Color.white; // alpha/tint already baked into the art
+            headerFill.raycastTarget = true;
+
+            // Scanline: behind all the text children (first sibling), subtle (8-12% alpha baked
+            // into the art, not an Image.color tint).
+            Image scanlineImage = BuildOrReuseScoreboardLayer(header, "ScoreboardScanline", scanlineSprite, Image.Type.Simple);
+            scanlineImage.transform.SetAsFirstSibling();
+
+            // Edge: glowing rim on top of everything, including the text -- a frame, not a backdrop.
+            scoreboardEdgeImage = BuildOrReuseScoreboardLayer(header, "ScoreboardEdge", neonEdgeSprite, Image.Type.Sliced);
+            scoreboardEdgeImage.transform.SetAsLastSibling();
+
+            scoreboardPanelBuilt = true;
+        }
+
+        private static Image BuildOrReuseScoreboardLayer(Transform parent, string name, Sprite sprite, Image.Type type)
+        {
+            Transform existing = parent.Find(name);
+            GameObject layerObject = existing != null
+                ? existing.gameObject
+                : new GameObject(name, typeof(RectTransform), typeof(Image));
+            layerObject.transform.SetParent(parent, false);
+
+            Image image = layerObject.GetComponent<Image>();
+            image.sprite = sprite;
+            image.type = type;
+            image.color = Color.white;
+            image.raycastTarget = false;
+            image.preserveAspect = false;
+
+            RectTransform rect = image.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            return image;
         }
 
         private static void SetTextColor(TextMeshProUGUI label, Color color)
