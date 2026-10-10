@@ -462,14 +462,21 @@ namespace BrainDrain.UI
             int nextTier = RebirthManager.Instance.RebirthCount + 1;
             string illumisnottyTitle = RebirthManager.GetIllumisnottyTitle(nextTier).ToUpper();
 
+            // 2026-10-10 play-test fix: was one undifferentiated block at a 14-26pt floor/ceiling
+            // inside a 10%-tall anchor band (fixed separately in RebirthModalReadabilityFix) --
+            // rich-text size/color tags now give it real title > lose > keep/gain hierarchy
+            // instead of relying on font size alone to separate sections. cyanHex is pulled from
+            // Palette.Cyan rather than a hardcoded literal so this can never drift from the
+            // palette if that color is ever retuned.
+            string cyanHex = ColorUtility.ToHtmlStringRGB(Palette.Cyan);
             multiplierText.text =
-                "<b>THE SNOTTING</b>\n\n" +
-                "Prestige reset.\n" +
-                "Your current run gets wiped:\n" +
-                "BP, Cash, Points, Buildings, Restoration, IQ.\n\n" +
-                "You keep:\n" +
-                "Rank and permanent boosts.\n\n" +
-                "Reward:\n" +
+                "<size=130%><b>THE SNOTTING</b></size>\n\n" +
+                "<b>YOU LOSE</b>\n" +
+                "Brain Power, Cash, Points\n" +
+                "Buildings, World Restoration, IQ\n\n" +
+                "<b>YOU KEEP</b>\n" +
+                "Rank and permanent boosts\n\n" +
+                $"<b><color=#{cyanHex}>REWARD</color></b>\n" +
                 $"+{bpPct}% Brain Power\n" +
                 $"+{cashPct}% Cash\n" +
                 $"+{tapPct}% Tap Power\n" +
@@ -480,9 +487,12 @@ namespace BrainDrain.UI
                 multiplierText.text += $"\n\nBecoming: {illumisnottyTitle}";
             }
 
+            // Strong contrast against RebirthModalReadabilityFix's solid Palette.Surface panel,
+            // regardless of whatever tint this TMP component's own scene-authored baseline was.
+            multiplierText.color = Palette.White;
             multiplierText.enableAutoSizing = true;
-            multiplierText.fontSizeMin = 14f;
-            multiplierText.fontSizeMax = 26f;
+            multiplierText.fontSizeMin = 28f;
+            multiplierText.fontSizeMax = 40f;
         }
 
         private void OnConfirmClicked()
