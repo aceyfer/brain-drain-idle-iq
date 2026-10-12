@@ -40,14 +40,16 @@ namespace BrainDrain.EditorTools
                 }
 
                 // Read the current default settings first so compressionFormat/quality/sample
-                // rate are carried forward unchanged -- only loadType is touched. The same
-                // struct is then reused verbatim as the Android override, per the explicit ask.
+                // rate are carried forward unchanged -- only loadType/preloadAudioData are
+                // touched. The same struct is then reused verbatim as the Android override, per
+                // the explicit ask. preloadAudioData lives on this struct in Unity 6, not on the
+                // importer itself -- AudioImporter.preloadAudioData is obsolete (CS0619).
                 AudioImporterSampleSettings settings = importer.defaultSampleSettings;
                 settings.loadType = AudioClipLoadType.Streaming;
+                settings.preloadAudioData = false;
 
                 importer.defaultSampleSettings = settings;
                 importer.SetOverrideSampleSettings("Android", settings);
-                importer.preloadAudioData = false;
 
                 EditorUtility.SetDirty(importer);
                 importer.SaveAndReimport();
