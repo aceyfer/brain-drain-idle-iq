@@ -481,13 +481,6 @@ namespace BrainDrain.UI
                 dirtyPoints = false;
                 HUDNumericFormatter.SetPoints(pointsText, pendingPoints, pendingPointsRebirthActivated);
             }
-
-            // 2026-10-12 play-test fix: logged here (after real text has actually been set at least
-            // once), not from EnforceMinimumFontSizes/RebalanceScoreboardLayout -- TMP's autosize
-            // recompute is driven by SetText, so logging immediately after the layout rebalance
-            // would have reported whatever fontSize was left over from before the resize, not the
-            // resolved one.
-            LogScoreboardRectsOnce();
         }
 
         /// <summary>Moves current a fixed fraction of the way toward target each call -- an
@@ -1042,24 +1035,53 @@ namespace BrainDrain.UI
 
         private bool loggedScoreboardRectsOnce;
 
-        /// <summary>2026-10-12 play-test fix: diagnostic requested alongside the TextsRow height fix
-        /// -- logs each counter's final allocated rect height and resolved fontSize exactly once, so
-        /// a future "renders tiny" report can be checked against real numbers instead of guessing.</summary>
+        /// <summary>2026-10-12 play-test fix round 2: logs resolved RectTransform.rect (the actual
+        /// on-screen width/height after anchors+sizeDelta are applied), not sizeDelta directly --
+        /// sizeDelta.x is legitimately negative for every stretch-anchored scoreboard label (it's an
+        /// inset from full width, e.g. -48 means "parent width minus 48px"), which read as a bogus
+        /// "negative width" bug in the round-1 log. .rect is also only trustworthy here because
+        /// ForceScoreboardLayoutAndAutosize (called first, in RebalanceScoreboardLayout) has already
+        /// forced an immediate rebuild -- reading it before that forced rebuild (as round 1 did, via
+        /// a deferred FlushDirtyTexts hook) could still race Unity's own lazy layout pass.</summary>
         private void LogScoreboardRectsOnce()
         {
             if (loggedScoreboardRectsOnce) { return; }
             loggedScoreboardRectsOnce = true;
 
+            LogLabelRect(playerIQText, "IQText");
+            LogLabelRect(illumisnottyTitleText, "IllumisnottyTitleText");
             LogLabelRect(brainPowerCounterText, "BrainsCounterText");
             LogLabelRect(bppsText, "BPPSText");
             LogLabelRect(cashText, "CashText");
             LogLabelRect(restorationProgressText, "IllumisnottyGripText");
+            LogLabelRect(cumulativeBrainPowerCounterText, "CumulativeBPText");
+            LogLabelRect(rebirthCountText, "RebirthCountText");
         }
 
         private static void LogLabelRect(TextMeshProUGUI label, string name)
         {
             if (label == null) { return; }
-            Debug.Log($"[HUDController] Scoreboard rect '{name}': rect={label.rectTransform.sizeDelta}, fontSize={label.fontSize:F1}, autosize={label.enableAutoSizing}, min={label.fontSizeMin:F1}, max={label.fontSizeMax:F1}");
+            Rect r = label.rectTransform.rect;
+            Debug.Log($"[HUDController] Scoreboard rect '{name}': rect=({r.width:F2}, {r.height:F2}), fontSize={label.fontSize:F1}, autosize={label.enableAutoSizing}, min={label.fontSizeMin:F1}, max={label.fontSizeMax:F1}");
+        }
+
+        /// <summary>2026-10-12 play-test fix round 2, requested assert-style check: warns (every
+        /// call, not just once, so a regression is caught immediately rather than only at the first
+        /// startup log) if a scoreboard label ends up with a non-positive resolved width/height, or
+        /// if autosize has settled below its own configured floor -- both are genuine invalid states,
+        /// not just small-looking text.</summary>
+        private static void ValidateScoreboardRect(TextMeshProUGUI label, string name)
+        {
+            if (label == null) { return; }
+            Rect r = label.rectTransform.rect;
+            if (r.width <= 0f || r.height <= 0f)
+            {
+                Debug.LogWarning($"[HUDController] Scoreboard label '{name}' has a non-positive resolved rect ({r.width:F2} x {r.height:F2}) -- its own RectTransform or a parent LayoutGroup/ContentSizeFitter needs a closer look.");
+            }
+            if (label.enableAutoSizing && label.fontSize < label.fontSizeMin - 0.1f)
+            {
+                Debug.LogWarning($"[HUDController] Scoreboard label '{name}' resolved fontSize ({label.fontSize:F1}) below its own fontSizeMin ({label.fontSizeMin:F1}) -- autosize is stale; needs a ForceMeshUpdate after whatever changed its rect/min/max.");
+            }
         }
 
         /// <summary>Forces a fixed (non-autosizing), single-line font size, matching the scoreboard
@@ -1181,6 +1203,27 @@ namespace BrainDrain.UI
         /// even with zero extra gap, the header grows past the "safe" budget instead of crushing a
         /// row below readable size -- logged loudly so the actual overage is visible, since
         /// readable size now outranks strict adherence to the side-button clearance margin.
+        ///
+        /// 2026-10-12 play-test fix ROUND 2: the row-height math above was correct (319px computed,
+        /// within a few px of the real budget), but setting TextsRow's own RectTransform.sizeDelta
+        /// doesn't synchronously resize its HorizontalLayoutGroup-controlled children -- Unity
+        /// defers LayoutGroup rebuilds to end-of-frame (CanvasUpdateRegistry), so BPPSText/CashText
+        /// were still carrying their scene-authored (0, 0) rect at the moment TMP's autosize last
+        /// ran, which is why they rendered (and logged) as 0x0 with fontSize clamped to an absolute
+        /// floor of 18 -- below even their own fontSizeMin, since TMP's autosize will violate its own
+        /// floor rather than render into a truly zero-sized box. The same staleness hit
+        /// restorationProgressText's fontSize (18, min 28) even though its own rect was correctly
+        /// sized (67px) -- its RectTransform resize doesn't by itself re-trigger TMP's internal
+        /// autosize fit either; that only happens on the next SetText or a forced update.
+        /// ForceScoreboardLayoutAndAutosize (below) closes both gaps: LayoutRebuilder.
+        /// ForceRebuildLayoutImmediate forces TextsRow's HorizontalLayoutGroup to size its children
+        /// NOW instead of at an unspecified later frame, and ForceMeshUpdate forces each
+        /// autosize-enabled label to redo its fit against its current (now-correct) rect and
+        /// fontSizeMin/Max immediately, rather than waiting on the next natural text change.
+        /// ValidateScoreboardRect (called for all 7 labels afterward) is the requested assert-style
+        /// check -- it uses RectTransform.rect (the resolved on-screen size), not sizeDelta, since
+        /// sizeDelta.x is legitimately negative for every stretch-anchored label here and reading it
+        /// directly is what made round 1's "-48 width" look like a bug when it wasn't.
         /// </summary>
         private void RebalanceScoreboardLayout()
         {
@@ -1239,6 +1282,46 @@ namespace BrainDrain.UI
             y += rowEHeight + effectiveGap;
 
             SetRowRect(rebirthRect, y, rowFHeight);
+
+            ForceScoreboardLayoutAndAutosize(textsRowRect);
+
+            ValidateScoreboardRect(playerIQText, "IQText");
+            ValidateScoreboardRect(illumisnottyTitleText, "IllumisnottyTitleText");
+            ValidateScoreboardRect(brainPowerCounterText, "BrainsCounterText");
+            ValidateScoreboardRect(bppsText, "BPPSText");
+            ValidateScoreboardRect(cashText, "CashText");
+            ValidateScoreboardRect(restorationProgressText, "IllumisnottyGripText");
+            ValidateScoreboardRect(cumulativeBrainPowerCounterText, "CumulativeBPText");
+            ValidateScoreboardRect(rebirthCountText, "RebirthCountText");
+
+            LogScoreboardRectsOnce();
+        }
+
+        /// <summary>2026-10-12 play-test fix round 2: forces TextsRow's HorizontalLayoutGroup to
+        /// immediately size BPPSText/CashText (instead of waiting for Unity's deferred end-of-frame
+        /// layout pass), then forces every autosize-enabled scoreboard label to immediately redo its
+        /// fit against its now-current rect and fontSizeMin/Max (instead of waiting for the next
+        /// SetText call). See RebalanceScoreboardLayout's "ROUND 2" doc comment above for the full
+        /// root-cause writeup.</summary>
+        private void ForceScoreboardLayoutAndAutosize(RectTransform textsRowRect)
+        {
+            if (textsRowRect != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(textsRowRect);
+            }
+
+            ForceLabelMeshUpdate(brainPowerCounterText);
+            ForceLabelMeshUpdate(bppsText);
+            ForceLabelMeshUpdate(cashText);
+            ForceLabelMeshUpdate(restorationProgressText);
+        }
+
+        private static void ForceLabelMeshUpdate(TextMeshProUGUI label)
+        {
+            if (label != null && label.enableAutoSizing)
+            {
+                label.ForceMeshUpdate();
+            }
         }
 
         /// <summary>
