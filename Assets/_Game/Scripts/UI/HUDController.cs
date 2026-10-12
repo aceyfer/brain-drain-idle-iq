@@ -258,6 +258,47 @@ namespace BrainDrain.UI
             UpdatePointsLockState(rebirthCount);
         }
 
+        /// <summary>
+        /// 2026-10-12 play-test fix round 3: moves the Dia-Log button (and, by extension, Pocket/
+        /// Wallet/Recover, each of which computes its own position from Dia-Log's position in its
+        /// own Start() -- see PocketPanelUI/TimedPurchaseWalletUI/RewardedAdRecoveryHudButtonUI)
+        /// down to make room for the scoreboard's real content height, rather than clamping the
+        /// scoreboard down to fit whatever room the buttons already left (see
+        /// RebalanceScoreboardLayout's "ROUND 3" doc comment for why that approach kept failing).
+        /// Must run in Awake(), not Start(): Unity guarantees every active object's Awake() runs
+        /// before any object's Start(), so shifting Dia-Log here is guaranteed to land before
+        /// Pocket/Wallet/Recover read its position in their own Start() -- doing this in Start()
+        /// instead would race them non-deterministically.
+        /// </summary>
+        private void Awake()
+        {
+            PushSideButtonsBelowScoreboard();
+        }
+
+        private void PushSideButtonsBelowScoreboard()
+        {
+            GameObject diaLogButton = GameObject.Find(DiaLogButtonName);
+            RectTransform diaLogRect = diaLogButton != null ? diaLogButton.GetComponent<RectTransform>() : null;
+            RectTransform header = brainPowerCounterText != null ? brainPowerCounterText.transform.parent as RectTransform : null;
+            if (diaLogRect == null || header == null)
+            {
+                Debug.LogWarning("[HUDController] Could not find the Dia-Log button (LogOpenButton) or the scoreboard header -- side buttons left at their scene-authored position; the scoreboard may overlap them.");
+                return;
+            }
+
+            float headerTopOffset = -header.anchoredPosition.y;
+            float diaLogTopOffset = -diaLogRect.anchoredPosition.y;
+            float currentBudget = diaLogTopOffset - headerTopOffset;
+            float requiredHeight = ComputeScoreboardContentHeight();
+            float shiftAmount = Mathf.Max(0f, requiredHeight - currentBudget) + ScoreboardButtonBreathingRoom;
+
+            Vector2 pos = diaLogRect.anchoredPosition;
+            pos.y -= shiftAmount;
+            diaLogRect.anchoredPosition = pos;
+
+            Debug.Log($"[HUDController] Pushed the side button column down {shiftAmount:F0}px (scoreboard needs {requiredHeight:F0}px, buttons previously left {currentBudget:F0}px) to clear the resized scoreboard.");
+        }
+
         private void Start()
         {
             ApplyVisualStyle();
@@ -1152,28 +1193,40 @@ namespace BrainDrain.UI
         private const float ScoreboardRowGap = 4f;
         private const float ScoreboardTopPadding = 6f;
         private const float ScoreboardBottomPadding = 6f;
-        private const float ScoreboardButtonSafetyMargin = 16f;
-        private const float ScoreboardFallbackMaxHeight = 300f;
         private const string DiaLogButtonName = "LogOpenButton"; // same lookup PocketPanelUI/TimedPurchaseWalletUI/RewardedAdRecoveryHudButtonUI already use
+
+        // 2026-10-12 play-test fix round 3: was fontSize*1.05+4 -- a guess that undershot what TMP
+        // actually needs. Oswald Bold SDF's own imported face metrics (Assets/TextMesh Pro/
+        // Examples & Extras/Resources/Fonts & Materials/Oswald Bold SDF.asset, m_FaceInfo)
+        // give m_LineHeight: 133.37402 at m_PointSize: 90 -- a real single-line-height-per-point
+        // ratio of 133.37402/90 ~= 1.482, not 1.05. That's exactly why a 43.9px TextsRow
+        // (38*1.05+4) could only push BPPSText/CashText to fontSize 30: even their own floor
+        // barely fit. 1.5 (just above the measured 1.482, for a hair of safety) replaces the
+        // guess; this is a per-line multiplier now derived from the actual font asset, not
+        // re-guessed per row.
+        private const float ScoreboardLineHeightMultiplier = 1.5f;
+        private const float ScoreboardLinePadding = 8f;
+        private const int ScoreboardRowGapCount = 5; // 6 rows -> 5 gaps
+        private const float ScoreboardButtonBreathingRoom = 40f;
 
         private static float EstimateRowHeight(float fontSize, int lines = 1)
         {
-            return (fontSize * 1.05f * lines) + 4f;
+            return (fontSize * ScoreboardLineHeightMultiplier * lines) + ScoreboardLinePadding;
         }
 
-        private static float ComputeMaxSafeHeaderHeight(RectTransform header)
+        /// <summary>Pure function of the sizing constants above -- no scene/live state -- so both
+        /// RebalanceScoreboardLayout (actual row placement) and PushSideButtonsBelowScoreboard
+        /// (computed in Awake, before the scoreboard panel itself has necessarily run its own
+        /// layout pass) agree on the same number without duplicating the row list.</summary>
+        private static float ComputeScoreboardContentHeight()
         {
-            GameObject diaLogButton = GameObject.Find(DiaLogButtonName);
-            RectTransform diaLogRect = diaLogButton != null ? diaLogButton.GetComponent<RectTransform>() : null;
-            if (diaLogRect == null)
-            {
-                Debug.LogWarning("[HUDController] Dia-Log button (LogOpenButton) not found -- scoreboard height clamp using a conservative fallback instead of a live read.");
-                return ScoreboardFallbackMaxHeight;
-            }
-
-            float headerTopOffset = -header.anchoredPosition.y;
-            float diaLogTopOffset = -diaLogRect.anchoredPosition.y;
-            return Mathf.Max(100f, (diaLogTopOffset - headerTopOffset) - ScoreboardButtonSafetyMargin);
+            float rowsTotal = EstimateRowHeight(Mathf.Max(IQFontSize, IllumisnottyTitleFontSize))
+                + EstimateRowHeight(BrainsCounterFontMax)
+                + EstimateRowHeight(CounterFontMax)
+                + EstimateRowHeight(RestorationFontCeiling, 2)
+                + EstimateRowHeight(24f) // cumulative BP label -- unchanged by this pass
+                + EstimateRowHeight(24f); // rebirth count label -- unchanged by this pass
+            return rowsTotal + (ScoreboardRowGap * ScoreboardRowGapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
         }
 
         private static void SetRowRect(RectTransform rect, float topOffset, float height)
@@ -1188,42 +1241,41 @@ namespace BrainDrain.UI
         }
 
         /// <summary>
-        /// 2026-10-12 play-test fix, rewritten from the original flexScale-based compression: that
-        /// approach shrank BrainsCounter/TextsRow/restoration's row heights proportionally whenever
-        /// the live safe budget came in tighter than their combined "ideal" (max-font) height --
-        /// which is exactly what crushed TextsRow (BPPS/CashText) down far enough that their
-        /// autosize collapsed well below 38pt, reported as "renders TINY." No row is ever shrunk
-        /// below its own ideal height now -- every row gets the height it actually needs at its
-        /// target font size, full stop. If the live safe budget has room to spare once every row
-        /// has what it needs, the leftover is distributed as EXTRA GAP between all 6 rows (not as
-        /// further growth past each row's target), so the panel fills the full budget without
-        /// looking top-heavy -- previously, surplus budget just sat as dead space below
-        /// RebirthCountText, since the old code only ever shrank toward the budget, never grew
-        /// gaps to fill it. If the budget is genuinely too tight to fit everyone's target height
-        /// even with zero extra gap, the header grows past the "safe" budget instead of crushing a
-        /// row below readable size -- logged loudly so the actual overage is visible, since
-        /// readable size now outranks strict adherence to the side-button clearance margin.
+        /// History across three play-test rounds, kept because each one explains a real,
+        /// non-obvious failure mode the next round's reader could otherwise reintroduce:
         ///
-        /// 2026-10-12 play-test fix ROUND 2: the row-height math above was correct (319px computed,
-        /// within a few px of the real budget), but setting TextsRow's own RectTransform.sizeDelta
-        /// doesn't synchronously resize its HorizontalLayoutGroup-controlled children -- Unity
-        /// defers LayoutGroup rebuilds to end-of-frame (CanvasUpdateRegistry), so BPPSText/CashText
-        /// were still carrying their scene-authored (0, 0) rect at the moment TMP's autosize last
-        /// ran, which is why they rendered (and logged) as 0x0 with fontSize clamped to an absolute
-        /// floor of 18 -- below even their own fontSizeMin, since TMP's autosize will violate its own
-        /// floor rather than render into a truly zero-sized box. The same staleness hit
-        /// restorationProgressText's fontSize (18, min 28) even though its own rect was correctly
-        /// sized (67px) -- its RectTransform resize doesn't by itself re-trigger TMP's internal
-        /// autosize fit either; that only happens on the next SetText or a forced update.
-        /// ForceScoreboardLayoutAndAutosize (below) closes both gaps: LayoutRebuilder.
-        /// ForceRebuildLayoutImmediate forces TextsRow's HorizontalLayoutGroup to size its children
-        /// NOW instead of at an unspecified later frame, and ForceMeshUpdate forces each
-        /// autosize-enabled label to redo its fit against its current (now-correct) rect and
-        /// fontSizeMin/Max immediately, rather than waiting on the next natural text change.
-        /// ValidateScoreboardRect (called for all 7 labels afterward) is the requested assert-style
-        /// check -- it uses RectTransform.rect (the resolved on-screen size), not sizeDelta, since
-        /// sizeDelta.x is legitimately negative for every stretch-anchored label here and reading it
-        /// directly is what made round 1's "-48 width" look like a bug when it wasn't.
+        /// ROUND 1: originally shrank BrainsCounter/TextsRow/restoration's row heights
+        /// proportionally (flexScale) whenever a live "safe budget" (computed to stay clear of the
+        /// side buttons) came in tighter than their combined ideal height -- which is exactly what
+        /// crushed TextsRow (BPPS/CashText) down far enough that their autosize collapsed well
+        /// below 38pt ("renders TINY").
+        ///
+        /// ROUND 2: removed that shrink, but two more bugs surfaced from Editor.log: (a) setting
+        /// TextsRow's own RectTransform.sizeDelta doesn't synchronously resize its
+        /// HorizontalLayoutGroup-controlled children -- Unity defers LayoutGroup rebuilds to
+        /// end-of-frame -- so BPPSText/CashText were still at their scene-authored (0,0) rect when
+        /// TMP's autosize last ran; (b) resizing a RectTransform doesn't by itself re-trigger TMP's
+        /// autosize fit (only SetText or a forced update does), so restorationProgressText's
+        /// fontSize stayed stale at 18 even once its own rect was correctly sized. Fixed via
+        /// ForceScoreboardLayoutAndAutosize (LayoutRebuilder.ForceRebuildLayoutImmediate +
+        /// ForceMeshUpdate, called at the end of this method) and ValidateScoreboardRect (an
+        /// assert-style check using RectTransform.rect, not sizeDelta -- sizeDelta.x is legitimately
+        /// negative for every stretch-anchored label here, which is what made round 1's "-48 width"
+        /// look like a bug when it wasn't).
+        ///
+        /// ROUND 3 (this one): the forced rebuild in round 2 worked, confirmed by Editor.log --
+        /// BPPSText/CashText's rect went from (0,0) to a real (454x43.9) -- but 43.9px still wasn't
+        /// tall enough for 38pt, so autosize correctly clamped at its own floor (30). Root cause:
+        /// EstimateRowHeight's multiplier (1.05) was a guess, and an undersized one -- Oswald Bold
+        /// SDF's own imported face metrics give a real single-line-height-per-point ratio of
+        /// ~1.482 (see EstimateRowHeight's doc comment). Rather than keep tuning a tight budget
+        /// against the side buttons, the budget itself is gone: PushSideButtonsBelowScoreboard
+        /// (called from Awake, before any button or this method has run) moves Dia-Log -- and by
+        /// extension Pocket/Wallet/Recover, which each compute their own position from Dia-Log's
+        /// position in their own Start(), guaranteed to run after every Awake() per Unity's
+        /// lifecycle -- down by however much ComputeScoreboardContentHeight needs beyond the
+        /// buttons' current position, plus a flat breathing-room buffer. This method now just sizes
+        /// the header to that same content height directly, no clamping, no warning.
         /// </summary>
         private void RebalanceScoreboardLayout()
         {
@@ -1241,24 +1293,16 @@ namespace BrainDrain.UI
 
             float rowAHeight = EstimateRowHeight(Mathf.Max(IQFontSize, IllumisnottyTitleFontSize));
             float rowBHeight = EstimateRowHeight(BrainsCounterFontMax);
-            float rowCHeight = EstimateRowHeight(CounterFontMax); // TextsRow (BPPS/Cash) -- guaranteed, never shrunk below 38pt's needs
+            float rowCHeight = EstimateRowHeight(CounterFontMax); // TextsRow (BPPS/Cash)
             float rowDHeight = EstimateRowHeight(RestorationFontCeiling, 2); // up to 2 lines
             float rowEHeight = EstimateRowHeight(24f); // cumulative BP label -- unchanged by this pass
             float rowFHeight = EstimateRowHeight(24f); // rebirth count label -- unchanged by this pass
-            float rowsTotal = rowAHeight + rowBHeight + rowCHeight + rowDHeight + rowEHeight + rowFHeight;
 
-            const int gapCount = 5;
-            float baseContentHeight = rowsTotal + (ScoreboardRowGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
-
-            float maxSafeHeight = ComputeMaxSafeHeaderHeight(header);
-            float surplus = maxSafeHeight - baseContentHeight;
-            float effectiveGap = surplus > 0f ? ScoreboardRowGap + (surplus / gapCount) : ScoreboardRowGap;
-
-            float totalHeight = rowsTotal + (effectiveGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
-            if (totalHeight > maxSafeHeight)
-            {
-                Debug.LogWarning($"[HUDController] Scoreboard content ({totalHeight:F0}px) exceeds the safe budget before the side buttons ({maxSafeHeight:F0}px) even with zero extra gap -- a row's font size may need trimming, or the side buttons moved down.");
-            }
+            // 2026-10-12 play-test fix round 3: no more clamping against a side-button budget --
+            // PushSideButtonsBelowScoreboard (called from Awake, before this ever runs) already
+            // moved the buttons clear of whatever ComputeScoreboardContentHeight needs, so the
+            // header is simply sized to its real content here, full stop.
+            float totalHeight = ComputeScoreboardContentHeight();
 
             Vector2 headerSize = header.sizeDelta;
             headerSize.y = totalHeight;
@@ -1267,19 +1311,19 @@ namespace BrainDrain.UI
             float y = ScoreboardTopPadding;
             SetRowRect(iqRect, y, rowAHeight);
             SetRowRect(titleRect, y, rowAHeight);
-            y += rowAHeight + effectiveGap;
+            y += rowAHeight + ScoreboardRowGap;
 
             SetRowRect(brainsRect, y, rowBHeight);
-            y += rowBHeight + effectiveGap;
+            y += rowBHeight + ScoreboardRowGap;
 
             SetRowRect(textsRowRect, y, rowCHeight);
-            y += rowCHeight + effectiveGap;
+            y += rowCHeight + ScoreboardRowGap;
 
             SetRowRect(restorationRect, y, rowDHeight);
-            y += rowDHeight + effectiveGap;
+            y += rowDHeight + ScoreboardRowGap;
 
             SetRowRect(cumulativeRect, y, rowEHeight);
-            y += rowEHeight + effectiveGap;
+            y += rowEHeight + ScoreboardRowGap;
 
             SetRowRect(rebirthRect, y, rowFHeight);
 
