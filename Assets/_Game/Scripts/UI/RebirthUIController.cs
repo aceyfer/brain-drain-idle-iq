@@ -495,11 +495,22 @@ namespace BrainDrain.UI
             // Palette.Cyan rather than a hardcoded literal so this can never drift from the
             // palette if that color is ever retuned.
             string cyanHex = ColorUtility.ToHtmlStringRGB(Palette.Cyan);
+
+            // 2026-10-12: the IQ line in YOU LOSE used to always say "back to 1", which was wrong
+            // whenever a Brain Freeze is active at preview time -- PlayerIQManager.ResetForRebirth
+            // holds IQ at the freeze floor instead (settled behavior, see that method's own doc
+            // comment). Reads BrainFreezeFloorValue rather than hardcoding 113, so this can never
+            // drift from the real floor if it's ever retuned.
+            PlayerIQManager iqManager = PlayerIQManager.Instance;
+            string iqLoseLine = (iqManager != null && iqManager.IsBrainFreezeActive)
+                ? $"IQ (held at {iqManager.BrainFreezeFloorValue:F0} by Brain Freeze)"
+                : "IQ (back to 1)";
+
             multiplierText.text =
                 "<size=130%><b>THE SNOTTING</b></size>\n\n" +
                 "<b>YOU LOSE</b>\n" +
                 "Brain Power, Cash, Points\n" +
-                "Buildings, World Restoration, IQ (back to 1)\n\n" +
+                $"Buildings, World Restoration, {iqLoseLine}\n\n" +
                 "<b>YOU KEEP</b>\n" +
                 "Rank and permanent boosts\n\n" +
                 $"<b><color=#{cyanHex}>REWARD</color></b>\n" +

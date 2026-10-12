@@ -88,6 +88,11 @@ namespace BrainDrain.Core
             ? brainFreezeExpiryUnixSeconds - DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             : 0f;
 
+        /// <summary>Public accessor for the private BrainFreezeFloor const -- so UI (e.g.
+        /// RebirthUIController's Snotting preview) reads the real floor value instead of
+        /// hardcoding its own copy of 113 that could drift if this is ever retuned.</summary>
+        public float BrainFreezeFloorValue => BrainFreezeFloor;
+
         private void Start()
         {
             if (GameManager.Instance != null)
@@ -245,19 +250,21 @@ namespace BrainDrain.Core
         /// common case, so the player has to tap it back up. Also clears lastMilestoneIndex so
         /// milestones fire correctly in the new run.
         ///
-        /// 2026-10-12, superseding the 2026-08-03 decision recorded here previously: that version
-        /// unconditionally cleared brainFreezeExpiryUnixSeconds on every Rebirth, specifically to
-        /// stop a paying player from timing a voluntary prestige reset for an instant free IQ
-        /// refill. Explicit new instruction reverses this -- a Brain Freeze active at the moment
-        /// of Rebirth now survives it: the reset still happens (IQ still drops, it's not left at
-        /// its pre-rebirth value), but it's held at BrainFreezeFloor (113) rather than MinPlayerIQ
-        /// (1), and the freeze keeps its remaining real-world time untouched. From that point on,
-        /// the existing DecayOvercharge/RestoreIQFromTap floor-at-113/ceiling-at-200 behavior
-        /// applies exactly as it would for any other active freeze -- no new mechanic, just a
-        /// different IQ value at the moment the freeze's clock keeps running through. Wallet
-        /// charge/consumption state (GodTierStoreManager, TimedPurchaseWalletUI) is untouched
-        /// either way; this method only ever reads/writes playerIQ and
-        /// brainFreezeExpiryUnixSeconds.
+        /// SETTLED 2026-10-12, superseding the 2026-08-03 decision recorded here previously: that
+        /// version unconditionally cleared brainFreezeExpiryUnixSeconds on every Rebirth,
+        /// specifically to stop a paying player from timing a voluntary prestige reset for an
+        /// instant free IQ refill. Confirmed by Aceyfer as the intended final behavior, not a
+        /// tentative override: an active Brain Freeze now survives a Snotting as a deliberate
+        /// paid perk. The reset still happens (IQ still drops, it's not left at its pre-rebirth
+        /// value), but it's held at BrainFreezeFloor (113, exposed publicly as
+        /// BrainFreezeFloorValue) rather than MinPlayerIQ (1), and the freeze keeps its remaining
+        /// real-world time untouched. From that point on, the existing DecayOvercharge/
+        /// RestoreIQFromTap floor-at-113/ceiling-at-200 behavior applies exactly as it would for
+        /// any other active freeze -- no new mechanic, just a different IQ value at the moment
+        /// the freeze's clock keeps running through. Wallet charge/consumption state
+        /// (GodTierStoreManager, TimedPurchaseWalletUI) is untouched either way; this method only
+        /// ever reads/writes playerIQ and brainFreezeExpiryUnixSeconds. See PROJECT_BIBLE.md §7
+        /// for the player-facing settled-decision record.
         /// </summary>
         public void ResetForRebirth()
         {
