@@ -45,7 +45,11 @@ namespace BrainDrain.UI
         // site below) but their values are no longer independently authored.
         private static readonly Color BoneWhite = Palette.White;
         private static readonly Color BrainPowerColor = Palette.Cyan;
-        private static readonly Color CashColor = Palette.Cyan;
+        // 2026-10-12 play-test fix: was Palette.Cyan -- CashText's face color combined with a
+        // stray Oswald_GoldUnderlay.mat (see the fontSharedMaterial reset in EnforceMinimumFontSizes
+        // below) to read greenish/olive. White face + the "/s" segment in Palette.Glow (see
+        // HUDNumericFormatter.SetCash) replaces that combination entirely.
+        private static readonly Color CashColor = Palette.White;
         private static readonly Color RestorationColor = Palette.Cyan;
         private static readonly Color IllumisnottyColor = Palette.Cyan;
         private static readonly Color SecondaryColor = Palette.White;
@@ -477,6 +481,13 @@ namespace BrainDrain.UI
                 dirtyPoints = false;
                 HUDNumericFormatter.SetPoints(pointsText, pendingPoints, pendingPointsRebirthActivated);
             }
+
+            // 2026-10-12 play-test fix: logged here (after real text has actually been set at least
+            // once), not from EnforceMinimumFontSizes/RebalanceScoreboardLayout -- TMP's autosize
+            // recompute is driven by SetText, so logging immediately after the layout rebalance
+            // would have reported whatever fontSize was left over from before the resize, not the
+            // resolved one.
+            LogScoreboardRectsOnce();
         }
 
         /// <summary>Moves current a fixed fraction of the way toward target each call -- an
@@ -967,7 +978,11 @@ namespace BrainDrain.UI
         private const float IllumisnottyTitleFontSize = 34f;
         private const float BrainsCounterFontMin = 40f;
         private const float BrainsCounterFontMax = 64f;
-        private const float CounterFontMin = 26f;
+        // 2026-10-12 play-test fix: was 26 -- too low a floor let BPPS/CashText autosize collapse
+        // far below their 38pt max once TextsRow's allocated height was tight (see
+        // RebalanceScoreboardLayout's rewrite below, which now guarantees that row enough height
+        // for 38pt anyway, but this floor stays raised as a second line of defense).
+        private const float CounterFontMin = 30f;
         private const float CounterFontMax = 38f;
         private const float RestorationFontFloor = 28f;
         private const float RestorationFontCeiling = 30f;
@@ -1002,7 +1017,49 @@ namespace BrainDrain.UI
                 brainPowerCounterText.fontSharedMaterial = glowMaterial;
             }
 
+            // 2026-10-12 play-test fix: root cause of CashText's greenish/olive tint --
+            // Editor/CashTextLegibilityFix.cs (an Editor-only scene tool) assigned CashText's
+            // fontSharedMaterial to Oswald_GoldUnderlay.mat, a clone of Oswald_CyanGlow.mat with an
+            // amber/gold _UnderlayColor. That amber glow halo bleeding around the (now White) face
+            // is what read as greenish-olive, not a vertex-color or rich-text issue. That fix
+            // predates BuildScoreboardPanel's solid black-glass backing -- the backdrop-contrast
+            // problem it solved no longer applies now that every scoreboard label sits on a solid
+            // panel, so resetting to the font's own default material here (same one every other
+            // unmodified scoreboard label already uses) is safe. Scene's serialized reference is
+            // left as-authored; this only overrides at runtime, same pattern as the glow material
+            // above.
+            if (cashText != null)
+            {
+                TMP_FontAsset oswaldForCash = GetOswaldFont();
+                if (oswaldForCash != null && oswaldForCash.material != null)
+                {
+                    cashText.fontSharedMaterial = oswaldForCash.material;
+                }
+            }
+
             RebalanceScoreboardLayout();
+        }
+
+        private bool loggedScoreboardRectsOnce;
+
+        /// <summary>2026-10-12 play-test fix: diagnostic requested alongside the TextsRow height fix
+        /// -- logs each counter's final allocated rect height and resolved fontSize exactly once, so
+        /// a future "renders tiny" report can be checked against real numbers instead of guessing.</summary>
+        private void LogScoreboardRectsOnce()
+        {
+            if (loggedScoreboardRectsOnce) { return; }
+            loggedScoreboardRectsOnce = true;
+
+            LogLabelRect(brainPowerCounterText, "BrainsCounterText");
+            LogLabelRect(bppsText, "BPPSText");
+            LogLabelRect(cashText, "CashText");
+            LogLabelRect(restorationProgressText, "IllumisnottyGripText");
+        }
+
+        private static void LogLabelRect(TextMeshProUGUI label, string name)
+        {
+            if (label == null) { return; }
+            Debug.Log($"[HUDController] Scoreboard rect '{name}': rect={label.rectTransform.sizeDelta}, fontSize={label.fontSize:F1}, autosize={label.enableAutoSizing}, min={label.fontSizeMin:F1}, max={label.fontSizeMax:F1}");
         }
 
         /// <summary>Forces a fixed (non-autosizing), single-line font size, matching the scoreboard
@@ -1051,8 +1108,9 @@ namespace BrainDrain.UI
         }
 
         /// <summary>
-        /// 2026-10-10 scoreboard sizing pass: re-balances CurrencyHeader's own height and each of
-        /// its 7 children's row (Y position + height) around the bumped font sizes above, entirely
+        /// 2026-10-10 scoreboard sizing pass (rewritten 2026-10-12, see RebalanceScoreboardLayout's
+        /// own doc comment for why): re-balances CurrencyHeader's own height and each of its 7
+        /// children's row (Y position + height) around the bumped font sizes above, entirely
         /// code-driven -- no .unity write. Six rows, top to bottom: [IQText | IllumisnottyTitleText]
         /// side by side, BrainsCounterText, TextsRow (BPPS/Cash, a HorizontalLayoutGroup --
         /// confirmed by reading the scene directly: ChildControlHeight/ChildForceExpandHeight are
@@ -1060,15 +1118,9 @@ namespace BrainDrain.UI
         /// don't need touching individually), restorationProgressText, cumulativeBrainPowerCounterText,
         /// rebirthCountText.
         ///
-        /// Splits rows into two kinds:
-        /// - FIXED (IQ/Title row, CumulativeBP, RebirthCount): single-line, non-autosizing, so they
-        ///   get a height computed to fully fit their fixed font size -- no shrink available if the
-        ///   estimate is tight, so these are never compressed by the clamp below.
-        /// - FLEXIBLE (BrainsCounter, TextsRow, restoration): autosizing (or wrap-allowed, for
-        ///   restoration), so they get whatever's left of the safe budget after the fixed rows,
-        ///   split proportionally to their own ideal (max-font) height. Autosizing absorbs any
-        ///   estimation error gracefully -- short of the max, not clipped -- rather than needing the
-        ///   estimate to be pixel-exact.
+        /// Every row gets the height its own target font size needs -- no row is ever shrunk below
+        /// that. Leftover budget (if the live safe height has room to spare) becomes extra gap
+        /// between rows instead of being left as dead space at the bottom.
         ///
         /// The safe budget itself is read LIVE from the scene (ComputeMaxSafeHeaderHeight), not
         /// hardcoded: CurrencyHeader's own top offset vs. the Dia-Log button's (LogOpenButton) top
@@ -1113,6 +1165,23 @@ namespace BrainDrain.UI
             rect.sizeDelta = size;
         }
 
+        /// <summary>
+        /// 2026-10-12 play-test fix, rewritten from the original flexScale-based compression: that
+        /// approach shrank BrainsCounter/TextsRow/restoration's row heights proportionally whenever
+        /// the live safe budget came in tighter than their combined "ideal" (max-font) height --
+        /// which is exactly what crushed TextsRow (BPPS/CashText) down far enough that their
+        /// autosize collapsed well below 38pt, reported as "renders TINY." No row is ever shrunk
+        /// below its own ideal height now -- every row gets the height it actually needs at its
+        /// target font size, full stop. If the live safe budget has room to spare once every row
+        /// has what it needs, the leftover is distributed as EXTRA GAP between all 6 rows (not as
+        /// further growth past each row's target), so the panel fills the full budget without
+        /// looking top-heavy -- previously, surplus budget just sat as dead space below
+        /// RebirthCountText, since the old code only ever shrank toward the budget, never grew
+        /// gaps to fill it. If the budget is genuinely too tight to fit everyone's target height
+        /// even with zero extra gap, the header grows past the "safe" budget instead of crushing a
+        /// row below readable size -- logged loudly so the actual overage is visible, since
+        /// readable size now outranks strict adherence to the side-button clearance margin.
+        /// </summary>
         private void RebalanceScoreboardLayout()
         {
             if (brainPowerCounterText == null) { return; }
@@ -1128,30 +1197,24 @@ namespace BrainDrain.UI
             RectTransform rebirthRect = rebirthCountText != null ? rebirthCountText.rectTransform : null;
 
             float rowAHeight = EstimateRowHeight(Mathf.Max(IQFontSize, IllumisnottyTitleFontSize));
+            float rowBHeight = EstimateRowHeight(BrainsCounterFontMax);
+            float rowCHeight = EstimateRowHeight(CounterFontMax); // TextsRow (BPPS/Cash) -- guaranteed, never shrunk below 38pt's needs
+            float rowDHeight = EstimateRowHeight(RestorationFontCeiling, 2); // up to 2 lines
             float rowEHeight = EstimateRowHeight(24f); // cumulative BP label -- unchanged by this pass
             float rowFHeight = EstimateRowHeight(24f); // rebirth count label -- unchanged by this pass
-            float fixedTotal = rowAHeight + rowEHeight + rowFHeight;
-
-            float idealB = EstimateRowHeight(BrainsCounterFontMax);
-            float idealC = EstimateRowHeight(CounterFontMax);
-            float idealD = EstimateRowHeight(RestorationFontCeiling, 2); // up to 2 lines
-            float idealFlexTotal = idealB + idealC + idealD;
+            float rowsTotal = rowAHeight + rowBHeight + rowCHeight + rowDHeight + rowEHeight + rowFHeight;
 
             const int gapCount = 5;
-            float chrome = fixedTotal + (ScoreboardRowGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
+            float baseContentHeight = rowsTotal + (ScoreboardRowGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
 
             float maxSafeHeight = ComputeMaxSafeHeaderHeight(header);
-            float availableForFlex = Mathf.Max(idealB * 0.5f, maxSafeHeight - chrome);
-            float flexScale = idealFlexTotal > 0f ? Mathf.Min(1f, availableForFlex / idealFlexTotal) : 1f;
+            float surplus = maxSafeHeight - baseContentHeight;
+            float effectiveGap = surplus > 0f ? ScoreboardRowGap + (surplus / gapCount) : ScoreboardRowGap;
 
-            float rowBHeight = idealB * flexScale;
-            float rowCHeight = idealC * flexScale;
-            float rowDHeight = idealD * flexScale;
-
-            float totalHeight = chrome + rowBHeight + rowCHeight + rowDHeight;
+            float totalHeight = rowsTotal + (effectiveGap * gapCount) + ScoreboardTopPadding + ScoreboardBottomPadding;
             if (totalHeight > maxSafeHeight)
             {
-                Debug.LogWarning($"[HUDController] Scoreboard content ({totalHeight:F0}px) exceeds the safe budget before the side buttons ({maxSafeHeight:F0}px) even after compacting -- a row's font size may need trimming, or the side buttons moved down.");
+                Debug.LogWarning($"[HUDController] Scoreboard content ({totalHeight:F0}px) exceeds the safe budget before the side buttons ({maxSafeHeight:F0}px) even with zero extra gap -- a row's font size may need trimming, or the side buttons moved down.");
             }
 
             Vector2 headerSize = header.sizeDelta;
@@ -1161,19 +1224,19 @@ namespace BrainDrain.UI
             float y = ScoreboardTopPadding;
             SetRowRect(iqRect, y, rowAHeight);
             SetRowRect(titleRect, y, rowAHeight);
-            y += rowAHeight + ScoreboardRowGap;
+            y += rowAHeight + effectiveGap;
 
             SetRowRect(brainsRect, y, rowBHeight);
-            y += rowBHeight + ScoreboardRowGap;
+            y += rowBHeight + effectiveGap;
 
             SetRowRect(textsRowRect, y, rowCHeight);
-            y += rowCHeight + ScoreboardRowGap;
+            y += rowCHeight + effectiveGap;
 
             SetRowRect(restorationRect, y, rowDHeight);
-            y += rowDHeight + ScoreboardRowGap;
+            y += rowDHeight + effectiveGap;
 
             SetRowRect(cumulativeRect, y, rowEHeight);
-            y += rowEHeight + ScoreboardRowGap;
+            y += rowEHeight + effectiveGap;
 
             SetRowRect(rebirthRect, y, rowFHeight);
         }

@@ -17,6 +17,13 @@ namespace BrainDrain.Core
         private static readonly UnityEngine.Color RestorationColor = Palette.Cyan;
         private static readonly UnityEngine.Color LockedRestorationColor = Palette.Dim;
 
+        // 2026-10-12 play-test fix: CashText's "($Y/s)" segment is now tagged in Palette.Glow (the
+        // main "$X" value takes the label's own base color, set to Palette.White in HUDController --
+        // see CashColor's doc comment there for why this replaced the greenish/olive-reading
+        // Cyan-face/gold-underlay combination). Hex computed once via a static field, not per call,
+        // since SetCash runs on every currency tick.
+        private static readonly string CashPerSecondColorHex = "#" + UnityEngine.ColorUtility.ToHtmlStringRGB(Palette.Glow);
+
         public static void SetBrainPowerCounter(TextMeshProUGUI label, double brainPower)
         {
             if (label == null)
@@ -87,9 +94,9 @@ namespace BrainDrain.Core
             SharedBuilder.Clear();
             SharedBuilder.Append('$');
             NumberFormatter.AppendFormatted(SharedBuilder, currentCash);
-            SharedBuilder.Append(" ($");
+            SharedBuilder.Append(" <color=").Append(CashPerSecondColorHex).Append(">($");
             NumberFormatter.AppendFormatted(SharedBuilder, cashPerSecond);
-            SharedBuilder.Append("/s)");
+            SharedBuilder.Append("/s)</color>");
             if (throttled)
             {
                 SharedBuilder.Append(" <color=").Append(ThrottledTagColorHex).Append(">DRY</color>");
