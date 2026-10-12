@@ -41,6 +41,18 @@ namespace BrainDrain.Systems
         }
 
         /// <summary>
+        /// 2026-10-12: exercises just the IQ side of a Rebirth (PlayerIQManager.ResetForRebirth --
+        /// IQ to 1, or to BrainFreezeFloor/113 if a freeze is active, lastMilestoneIndex cleared)
+        /// without a full TriggerRebirth -- so the reset/recovery-climb/milestone-refire behavior
+        /// can be checked repeatedly without wiping buildings, Brain Power, World Restoration
+        /// progress, or RebirthCount itself.
+        /// </summary>
+        public static void SimulateRebirthIQReset()
+        {
+            PlayerIQManager.Instance?.ResetForRebirth();
+        }
+
+        /// <summary>
         /// 2026-09-29: dismisses the FTUE "first affordable building" nudge arrow (UINudgePointer)
         /// without needing to actually purchase the building it's pointing at -- added because the
         /// arrow can visually park itself over/near a shop tab button and intercept taps meant for

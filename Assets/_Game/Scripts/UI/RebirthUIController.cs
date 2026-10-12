@@ -499,7 +499,7 @@ namespace BrainDrain.UI
                 "<size=130%><b>THE SNOTTING</b></size>\n\n" +
                 "<b>YOU LOSE</b>\n" +
                 "Brain Power, Cash, Points\n" +
-                "Buildings, World Restoration, IQ\n\n" +
+                "Buildings, World Restoration, IQ (back to 1)\n\n" +
                 "<b>YOU KEEP</b>\n" +
                 "Rank and permanent boosts\n\n" +
                 $"<b><color=#{cyanHex}>REWARD</color></b>\n" +

@@ -431,6 +431,18 @@ namespace BrainDrain.UI
             {
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
                 RebirthManager.Instance.OnRebirthCountChanged += HandleRebirthCountChangedForRestorationText;
+
+                // 2026-10-12: resets this HUD's own independent milestone tracker on every
+                // Snotting, so climbing back up from the post-rebirth IQ reset re-triggers the
+                // celebration flash at 1000, 2000, etc. -- otherwise it wouldn't fire again until
+                // IQ organically exceeded whatever pre-rebirth high-water mark this tracker was
+                // already sitting at. Separate from PlayerIQManager's own lastMilestoneIndex
+                // (which ResetForRebirth already resets, driving OnIQMilestoneCrossed/
+                // DialogueManager's narrator line correctly on its own) -- same
+                // independent-tracker-same-interval-by-convention pattern as everywhere else
+                // these two trackers coexist.
+                RebirthManager.Instance.OnRebirthCountChanged -= ResetIQMilestoneTrackerOnRebirth;
+                RebirthManager.Instance.OnRebirthCountChanged += ResetIQMilestoneTrackerOnRebirth;
             }
 
             // Always sync rank on cold boot regardless of whether CurrencyManager was ready above.
@@ -571,6 +583,11 @@ namespace BrainDrain.UI
                 RebirthManager.Instance.OnRebirthCountChanged -= UpdateIllumisnottyTitleText;
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForPoints;
                 RebirthManager.Instance.OnRebirthCountChanged -= HandleRebirthCountChangedForRestorationText;
+            }
+
+            if (RebirthManager.Instance != null)
+            {
+                RebirthManager.Instance.OnRebirthCountChanged -= ResetIQMilestoneTrackerOnRebirth;
             }
 
             if (GameManager.Instance != null)
@@ -1792,6 +1809,14 @@ namespace BrainDrain.UI
             var worldRestoration = WorldRestorationManager.Instance;
             double spent = worldRestoration != null ? worldRestoration.CumulativePointsSpentOnRestoration : 0d;
             UpdateRestorationProgressText(spent);
+        }
+
+        /// <summary>2026-10-12: see the subscribe-side doc comment in InitializeHUD -- keeps this
+        /// HUD's own milestone tracker in sync with PlayerIQManager's post-rebirth reset so the
+        /// celebration flash re-fires at the same 1000/2000/etc. points on the climb back up.</summary>
+        private void ResetIQMilestoneTrackerOnRebirth(int _)
+        {
+            lastIQMilestoneIndex = 0;
         }
     }
 }

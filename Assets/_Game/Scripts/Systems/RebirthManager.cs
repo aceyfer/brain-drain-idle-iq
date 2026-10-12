@@ -117,6 +117,11 @@ namespace BrainDrain.Systems
             WorldRestorationManager.Instance?.ResetProgress();
             BrainDrain.Core.PlayerIQManager.Instance?.ResetForRebirth();
 
+            // 2026-10-12: a pending IQ-recovery popup/RECOVER button from before this Rebirth is
+            // moot now -- the IQ it would have recovered no longer exists post-reset. You can't
+            // recover IQ lost before a Rebirth.
+            RewardedAdRecoveryManager.Instance?.ClearPendingRecoveryForRebirth();
+
             Debug.Log($"The Snotting #{RebirthCount} complete! You are now {GetIllumisnottyTitle(RebirthCount)}. Added +{FlatMultiplierBonusPerRebirth:P0} to the global income multiplier, +{FlatCashMultiplierBonusPerRebirth:P0} to the Cash multiplier, +{FlatPointsConversionRateBonusPerRebirth:P0} to the Points conversion rate, and +{FlatTapMultiplierBonusPerRebirth:P0} to the tap multiplier.");
 
             GameManager.Instance?.RequestSave();

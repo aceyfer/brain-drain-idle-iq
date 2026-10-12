@@ -172,6 +172,28 @@ namespace BrainDrain.Systems
             playerIQManager.OnOfflineDecayApplied -= HandleOfflineDecayApplied;
         }
 
+        /// <summary>
+        /// 2026-10-12: called by RebirthManager.TriggerRebirth() -- a pending IQ-recovery
+        /// opportunity from BEFORE the Rebirth is now moot, since Rebirth already reset IQ to its
+        /// own baseline; there's nothing left to recover INTO. Deliberately distinct from the
+        /// permanent-dismiss-on-close behavior that was removed in the SS57 follow-up above --
+        /// that one was cut specifically because closing the POPUP shouldn't forfeit a still-live
+        /// recovery. A Rebirth is a different, player-initiated event that genuinely invalidates
+        /// it, so clearing here doesn't reintroduce that regression.
+        /// </summary>
+        public void ClearPendingRecoveryForRebirth()
+        {
+            if (!HasPendingRecovery)
+            {
+                return;
+            }
+
+            HasPendingRecovery = false;
+            PendingAmountLost = 0f;
+            AdsWatchedThisEvent = 0;
+            OnRecoveryStateChanged?.Invoke();
+        }
+
         private void HandleOfflineDecayApplied(float amountLost)
         {
             // 2026-10-11 play-test fix: PlayerIQManager only fires this event for amountLost >

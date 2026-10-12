@@ -241,18 +241,37 @@ namespace BrainDrain.Core
         }
 
         /// <summary>
-        /// Resets IQ to the fresh-run baseline (MinPlayerIQ = 1) on Snotting (Rebirth).
-        /// Also clears lastMilestoneIndex so milestones fire correctly in the new run, and clears
-        /// any active Brain Freeze (decided 2026-08-03): letting the freeze's floor/timer survive
-        /// a Rebirth would let a paying player time a voluntary prestige reset for an instant free
-        /// IQ refill, which is exactly the pay-to-win this mechanic is designed to avoid. The
-        /// purchase being cut short by the player's own choice to Rebirth is intentional.
+        /// Resets IQ to the fresh-run baseline on Snotting (Rebirth) -- MinPlayerIQ (1) in the
+        /// common case, so the player has to tap it back up. Also clears lastMilestoneIndex so
+        /// milestones fire correctly in the new run.
+        ///
+        /// 2026-10-12, superseding the 2026-08-03 decision recorded here previously: that version
+        /// unconditionally cleared brainFreezeExpiryUnixSeconds on every Rebirth, specifically to
+        /// stop a paying player from timing a voluntary prestige reset for an instant free IQ
+        /// refill. Explicit new instruction reverses this -- a Brain Freeze active at the moment
+        /// of Rebirth now survives it: the reset still happens (IQ still drops, it's not left at
+        /// its pre-rebirth value), but it's held at BrainFreezeFloor (113) rather than MinPlayerIQ
+        /// (1), and the freeze keeps its remaining real-world time untouched. From that point on,
+        /// the existing DecayOvercharge/RestoreIQFromTap floor-at-113/ceiling-at-200 behavior
+        /// applies exactly as it would for any other active freeze -- no new mechanic, just a
+        /// different IQ value at the moment the freeze's clock keeps running through. Wallet
+        /// charge/consumption state (GodTierStoreManager, TimedPurchaseWalletUI) is untouched
+        /// either way; this method only ever reads/writes playerIQ and
+        /// brainFreezeExpiryUnixSeconds.
         /// </summary>
         public void ResetForRebirth()
         {
-            playerIQ = MinPlayerIQ;
+            if (IsBrainFreezeActive)
+            {
+                playerIQ = BrainFreezeFloor;
+            }
+            else
+            {
+                playerIQ = MinPlayerIQ;
+                brainFreezeExpiryUnixSeconds = 0;
+            }
+
             lastMilestoneIndex = 0;
-            brainFreezeExpiryUnixSeconds = 0;
             OnPlayerIQChanged?.Invoke(playerIQ);
         }
 
