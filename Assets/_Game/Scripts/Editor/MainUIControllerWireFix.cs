@@ -195,7 +195,11 @@ namespace BrainDrain.EditorTools
         {
             string[] paths =
             {
-                "Assets/_Game/Sprites/Backgrounds/BG1.jpg",
+                // 2026-10-13: was BG1.jpg -- replaced by the real Leonardo-painted Stage 0
+                // backdrop (abandoned cryo facility), imported via the Art Import tool. Re-run
+                // this menu item (BrainDrain > Wire Background Stage View) to push the new
+                // reference into the live scene's BackgroundStageView.stageSprites[0].
+                "Assets/_Game/Sprites/Backgrounds/Stage0_CryoChamber.png",
                 "Assets/_Game/Sprites/Backgrounds/BG2.png",
                 "Assets/_Game/Sprites/Backgrounds/BG3.png",
                 "Assets/_Game/Sprites/Backgrounds/BG4.png",
