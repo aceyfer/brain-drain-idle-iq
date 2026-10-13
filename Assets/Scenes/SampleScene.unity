@@ -51757,7 +51757,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 52197ace3a2fe9c4e93e0906cad0601e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9fbdf2a3058f21d4ca4f5f78f8b905a8, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -51788,7 +51788,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrainDrain.UI.BackgroundStageView
   stageSprites:
-  - {fileID: 21300000, guid: 52197ace3a2fe9c4e93e0906cad0601e, type: 3}
+  - {fileID: 21300000, guid: 9fbdf2a3058f21d4ca4f5f78f8b905a8, type: 3}
   - {fileID: 21300000, guid: 38ab0e446a547f14a97f70312eb8e7e0, type: 3}
   - {fileID: 21300000, guid: b10d77f3f7be585458708c1b28cb391c, type: 3}
   - {fileID: 21300000, guid: fde4d3c8250e4e74f90b4021050059b2, type: 3}
