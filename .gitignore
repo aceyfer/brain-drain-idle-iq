@@ -61,3 +61,7 @@ Packages/app.rive.rive-unity/
 # Cloud Code (Node.js) -- package-lock.json IS committed (repeatable installs), node_modules is not
 Assets/CloudCode/node_modules/
 Assets/CloudCode/node_modules.meta
+
+# Android signing keys -- never commit
+*.keystore
+*.jks
